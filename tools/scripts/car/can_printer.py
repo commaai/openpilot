@@ -7,8 +7,8 @@ from collections import defaultdict
 import openpilot.cereal.messaging as messaging
 
 
-def can_printer(bus, max_msg, addr, ascii_decode):
-  logcan = messaging.sub_sock('can', addr=addr)
+def can_printer(bus, max_msg, ascii_decode):
+  logcan = messaging.sub_sock('can')
 
   start = time.monotonic()
   lp = time.monotonic()
@@ -39,7 +39,6 @@ if __name__ == "__main__":
   parser.add_argument("--bus", type=int, help="CAN bus to print out", default=0)
   parser.add_argument("--max_msg", type=int, help="max addr")
   parser.add_argument("--ascii", action='store_true', help="decode as ascii")
-  parser.add_argument("--addr", default="127.0.0.1")
 
   args = parser.parse_args()
-  can_printer(args.bus, args.max_msg, args.addr, args.ascii)
+  can_printer(args.bus, args.max_msg, args.ascii)

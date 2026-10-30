@@ -4,6 +4,12 @@ openpilot is an Adaptive Cruise Control (ACC) and Automated Lane Centering (ALC)
 Like other ACC and ALC systems, openpilot is a failsafe passive system and it requires the
 driver to be alert and to pay attention at all times.
 
+openpilot is not an autonomous driving system. It is not a collision avoidance system or a
+substitute for safe and attentive driving. The driver is always responsible for the safe
+operation of the vehicle and must be ready to take control at any time. The driver can override
+openpilot at any time by braking, accelerating, or steering the vehicle. openpilot may
+disengage without warning. Read the [limitations](https://github.com/commaai/openpilot/blob/master/docs/LIMITATIONS.md) carefully before using openpilot.
+
 To assist the driver in maintaining alertness, openpilot includes a driver monitoring feature
 that alerts when it detects driver distraction.
 
