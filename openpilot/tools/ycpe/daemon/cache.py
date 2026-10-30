@@ -1,7 +1,7 @@
 """The download cache shared with openpilot's tools (Paths.download_cache_root()).
 
 Two formats already live there, both keyed by the URL without its query, so signed URLs of one file share a key:
-- file_downloader.py (cabana, jotpluggler, replay): sha256(url) holds the whole file, and
+- file_downloader.py (replay): sha256(url) holds the whole file, and
   sha256("decompressed-<zst|bz2>:" + url) a decompressed log.
 - url_file.py (LogReader, FrameReader, process_replay): md5(url)_<n>.0 in 1 MB chunks, plus md5(url)_length.
 A file is looked up under the canonical URL of every source that could hold it (internal, comma API blob,
@@ -93,7 +93,7 @@ def chunk_paths(url: str) -> tuple[int, list[Path]] | None:
 
 def lookup(key: Key, sources=SHARED) -> tuple[str, Path] | None:
   """(source, path) of a cached copy of key from one of sources, or None. A complete url_file chunk set is joined into a whole file
-  first (which cabana then reuses too). A decompressed-only copy is served as is; the page's reader takes raw logs."""
+  first (which replay then reuses too). A decompressed-only copy is served as is; the page's reader takes raw logs."""
   for source in sources:
     if (url := canonical_url(source, key)) is None:
       continue

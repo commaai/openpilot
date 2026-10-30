@@ -19,7 +19,7 @@ small local server that does what a browser can't on its own. A **local** badge 
 |---|---|
 | `auth` | Your `~/.comma/auth.json` sign-in: the app opens signed in. |
 | `sources` | Logs from every source LogReader uses: your disk, comma's internal storage, the comma API and openpilotci. |
-| `cache` | One disk cache shared with cabana, jotpluggler, replay and LogReader, so a route any of them downloaded opens instantly. The badge panel caches or evicts a whole route. |
+| `cache` | One disk cache shared with replay and LogReader, so a route either of them downloaded opens instantly. The badge panel caches or evicts a whole route. |
 | `repos` | Saving DBCs from the CAN view straight into the checkout's `opendbc_repo`. |
 | `athena`, `billing` | Relays the page's device calls and referrals read on origins athena and billing don't allow. |
 | `webrtc` | Live data from a webrtcd on this PC (openpilot, a sim, replay). |
@@ -41,7 +41,7 @@ small local server that does what a browser can't on its own. A **local** badge 
 
 ## Shared cache
 
-`Paths.download_cache_root()`, the directory cabana, jotpluggler, replay (`file_downloader.py`) and LogReader
+`Paths.download_cache_root()`, the directory replay (`file_downloader.py`) and LogReader
 (`url_file.py`) already use. A file is found under the canonical URL of every source that could hold it, as a whole file,
 a decompressed one or complete url_file chunks; downloads land whole and logs are mirrored as chunks too. It's
 LRU-pruned to the budget, and a hit is checked against its source at most once a day, refetched if the size changed.

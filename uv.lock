@@ -168,16 +168,6 @@ wheels = [
 ]
 
 [[package]]
-name = "comma-deps-imgui"
-version = "1.92.7.post103"
-source = { registry = "https://pypi.org/simple" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/4d/0f/29f3dc72d8b745f8db30245502c7d5626eff5d244a4c02c4e89bbc8497ec/comma_deps_imgui-1.92.7.post103-py3-none-macosx_11_0_arm64.whl", hash = "sha256:bb693b2e9f3aa5900b8884527409e73d6580c8b05bb42e1ec1a2897f4f6c05fc", size = 1688025, upload-time = "2026-09-11T22:32:41.73Z" },
-    { url = "https://files.pythonhosted.org/packages/ec/4b/abf18a8cc4527c6cb1d8f8dbec10b02e28746b303850d90fe0af5ba82a9d/comma_deps_imgui-1.92.7.post103-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:1b2737fa6f47ad00835828ff663eae7150519e0a6cc7df9e0b336a48c24032b6", size = 2522805, upload-time = "2026-09-11T22:32:45.498Z" },
-    { url = "https://files.pythonhosted.org/packages/17/b8/d5fe737f156ca1dd1797f9ed664464b43fbe7712f9b61271fbe6315ed539/comma_deps_imgui-1.92.7.post103-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:6554b6ff6ba818038ac8a6c51bd71afbb285c7b3f1c0c31947298b17db8f111b", size = 2655501, upload-time = "2026-09-11T22:32:49.008Z" },
-]
-
-[[package]]
 name = "comma-deps-json11"
 version = "20170411.0.post103"
 source = { registry = "https://pypi.org/simple" }
@@ -185,16 +175,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/1c/5c/8bed22f3118f53ae08763c6dfc755d08826c750ac21864d60a4710ef3183/comma_deps_json11-20170411.0.post103-py3-none-macosx_11_0_arm64.whl", hash = "sha256:cb255b3c010e83f8361869f7cf8b1f585db5e0dabc92b41f3132af49838e981a", size = 34039, upload-time = "2026-09-11T22:32:52.45Z" },
     { url = "https://files.pythonhosted.org/packages/6c/be/51c3dd8f80ee0a968a90b4737e0362e7b621366c24c9c55613386ba0aa14/comma_deps_json11-20170411.0.post103-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:0f7764609db411d98c540d985c289a2c37f282fbf2a75e2503017f1243546653", size = 41850, upload-time = "2026-09-11T22:32:55.711Z" },
     { url = "https://files.pythonhosted.org/packages/79/73/7f893e3a65e82c2453806c39e79eb4e2a8074f358cfa20e1b66e46e9a6b3/comma_deps_json11-20170411.0.post103-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:a309d401dd22b758455dafd3c28b72c4bd88c7482ddd70fe8653e53efc745a83", size = 42604, upload-time = "2026-09-11T22:32:58.866Z" },
-]
-
-[[package]]
-name = "comma-deps-libusb"
-version = "1.0.29.post103"
-source = { registry = "https://pypi.org/simple" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/ad/81/865cbc69c8f182a020f4fb85c70b4d4e1b2a636eedfc34c85490472c1e56/comma_deps_libusb-1.0.29.post103-py3-none-macosx_11_0_arm64.whl", hash = "sha256:7a8afc81bce03f3d6386613983a23a303369bed19593e84d0c744e8381087cb1", size = 102343, upload-time = "2026-09-11T22:33:02.116Z" },
-    { url = "https://files.pythonhosted.org/packages/d3/1a/d07a980d8132c58cc328974c0566c8263fcff9b60e053129030fd849dd2c/comma_deps_libusb-1.0.29.post103-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:56661f2674fd41abb5337a435c032552ecd7318857d598f79c4fd6cdddd727d8", size = 94431, upload-time = "2026-09-11T22:33:05.488Z" },
-    { url = "https://files.pythonhosted.org/packages/b1/2f/19227534c7f7cf4850ef73df16ec5feabd80e23edebec648877a5b82eab6/comma_deps_libusb-1.0.29.post103-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:450c9bfaad634931c336eeea8369d4ac8db78ba092b3c5d7b70c098d5634b050", size = 93460, upload-time = "2026-09-11T22:33:08.701Z" },
 ]
 
 [[package]]
@@ -621,8 +601,6 @@ testing = [
 ]
 tools = [
     { name = "comma-deps-bootstrap-icons" },
-    { name = "comma-deps-imgui" },
-    { name = "comma-deps-libusb" },
     { name = "comma-deps-ncurses" },
     { name = "matplotlib" },
 ]
@@ -641,9 +619,7 @@ requires-dist = [
     { name = "comma-deps-ffmpeg" },
     { name = "comma-deps-gcc-arm-none-eabi" },
     { name = "comma-deps-git-lfs" },
-    { name = "comma-deps-imgui", marker = "extra == 'tools'" },
     { name = "comma-deps-json11" },
-    { name = "comma-deps-libusb", marker = "extra == 'tools'" },
     { name = "comma-deps-ncurses", marker = "extra == 'tools'" },
     { name = "comma-deps-raylib" },
     { name = "comma-deps-zstd" },
@@ -990,7 +966,7 @@ requires-dist = [
     { name = "mkdocs", marker = "extra == 'docs'" },
     { name = "mkdocs-material", marker = "extra == 'docs'" },
     { name = "mkdocstrings", extras = ["python"], marker = "extra == 'docs'" },
-    { name = "mypy", marker = "extra == 'linting'", specifier = "==1.19.1" },
+    { name = "mypy", marker = "extra == 'linting'", specifier = "==2.3.1" },
     { name = "networkx", marker = "extra == 'testing'" },
     { name = "nibabel", marker = "extra == 'testing'" },
     { name = "numba", marker = "extra == 'testing'", specifier = ">=0.55" },
@@ -1011,7 +987,7 @@ requires-dist = [
     { name = "pytest-split", marker = "extra == 'testing-minimal'" },
     { name = "pytest-xdist", marker = "extra == 'testing-minimal'" },
     { name = "pyyaml", marker = "extra == 'autogen'" },
-    { name = "ruff", marker = "extra == 'linting'", specifier = "==0.14.10" },
+    { name = "ruff", marker = "extra == 'linting'", specifier = "==0.16.4" },
     { name = "safetensors", marker = "extra == 'testing-unit'" },
     { name = "sentencepiece", marker = "extra == 'testing'" },
     { name = "tabulate", marker = "extra == 'testing-unit'" },
@@ -1024,7 +1000,7 @@ requires-dist = [
     { name = "transformers", marker = "extra == 'testing'" },
     { name = "typeguard", marker = "extra == 'linting'" },
     { name = "typing-extensions", marker = "extra == 'linting'" },
-    { name = "z3-solver", marker = "extra == 'testing-minimal'", specifier = "<4.15.4" },
+    { name = "z3-solver", marker = "extra == 'testing-minimal'", specifier = "==5.1.0.0" },
 ]
 provides-extras = ["linting", "testing-minimal", "testing-unit", "testing", "docs", "mesa", "autogen"]
 

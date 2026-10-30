@@ -61,9 +61,7 @@ testing = [
 tools = [
   "matplotlib",
 
-  "comma-deps-imgui",
   "comma-deps-bootstrap-icons",
-  "comma-deps-libusb",
   "comma-deps-ncurses",
 
   # this can be added back once it's stripped down some more
