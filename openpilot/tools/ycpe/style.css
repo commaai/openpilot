@@ -55,8 +55,11 @@ input::-webkit-calendar-picker-indicator { cursor: pointer; opacity: .6; }
 input[type=color] { width: 32px; height: 20px; padding: 0; border: 1px solid var(--line); border-radius: 4px; background: none; cursor: pointer; }
 input[type=color]::-webkit-color-swatch-wrapper { padding: 2px; }
 input[type=color]::-webkit-color-swatch { border: 0; border-radius: 2px; }
-.ask { max-width: min(420px, calc(100vw - 32px)); padding: 16px 18px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--raised); color: var(--fg); box-shadow: var(--shadow); }
-.ask::backdrop { background: rgba(0,0,0,.35); }
+/* what floats over the page: menus, panels, dialogs */
+.popover, .status-panel, .perf-panel, .ask, .help { border: 1px solid var(--line); border-radius: 8px; background: var(--raised); color: var(--fg); box-shadow: var(--shadow); }
+.ask, .help { border-radius: 10px; }
+:is(.ask, .help)::backdrop { background: rgba(0,0,0,.35); }
+.ask { max-width: min(420px, calc(100vw - 32px)); padding: 16px 18px 12px; }
 .ask p { margin: 0 0 12px; overflow-wrap: anywhere; }
 .ask-buttons { display: flex; justify-content: flex-end; gap: 4px; }
 .ask .button { margin: 0; }
@@ -135,7 +138,7 @@ body.in-ws #main { overflow: hidden; }
 .pill-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--line); }
 .pill-bar > i { display: block; height: 100%; background: var(--accent); transition: width 0.2s linear; }
 .load-pill.buffering .pill-bar > i { background: var(--alert); }
-.status-panel { position: fixed; z-index: 50; width: 420px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--raised); box-shadow: var(--shadow); }
+.status-panel { position: fixed; z-index: 50; padding: 8px 10px; }  /* placed and sized by dom.js anchoredPanel */
 .status-head { display: flex; justify-content: space-between; margin-bottom: 6px; }
 .status-row { margin: 6px 0 8px; }
 .status-title { font-size: 11px; margin-bottom: 3px; }
@@ -159,14 +162,13 @@ body.in-ws #main { overflow: hidden; }
 .hud-fps { min-width: 3.6em; }
 .hud-ms { min-width: 4.2em; color: var(--muted); }
 .hud-drops { color: var(--muted); }
-.hud-spark { width: 40px; height: 18px; }
 /* a narrower bar sheds the least needed first (after the chips' own display) */
 @container (max-width: 1400px) { .topbar :is(.hud-spark, .hud-mem, .mode-btn > span) { display: none; } }
 @container (max-width: 1200px) { .topbar .hud-ms, .topbar .brand > span { display: none; } }
 @container (max-width: 1100px) { .topbar .omni, .topbar .omnibox { min-width: 40px; } .topbar .view { padding: 0 5px; } .topbar .load-pill { max-width: 150px; } .topbar .tabs { min-width: 80px; } .topbar .mode-btn { padding: 0 5px; } }
 /* the device crumb goes as on phones: the route crumb's menu reaches the rest */
 @container (max-width: 900px) { .topbar :is(.hud-drops, .local-badge, .sep), .topbar > .crumb:first-of-type { display: none; } }
-.popover { position: fixed; z-index: 50; min-width: min(220px, calc(100vw - 16px)); max-width: min(340px, calc(100vw - 16px)); max-height: 70vh; overflow: auto; padding: 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--raised); box-shadow: var(--shadow); }
+.popover { position: fixed; z-index: 50; min-width: min(220px, calc(100vw - 16px)); max-width: min(340px, calc(100vw - 16px)); max-height: 70vh; overflow: auto; padding: 4px; }
 .popover:has(.route-pop) { max-width: min(480px, calc(100vw - 16px)); }  /* the route name diagram on one line */
 .menu-list { display: flex; flex-direction: column; }
 .menu-row { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border: 0; border-radius: 4px; background: none; text-align: left; text-decoration: none; white-space: nowrap; cursor: pointer; }
@@ -186,7 +188,7 @@ body.loading .topbar::before { content: ""; position: absolute; left: 0; bottom:
 }
 
 /* perf panel */
-.perf-panel { position: fixed; top: calc(var(--top) + 4px); right: 8px; z-index: 40; width: 380px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--raised); box-shadow: var(--shadow); }
+.perf-panel { position: fixed; top: calc(var(--top) + 4px); right: 8px; z-index: 40; width: 380px; padding: 8px; }
 .perf-head { display: flex; gap: 10px; align-items: baseline; margin-bottom: 6px; }
 .perf-head b { flex: 1; }
 .perf-chart { width: 100%; height: 90px; display: block; margin-bottom: 6px; }
@@ -202,12 +204,11 @@ body.loading .topbar::before { content: ""; position: absolute; left: 0; bottom:
 .workspace { flex: 1; min-height: 0; display: flex; }
 #main > .ws-wait { height: 100%; }
 .ws-wait { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--muted); }
-.layout { flex: 1; display: flex; min-width: 0; padding: 4px; gap: 0; }
+.layout { flex: 1; display: flex; min-width: 0; padding: 4px; }
 .layout > * { flex: 1; }
 .split { display: flex; min-width: 0; min-height: 0; }
-.split.row { flex-direction: row; }
 .split.col { flex-direction: column; }
-.divider { position: relative; flex: 0 0 4px; background: transparent; transition: background .1s; touch-action: none; }
+.divider { position: relative; flex: 0 0 4px; transition: background .1s; touch-action: none; }
 .split.row > .divider { cursor: col-resize; }
 .split.col > .divider { cursor: row-resize; }
 .divider:hover, .divider:active, .divider:focus-visible { background: var(--accent); outline: none; }
@@ -268,8 +269,7 @@ input.pb-time[aria-invalid] { outline-color: var(--critical); }
 body.docking, body.docking * { cursor: grabbing !important; user-select: none; }
 .dock-hint { position: fixed; z-index: 45; border: 2px solid var(--accent); border-radius: 5px; background: var(--loop); pointer-events: none; transition: all .08s ease-out; }
 .tab-edit { width: 90px; height: 20px; padding: 0 4px; border: 1px solid var(--accent); border-radius: 3px; background: var(--bg); }
-.help { padding: 0; border: 1px solid var(--line); border-radius: 10px; background: var(--raised); color: var(--fg); box-shadow: var(--shadow); }
-.help::backdrop { background: rgba(0,0,0,.35); }
+.help { padding: 0; }
 .help-card { min-width: min(380px, calc(100vw - 32px)); padding: 14px 18px; }
 .help-head { display: flex; justify-content: space-between; align-items: baseline; }
 .help h2 { margin: 0; font-size: 13px; }

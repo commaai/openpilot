@@ -2,7 +2,7 @@
 // from a URL, or export the view's layout. Custom code in an opened layout stays untrusted until the user
 // reviews it in the code console, except in the bundled references (commaai/openpilot's own layouts).
 import {h, css, download} from "/dom.js";
-import {importLayout, exportLayout, uniqueCustoms, customsOf} from "./import.js";
+import {importLayout, exportLayout, uniqueCustoms, customsOf, plots} from "./import.js";
 
 css(new URL("./picker.css", import.meta.url));
 
@@ -27,8 +27,7 @@ export async function loadLayout(src) {
 }
 
 function trust(layout) {
-  const walk = (n) => n.children ? n.children.forEach(walk) : n.state?.curves?.forEach((c) => { if (c.custom) delete c.custom.untrusted; });
-  layout.tabs.forEach((t) => walk(t.root));
+  plots(layout, (curves) => { for (const c of curves) delete c.custom?.untrusted; });
 }
 
 // tabs with generic names ("tab1") are named after the layout's file instead
@@ -55,10 +54,8 @@ export function shareUrl(layout, href = location.href) {
   return url.href;
 }
 
-// files dropped on el open as new tabs; open(file) does the rest (loadLayout, mergeLayout, apply)
+// files dropped on el (app.js lets them drop anywhere) open as new tabs: open(file) loads, merges and applies one
 export function acceptLayoutFiles(el, open) {
-  const isFile = (e) => e.dataTransfer?.types.includes("Files");
-  el.addEventListener("dragover", (e) => { if (isFile(e)) e.preventDefault(); });
   el.addEventListener("drop", (e) => {
     const files = [...(e.dataTransfer?.files || [])].filter((f) => /\.json$/i.test(f.name));
     if (!files.length) return;
