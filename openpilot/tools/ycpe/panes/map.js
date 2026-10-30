@@ -320,6 +320,15 @@ export function deviceMap(device, locationPromise, {connect = false, drawPin = n
   return el;
 }
 
+// fills the path, outlined in the background color
+function fillOutlined(ctx, fill) {
+  ctx.fillStyle = fill;
+  ctx.fill();
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = theme.color("--bg");
+  ctx.stroke();
+}
+
 // a map pin with its point at (x, y)
 function pin(ctx, x, y, fill) {
   ctx.beginPath();
@@ -327,11 +336,7 @@ function pin(ctx, x, y, fill) {
   ctx.bezierCurveTo(x - 2, y - 8, x - 10, y - 13, x - 10, y - 20);
   ctx.arc(x, y - 20, 10, Math.PI, 0);
   ctx.bezierCurveTo(x + 10, y - 13, x + 2, y - 8, x, y);
-  ctx.fillStyle = fill;
-  ctx.fill();
-  ctx.lineWidth = 2;
-  ctx.strokeStyle = theme.color("--bg");
-  ctx.stroke();
+  fillOutlined(ctx, fill);
   ctx.beginPath();
   ctx.arc(x, y - 20, 4, 0, 2 * Math.PI);
   ctx.fillStyle = theme.color("--bg");
@@ -341,11 +346,7 @@ function pin(ctx, x, y, fill) {
 function dot(ctx, x, y, r, fill) {
   ctx.beginPath();
   ctx.arc(x, y, r, 0, 2 * Math.PI);
-  ctx.fillStyle = fill;
-  ctx.fill();
-  ctx.lineWidth = 2;
-  ctx.strokeStyle = theme.color("--bg");
-  ctx.stroke();
+  fillOutlined(ctx, fill);
 }
 
 // an arrowhead pointing at angle (radians, clockwise from east)
@@ -359,12 +360,8 @@ function arrow(ctx, x, y, angle, fill) {
   ctx.lineTo(-3, 0);
   ctx.lineTo(-6, -7);
   ctx.closePath();
-  ctx.fillStyle = fill;
-  ctx.fill();
-  ctx.lineWidth = 2;
   ctx.lineJoin = "round";
-  ctx.strokeStyle = theme.color("--bg");
-  ctx.stroke();
+  fillOutlined(ctx, fill);
   ctx.restore();
 }
 

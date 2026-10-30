@@ -28,10 +28,11 @@ function decode(url) {
   }
   return decoded.get(url);
 }
+const decodeAll = (list) => list.map(([, , url]) => decode(url));
 
 // what the route's strip shows, loaded ahead (for a device page about to open)
 export function warm(route, duration) {
-  return Promise.all([routeEvents(route).catch(() => {}), ...sprites(route, duration).map(([, , url]) => decode(url))]);
+  return Promise.all([routeEvents(route).catch(() => {}), ...decodeAll(sprites(route, duration))]);
 }
 
 // duration in route seconds; fill() loads the spans and thumbnails (a list fills its rows as they near the viewport) and
@@ -54,12 +55,12 @@ export function strip(route, duration) {
     // the spans, once they and the thumbnails are in; neither band before `hold` (the rest of a list's first screen in)
     fill(hold) {
       const list = sprites(route, duration);
-      const thumbsIn = Promise.all([hold, ...list.map(([, , url]) => decode(url))]).then(() => putThumbs(list));
+      const thumbsIn = Promise.all([hold, ...decodeAll(list)]).then(() => putThumbs(list));
       const spansIn = Promise.all([routeEvents(route), hold]).then(([events]) => (putSpans(events), events));
       return Promise.all([spansIn, thumbsIn]).then(([events]) => events);
     },
     // the thumbnails decoded, ready to go in
-    decoded: () => Promise.all(sprites(route, duration).map(([, , url]) => decode(url))),
+    decoded: () => Promise.all(decodeAll(sprites(route, duration))),
     // only [t0, t1] in view
     show(t0, t1) {
       const span = Math.max(0.01, t1 - t0);

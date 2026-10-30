@@ -134,5 +134,5 @@ export function create(ctx) {
       copied),
     toggles,
     bookmarks);
-  return {name: "info", el, render() {}, resize() {}, dispose: schema.dispose, save: () => ({})};
+  return {name: "info", el, render() {}, dispose: schema.dispose, save: () => ({})};
 }

@@ -2,12 +2,13 @@
 // where frame is a VideoFrame on the GPU or {width, height, data} with tightly packed I420 planes for the shader.
 const QUEUE = 4;  // chunks in flight in a WebCodecs decoder
 
-export async function openBackend(codec, {emit, pump, error, alloc}) {
+// io: {emit, pump (it can take more), error (a decode failed), alloc (a plane buffer of size bytes)}
+export async function openBackend(codec, io) {
   for (const hardwareAcceleration of ["prefer-hardware", "no-preference"]) {
     const config = {codec, hardwareAcceleration, optimizeForLatency: true};
-    if ((await VideoDecoder.isConfigSupported(config)).supported) return webcodecs(config, {emit, pump, error, alloc});
+    if ((await VideoDecoder.isConfigSupported(config)).supported) return webcodecs(config, io);
   }
-  return codec.startsWith("hev") ? wasm({emit, pump, alloc}) : null;
+  return codec.startsWith("hev") ? wasm(io) : null;
 }
 
 function webcodecs(config, {emit, pump, error, alloc}) {

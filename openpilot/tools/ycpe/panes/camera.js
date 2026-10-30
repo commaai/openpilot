@@ -18,7 +18,8 @@ await css(new URL("./camera.css", import.meta.url));
 
 const CAMERAS = {qcamera: "qcam", fcamera: "road", ecamera: "wide", dcamera: "driver"};
 const ALERT_STATUS = ["normal", "prompt", "critical"];  // selfdriveState.alertStatus
-const LANES = {fcamera: ["fcam", 1], ecamera: ["ecam", 2], dcamera: ["dcam", 3], qcamera: ["qcam", 4]};
+// each camera's lane in status.js
+const LANES = {fcamera: {label: "fcam", order: 1}, ecamera: {label: "ecam", order: 2}, dcamera: {label: "dcam", order: 3}, qcamera: {label: "qcam", order: 4}};
 const AHEAD = 8;          // frames decoded ahead of the playhead while playing
 const BACK = 19;          // frames kept behind the playhead for stepping backwards while paused (one GOP)
 const SCRUB_MS = 100;     // seeks closer together than this are a scrub: keyframes only until it settles
@@ -75,7 +76,7 @@ export function create(ctx, state) {
   const mute = muteButton("camera-mute", 16);  // shown for a video with sound
   const el = h("div", {class: "camera-pane"});
   // audio: whether the video shown has a sound track
-  const pane = {name: "camera", el, audio: false, resize() {}, save: () => ({camera}), dispose, stats: () => source.stats,
+  const pane = {name: "camera", el, audio: false, save: () => ({camera}), dispose,
     render() {
       source.render();
       showAlert();
@@ -173,11 +174,6 @@ export function create(ctx, state) {
   return pane;
 }
 
-function lane(camera) {
-  const [label, order] = LANES[camera];
-  return status.source(camera, {label, order});
-}
-
 // hls.js (the light build: no subtitles, alternate audio or DRM) loads with the first qcamera pane, or ahead of it as a
 // pointer comes over a drive (prefetch), not with the page.
 // It runs in the origin that holds the auth tokens, so the CDN's copy must match the pinned hash. It downloads right
@@ -200,7 +196,7 @@ function qcamera(ctx, pane, {wait, absent}) {
   const poster = ctx.route.loose ? "" : api.segmentAsset(ctx.route, segmentAt(ctx.route, Math.floor(ctx.clock.t / SEGMENT)), "sprite.jpg");
   const video = h("video", {playsinline: true, preload: "auto", poster});
   video.muted = sound.silent();  // the property: the attribute set after creation doesn't mute it, and only a muted video plays unasked
-  const lanes = lane("qcamera");
+  const lanes = status.source("qcamera", LANES.qcamera);
   const count = Math.ceil(ctx.clock.duration / SEGMENT);
   lanes.count(count);
   const loading = new Set();
@@ -327,16 +323,15 @@ function fullres(ctx, pane, camera, screen, {say, wait, absent, fail}) {
   const {canvas, draw} = screen;
   screen.restored = () => { shown = -1; ctx.perf.invalidate(pane); };
   const worker = new Worker("/data/video/decoder.js", {type: "module"});
-  const lanes = lane(camera);
+  const lanes = status.source(camera, LANES[camera]);
   const frames = new Map();  // n → VideoFrame, or I420 planes from the software decoder
-  const stats = {shown: -1, exact: false, drawn: 0, lag: 0, fps: 0, held: 0, seekMs: null};
-  let ready = false, transcoded = false, software = false, shown = -1, last = -1, asked = "", missingSince = 0, decoded = 0;
+  let ready = false, transcoded = false, software = false, shown = -1, last = -1, asked = "", missingSince = 0, decoded = 0, fps = 0;
   let jumped = 0, settle = 0, scrubbing = false;  // when the playhead last jumped; a render once a scrub settles
   let gone = false;
 
   const jobs = new Map();  // segment → {done, total} frames of the daemon's transcode
   const segState = [];     // the worker's last word on each segment
-  const badge = () => say([transcoded && "daemon H.264", software && "software decode", software && stats.fps && `${stats.fps} fps`].filter(Boolean).join(" · "),
+  const badge = () => say([transcoded && "daemon H.264", software && "software decode", software && fps && `${fps} fps`].filter(Boolean).join(" · "),
     transcoded ? TRANSCODED : SOFTWARE);
   let stopJobs = null, waitingOn = null;
   const waitText = (b) => {
@@ -380,7 +375,7 @@ function fullres(ctx, pane, camera, screen, {say, wait, absent, fail}) {
     if (data.unbuilt) return fail(UNBUILT);
     if (data.unsupported) return fail(`this browser can't decode ${data.unsupported.startsWith("hev") ? "HEVC" : data.unsupported}, showing qcamera`);
     if (data.backend) {
-      software = (stats.backend = data.backend) !== "hardware";
+      software = data.backend !== "hardware";
       badge();
     } else if (data.seg !== undefined) {
       segState[data.seg] = data.state;
@@ -392,9 +387,9 @@ function fullres(ctx, pane, camera, screen, {say, wait, absent, fail}) {
       for (const f of frames.values()) held += f.data?.byteLength ?? f.allocationSize();
       lanes.bytes({memory: data.memory + held, disk: data.disk});
       lanes.rate(data.rate);
-      stats.fps = (data.decoded - decoded) * 2;
+      fps = (data.decoded - decoded) * 2;
       decoded = data.decoded;
-      ctx.perf.mark(`${camera} decode`, `${stats.fps} fps · ${frames.size} held`);
+      ctx.perf.mark(`${camera} decode`, `${fps} fps · ${frames.size} held`);
       badge();
     } else {
       frames.set(data.n, data.frame);
@@ -404,7 +399,6 @@ function fullres(ctx, pane, camera, screen, {say, wait, absent, fail}) {
 
   return {
     el: canvas,
-    stats,
     render() {
       if (!ready) return;
       const n = frameAt(ctx.peekStore(), ctx.route, camera, ctx.clock.t), slot = Math.floor(n / SEGMENT_FRAMES);
@@ -429,24 +423,20 @@ function fullres(ctx, pane, camera, screen, {say, wait, absent, fail}) {
         frames.delete(k);
         closed.push(k);
       }
-      stats.held = frames.size;
 
       let best = -1;
       for (const k of frames.keys()) if (k <= n && k > best) best = k;
       if (best !== shown && best >= 0) {
         if (draw(frames.get(best))) {
           canvas.hidden = false;
-          shown = stats.shown = best;
-          stats.drawn++;
+          shown = best;
         } else {
           ctx.perf.invalidate(pane);  // the shaders are still linking
         }
       }
-      stats.exact = best === n;  // else a keyframe (or older frame) stands in until the exact one decodes
-      if (playing && best >= 0) stats.lag = Math.max(stats.lag, n - best);
+      // a keyframe (or older frame) stands in until the exact one decodes; that wait is the seek's time
       if (best === n && missingSince) {
-        stats.seekMs = Math.round(performance.now() - missingSince);
-        ctx.perf.mark(`${camera} seek`, `${stats.seekMs} ms`);
+        ctx.perf.mark(`${camera} seek`, `${Math.round(performance.now() - missingSince)} ms`);
         missingSince = 0;
       } else if (best !== n && !missingSince) {
         missingSince = performance.now();
@@ -474,13 +464,10 @@ function fullres(ctx, pane, camera, screen, {say, wait, absent, fail}) {
 // files they came with. All of it is by timeline slot (a range plays its segments back to back); segs[k] is slot k's
 // segment.
 async function sources(route, camera) {
-  const files = await routeCameraFiles(route, camera), urls = [], keys = [];
+  const files = await routeCameraFiles(route, camera);
   const segs = Array.from({length: slots(route)}, (_, k) => segmentAt(route, k));
-  urls.length = keys.length = segs.length;
-  files.forEach(({url, file}, k) => {
-    urls[k] = url;
-    keys[k] = `${route.fullname.replace("|", "/")}/${segs[k]}/${file}`;
-  });
+  const urls = segs.map((_, k) => files[k]?.url);
+  const keys = segs.map((n, k) => files[k] && `${route.fullname.replace("|", "/")}/${n}/${files[k].file}`);
   const hardware = (await VideoDecoder.isConfigSupported({codec: HEVC, hardwareAcceleration: "prefer-hardware"})).supported;
   if (hardware || route.loose || !daemon.has("transcode")) return {urls, keys, segs, transcoded: false};
   const [dongle, log] = route.fullname.split("|");

@@ -8,6 +8,7 @@ import {canManage} from "/pages/home.js";
 import {API_KIND} from "/data/sources.js";
 import {uploads, keysIn, urlKey} from "/pages/files.js";
 import {cnIcon} from "/pages/connect/icons.js";
+import {progress} from "/pages/cnui.js";
 
 await css(new URL("./connect-menus.css", import.meta.url));
 
@@ -20,7 +21,7 @@ const FILES = [["Road camera", "fcamera"], ["Wide road camera", "ecamera"], ["Dr
 const CAMERAS = ["fcamera", "ecamera", "dcamera"];
 
 // MUI's CircularProgress, white
-const spinner = (size) => h("span", {class: "cm-spinner", style: `width:${size}px;height:${size}px`});
+const spinner = (size) => progress(size, "#fff");
 
 // a MUI menu: a transparent backdrop that closes it, and the paper growing in where place(anchor, paper) puts it,
 // kept 16 px inside the window. Returns {paper, list, close}
@@ -84,30 +85,30 @@ export function filesMenu(anchor, ctx) {
     return {canRequest: left - requested, uploading: !left, uploaded: !(keys.length - uploaded), paused, active: uploading};
   };
 
+  // what a file's row offers: its download, how its upload is going, or a request for it
+  function action(key, kind) {
+    const s = up?.state(key);
+    if (files.has(key)) return button("download", () => { location.href = files.get(key); });
+    if (s?.queued) return fake(s.current ? `${Math.floor(s.progress * 100)}%` : s.paused ? "paused" : "pending");
+    if (s?.requested) return fake(spinner(17));
+    if (s?.notFound && kind === "dcamera") return tip(fake("not found", cnIcon("info", 16)), DCAM_TIP);
+    if (s?.notFound) return fake("not found");
+    if (s?.error) return fake("failed");
+    if (!up?.canUpload) return button("download", null, true);
+    return button(innerWidth < 425 ? "upload" : "request upload", () => up.request([key]));
+  }
+
   function row(li, key, kind) {
-    const narrow = innerWidth < 425, s = up?.state(key);
-    let b = null;
-    if (!files) b = null;
-    else if (files.has(key)) b = button("download", () => { location.href = files.get(key); });
-    else if (s?.queued) b = fake(s.current ? `${Math.floor(s.progress * 100)}%` : s.paused ? "paused" : "pending");
-    else if (s?.requested) b = fake(spinner(17));
-    else if (s?.notFound) {
-      b = fake("not found", kind === "dcamera" && cnIcon("info", 16));
-      if (kind === "dcamera") tip(b, DCAM_TIP);
-    } else if (s?.error) b = fake("failed");
-    else if (!up?.canUpload) b = button("download", null, true);
-    else b = button(narrow ? "upload" : "request upload", () => up.request([key]));
     li.classList.toggle("cm-wait", !files);
-    li.replaceChildren(li.firstChild, ...[b].filter(Boolean));
+    li.replaceChildren(li.firstChild, ...files ? [action(key, kind)] : []);
   }
 
   function all(li, kinds, what) {
     li.classList.toggle("cm-wait", !files);
-    if (!files || !up) return li.replaceChildren(li.firstChild);
+    if (!files || !up?.canUpload) return li.replaceChildren(li.firstChild);
     const keys = inRange(kinds), st = stats(keys), off = st.uploaded || st.uploading || !st.canRequest;
-    const b = !up.canUpload ? null : !off ? button(`upload ${st.canRequest} ${what}`, () => up.request(keys))
-      : fake(st.uploaded ? "uploaded" : st.uploading ? "pending" : spinner(17));
-    li.replaceChildren(li.firstChild, ...[b].filter(Boolean));
+    li.replaceChildren(li.firstChild, off ? fake(st.uploaded ? "uploaded" : st.uploading ? "pending" : spinner(17))
+      : button(`upload ${st.canRequest} ${what}`, () => up.request(keys)));
   }
 
   function draw() {
@@ -186,7 +187,6 @@ export function infoMenu(anchor, ctx) {
       preserved.el);
     isPreserved(ctx).then(preserved.set, () => {});
   }).catch(() => {});
-  void m;
 }
 
 // a MUI switch with its label, info tooltip, and the error it failed with. checked null: loading
@@ -226,7 +226,7 @@ function switchRow(label, about, checked, save) {
   return {el, set};
 }
 
-// a tooltip over el: connect's grey bubble, with an arrow above (info) or a plain popper below (hover)
+// a tooltip over el, which it returns: connect's grey bubble, with an arrow above (info) or a plain popper below (hover)
 function tip(el, text, above = false) {
   let pop = null;
   const show = () => {
@@ -243,6 +243,7 @@ function tip(el, text, above = false) {
   el.addEventListener("pointerenter", show);
   el.addEventListener("pointerleave", hide);
   el.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); if (pop) hide(); else show(); });
+  return el;
 }
 
 // connect's upload queue dialog: the device's queue (this drive's and others'), progress, cancel one or all. It owns

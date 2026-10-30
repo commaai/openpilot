@@ -22,6 +22,7 @@ const ACTIVE = new Set(["queued", "encoding"]);
 const CAMERAS = [["fcamera.hevc", "Road"], ["ecamera.hevc", "Wide road"], ["dcamera.hevc", "Driver"]];
 const BITRATES = [[5, "Standard", "5 Mbps"], [8, "High", "8 Mbps"], [12, "Extreme", "12 Mbps"]];
 const SPEEDUPS = [1, 2, 4, 5, 10];
+const STORED = "Clips are stored on your device and may be cleared to make room for more recent driving footage.";
 
 const dur = (s) => {
   s = Math.max(0, Math.round(s));
@@ -36,6 +37,7 @@ const cameraName = (camera) => CAMERAS.find(([v]) => v === camera)?.[1] || camer
 const covers = (ranges, camera, t0, t1) => !!ranges?.[camera]?.available_ranges?.some(([a, b]) => a <= t0 && b >= t1);
 const clipTitle = (clip) => stem(clip.filename || "") || "Clip";
 const clipLength = (clip) => dur((clip.source_end_time - clip.source_start_time) / (clip.speedup || 1));
+const clipMeta = (clip) => [cameraName(clip.camera), clipLength(clip), mb(clip.size)].filter(Boolean).join(" · ");
 
 // as connect: openpilot 0.11.2 on, with a getVersion that has a commit date (athenad from before clips has none). A yes
 // is remembered, so an offline device still shows its button
@@ -63,7 +65,7 @@ function supportsClips(device) {
 
 const store = () => caches.open("ycpe-clips");
 const keyOf = (dongle, clip) => `/clips/${dongle}/${encodeURIComponent(clip.filename)}/${clip.requested_at}`;
-const cached = async (key) => !!await store().then((c) => c.match(key)).catch(() => null);
+const cached = (key) => store().then((c) => c.match(key)).catch(() => null);  // the cached Response, if any
 const downloads = new Map();  // cache key → {promise, listeners, loaded, total, cancelled}
 
 async function chunk(dongle, filename, offset, attempt = 0) {
@@ -105,7 +107,7 @@ async function fetchClip(dongle, filename, progress, cancelled) {
 
 async function clipBlob(dongle, clip, onProgress) {
   const key = keyOf(dongle, clip);
-  const hit = await store().then((c) => c.match(key)).catch(() => null);
+  const hit = await cached(key);
   if (hit) return hit.blob();
   let d = downloads.get(key);
   if (!d) {
@@ -161,7 +163,7 @@ async function viewer(clip, blob, wanted) {
   const el = openModal({class: `clips-viewer${userMode() ? " um" : ""}`, autofocus: true, onclose: () => URL.revokeObjectURL(url)},
     h("div", {class: "clips-viewer-head"},
       h("div", {class: "clips-viewer-title"}, h("b", {}, clipTitle(clip)),
-        h("div", {class: "clips-meta"}, [cameraName(clip.camera), clipLength(clip), mb(clip.size)].filter(Boolean).join(" · "))),
+        h("div", {class: "clips-meta"}, clipMeta(clip))),
       h("button", {class: "clips-icon", title: "Download clip", "aria-label": "Download clip", onclick: () => save(blob, clip)}, ic("download", 24)),
       h("button", {class: "clips-icon", title: "Close", "aria-label": "Close video", onclick: () => el.close()}, ic("close", 24))),
     video);
@@ -201,11 +203,11 @@ function clipMenu(anchor, device, route = null, range = null) {
   const error = h("p", {class: "clips-error"}), list = h("div", {class: "clips-list"});
   const close = h("button", {class: "clips-icon clips-close", title: "Close", "aria-label": "Close clip menu", onclick: () => menu.close()}, ic("close", 24));
 
-  const menu = h("dialog", {class: `clips-menu${route ? " creating" : ""}${um ? " um" : ""}`, autofocus: true, "aria-label": route ? "Create a clip" : "Clips", onclose: () => {
+  anchor.style.anchorName = "--clips";
+  const menu = openModal({class: `clips-menu${route ? " creating" : ""}${um ? " um" : ""}`, autofocus: true, "aria-label": route ? "Create a clip" : "Clips", onclose: () => {
     clearTimeout(poll);
     request++;
     anchor.style.anchorName = "";
-    menu.remove();
   }}, h("div", {class: "clips-paper"},
     route && h("div", {class: "clips-body"},
       h("div", {class: "clips-head"}, h("b", {}, "Create a clip"), close),
@@ -218,10 +220,8 @@ function clipMenu(anchor, device, route = null, range = null) {
     route && h("hr"),
     h("div", {class: "clips-section"},
       h("div", {class: "clips-section-head"}, "CLIPS ON THIS DEVICE",
-        h("span", {class: "clips-info", tabindex: 0, title: "Clips are stored on your device and may be cleared to make room for more recent driving footage.",
-          "aria-label": "Clips are stored on your device and may be cleared to make room for more recent driving footage."}, ic("info", 16, "info", 18))),
+        h("span", {class: "clips-info", tabindex: 0, title: STORED, "aria-label": STORED}, ic("info", 16, "info", 18))),
       error, list)));
-  menu.addEventListener("click", (e) => { if (e.target === menu) menu.close(); });  // the backdrop
 
   const defaultName = (t0, t1) => [dongle, here, Math.round(t0), Math.round(t1), s.camera.replace(/\.hevc$/i, ""), s.speedup > 1 && `${s.speedup}x`]
     .filter((p) => p !== false).join("_");
@@ -338,7 +338,7 @@ function clipMenu(anchor, device, route = null, range = null) {
         h("div", {class: "clips-details"},
           h("div", {class: "clips-title"}, clipTitle(clip)),
           h("div", {class: "clips-meta"}, where),
-          h("div", {class: "clips-meta"}, [cameraName(clip.camera), clipLength(clip), mb(clip.size)].filter(Boolean).join(" · "))),
+          h("div", {class: "clips-meta"}, clipMeta(clip))),
         h("div", {class: "clips-actions"},
           ready && h("button", {class: "clips-icon", "data-focus": `play ${clip.filename}`, "aria-label": play, title: previewing ? "Downloading" : play,
             disabled: previewing, onclick: () => preview(clip)}, downloaded ? ic("play", 24, "play", 27) : ic("download", 24)),
@@ -387,10 +387,7 @@ function clipMenu(anchor, device, route = null, range = null) {
       changed();
     }, () => {});
   }
-  anchor.style.anchorName = "--clips";
-  document.body.append(menu);
   view.render();
-  menu.showModal();
   load();
   return menu;
 }
