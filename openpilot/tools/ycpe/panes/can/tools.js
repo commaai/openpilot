@@ -76,21 +76,18 @@ export function dbcDialog(can, message = "") {
           h("button", {class: "can-btn", onclick: open(() => can.dbcs.open(buses(), new DBC("untitled", "")))}, "New")),
         paste, h("button", {class: "can-btn", onclick: open(async () => can.dbcs.open(buses(), await can.parseDbc("pasted", paste.value)))}, "Open pasted"))),
     error, note);
-  d.classList.add("can-dbc-dialog");
 }
 
 async function openFile(can, buses) {
-  let handle, text, name;
+  let handle, file;
   if (window.showOpenFilePicker) {
     [handle] = await showOpenFilePicker({types: [{description: "DBC", accept: {"text/plain": [".dbc"]}}]});
-    const file = await handle.getFile();
-    [text, name] = [await file.text(), file.name];
+    file = await handle.getFile();
   } else {
     const input = h("input", {type: "file", accept: ".dbc"});
-    const file = await new Promise((resolve) => { input.onchange = () => resolve(input.files[0]); input.click(); });
-    [text, name] = [await file.text(), file.name];
+    file = await new Promise((resolve) => { input.onchange = () => resolve(input.files[0]); input.click(); });
   }
-  const dbc = await can.parseDbc(name.replace(/\.dbc$/, ""), text);
+  const dbc = await can.parseDbc(file.name.replace(/\.dbc$/, ""), await file.text());
   dbc.handle = handle;
   can.dbcs.open(buses, dbc);
   if (handle) {

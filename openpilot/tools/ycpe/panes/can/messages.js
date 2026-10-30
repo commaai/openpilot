@@ -1,7 +1,7 @@
 // cabana's message list: every (bus, address) with its name, rate, count and live bytes; filters, sorting and suppression
 import {h} from "/dom.js";
 import {icon} from "/icons.js";
-import {canOf, hex2, menuCheck, popup, reveal, subs} from "./common.js";
+import {canOf, hex2, menuCheck, popup, reveal, setText, subs} from "./common.js";
 import {dbcDialog, save, toolsMenu} from "./tools.js";
 
 const ROW = matchMedia("(pointer: coarse)").matches ? 28 : 20;  // px per row; can.css agrees
@@ -169,8 +169,6 @@ export function create(ctx, state) {
     return r;
   }
 
-  const set = (el, text) => { if (el.textContent !== text) el.textContent = text; };
-
   const pane = {
     name: "can-messages", el,
     render() {
@@ -200,7 +198,7 @@ export function create(ctx, state) {
         // rows past the edges catch up on the live bytes once scrolled to
         if (r.key === m.key && r.version === version && (r.live === live || at < top || at >= top + shown)) continue;
         Object.assign(r, {key: m.key, live, version});
-        COLS.forEach((c, k) => { if (c.id !== "bytes") set(r.cells[k], text(c, m, can)); });
+        COLS.forEach((c, k) => { if (c.id !== "bytes") setText(r.cells[k], text(c, m, can)); });
         const dm = can.dbcMsg(m.key), named = !!dm;
         if (r.named !== named) r.cells[0].classList.toggle("muted", !(r.named = named));
         const tip = dm ? (dm.comment ? `${dm.name}\n${dm.comment}` : dm.name) : "";
@@ -212,7 +210,7 @@ export function create(ctx, state) {
           if (b.hidden !== x >= len) b.hidden = x >= len;
           if (x >= len) return;
           const o = live.off[j] + x, a = Math.max(0, 1 - live.age[o] / 2);
-          set(b, hex2(live.data[o]));
+          setText(b, hex2(live.data[o]));
           const cls = a > 0 ? `can-chg${live.kind[o]}` : "", av = a.toFixed(1);  // a style change per tenth, not per frame
           if (b.className !== cls) b.className = cls;
           if (a > 0 && b.av !== av) b.style.setProperty("--a", b.av = av);
@@ -231,31 +229,26 @@ export function create(ctx, state) {
   s.add(can.on("live", () => { if (filters.bytes) refresh(false); else ctx.perf.invalidate(pane); }));
   s.add(can.on("select", () => ctx.perf.invalidate(pane)));
   s.add(can.dbcs.on(toolbar));
-  // DBC undo/redo anywhere but in a text box, as cabana, while this view shows and it has an edit to undo; otherwise
-  // the keys go on to a focused plot or the layout
-  const undoKeys = (e) => {
-    if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== "z" || e.defaultPrevented || !el.isConnected) return;
-    if (e.target.closest?.("input, textarea, select")) return;
-    const d = can.dbcs;
-    if (e.shiftKey ? d.index >= d.undos.length : d.index === 0) return;
-    e.preventDefault();
-    if (e.shiftKey) d.redo(); else d.undo();
+  // cabana's DBC keys while this view shows. Undo and redo anywhere but in a text box, when there's an edit to undo
+  // (otherwise the keys go on to a focused plot or the layout). And rather than the browser's file keys: ctrl+s saves
+  // the DBC with edits (or the only one), ctrl+shift+s saves it as, and ctrl+o or more than one to pick from opens
+  // the DBC dialog
+  const dbcKeys = (e) => {
+    const k = e.key.toLowerCase(), d = can.dbcs;
+    if (!(e.ctrlKey || e.metaKey) || e.defaultPrevented || !el.isConnected) return;
+    if (k === "z" && !e.target.closest?.("input, textarea, select") && (e.shiftKey ? d.index < d.undos.length : d.index > 0)) {
+      e.preventDefault();
+      if (e.shiftKey) d.redo(); else d.undo();
+    } else if ((k === "s" || k === "o") && !e.altKey && !e.target.closest?.("dialog")) {
+      e.preventDefault();
+      const files = d.all(), dirty = files.filter((f) => d.isDirty(f));
+      const f = k === "s" && (dirty.length === 1 ? dirty[0] : files.length === 1 ? files[0] : null);
+      if (f) save(can, f, e.shiftKey).catch((err) => dbcDialog(can, err.message));
+      else dbcDialog(can);
+    }
   };
-  document.addEventListener("keydown", undoKeys);
-  s.add(() => document.removeEventListener("keydown", undoKeys));
-  // cabana's file keys, rather than the browser's: ctrl+s saves the DBC with edits (or the only one), ctrl+shift+s
-  // saves it as, and ctrl+o or more than one to pick from opens the DBC dialog
-  const fileKeys = (e) => {
-    const k = e.key.toLowerCase();
-    if (!(e.ctrlKey || e.metaKey) || e.altKey || (k !== "s" && k !== "o") || e.defaultPrevented || !el.isConnected || e.target.closest?.("dialog")) return;
-    e.preventDefault();
-    const files = can.dbcs.all(), dirty = files.filter((f) => can.dbcs.isDirty(f));
-    const f = k === "s" && (dirty.length === 1 ? dirty[0] : files.length === 1 ? files[0] : null);
-    if (f) save(can, f, e.shiftKey).catch((err) => dbcDialog(can, err.message));
-    else dbcDialog(can);
-  };
-  document.addEventListener("keydown", fileKeys);
-  s.add(() => document.removeEventListener("keydown", fileKeys));
+  document.addEventListener("keydown", dbcKeys);
+  s.add(() => document.removeEventListener("keydown", dbcKeys));
   s.add(can.on("notice", toolbar));
   columns();
   // the list's own height: the notice comes and goes and the toolbar wraps, so the pane's size doesn't tell it

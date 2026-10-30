@@ -252,15 +252,18 @@ function heatmap(k, t0, t1) {
   return out;
 }
 
-// a scaled value equal to v as shown: within half a step of the signal
+// the history filter's and find signal's comparisons of a value x with v (and v2). A scaled value equal to v as shown
+// is within half a step of the signal
 const near = (x, v, sig) => Math.abs(x - v) < Math.abs(sig.factor) / 2;
+const COMPARE = {"=": near, "!=": (x, v, sig) => !near(x, v, sig), ">": (x, v) => x > v, ">=": (x, v) => x >= v,
+                 "<": (x, v) => x < v, "<=": (x, v) => x <= v, between: (x, v, sig, v2) => x >= v && x <= v2};
 
 // up to n frames of k at or before t, newest first, optionally only those passing filter(msg, d, o, len)
 function frames(k, t, n, msg, filters) {
   const out = {t: [], data: [], more: false};
   const pass = (s, m, i) => !filters?.length || filters.every(({sig, op, v}) => {
-    const sg = msg.sigs.find((q) => q.name === sig), x = value(msg, sg, s.data, dataAt(s, m, i), s.len[i]);
-    return op === "=" ? near(x, v, sg) : op === "!=" ? !near(x, v, sg) : op === ">" ? x > v : op === ">=" ? x >= v : op === "<" ? x < v : x <= v;
+    const sg = msg.sigs.find((q) => q.name === sig);
+    return COMPARE[op](value(msg, sg, s.data, dataAt(s, m, i), s.len[i]), v, sg);
   });
   for (let j = segAt(t); j >= 0; j--) {
     const s = segs[j], m = s.idx.get(k);
@@ -357,9 +360,7 @@ function findInit({buses, addresses, t0, t1, minSize, maxSize, le, signed, facto
 }
 
 function findNext(op, v1, v2) {
-  const cmp = {"=": (v, sig) => near(v, v1, sig), ">": (v) => v > v1, ">=": (v) => v >= v1, "!=": (v, sig) => !near(v, v1, sig), "<": (v) => v < v1,
-               "<=": (v) => v <= v1, between: (v) => v >= v1 && v <= v2}[op];
-  const next = [];
+  const cmp = COMPARE[op], next = [];
   for (const c of find.history.at(-1)) {
     let hit = null;
     for (const s of segs) {
@@ -367,7 +368,7 @@ function findNext(op, v1, v2) {
       if (m === undefined || hit) continue;
       for (let i = upper(s, m, c.t), end = upper(s, m, find.t1); i < end; i++) {
         const v = raw(c.sig, s.data, dataAt(s, m, i), s.len[i]) * c.sig.factor + c.sig.offset;
-        if (cmp(v, c.sig)) { hit = {...c, t: time(s, i), values: [...c.values, [time(s, i), v]]}; break; }
+        if (cmp(v, v1, c.sig, v2)) { hit = {...c, t: time(s, i), values: [...c.values, [time(s, i), v]]}; break; }
       }
     }
     if (hit) next.push(hit);
@@ -649,7 +650,6 @@ export class Can {
       });
     }
     this.sendMasks();
-    return [...this.suppressed.values()].reduce((n, m) => n + m.filter((x) => x).length, 0);
   }
   setSuppressDefined(on) {
     this.suppressDefined = on;

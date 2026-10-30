@@ -113,9 +113,14 @@ export function create(ctx, state) {
     for (const x of st.curves.slice(1)) add({curves: [x]});
   }
 
+  // the open tab's charts into its saved state
+  const stash = () => { tabs[active].charts = charts.map((c) => c.pane.save()); };
+  // every saved curve of every tab
+  const curves = () => tabs.flatMap((t) => t.charts.flatMap((st) => st.curves));
+
   // the open tab's charts saved, changed by fn, and rebuilt
   function rebuild(fn = () => {}) {
-    tabs[active].charts = charts.map((c) => c.pane.save());
+    stash();
     for (const c of [...charts]) remove(c);
     fn();
     for (const st of tabs[active].charts) add(st);
@@ -140,7 +145,7 @@ export function create(ctx, state) {
   // cabana's chart type: one series style for every chart, set on their curves
   function restyle(v) {
     style = v;
-    rebuild(() => { for (const t of tabs) for (const st of t.charts) for (const c of st.curves) c.style = style || undefined; });
+    rebuild(() => { for (const c of curves()) c.style = style || undefined; });
   }
 
   // cabana's chart range: a window of `span` seconds that pages forward once the playhead passes 80% of it
@@ -203,7 +208,7 @@ export function create(ctx, state) {
       can.emit("charted");
     },
     save: () => {
-      tabs[active].charts = charts.map((c) => c.pane.save());
+      stash();
       return {cols, style, span, tabs, active};
     },
   };
@@ -217,12 +222,12 @@ export function create(ctx, state) {
   }));
   // curves follow a renamed signal or message, and go with a removed one
   s.add(can.on("moved", (move) => {
-    tabs[active].charts = charts.map((c) => c.pane.save());
+    stash();
+    if (curves().every((x) => move(x.path) === x.path)) return;
     const moved = (st) => ({...st, curves: st.curves.flatMap((x) => (move(x.path) ? [{...x, path: move(x.path)}] : []))});
-    if (tabs.every((t) => t.charts.every((st) => st.curves.every((x) => move(x.path) === x.path)))) return;
     rebuild(() => { for (const t of tabs) t.charts = t.charts.map(moved).filter((st) => st.curves.length); });
   }));
-  s.add(ctx.theme.on(() => rebuild(() => { for (const t of tabs) for (const st of t.charts) for (const c of st.curves) c.color = color(c.path) || c.color; })));
+  s.add(ctx.theme.on(() => rebuild(() => { for (const c of curves()) c.color = color(c.path) || c.color; })));
   s.add(ctx.clock.on("t", follow));
   follow();
   for (const st of tabs[active].charts) add(st);

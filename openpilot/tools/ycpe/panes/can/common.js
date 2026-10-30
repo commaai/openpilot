@@ -33,14 +33,15 @@ export function reveal(el, cls) {
   if (layout && getComputedStyle(layout).display === "block") layout.querySelector(`.${cls}`)?.closest(".pane").scrollIntoView({behavior: "smooth"});
 }
 
+export const setText = (el, text) => { if (el.textContent !== text) el.textContent = text; };
 export const hex2 = (x) => x.toString(16).toUpperCase().padStart(2, "0");
-// a signal color dark enough for text and lines on either theme
-export const ink = (color) => color.replace(/(\d+(\.\d+)?)%\)$/, "45%)");
+// a signal color dark enough for text and lines on either theme: its lightness set to l%
+export const ink = (color, l = 45) => color.replace(/(\d+(\.\d+)?)%\)$/, `${l}%)`);
 
 // a modal dialog; close() removes it
 export function dialog(title, ...body) {
   const el = h("dialog", {class: "can-dialog", onclose: () => el.remove()},
-    h("div", {class: "can-dialog-head"}, h("b", {}, title), h("button", {class: "can-x", title: "Close", onclick: () => el.close()}, icon("close", 14))),
+    h("div", {class: "can-dialog-head"}, h("b", {}, title), h("button", {class: "can-icon can-x", title: "Close", onclick: () => el.close()}, icon("close", 14))),
     h("div", {class: "can-dialog-body"}, body));
   document.body.append(el);
   el.showModal();

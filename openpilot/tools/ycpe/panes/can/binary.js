@@ -3,7 +3,7 @@ import {fitCanvas, h, latest} from "/dom.js";
 import {icon} from "/icons.js";
 import {MUX, MUXED, flip, format, raw, value} from "/data/dbc.js";
 import {busOf, hexId} from "/data/can.js";
-import {canOf, createSignal, hex2, removeSignal, reveal, subs, updateSignal} from "./common.js";
+import {canOf, createSignal, hex2, ink, removeSignal, reveal, subs, updateSignal} from "./common.js";
 
 const ROW = 22;
 // bit position <-> grid cell: row = byte, column 0 = bit 7
@@ -63,6 +63,8 @@ export function create(ctx, state) {
     for (const c of cells) c.sort((a, b) => b.size - a.size);
     return cells;
   }
+  // the signals covering a grid cell, largest first
+  const under = (c) => coverage(visible(), rows())[posOf(c.row, c.col)] || [];
 
   const requestHeat = latest(async () => {
     if (k() === null || mode === "off") return ctx.perf.invalidate(pane);
@@ -104,7 +106,7 @@ export function create(ctx, state) {
     if (!drag.armed) drag.timer = setTimeout(() => { if (drag) { drag.armed = true; ctx.perf.invalidate(pane); } }, 400);
     // grabbing a signal's first or last bit resizes it from the other end
     const pos = posOf(c.row, c.col);
-    for (const sg of coverage(visible(), rows())[pos]) {
+    for (const sg of under(c)) {
       if (pos === sg.lsb || pos === sg.msb) {
         const [row, col] = cellOf(pos === sg.lsb ? sg.msb : sg.lsb);
         Object.assign(drag, {anchor: {row, col}, resize: sg});
@@ -126,7 +128,7 @@ export function create(ctx, state) {
       if (c && (c.row !== drag.cur.row || c.col !== drag.cur.col)) drag.moved = true;
       if (c) drag.cur = c;
     }
-    const sg = c && !c.hex ? coverage(visible(), rows())[posOf(c.row, c.col)]?.at(-1) || null : null;
+    const sg = c && !c.hex ? under(c).at(-1) || null : null;
     if (sg !== hover) { hover = sg; can.emit("hover", sg?.name); }
     ctx.perf.invalidate(pane);
   });
@@ -142,7 +144,7 @@ export function create(ctx, state) {
       if (!d.resize) can.emit("edit", createSignal(can, k(), sel));
       else if (sel.start !== d.resize.start || sel.size !== d.resize.size) updateSignal(can, k(), d.resize.name, {start: sel.start, size: sel.size, max: d.resize.max});
     } else {
-      const sg = d.resize || coverage(visible(), rows())[posOf(d.anchor.row, d.anchor.col)]?.at(-1);
+      const sg = d.resize || under(d.anchor).at(-1);
       if (sg) can.emit("edit", sg.name);
     }
     ctx.perf.invalidate(pane);
@@ -193,9 +195,7 @@ export function create(ctx, state) {
       const d = bytes(), sigs = visible(), cells = coverage(sigs, n);
       const flips = heatKey === key && heat ? heat : new Uint32Array(0);
       const max = Math.max(1, ...flips);
-      const sel = drag?.armed && (drag.moved || drag.resize) ? selection(drag) : null;
-      const selected = new Set();
-      if (sel) for (let j = 0; j < sel.size; j++) selected.add(sel.le ? sel.start + j : flip(flip(sel.start) + j));
+      const sel = drag?.armed && (drag.moved || drag.resize) ? coverage([selection(drag)], n) : null;
       g.font = `12px ${mono}`;
       g.textAlign = "center";
       g.textBaseline = "middle";
@@ -208,7 +208,7 @@ export function create(ctx, state) {
           const pos = posOf(r, c), x = x0 + c * col, cover = cells[pos], f = flips[r * 8 + c] || 0;
           // heatmap: log scale as in cabana, stronger under signals
           const heatA = f ? Math.min(1, Math.max(cover.length ? 0.1 : 0.04, Math.log2(1 + f * 1.2) / Math.log2(1 + max * 1.2))) : cover.length ? 0.1 : 0;
-          if (selected.has(pos)) {
+          if (sel?.[pos].length) {
             g.fillStyle = withAlpha(drag.resize?.color || "hsl(220 70% 55%)", 0.85);
             g.fillRect(x, y, col, ROW);
           } else if (cover.length) {
@@ -321,7 +321,7 @@ function hatch(g, x, y, w, hgt, color) {
 // the signal's border: an edge wherever the neighbouring cell isn't part of it
 function outline(g, sg, cells, n, x0, col, hot) {
   const has = (r, c) => r >= 0 && r < n && c >= 0 && c < 8 && cells[posOf(r, c)].includes(sg);
-  g.strokeStyle = hot ? sg.color.replace(/(\d+(\.\d+)?)%\)$/, "35%)") : sg.color.replace(/(\d+(\.\d+)?)%\)$/, "45%)");
+  g.strokeStyle = ink(sg.color, hot ? 35 : 45);
   g.lineWidth = hot ? 2 : 1.5;
   g.beginPath();
   for (let r = 0; r < n; r++) {
