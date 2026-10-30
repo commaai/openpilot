@@ -50,6 +50,7 @@ export class Slots {
       if (s !== to) {
         if (to) append(to, buf.subarray(run, m));
         [to, run] = [s, m];
+        s.dirty = true;
       }
       end = m + size;
     }
@@ -129,15 +130,12 @@ export class Slots {
 
   // every event received, in order, as one rlog
   save() {
-    const parts = [...this.slots.keys()].sort((a, b) => a - b).map((n) => this.slots.get(n)).map((s) => s.bytes.subarray(0, s.len));
-    const out = new Uint8Array(parts.reduce((a, p) => a + p.length, 0));
-    parts.reduce((at, p) => (out.set(p, at), at + p.length), 0);
-    return out;
+    return concat([...this.slots.keys()].sort((a, b) => a - b).map((n) => this.bytes(n)));
   }
 }
 
-// adds bytes to a slot, doubling its buffer as needed
-function append(s, bytes) {
+// adds bytes to a growing buffer {bytes, len} (a slot, or the page's batch of events), doubling it as needed
+export function append(s, bytes) {
   if (s.len + bytes.length > s.bytes.length) {
     const grown = new Uint8Array(Math.max(s.len + bytes.length, s.bytes.length * 2));
     grown.set(s.bytes.subarray(0, s.len));
@@ -145,5 +143,11 @@ function append(s, bytes) {
   }
   s.bytes.set(bytes, s.len);
   s.len += bytes.length;
-  s.dirty = true;
+}
+
+// the byte arrays one after another in a new one
+export function concat(chunks) {
+  const out = new Uint8Array(chunks.reduce((a, c) => a + c.length, 0));
+  for (let k = 0, at = 0; k < chunks.length; at += chunks[k++].length) out.set(chunks[k], at);
+  return out;
 }

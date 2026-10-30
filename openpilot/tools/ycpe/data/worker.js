@@ -8,19 +8,13 @@ import {pack} from "./pack.js";
 import {index, messageAt} from "./message.js";
 import {CanFrames} from "./can.js";
 import {bootLog} from "./boot.js";
-import {Slots} from "./slots.js";
+import {Slots, concat} from "./slots.js";
 import schema from "./schema.json" with {type: "json"};  // the same instance as migrate.js's, so enum names match
 
 const codec = initCodec(), ready = codec.then(() => new Reader(schema));
 
 const RETRIES = 6;  // 0.5 s, then doubling: about 30 s of trying before a segment fails
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const concat = (chunks) => {
-  const buf = new Uint8Array(chunks.reduce((a, c) => a + c.length, 0));
-  for (let k = 0, at = 0; k < chunks.length; at += chunks[k++].length) buf.set(chunks[k], at);
-  return buf;
-};
 
 // the download, streamed so progress({loaded, total}) can follow it (at most 10 a second). It continues from the
 // bytes in head with a Range request, as do retries after network errors and 5xx/429 responses (with backoff,
@@ -166,8 +160,8 @@ async function liveOp(op, {id, span, buf, msgs, n, opts}) {
     const r = await live.read(n, opts.only, opts.can);
     postMessage({id, result: r}, [...r.bufs, r.recs.buffer, ...r.canBufs]);
   } else if (op === "live-message") {
-    const bytes = live.bytes(n), {schema: s} = await ready;
-    postMessage({id, result: messageAt(s, bytes, index(s, bytes), opts.service, opts.mono)});
+    const bytes = live.bytes(n);
+    postMessage({id, result: messageAt(schema, bytes, index(schema, bytes), opts.service, opts.mono)});
   } else if (op === "live-save") {
     const bytes = live.save();
     postMessage({id, result: bytes}, [bytes.buffer]);

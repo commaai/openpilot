@@ -8,7 +8,7 @@ import {lowerBound, upperBound} from "./bounds.js";
 import {Loader, POOL} from "./loader.js";
 import * as opfs from "./opfs.js";
 import {Can} from "./can.js";
-import {BLOCK, constant, enumRef, service, times, unpack} from "./pack.js";
+import {BLOCK, constant, enumRef, minmax, service, times, unpack} from "./pack.js";
 
 const BUDGET = 1.5e9;  // resident column bytes
 const IN_USE = 5000;  // ms since last use that a column counts as in use (never evicted)
@@ -622,27 +622,14 @@ function drop(pack, s) {
 }
 
 // min/max per block of BLOCK samples, then per FANOUT blocks, up to one block per chunk; built on first need from
-// the blocks the worker packed, when it did
+// the blocks the worker packed, when it did (decimate() asks only of chunks with 2 * BLOCK samples or more)
 function pyramid(c) {
   if (c.pyramid) return c.pyramid;
   const {v, blocks} = c, Arr = ArrayBuffer.isView(v) ? v.constructor : Float64Array;
-  const levels = blocks ? [blocks] : [];
-  let lo = blocks?.lo ?? v, hi = blocks?.hi ?? v, size = blocks ? FANOUT : BLOCK;
-  while (lo.length >= size) {
-    const m = Math.ceil(lo.length / size), nlo = new Arr(m), nhi = new Arr(m);
-    for (let b = 0; b < m; b++) {
-      let a = Infinity, z = -Infinity;
-      for (let k = b * size, end = Math.min(lo.length, k + size); k < end; k++) {
-        if (lo[k] < a) a = lo[k];
-        if (hi[k] > z) z = hi[k];
-      }
-      nlo[b] = a;
-      nhi[b] = z;
-    }
-    levels.push({lo: nlo, hi: nhi});
-    lo = nlo;
-    hi = nhi;
-    size = FANOUT;
+  const levels = [blocks ?? minmax(v, v, BLOCK, Arr)];
+  while (levels.at(-1).lo.length >= FANOUT) {
+    const {lo, hi} = levels.at(-1);
+    levels.push(minmax(lo, hi, FANOUT, Arr));
   }
   return (c.pyramid = levels);
 }

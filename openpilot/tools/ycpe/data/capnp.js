@@ -112,17 +112,20 @@ function xorDefault(type, raw, def) {
   if (type === "i64" || type === "u64") return Number(BigInt[type === "i64" ? "asIntN" : "asUintN"](64, BigInt(raw) ^ BigInt(def)));
   return type === "u32" ? (raw ^ def) >>> 0 : raw ^ def;
 }
-const MAX_LIST = 16;  // longer lists are not split into per-index columns unless asked for
+export const MAX_LIST = 16;  // longer lists are not split into per-index columns unless asked for
 
 // path globs: * matches one path component
 export const pattern = (globs) => new RegExp(`^(${globs.map((g) => g.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[^/]+")).join("|")})$`);
 
-// a column fills as events arrive; missing values stay NaN
-class Column {
+// the types whose values need a Float64Array; the others fit a Float32Array exactly
+export const WIDE = new Set(["f64", "i64", "u64", "u32", "i32"]);
+
+// a column fills as events arrive; missing values stay NaN (null for text)
+export class Column {
   constructor(type, n, names) {
     this.type = type;
     this.names = names;
-    this.v = type === "t" ? new Array(n).fill(null) : type === "f64" || type === "i64" || type === "u64" || type === "u32" || type === "i32" ? new Float64Array(n).fill(NaN) : new Float32Array(n).fill(NaN);
+    this.v = type === "t" ? new Array(n).fill(null) : new (WIDE.has(type) ? Float64Array : Float32Array)(n).fill(NaN);
   }
 }
 
@@ -367,12 +370,9 @@ function compactNumbers(v) {
   }
   if (!count) return null;
   if (count === n && lo === hi && n > 1) return {c: lo};
-  if (count * 2 >= n) {
-    if (count < n) return {v: wide && f32 ? new Float32Array(v) : v};  // gaps stay NaN, so floats
-    const Arr = ints ? intArray(lo, hi) : f32 ? Float32Array : Float64Array;
-    return {v: v instanceof Arr ? v : new Arr(v)};
-  }
+  if (count < n && count * 2 >= n) return {v: wide && f32 ? new Float32Array(v) : v};  // gaps stay NaN, so floats
   const Arr = ints ? intArray(lo, hi) : f32 ? Float32Array : Float64Array;
+  if (count === n) return {v: v instanceof Arr ? v : new Arr(v)};
   const i = indexArray(n, count), out = new Arr(count);
   for (let k = 0, j = 0; k < n; k++) if (v[k] === v[k]) { i[j] = k; out[j++] = v[k]; }
   return {v: out, i};
