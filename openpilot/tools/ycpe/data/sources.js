@@ -78,9 +78,7 @@ export const daemon = {
 };
 
 // a source only the daemon reaches (no CORS, or not this machine's network); with it, resolveFiles asks it instead
-const daemonOnly = async () => {
-  throw new Error("needs the local daemon");
-};
+const daemonOnly = () => Promise.reject(new Error("needs the local daemon"));
 
 // ---- the sources ----
 
@@ -279,12 +277,15 @@ async function elsewhere(sr) {
   return (await resolveFiles(sr, segs, Object.keys(KINDS), ["carSegments"])).found;
 }
 
+// the segments a record has: those of its range, else every one up to its last
+const recordSegs = (route, sr) => route.range ? route.segment_numbers : segIdxs(sr, route.maxqlog);
+
 // what the store loads for a route (a name, optionally with a range and selector) given its record (or the promise
 // of it), from the route's chosen source: urls[n] = {url, file, source, kind}. Fails only when no source has any of it.
 export async function routeLogs(name, record) {
   const route = await record, sr = parseRange(name);
   if (route.loose) return slotted(route, looseLogs(route.files, sr?.selector));
-  const segs = route.range ? route.segment_numbers : segIdxs(sr, route.maxqlog);
+  const segs = recordSegs(route, sr);
   const source = routeSource.get(sr.route), {logs, errors} = await resolveLogs(sr, segs, {sources: routeSource.list(source)});
   if (!logs.size && Object.keys(errors).length) throw new Error(Object.entries(errors).map(([s, m]) => `${SOURCES[s]?.label ?? s}: ${m}`).join("; "));
   if (!logs.size) throw new Error(source === "auto" ? "No source has this route's logs" : `${SOURCES[source].label} doesn't have this route's logs`);
@@ -293,29 +294,26 @@ export async function routeLogs(name, record) {
   return slotted(route, urls);
 }
 
-// a camera's file for each segment (camera: qcamera, fcamera, ecamera or dcamera), from the route's chosen source or
-// the files a loose route came with: urls[n] = {url, file, size, source}
+// a record's files of some kinds, "<n>/<kind>" → {url, file, size, source}: the ones a loose route came with, else
+// from the route's chosen source
+async function recordFiles(route, kinds) {
+  if (route.loose) return route.files;
+  const sr = parseRange(route.fullname);
+  return (await resolveFiles(sr, recordSegs(route, sr), kinds, routeSource.list(routeSource.get(sr.route)))).found;
+}
+
+// a camera's file for each segment (camera: qcamera, fcamera, ecamera or dcamera): urls[n] = {url, file, size, source}
 export async function routeCameraFiles(route, camera) {
   const urls = [];
-  if (route.loose) {
-    for (const [key, f] of route.files) if (key.endsWith(`/${camera}`)) urls[parseInt(key)] = f;
-    return slotted(route, urls);
-  }
-  const sr = parseRange(route.fullname);
-  const segs = route.range ? route.segment_numbers : segIdxs(sr, route.maxqlog);
-  const {found} = await resolveFiles(sr, segs, [camera], routeSource.list(routeSource.get(sr.route)));
-  for (const [key, f] of found) urls[parseInt(key)] = f;
+  for (const [key, f] of await recordFiles(route, [camera])) if (key.endsWith(`/${camera}`)) urls[parseInt(key)] = f;
   return slotted(route, urls);
 }
 
 // the cameras with a file for any of the route's segments
 export async function routeCameras(route) {
   const cameras = ["qcamera", "fcamera", "ecamera", "dcamera"];
-  if (route.loose) return new Set(cameras.filter((c) => [...route.files.keys()].some((key) => key.endsWith(`/${c}`))));
-  const sr = parseRange(route.fullname);
-  const segs = route.range ? route.segment_numbers : segIdxs(sr, route.maxqlog);
-  const {found} = await resolveFiles(sr, segs, cameras, routeSource.list(routeSource.get(sr.route)));
-  return new Set([...found.keys()].map((key) => key.split("/")[1]));
+  const kinds = [...(await recordFiles(route, cameras)).keys()].map((key) => key.split("/")[1]);
+  return new Set(kinds.filter((kind) => cameras.includes(kind)));
 }
 
 // ---- routes outside the API: local files and direct URLs ----

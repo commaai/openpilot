@@ -5,9 +5,9 @@ const ARRAYS = [Uint8Array, Int8Array, Uint16Array, Int16Array, Uint32Array, Int
 const TEXT = 8, CONST = 9;
 // a column record: service, kind (ARRAYS index | TEXT | CONST), offset, length, index kind (-1: dense), index offset,
 // constant (the value, or a consts index for text), enum ref (-1: none), text bytes offset, block minimums offset
-// (-1: none), block maximums offset
+// (-1: none), block maximums offset (see minmax)
 const REC = 11;
-export const BLOCK = 16;  // samples per block of the min/max pyramid the store decimates with (see blocks)
+export const BLOCK = 16;  // samples per block of the min/max pyramid the store decimates with (see minmax)
 
 const encoder = new TextEncoder(), decoder = new TextDecoder();
 const align = (x) => (x + 7) & ~7;
@@ -51,7 +51,7 @@ export function pack(services, enums, want) {
         r[2] = put(c.v);
         r[3] = c.v.length;
         if (c.v.length >= BLOCK) {
-          const {lo, hi} = blocks(c.v);
+          const {lo, hi} = minmax(c.v, c.v, BLOCK);
           r[9] = put(lo);
           r[10] = put(hi);
         }
@@ -76,21 +76,21 @@ export function pack(services, enums, want) {
   return out;
 }
 
-// the min and max of each BLOCK values, the pyramid's first level: built here while the worker has the column at
+// the min and max of each `size` values of lo and hi (one array twice for samples), as arrays of type Arr: a level of
+// the min/max pyramid the store decimates with. Its first level is built here while the worker has the column at
 // hand, so a series' first decimation on the main thread reads 1/BLOCK of its samples
-function blocks(v) {
-  const m = Math.ceil(v.length / BLOCK), lo = new v.constructor(m), hi = new v.constructor(m);
+export function minmax(lo, hi, size, Arr = lo.constructor) {
+  const m = Math.ceil(lo.length / size), nlo = new Arr(m), nhi = new Arr(m);
   for (let b = 0; b < m; b++) {
     let a = Infinity, z = -Infinity;
-    for (let k = b * BLOCK, end = Math.min(v.length, k + BLOCK); k < end; k++) {
-      const x = v[k];
-      if (x < a) a = x;
-      if (x > z) z = x;
+    for (let k = b * size, end = Math.min(lo.length, k + size); k < end; k++) {
+      if (lo[k] < a) a = lo[k];
+      if (hi[k] > z) z = hi[k];
     }
-    lo[b] = a;
-    hi[b] = z;
+    nlo[b] = a;
+    nhi[b] = z;
   }
-  return {lo, hi};
+  return {lo: nlo, hi: nhi};
 }
 
 // the service and enum ref of column k, and the times of service s as a view
@@ -99,7 +99,7 @@ export const enumRef = (p, k) => p.recs[k * REC + 7];
 export const times = (p, s) => (p.t ||= [])[s] ||= new Float64Array(p.bufs[s], 0, p.counts[s]);
 
 // column k of a pack as a contract chunk {t, v, i?} plus tt, the time of each value, and the first pyramid level of
-// numbers (see blocks). A constant column's chunk also has c, its value: its v (a value at every message time, like
+// numbers (see minmax). A constant column's chunk also has c, its value: its v (a value at every message time, like
 // any other dense column) is only filled in when read, and the store's readers that can read c do
 export function unpack(p, k, n) {
   const r = p.recs, o = k * REC, s = r[o], kind = r[o + 1], len = r[o + 3], buf = p.bufs[s];

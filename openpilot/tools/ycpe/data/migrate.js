@@ -11,12 +11,10 @@
 // skipped and reported in `missing`.
 import schema from "./schema.json" with {type: "json"};
 import tables from "./migrate.json" with {type: "json"};
-import {pattern} from "./capnp.js";
+import {Column, MAX_LIST, pattern} from "./capnp.js";
 
 const STRUCTS = Object.fromEntries(schema.structs.map((s) => [s.name, s]));
 const SCALAR = new Set(["b", "i8", "u8", "i16", "u16", "i32", "u32", "i64", "u64", "f32", "f64", "e"]);
-const WIDE = new Set(["f64", "i64", "u64", "u32", "i32"]);
-const MAX_LIST = 16;  // capnp.js
 const T_IDXS = Array.from({length: 33}, (_, i) => 10 * (i / 32) ** 2);  // ModelConstants.T_IDXS
 
 // the long lists the migrations read
@@ -32,11 +30,13 @@ const has = (col, i) => { const x = at(col, i); return x !== undefined && x !== 
 const field = (st, name) => st.fields.find((f) => f[0] === name);
 const names = (st, name) => schema.enums[field(st, name)[4]];
 const ns = (svc) => svc.t.length;
+// the columns <from>/<name> of cols as fields to set, keyed /<name>
+const copied = (cols, names, from = "") => Object.fromEntries(names.map((name) => [`/${name}`, cols[`${from}/${name}`]]));
 
 function column(type, n, fn, enumNames) {
-  const v = type === "t" ? new Array(n) : new (WIDE.has(type) ? Float64Array : Float32Array)(n);
-  for (let i = 0; i < n; i++) v[i] = fn(i) ?? (type === "t" ? null : NaN);
-  return enumNames ? {type, names: enumNames, v} : {type, v};
+  const c = new Column(type, n, enumNames);
+  for (let i = 0; i < n; i++) c.v[i] = fn(i) ?? c.v[i];  // undefined and null stay missing
+  return c;
 }
 
 const ones = (n) => new Uint8Array(n).fill(1);
@@ -179,10 +179,8 @@ function carOutput(s) {
 
 function controlsState(s) {
   const cs = s.controlsState, st = STRUCTS.SelfdriveState;
-  const set = {};
-  for (const f of ["enabled", "active", "state", "engageable", "alertText1", "alertText2", "alertStatus", "alertSize", "alertType", "personality"]) {
-    set[`/${f}`] = cs.cols[`/deprecated/${f}`];
-  }
+  const fields = ["enabled", "active", "state", "engageable", "alertText1", "alertText2", "alertStatus", "alertSize", "alertType", "personality"];
+  const set = copied(cs.cols, fields, "/deprecated");
   s.selfdriveState = {t: cs.t, valid: cs.valid, cols: struct(st, "", ns(cs), set)};
 }
 
@@ -206,8 +204,7 @@ const nanoseconds = (svc) => (i) => Math.round(svc.t[i] * 1e9);
 
 function liveLocationKalman(s) {
   const llk = s.liveLocationKalmanDEPRECATED, n = ns(llk), src = llk.cols;
-  const set = {"/timestamp": nanoseconds(llk)};
-  for (const f of ["inputsOK", "posenetOK", "sensorsOK"]) set[`/${f}`] = src[`/${f}`];
+  const set = {"/timestamp": nanoseconds(llk), ...copied(src, ["inputsOK", "posenetOK", "sensorsOK"])};
   const cols = struct(STRUCTS.DeviceMotion, "", n, set);
   for (const f of ["orientationNED", "velocityDevice", "accelerationDevice", "angularVelocityDevice"]) {
     // an empty value or std list becomes NaN, which is a missing column
@@ -231,7 +228,7 @@ function liveTracks(s) {
   const lt = s.liveTracksDEPRECATED, n = ns(lt), point = STRUCTS["RadarData.RadarPoint"];
   const cols = struct(STRUCTS.RadarData, "", n);
   for (let j = 0; lt.cols[`/${j}/trackId`]; j++) {
-    const set = Object.fromEntries(["trackId", "dRel", "yRel", "vRel"].map((f) => [`/${f}`, lt.cols[`/${j}/${f}`]]));
+    const set = copied(lt.cols, ["trackId", "dRel", "yRel", "vRel"], `/${j}`);
     struct(point, `/points/${j}`, n, set, present(lt.cols, `/${j}`, n), "", cols);
   }
   s.radarTracks = {t: lt.t, valid: lt.valid, cols};
@@ -245,11 +242,9 @@ function driverAssistance(s) {
 
 function drivingModelData(s, ctx, missing) {
   const m = s.modelV2, n = ns(m), src = m.cols, st = STRUCTS.DrivingModelData;
-  const set = {};
-  for (const f of ["frameId", "frameIdExtra", "frameDropPerc", "modelExecutionTime", "big"]) set[`/${f}`] = src[`/${f}`];
-  const cols = struct(st, "", n, set);
+  const cols = struct(st, "", n, copied(src, ["frameId", "frameIdExtra", "frameDropPerc", "modelExecutionTime", "big"]));
   const action = STRUCTS["ModelDataV2.Action"];
-  struct(action, "/action", n, Object.fromEntries(action.fields.map(([f]) => [`/${f}`, src[`/action/${f}`]])), null, "", cols);
+  struct(action, "/action", n, copied(src, action.fields.map(([f]) => f), "/action"), null, "", cols);
   struct(STRUCTS["DrivingModelData.MetaData"], "/meta", n, {"/laneChangeState": src["/meta/laneChangeState"]}, null, "", cols);
 
   // fill_lane_line_meta reads laneLines[1].y[0] and laneLines[2].y[0]; laneLines[*].y are 33 long

@@ -6,6 +6,7 @@ import {SEGMENT} from "../api.js";
 import {listeners} from "../dom.js";
 import {service} from "./pack.js";
 import {client} from "./rpc.js";
+import {append} from "./slots.js";
 import {Store} from "./store.js";
 
 const FLUSH = 100;  // ms between batches to the worker
@@ -56,7 +57,7 @@ export async function openLive(kind, opts, {key = kind, path, window} = {}) {
 
 export class LiveStore extends Store {
   constructor(name, {budget = BUDGET, window = WINDOW} = {}) {
-    super(name, [], {budget, lane: {name: "logs", label: "live", order: 0}});
+    super(name, [], {budget});
     this.window = window;
     this.start = 0;  // route time of the oldest slot kept
     this.newest = 0;  // route time of the newest message in
@@ -77,14 +78,7 @@ export class LiveStore extends Store {
 
   // whole capnp Events in rlog framing, copied: the source may reuse its buffer
   events(bytes) {
-    const p = this.pending;
-    if (p.len + bytes.length > p.bytes.length) {
-      const grown = new Uint8Array(Math.max(p.len + bytes.length, p.bytes.length * 2));
-      grown.set(p.bytes.subarray(0, p.len));
-      p.bytes = grown;
-    }
-    p.bytes.set(bytes, p.len);
-    p.len += bytes.length;
+    append(this.pending, bytes);
     this.flushSoon();
   }
 

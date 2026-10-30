@@ -1,8 +1,6 @@
 // cereal messages as JSON (webrtcd's to_dict output) into the reader's columns, so they get the paths, types and
 // enum names a log of them would: one service's messages become the {name, t, valid, cols, lists} of Reader.read.
-
-const MAX_LIST = 16;  // as capnp.js: longer lists are skipped and reported in lists
-const WIDE = new Set(["f64", "i64", "u64", "u32", "i32"]);
+import {Column, MAX_LIST} from "./capnp.js";
 
 // msgs: [{t (mono s), valid, data}] of one service; null when the schema has no such service
 export function flatten(schema, name, msgs) {
@@ -11,7 +9,7 @@ export function flatten(schema, name, msgs) {
   const n = msgs.length, cols = new Map(), lists = new Map();
   const col = (path, type, names) => {
     let c = cols.get(path);
-    if (!c) cols.set(path, c = {type, names, v: type === "t" ? new Array(n).fill(null) : new (WIDE.has(type) ? Float64Array : Float32Array)(n).fill(NaN)});
+    if (!c) cols.set(path, c = new Column(type, n, names));
     return c;
   };
 

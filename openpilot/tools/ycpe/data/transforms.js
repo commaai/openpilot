@@ -1,7 +1,7 @@
 // series math off the main thread: transforms, statistics, CSV and XY pairs. This module is both
 // the main-side API and, loaded as a module worker, the worker itself. The worker keeps the chunks of each
 // series it has seen and their concatenation, so a chunk crosses threads once.
-import {upperBound} from "./bounds.js";
+import {lowerBound, upperBound} from "./bounds.js";
 import {client} from "./rpc.js";
 
 // transform kinds: fn(t, v, param, inputs) → {t, v}; `inputs` are extra series resampled to t
@@ -139,11 +139,7 @@ export function resample(ref, t, v) {
 }
 
 // sample index range [a, b) of s over [t0, t1]
-function range(s, t0, t1) {
-  let a = upperBound(s.t, t0);
-  while (a > 0 && s.t[a - 1] === t0) a--;
-  return [a, upperBound(s.t, t1)];
-}
+const range = (s, t0, t1) => [lowerBound(s.t, t0), upperBound(s.t, t1)];
 
 const ops = {
   derive({path, transform: {kind, param}, inputs}) {

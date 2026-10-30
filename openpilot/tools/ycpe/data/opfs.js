@@ -30,6 +30,16 @@ async function idb(store, mode, fn) {
   });
 }
 
+// [key, entry] of every indexed file, or of those in a key range
+async function entries(range) {
+  let keys, values;
+  await idb("files", "readonly", (s) => {
+    keys = s.getAllKeys(range);
+    values = s.getAll(range);
+  });
+  return keys.result.map((key, k) => [key, values.result[k]]);
+}
+
 const touch = (key, entry) => idb("files", "readwrite", (s) => s.put({...entry, used: Date.now()}, key)).catch(() => {});
 
 // the cached file (a File), or null; a read counts as a use
@@ -66,27 +76,14 @@ export async function write(key, bytes, kind) {
 
 // {key: bytes} of the cached files under a key prefix
 export async function list(prefix) {
-  const out = {};
-  const range = IDBKeyRange.bound(prefix, prefix + "￿");
-  await idb("files", "readonly", (s) => {
-    const req = s.openCursor(range);
-    req.onsuccess = () => {
-      const c = req.result;
-      if (!c) return;
-      out[c.key] = c.value.bytes;
-      c.continue();
-    };
-  });
-  return out;
+  const files = await entries(IDBKeyRange.bound(prefix, prefix + "￿"));
+  return Object.fromEntries(files.map(([key, f]) => [key, f.bytes]));
 }
 
 // drops a cached file and its index entry
 export async function remove(key) {
-  const parts = key.split("/");
   try {
-    let dir = await navigator.storage.getDirectory();
-    for (const p of parts.slice(0, -1)) dir = await dir.getDirectoryHandle(p);
-    await dir.removeEntry(parts.at(-1));
+    await (await handle(key, false)).remove();
   } catch {}  // already gone
   await idb("files", "readwrite", (s) => s.delete(key)).catch(() => {});
 }
@@ -94,16 +91,7 @@ export async function remove(key) {
 // trims a kind to its share, least recently used first, skipping any key under the open route (dongle/route);
 // returns the keys removed
 export async function evict(kind, route) {
-  const budget = SHARES[kind], files = [];
-  await idb("files", "readonly", (s) => {
-    const req = s.openCursor();
-    req.onsuccess = () => {
-      const c = req.result;
-      if (!c) return;
-      if (c.value.kind === kind) files.push([c.key, c.value]);
-      c.continue();
-    };
-  });
+  const budget = SHARES[kind], files = (await entries()).filter(([, f]) => f.kind === kind);
   let total = files.reduce((a, [, f]) => a + f.bytes, 0);
   const removed = [];
   for (const [key, f] of files.sort((a, b) => a[1].used - b[1].used)) {

@@ -16,8 +16,8 @@ const ELEM_BYTES = [0, 0, 1, 2, 4, 8, 8];  // by list element size code: void, b
 const ZERO = new DataView(new ArrayBuffer(8)), bits = new DataView(new ArrayBuffer(8));
 const text = new TextDecoder();
 
-// one message (segment table first) as an object of struct `root` (0: Event); with big, 64-bit integers are BigInts
-export function decode(schema, bytes, root = 0, big = false) {
+// one message (segment table first) as an Event object; with big, 64-bit integers are BigInts
+export function decode(schema, bytes, big = false) {
   const read = big ? BIG : READ, dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const nseg = dv.getUint32(0, true) + 1, segs = [];
   for (let s = 0, at = (4 + 4 * nseg + 7) & ~7; s < nseg; s++) {
@@ -106,7 +106,7 @@ export function decode(schema, bytes, root = 0, big = false) {
   }
 
   const ev = pointer(segs[0]);
-  return ev?.struct ? struct(root, ev.at, ev.data, ev.ptrs) : null;
+  return ev?.struct ? struct(0, ev.at, ev.data, ev.ptrs) : null;
 }
 
 // the messages of a decompressed log as [byte offset, length]
@@ -149,5 +149,5 @@ export function messageAt(schema, buf, idx, service, mono) {
   const s = idx.get(service);
   if (!s) return null;
   const lo = upperBound(s.mono, mono);
-  return lo ? decode(schema, buf.subarray(s.at[lo - 1], s.at[lo - 1] + s.size[lo - 1]), 0, true) : null;
+  return lo ? decode(schema, buf.subarray(s.at[lo - 1], s.at[lo - 1] + s.size[lo - 1]), true) : null;
 }
