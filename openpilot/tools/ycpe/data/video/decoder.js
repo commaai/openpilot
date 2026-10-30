@@ -52,12 +52,13 @@ function state(n, s, loaded = 0, total = 0) {
   states[n] = tag;
 }
 
+// bytes of the segment files in memory
+const inMemory = () => [...segs.values()].reduce((sum, s) => sum + (s.data?.byteLength || 0), 0);
+
 // memory, disk and download rate, twice a second
 let lastReceived = 0;
 setInterval(() => {
-  let memory = 0;
-  for (const s of segs.values()) memory += s.data?.byteLength || 0;
-  postMessage({memory, disk: [...disk.values()].reduce((a, b) => a + b, 0), rate: (received - lastReceived) * 2, decoded});
+  postMessage({memory: inMemory(), disk: [...disk.values()].reduce((a, b) => a + b, 0), rate: (received - lastReceived) * 2, decoded});
   lastReceived = received;
 }, 500);
 
@@ -98,8 +99,7 @@ function segment(n) {
 // finishes into the disk cache rather than being thrown away
 function trim() {
   const at = Math.floor(want.at / SEGMENT_FRAMES);
-  let total = 0;
-  for (const s of segs.values()) total += s.data?.byteLength || 0;
+  let total = inMemory();
   for (const f of [...segs.values()].sort((a, b) => Math.abs(b.n - at) - Math.abs(a.n - at))) {
     if (total <= MEMORY || f.n === at) break;
     total -= f.data?.byteLength || 0;

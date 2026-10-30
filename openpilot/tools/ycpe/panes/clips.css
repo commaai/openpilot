@@ -97,8 +97,7 @@
 /* the menu's paper (elevation 8) with its list's 8px ends, 32px above its button's top as Material UI's menu places
    it, kept 16px inside the window, and growing in from the button's corner */
 @position-try --clips-um-up { top: 16px; bottom: auto; }
-.clips-menu.um { --clips-bg: var(--cnui-paper); --clips-soft: rgb(from var(--cnui-fg) r g b / .05); --clips-warn: #ffcc80; --clips-error: #ff8a80;
-  --w: min(360px, 100vw - 24px); top: calc(anchor(top) - 32px); right: clamp(16px, anchor(right), 100vw - 16px - var(--w)); max-height: calc(100dvh - 96px);
+.clips-menu.um { --clips-bg: var(--cnui-paper); --w: min(360px, 100vw - 24px); top: calc(anchor(top) - 32px); right: clamp(16px, anchor(right), 100vw - 16px - var(--w)); max-height: calc(100dvh - 96px);
   border: 0; border-radius: 4px; color: var(--cnui-fg); font: 16px/1.5 "Inter", sans-serif; position-try-fallbacks: --clips-um-up;
   box-shadow: 0 5px 5px -3px rgba(0,0,0,.2), 0 8px 10px 1px rgba(0,0,0,.14), 0 3px 14px 2px rgba(0,0,0,.12);
   transform-origin: top right; transition: opacity 300ms cubic-bezier(.4, 0, .2, 1), transform 200ms cubic-bezier(.4, 0, .2, 1); }
@@ -106,37 +105,26 @@
 .clips-menu.um .clips-paper { padding: 8px 0; box-sizing: border-box; }
 .clips-menu.um hr { border: 0; height: 1px; background: rgb(from var(--cnui-fg) r g b / .12); }
 .clips-menu.um .clips-head b { margin-bottom: 4px; }
-.clips-menu.um .clips-head b { line-height: 1.46429; }
+.clips-menu.um :is(.clips-head b, .clips-range-value, .clips-label, .clips-size) { line-height: 1.46429; }
 .clips-menu.um .clips-head .clips-close { width: 48px; height: 48px; padding: 12px; }
-.clips-menu.um .clips-muted { color: rgb(from var(--cnui-fg) r g b / .6); line-height: 1.4; }
-.clips-menu.um .clips-range-value { line-height: 1.46429; }
-.clips-menu.um .clips-label { color: rgb(from var(--cnui-fg) r g b / .6); line-height: 1.46429; }
-.clips-menu.um .clips-seg { border-color: rgb(from var(--cnui-fg) r g b / .1); }
-.clips-menu.um .clips-seg-btn { border-color: rgb(from var(--cnui-fg) r g b / .1); font-weight: 500; transition: background-color 250ms cubic-bezier(.4, 0, .2, 1); }
+.clips-menu.um .clips-seg-btn { font-weight: 500; transition: background-color 250ms cubic-bezier(.4, 0, .2, 1); }
 .clips-menu.um .clips-seg-btn:hover { background: rgb(from var(--cnui-fg) r g b / .1); }
-.clips-menu.um .clips-seg-btn[aria-pressed="true"] { background: rgb(from var(--cnui-fg) r g b / .14); }
 .clips-menu.um .clips-seg-btn:disabled { color: rgb(from var(--cnui-fg) r g b / .3); opacity: 1; background: none; }
-.clips-menu.um .clips-detail { color: rgb(from var(--cnui-fg) r g b / .6); font-weight: 400; }
-.clips-menu.um .clips-size { line-height: 1.46429; }
-.clips-menu.um .clips-input { border-color: rgb(from var(--cnui-fg) r g b / .1); line-height: 1.5; font-family: inherit; }
+.clips-menu.um .clips-detail { font-weight: 400; }
+.clips-menu.um .clips-input { line-height: 1.5; font-family: inherit; }
 .clips-menu.um .clips-input:focus-visible { border-color: rgb(from var(--cnui-fg) r g b / .1); }
-.clips-menu.um .clips-input::placeholder { color: rgb(from var(--cnui-fg) r g b / .4); }
 .clips-menu.um .clips-create { min-height: 36px; padding: 8px 16px; color: var(--cnui-on); background: var(--cnui-fg); font-size: 14px; line-height: 1.4; transition: background-color 250ms; }
 .clips-menu.um .clips-create:hover { background: #eee; filter: none; }
 .clips-menu.um .clips-create:disabled { background: rgb(from var(--cnui-fg) r g b / .05); color: rgb(from var(--cnui-fg) r g b / .6); }
-.clips-menu.um .clips-section-head { gap: 0; color: rgb(from var(--cnui-fg) r g b / .6); line-height: 1.4; }
+.clips-menu.um .clips-section-head { gap: 0; line-height: 1.4; }
 .clips-menu.um .clips-info { margin-left: 8px; padding: 0; border-radius: 0; cursor: pointer; }
-.clips-menu.um .clips-empty { color: rgb(from var(--cnui-fg) r g b / .6); }
-.clips-menu.um .clips-clip + .clips-clip { border-top-color: rgb(from var(--cnui-fg) r g b / .05); }
-.clips-menu.um .clips-meta { color: rgb(from var(--cnui-fg) r g b / .6); }
 .clips-menu.um .clips-icon { padding: 0; transition: background-color 150ms cubic-bezier(.4, 0, .2, 1); }
 .clips-menu.um .clips-icon:hover { background: rgb(from var(--cnui-fg) r g b / .1); }
-.clips-menu.um .clips-icon:disabled { color: rgb(from var(--cnui-fg) r g b / .4); background: none; }
+.clips-menu.um .clips-icon:disabled { background: none; }
 .clips-menu.um :is(.clips-top, .clips-actions) { gap: 0; }  /* connect's gaps are unitless, so none */
 .clips-menu.um .clips-actions > .clips-meta { margin: 0; }
 .clips-menu.um .clips-clip > .cnui-linear { margin-top: 7px; }
 .clips-menu.um .clips-clip > .cnui-linear:not(.busy) { margin-top: 8px; border-radius: 3px; }
-.clips-menu.um .clips-transfer { color: rgb(from var(--cnui-fg) r g b / .6); }
 @media (max-width: 600px) { .clips-menu.um.creating { inset: 0; max-height: none; border-radius: 0; position-try-fallbacks: none; } }
 
 /* a clip playing: Material UI's dialog (elevation 24), fading in */
@@ -145,8 +133,8 @@
 @starting-style { .clips-viewer.um[open] { opacity: 0; } }
 .clips-viewer.um .clips-viewer-head { gap: 0; }
 .clips-viewer.um .clips-viewer-title b { line-height: 1.46429; }
-.clips-viewer.um .clips-meta { margin-top: 3px; color: rgb(from var(--cnui-fg) r g b / .6); }
-.clips-viewer.um .clips-viewer-head .clips-icon { width: 48px; height: 48px; color: var(--cnui-fg); }
+.clips-viewer.um .clips-meta { margin-top: 3px; }
+.clips-viewer.um .clips-viewer-head .clips-icon { width: 48px; height: 48px; }
 .clips-viewer.um .clips-viewer-head .clips-icon:hover { background: rgb(from var(--cnui-fg) r g b / .1); }
 .clips-viewer.um video { aspect-ratio: auto; background: #151819; }
 

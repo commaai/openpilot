@@ -10,8 +10,8 @@ import {PATHS_MIME, addToPlot} from "/panes/plot/view.js";
 const COARSE = matchMedia("(pointer: coarse)").matches;
 const ROW = COARSE ? 28 : 18, ROOM_MS = 2;  // px per row (plot.css agrees); ms of the frame's budget the tree and its rows leave to the plots
 const deprecated = (p) => p.includes("DEPRECATED") || p.includes("/deprecated/");
-// list indices sort numerically, names by code point (Intl.Collator is ~35x slower on 2k paths)
 let browsers = 0;  // ids for the rows' aria-activedescendant
+// list indices sort numerically, names by code point (Intl.Collator is ~35x slower on 2k paths)
 const order = (a, b) => {
   const x = +a, y = +b;
   return x === x && y === y ? x - y : a < b ? -1 : a > b ? 1 : 0;
@@ -49,7 +49,12 @@ export function create(ctx, state = {}) {
     }}, note, spacer, win);
   const id = `series-${++browsers}`;
   const el = h("div", {class: "browser"}, h("div", {class: "bar"}, filter, depr, count), scroller);
-  const pane = {name: "browser", el, render, resize, dispose, save};
+  const pane = {name: "browser", el, render, dispose: () => { for (const off of offs) off(); },
+    save: () => ({filter: st.filter, deprecated: st.deprecated, expanded: [...st.expanded]}),
+    resize(w, hgt = el.clientHeight) {
+      H = hgt;
+      perf.invalidate(pane);
+    }};
   scroller.addEventListener("scroll", () => { top = scroller.scrollTop; perf.invalidate(pane); }, {passive: true});
 
   // new paths arrive with segments and are added at most once a frame; a new DBC replaces the /dbc branch
@@ -280,19 +285,6 @@ export function create(ctx, state = {}) {
       if (val.textContent !== text) val.textContent = text;
     }
     attr(scroller, "aria-activedescendant", current?.id ?? null);
-  }
-
-  function resize(w, hgt = el.clientHeight) {
-    H = hgt;
-    perf.invalidate(pane);
-  }
-
-  function save() {
-    return {filter: st.filter, deprecated: st.deprecated, expanded: [...st.expanded]};
-  }
-
-  function dispose() {
-    for (const off of offs) off();
   }
 
   return pane;

@@ -19,7 +19,6 @@
 .cm-item[aria-disabled="true"]:focus { background: none; }
 .cm-item.cm-wait { color: rgba(255,255,255,.6); }
 .cm-loading { position: absolute; top: 50%; left: 50%; z-index: 5; transform: translate(-50%, -50%); }
-.cm-loading[hidden] { display: none; }
 .cm-upload { min-width: 120px; min-height: 19px; margin-left: 12px; padding: 4px 12px; border: 0; border-radius: 13px; background: rgba(255,255,255,.05); color: #fff;
   font: 500 12.8px/17.92px "Inter", sans-serif; cursor: pointer; transition: background-color .25s cubic-bezier(.4,0,.2,1); }
 .cm-upload:hover { background: rgba(255,255,255,.1); }
@@ -61,9 +60,8 @@
 .cm-tip.above { padding: 4px 8px; border: 0; border-radius: 4px; background: #1e2224; font-size: 14px; line-height: 1.46; text-align: left; }
 .cm-tip.above::after { content: ""; position: absolute; top: 100%; left: calc(var(--arrow) - 7px); border: 7px solid transparent; border-top-color: #1e2224; border-bottom: 0; }
 
-/* MUI's CircularProgress */
-.cm-spinner { display: inline-block; vertical-align: middle;
-  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="22 22 44 44"><style>svg{animation:r 1.4s linear infinite;transform-origin:44px 44px}circle{stroke-dasharray:80px,200px;animation:d 1.4s ease-in-out infinite}@keyframes r{to{transform:rotate(360deg)}}@keyframes d{0%{stroke-dasharray:1px,200px;stroke-dashoffset:0}50%{stroke-dasharray:100px,200px;stroke-dashoffset:-15px}to{stroke-dasharray:100px,200px;stroke-dashoffset:-125px}}</style><circle cx="44" cy="44" r="20.2" fill="none" stroke="%23fff" stroke-width="3.6"/></svg>') center / contain no-repeat; }
+/* MUI's CircularProgress (cnui.js), white, centered on the line as connect's */
+:is(.cm-modal, .cm-dialog) .cnui-progress { vertical-align: middle; }
 
 /* the upload queue: a paper in the middle of a dimmed window */
 .cm-dialog { width: max-content; max-width: 90%; max-height: none; box-sizing: border-box; padding: 16px; border: 0; border-radius: 4px; outline: 0; background: #30373b;

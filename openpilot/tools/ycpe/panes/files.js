@@ -20,6 +20,7 @@ export function create(ctx) {
   const {route, perf, clock} = ctx;
   const sr = parseRange(route.fullname);
   const segs = segmentsOf(route);
+  const fileName = (n, f) => `${route.fullname.replace("|", "_")}--${n}--${f.file}`;  // as saved
   let source = routeSource.get(route.fullname);
   let found = new Map(), errors = {}, asked = new Set(), gen = 0;  // gen drops answers for a source no longer picked
   let up = null, apiFiles = new Set(), height = 0, top = 0, alive = true;
@@ -119,7 +120,7 @@ export function create(ctx) {
       const sameOrigin = f.url.startsWith("blob:") || new URL(f.url, location.href).origin === location.origin;
       const href = sameOrigin ? f.url : await fetch(f.url, {signal: stop.signal}).then((r) => r.ok ? r.blob() : null).then((b) => b && URL.createObjectURL(b), () => null);
       if (!href) continue;
-      h("a", {href, download: `${route.fullname.replace("|", "_")}--${n}--${f.file}`}).click();
+      h("a", {href, download: fileName(n, f)}).click();
       if (!sameOrigin) setTimeout(() => URL.revokeObjectURL(href), 10000);
     }
     delete saving[kind];
@@ -135,7 +136,7 @@ export function create(ctx) {
   function cell(n, kind, what) {
     const key = `${n}/${kind}`, f = found.get(key);
     if (f) {
-      return h("a", {class: "fp-cell dl", href: f.url, download: `${route.fullname.replace("|", "_")}--${n}--${f.file}`, title: `${f.file} from ${label(f.source)}${f.cached ? " (on disk)" : ""}`},
+      return h("a", {class: "fp-cell dl", href: f.url, download: fileName(n, f), title: `${f.file} from ${label(f.source)}${f.cached ? " (on disk)" : ""}`},
         icon("download", 14), f.size ? fmtBytes(f.size) : "");
     }
     if (typeof what === "object") return h("span", {class: "fp-cell"}, uploadState(up, key));
@@ -235,7 +236,7 @@ export function create(ctx) {
   }
 
   const offRange = clock.on("range", () => perf.invalidate(pane));
-  const pane = {name: "files", el, render, resize() {}, save: () => ({}),
+  const pane = {name: "files", el, render, save: () => ({}),
     dispose() { alive = false; gen++; stop.abort(); sized.disconnect(); up?.dispose(); offRange(); }};
   return pane;
 }

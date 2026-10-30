@@ -18,6 +18,7 @@ const started = new WeakSet();  // the clocks of routes this view opened playing
 const zooms = new WeakMap();  // each clock's ranges zoomed in from, which back steps out to one at a time as on connect
 const WIDE = matchMedia("(min-width: 1536px)");  // as connect, the map beside the video from here on
 const STEPS = [0.1, 0.25, 0.5, 1, 2, 4, 8];  // connect's play speeds, a step at a time
+const stepOf = (rate) => STEPS.includes(rate) ? STEPS.indexOf(rate) : STEPS.indexOf(1);  // a speed off the steps is at 1x
 const THUMB = 32;  // px per timeline thumbnail on connect: its 20 px row at the sprites' 128:80
 // built once: a formatter per call costs ~7 ms of ICU setup the first time
 const HM = new Intl.DateTimeFormat(undefined, {hour: "2-digit", minute: "2-digit", hour12: false});
@@ -109,8 +110,7 @@ export function create(ctx, state) {
   // connect's control pill, its speeds a step at a time
   const playBtn = h("button", {class: "cn-play", onclick: () => clock.toggle()});
   const step = (by) => {
-    const i = STEPS.indexOf(clock.rate);
-    clock.setRate(STEPS[Math.max(0, Math.min(STEPS.length - 1, (i < 0 ? STEPS.indexOf(1) : i) + by))]);
+    clock.setRate(STEPS[Math.max(0, Math.min(STEPS.length - 1, stepOf(clock.rate) + by))]);
     clock.play();  // as connect: a step plays
   };
   const faster = h("button", {class: "cn-step", "aria-label": "Increase play speed by 1 step", onclick: () => step(1)}, cnIcon("up", 12));
@@ -207,7 +207,7 @@ export function create(ctx, state) {
 
   const segmentOf = (t) => segmentAtTime(route, t, clock.duration);
   let shown = "", second = null, playing = null, rated = null;  // the range the strip and title show, the second the clock shows
-  const pane = {name: "connect", el, resize() {}, save: () => ({media}), dispose,
+  const pane = {name: "connect", el, save: () => ({media}), dispose,
     render() {
       const [r0, r1] = clock.range, span = r1 - r0;
       if (shown !== `${r0} ${r1} ${width}`) {
@@ -247,7 +247,7 @@ export function create(ctx, state) {
       mute.show(!!panes.video?.audio);
       if (rated !== clock.rate) {
         rated = clock.rate;
-        const i = STEPS.indexOf(rated) < 0 ? STEPS.indexOf(1) : STEPS.indexOf(rated);
+        const i = stepOf(rated);
         speedText.textContent = `${rated}×`;
         faster.disabled = i >= STEPS.length - 1;
         slower.disabled = i <= 0;

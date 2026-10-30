@@ -23,6 +23,6 @@ make -C "$F" -j"$(nproc)" libavcodec/libavcodec.a libavutil/libavutil.a >/dev/nu
 
 emcc -O3 -msimd128 -flto -DNDEBUG -I"$F" hevc.c "$F"/libavcodec/libavcodec.a "$F"/libavutil/libavutil.a \
   --no-entry -sSTANDALONE_WASM -sALLOW_MEMORY_GROWTH -sSTACK_SIZE=1MB -sINITIAL_MEMORY=32MB -sMAXIMUM_MEMORY=4GB \
-  -sEXPORTED_FUNCTIONS=_malloc,_free,_hevc_init,_hevc_push,_hevc_flush,_hevc_reset,_hevc_frame,_hevc_width,_hevc_height,_hevc_plane,_hevc_stride,_hevc_pts,_hevc_release \
+  -sEXPORTED_FUNCTIONS=_malloc,_free,_hevc_init,_hevc_push,_hevc_reset,_hevc_frame,_hevc_width,_hevc_height,_hevc_plane,_hevc_stride,_hevc_pts,_hevc_release \
   -o hevc.wasm
 ls -l hevc.wasm

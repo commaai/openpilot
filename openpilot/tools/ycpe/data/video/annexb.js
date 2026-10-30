@@ -48,7 +48,7 @@ export class AnnexB {
 
   // the stream opens with a VPS (HEVC) or an SPS/AUD (H.264)
   #detect(d, n) {
-    this.hevc = ((d[n] >> 1) & 63) === 32 || ((d[n] >> 1) & 63) === 35;
+    this.hevc = [32, 35].includes((d[n] >> 1) & 63);
     const hex = (b) => b.toString(16).padStart(2, "0");
     this.codec = this.hevc ? HEVC : (d[n] & 31) === 7 ? `avc1.${hex(d[n + 1])}${hex(d[n + 2])}${hex(d[n + 3])}` : "avc1.64001f";
   }
