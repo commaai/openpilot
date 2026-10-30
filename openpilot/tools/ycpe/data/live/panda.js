@@ -91,11 +91,10 @@ export class Unpacker {
 const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
 const vendor = (request, value = 0) => ({requestType: "vendor", recipient: "device", request, value, index: 0});
 const isPanda = (d) => FILTERS.some((f) => f.vendorId === d.vendorId && f.productId === d.productId);
-const fakeRequested = () => new URLSearchParams(globalThis.location?.search).get("fake-panda");
 
 // opts.usb: a navigator.usb stand-in (tests)
 export function create(opts = {}) {
-  const fake = opts.usb ? null : fakeRequested();
+  const fake = opts.usb ? null : new URLSearchParams(globalThis.location?.search).get("fake-panda");
   const usbReady = opts.usb ? Promise.resolve(opts.usb)
     : fake !== null ? import("./fake-panda.js").then((m) => m.fakeUsb({granted: fake !== "click"})) : Promise.resolve(globalThis.navigator?.usb);
   let usb = null, sink = null, device = null, opening = null;

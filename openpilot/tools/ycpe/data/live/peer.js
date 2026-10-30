@@ -9,7 +9,8 @@ const daemon = await import("/daemon.js").then((m) => m.daemon, () => null);
 const STUN = [{urls: "stun:stun.l.google.com:19302"}];  // as the device's side (teleoprtc) uses
 const GATHER_MS = 3000, SRFLX_MS = 100, CONNECT_MS = 20000, DISCONNECTED_MS = 5000;
 const BUSY_MS = 30000, BUSY_RETRY_MS = 2000;  // a closed viewer's session lingers on the device until ICE gives up
-export const CAMERAS = ["road", "wideRoad", "driver"];
+const CAMERAS = ["road", "wideRoad", "driver"];
+const ICE_FAILED = "the peer-to-peer connection failed (ICE): no route between this browser and the device";
 
 const FAKE = new URLSearchParams(globalThis.location?.search).has("fake-webrtcd");  // the harness's stand-in for this PC's webrtcd
 const text = new TextDecoder();
@@ -98,7 +99,7 @@ class Peer {
     pc.ondatachannel = (e) => channel(e.channel);
     pc.onconnectionstatechange = () => {
       if (!live()) return;
-      if (pc.connectionState === "failed") this.close("error", "the peer-to-peer connection failed (ICE): no route between this browser and the device", gen);
+      if (pc.connectionState === "failed") this.close("error", ICE_FAILED, gen);
       if (pc.connectionState === "disconnected") {
         setTimeout(() => live() && pc.connectionState === "disconnected" && this.close("error", "the device stopped answering", gen), DISCONNECTED_MS);
       }
@@ -179,7 +180,7 @@ function connected(pc) {
   return new Promise((resolve, reject) => {
     const check = () => {
       if (pc.connectionState === "connected") resolve();
-      if (["failed", "closed"].includes(pc.connectionState)) reject(new Error("the peer-to-peer connection failed (ICE): no route between this browser and the device"));
+      if (["failed", "closed"].includes(pc.connectionState)) reject(new Error(ICE_FAILED));
     };
     pc.addEventListener("connectionstatechange", check);
     setTimeout(() => reject(new Error(`no peer-to-peer connection after ${CONNECT_MS / 1000} s`)), CONNECT_MS);
