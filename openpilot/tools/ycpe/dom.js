@@ -26,6 +26,15 @@ export function listeners() {
   };
 }
 
+// listeners() per event name
+export function events() {
+  const fns = {};
+  return {
+    on(event, fn) { (fns[event] ||= new Set()).add(fn); return () => fns[event].delete(fn); },
+    emit(event, ...args) { for (const fn of fns[event] || []) fn(...args); },
+  };
+}
+
 // obj's state and detail, as a live source has them: the returned set(state, detail) changes them and calls
 // obj.on("state", fn)'s fns with them; obj has no other events
 export function stateful(obj) {

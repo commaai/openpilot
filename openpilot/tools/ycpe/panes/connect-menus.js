@@ -1,7 +1,7 @@
 // user mode's Files and More info menus, as connect's Media.jsx draws them over the button: the playhead segment's
 // files to download or ask the device for, all logs or files of the range, the upload queue (Files/UploadQueue.jsx),
 // the segment name to copy, sharing, useradmin, and the public and preserved switches. Loaded with the first click.
-import {api, segmentAtTime} from "/api.js";
+import {api, memo, segmentAtTime} from "/api.js";
 import {h, css, openModal} from "/dom.js";
 import {isOnline} from "/app.js";
 import {canManage} from "/pages/home.js";
@@ -146,15 +146,8 @@ export function filesMenu(anchor, ctx) {
 
 // whether the drive is preserved: connect asks for the device's preserved routes (rather than trusting the record) as
 // the drive opens, for those who manage the device, so More info opens knowing
-const preservedOf = new Map();
-const isPreserved = ({route}) => {
-  if (!preservedOf.has(route.fullname)) {
-    preservedOf.set(route.fullname, api.preservedRoutes(route.fullname.split("|")[0]).then((list) => Array.isArray(list) && list.some((r) => r.fullname === route.fullname))
-      .catch((e) => { preservedOf.delete(route.fullname); throw e; }));
-  }
-  return preservedOf.get(route.fullname);
-};
-export const prefetch = (ctx) => api.device(ctx.route.fullname.split("|")[0]).then(canManage).then((ok) => ok && isPreserved(ctx)).catch(() => {});
+const isPreserved = memo((fullname) => api.preservedRoutes(fullname.split("|")[0]).then((list) => Array.isArray(list) && list.some((r) => r.fullname === fullname)));
+export const prefetch = ({route}) => api.device(route.fullname.split("|")[0]).then(canManage).then((ok) => ok && isPreserved(route.fullname)).catch(() => {});
 
 // More info: opened from the label's left, 260 px (300 on a phone) to its left, as connect's menu-info is
 export function infoMenu(anchor, ctx) {
@@ -176,7 +169,7 @@ export function infoMenu(anchor, ctx) {
     if (!await canManage(device)) return;
     const preserved = switchRow("Preserved", PRESERVED_TIP, null, (v) => api.setRoutePreserved(route.fullname, v).then((r) => {
       if (!r?.success) throw new Error("unable to update");
-      preservedOf.set(route.fullname, Promise.resolve(v));
+      isPreserved.prime(v, route.fullname);
     }));
     toggles.replaceChildren(h("hr"),
       switchRow("Public access", PUBLIC_TIP, !!route.is_public, async (v) => {
@@ -185,7 +178,7 @@ export function infoMenu(anchor, ctx) {
         if (r && r.is_public !== v) throw new Error("unable to update");
       }).el,
       preserved.el);
-    isPreserved(ctx).then(preserved.set, () => {});
+    isPreserved(route.fullname).then(preserved.set, () => {});
   }).catch(() => {});
 }
 

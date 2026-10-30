@@ -156,7 +156,7 @@ function signedUntil(files) {
 
 // reads are cached for the session (or ttl ms) so revisits never wait on the network; failures are not kept
 const apiCaches = new Set();
-function memo(fn, key = (...args) => JSON.stringify(args), ttl = Infinity) {
+export function memo(fn, key = (...args) => JSON.stringify(args), ttl = Infinity) {
   const cache = new Map(), at = new Map();
   apiCaches.add(cache);
   const wrapped = (...args) => {
