@@ -1,0 +1,185 @@
+// the frame scheduler and the perf HUD. Every pane renders through invalidate(), so each frame's work is
+// timed per pane; the HUD in the top bar is always on, and its panel shows where the time went.
+import {h, fitCanvas, anchoredPanel} from "/dom.js";
+
+const HISTORY = 600;             // frames kept for the panel and the harness (~10 s at 60 Hz)
+const BUDGET_MS = 4;             // main-thread budget per frame, shared by ticks and panes (perf.left)
+
+const dirty = new Set();
+const ticks = new Set();
+const frames = [];               // {t, interval, work, panes: {name: ms}}
+const longFrames = [];           // long-animation-frame entries, newest last
+const dropped = [];              // the frames that came late, newest last
+const marks = {};
+let last = 0, drops = 0, frameNo = 0, frameStart = 0;
+let refresh = 1000 / 60;         // learned display interval
+
+export const perf = {
+  frames, longFrames, dropped, marks,
+  get drops() { return drops; },
+
+  // pane.render(frame) runs once on the next frame
+  invalidate(pane) { dirty.add(pane); },
+  // fn(frame) runs every frame until removed (playback, animations); with a name, its time shows like a pane's
+  tick(fn, name) {
+    const t = name ? (frame) => perf.measure(name, () => fn(frame)) : fn;
+    ticks.add(t);
+    return () => ticks.delete(t);
+  },
+  measure(name, fn) {
+    const t = performance.now();
+    try { return fn(); } finally { add(current, name, performance.now() - t); }
+  },
+  mark(name, value) { marks[name] = value; },
+  // ms of BUDGET_MS left in this frame, counted from its start: work that spreads over frames stops at 0 (or
+  // earlier, to leave room for what renders after it). Outside a frame, a whole budget
+  left() { return current ? frameStart + BUDGET_MS - performance.now() : BUDGET_MS; },
+};
+window.__perf = perf;
+
+let current = null;
+const keys = new WeakMap();      // pane → its name and number: each pane's time is its own ("plot#3")
+let nextId = 0;
+const key = (pane) => keys.get(pane) ?? keys.set(pane, `${pane.name || "?"}#${++nextId}`).get(pane);
+
+function add(f, name, ms) {
+  if (f) f.panes[name] = (f.panes[name] || 0) + ms;
+}
+
+function loop(now) {
+  requestAnimationFrame(loop);
+  const start = frameStart = performance.now();
+  const interval = last ? now - last : refresh;
+  last = now;
+  if (interval < refresh * 1.2) refresh += (interval - refresh) * 0.05;
+  const frame = current = {t: now, n: frameNo++, interval, work: 0, panes: {}};
+  if (interval > refresh * 1.5 && !document.hidden) {
+    drops += Math.round(interval / refresh) - 1;
+    dropped.push(frame);
+    if (dropped.length > 50) dropped.shift();
+  }
+
+  // one that throws mustn't stop the frame: every pane after it would never render again
+  for (const fn of ticks) try { fn(frame); } catch (e) { console.error("tick", e); }
+  const batch = [...dirty];
+  dirty.clear();
+  for (const pane of batch) {
+    if (pane.el && !pane.el.isConnected) continue;  // a hidden view's: it redraws when shown again (Layout.invalidateAll)
+    const t = performance.now();
+    try { pane.render(frame); } catch (e) { console.error(pane.name, e); }
+    add(frame, key(pane), performance.now() - t);
+  }
+  frame.work = performance.now() - start;
+  frames.push(frame);
+  if (frames.length > HISTORY) frames.shift();
+  current = null;
+}
+requestAnimationFrame(loop);
+document.addEventListener("visibilitychange", () => { last = 0; });
+
+if (PerformanceObserver.supportedEntryTypes?.includes("long-animation-frame")) {
+  new PerformanceObserver((list) => {
+    for (const e of list.getEntries()) {
+      // layout: style + layout + paint time at the frame's end, where DOM churn shows up
+      longFrames.push({t: e.startTime, duration: e.duration, blocking: e.blockingDuration,
+        layout: e.styleAndLayoutStart ? e.startTime + e.duration - e.styleAndLayoutStart : 0,
+        scripts: e.scripts.map((s) => `${s.sourceFunctionName || s.invoker || "?"} ${s.sourceURL.split("/").pop()}:${s.sourceCharPosition} ${s.duration.toFixed(0)}ms`)});
+      if (longFrames.length > 50) longFrames.shift();
+    }
+  }).observe({type: "long-animation-frame", buffered: false});
+}
+
+function stats(n) {
+  const recent = frames.slice(-n);
+  const span = recent.reduce((s, f) => s + f.interval, 0);
+  return {fps: span ? recent.length * 1000 / span : 0, max: recent.reduce((m, f) => Math.max(m, f.work), 0)};
+}
+
+// the top-bar readout; text updates 4x a second so the HUD itself costs nothing
+// extra: more readouts inside the HUD (memory and disk come from status.js)
+export function hud(...extra) {
+  const fps = h("span", {class: "hud-fps"});
+  const ms = h("span", {class: "hud-ms"});
+  const dropEl = h("span", {class: "hud-drops"});
+  const spark = h("canvas", {class: "hud-spark", width: 40, height: 18});
+  const el = h("button", {class: "hud", title: "frame rate · worst render time this second · dropped frames · memory · disk (click for details)"}, spark, fps, ms, dropEl, ...extra);
+  anchoredPanel(el, perfPanel, {light: false, placed: false});  // it stays open while the app is used
+  const sparkPane = {name: "hud", render() {
+    const ctx = spark.getContext("2d");
+    const w = spark.width, hgt = spark.height;
+    ctx.clearRect(0, 0, w, hgt);
+    const recent = frames.slice(-w);
+    for (let i = 0; i < recent.length; i++) {
+      const f = recent[i];
+      const v = Math.min(hgt, f.work / (BUDGET_MS * 2) * hgt);
+      ctx.fillStyle = f.work > BUDGET_MS || f.interval > refresh * 1.5 ? "#e5484d" : "#3fb950";
+      ctx.fillRect(w - recent.length + i, hgt - Math.max(1, v), 1, Math.max(1, v));
+    }
+  }};
+  setInterval(() => {
+    const s = stats(60);
+    fps.textContent = `${Math.round(s.fps)} fps`;
+    ms.textContent = `${s.max.toFixed(1)} ms`;
+    dropEl.textContent = `${drops} drop${drops === 1 ? "" : "s"}`;
+    el.classList.toggle("bad", s.max > BUDGET_MS * 2 || s.fps < 55 && !document.hidden);
+    perf.invalidate(sparkPane);
+  }, 250);
+  return el;
+}
+
+// the detail panel: frame-time chart, per-pane cost, long frames, counters
+function perfPanel(close) {
+  const chart = h("canvas", {class: "perf-chart"});
+  const table = h("div", {class: "perf-table"});
+  const longs = h("div", {class: "perf-longs"});
+  const closeBtn = h("button", {class: "link", onclick: () => close()}, "close");
+  const el = h("div", {class: "perf-panel", role: "dialog", "aria-label": "Performance"},
+    h("div", {class: "perf-head"}, h("b", {}, "Performance"),
+      h("button", {class: "link", onclick: () => { drops = 0; longFrames.length = dropped.length = 0; }}, "reset"), closeBtn),
+    chart, table, longs);
+  const pane = {name: "perf-panel", render() {
+    const w = chart.clientWidth, hgt = chart.clientHeight, ctx = fitCanvas(chart, w, hgt);
+    ctx.clearRect(0, 0, w, hgt);
+    const scale = hgt / 33;
+    const bw = w / HISTORY;
+    const gap = document.documentElement.dataset.theme === "light" ? "rgba(128,128,128,.12)" : "rgba(128,128,128,.25)";
+    frames.forEach((f, i) => {
+      const x = w - (frames.length - i) * bw;
+      ctx.fillStyle = f.interval > refresh * 1.5 ? "rgba(229,72,77,.35)" : gap;
+      ctx.fillRect(x, hgt - Math.min(hgt, f.interval * scale), bw, Math.min(hgt, f.interval * scale));
+      ctx.fillStyle = f.work > BUDGET_MS ? "#e5484d" : "#3fb950";
+      ctx.fillRect(x, hgt - Math.min(hgt, f.work * scale), bw, Math.max(1, f.work * scale));
+    });
+    ctx.fillStyle = "rgba(128,128,128,.8)";
+    ctx.font = "10px ui-monospace, monospace";
+    ctx.textAlign = "right";  // clear of the newest frames' bars, mostly
+    for (const ms of [BUDGET_MS, 16.7]) {
+      ctx.fillRect(0, hgt - ms * scale, w, 1);
+      ctx.fillText(`${ms} ms`, w - 4, hgt - ms * scale - 3);
+    }
+  }};
+  const update = () => {
+    perf.invalidate(pane);
+    // by pane type: each frame's time for all the panes of it, and how many there are
+    const totals = {}, panes = {};
+    const recent = frames.slice(-120);
+    for (const f of recent) {
+      const byType = {};
+      for (const [k, v] of Object.entries(f.panes)) {
+        const type = k.split("#")[0];
+        byType[type] = (byType[type] || 0) + v;
+        (panes[type] ||= new Set()).add(k);
+      }
+      for (const [type, v] of Object.entries(byType)) (totals[type] ||= []).push(v);
+    }
+    const rows = Object.entries(totals).map(([k, v]) => [panes[k].size > 1 ? `${k} ×${panes[k].size}` : k, v.reduce((a, b) => a + b, 0) / recent.length, Math.max(...v)])
+      .sort((a, b) => b[1] - a[1]);
+    table.replaceChildren(h("div", {class: "perf-row head"}, h("span", {}, "pane"), h("span", {}, "avg ms"), h("span", {}, "max ms")),
+      ...rows.map(([k, avg, max]) => h("div", {class: "perf-row"}, h("span", {}, k), h("span", {}, avg.toFixed(2)), h("span", {class: max > BUDGET_MS ? "bad" : ""}, max.toFixed(2)))),
+      ...Object.entries(marks).map(([k, v]) => h("div", {class: "perf-row mark"}, h("span", {}, k), h("span", {}, String(v)))));
+    longs.replaceChildren(h("div", {class: "muted"}, `${longFrames.length} long frame${longFrames.length === 1 ? "" : "s"}`),
+      ...longFrames.slice(-6).reverse().map((l) => h("div", {class: "mono small"}, `${l.duration.toFixed(0)} ms (layout ${l.layout.toFixed(0)})  ${l.scripts.slice(0, 2).join(" · ")}`)));
+  };
+  const timer = setInterval(update, 500);
+  return {el, focus: closeBtn, update, closed: () => clearInterval(timer)};
+}

@@ -1,0 +1,75 @@
+/* connect's material pieces (cnui.js): progress, and the modal's full-window layer with its paper, in connect's
+   palette (user mode is dark only) */
+[data-theme="dark"] { --cnui-fg: #fff; --cnui-paper: #30373b; --cnui-deep: #1e2224; --cnui-on: #1e2224; }
+.cnui-icon { flex: none; }
+
+/* Material UI's circular progress: the svg turns, its arc grows and shrinks */
+.cnui-progress { flex: none; color: #57a9e3; animation: cn-rotate 1.4s linear infinite; }
+.cnui-progress circle { stroke: currentColor; stroke-dasharray: 80px, 200px; stroke-dashoffset: 0; animation: cn-dash 1.4s ease-in-out infinite; }
+@keyframes cn-rotate { to { transform: rotate(360deg); } }
+@keyframes cn-dash {
+  0% { stroke-dasharray: 1px, 200px; stroke-dashoffset: 0; }
+  50% { stroke-dasharray: 100px, 200px; stroke-dashoffset: -15px; }
+  100% { stroke-dasharray: 100px, 200px; stroke-dashoffset: -125px; }
+}
+
+/* Material UI's linear progress, its bars moved and scaled by the compositor (Material UI moves left and right) */
+.cnui-linear { position: relative; height: 5px; overflow: hidden; background: rgb(201, 227, 245); }
+.cnui-linear i { position: absolute; inset: 0; background: #57a9e3; transform-origin: left; }
+.cnui-linear:not(.busy) i { transform: translateX(calc((var(--p, 0) - 1) * 100%)); transition: transform .4s linear; transform-origin: center; }
+.cnui-linear:not(.busy) i + i { display: none; }
+.cnui-linear.busy i { animation: cn-bar1 2.1s cubic-bezier(.65, .815, .735, .395) var(--t, 0ms) infinite; }
+.cnui-linear.busy i + i { animation: cn-bar2 2.1s cubic-bezier(.165, .84, .44, 1) calc(var(--t, 0ms) + 1.15s) infinite; transform: translateX(-200%) scaleX(2); }
+@keyframes cn-bar1 { 0% { transform: translateX(-35%) scaleX(.35); } 60%, 100% { transform: translateX(100%) scaleX(.9); } }
+@keyframes cn-bar2 { 0% { transform: translateX(-200%) scaleX(2); } 60%, 100% { transform: translateX(107%) scaleX(.01); } }
+
+/* connect's Notification (promo()), over the map's top right; full width on a phone */
+.cnui-promo-slot { position: relative; z-index: 4; height: 0; }
+.cnui-promo { position: absolute; top: 8px; right: 10px; box-sizing: border-box; width: 360px; padding: 12px 16px; border: 1px solid #303639; border-radius: 22px;
+  background: #424a4f; color: #fff; font: 400 16px/24px "Inter", sans-serif; }
+.cnui-promo p { margin: 0; color: rgba(255,255,255,.9); font-size: 14px; line-height: 1.46429; }
+.cnui-promo-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+.cnui-promo-head b { font-size: 20px; font-weight: 600; line-height: 31px; }
+.cnui-promo-head a { box-sizing: border-box; min-width: 90px; margin-left: 8px; padding: 6px 24px; border-radius: 15px; background: #5e8bff; color: #fff;
+  font-size: 14px; font-weight: 500; line-height: 1.4; text-align: center; text-decoration: none; }
+.cnui-promo-head a:hover { background: #547de6; }
+.cnui-promo-x { position: absolute; top: -8px; left: -6px; display: grid; place-items: center; box-sizing: border-box; width: 24px; height: 24px; padding: 5px;
+  border: 1px solid #394044; border-radius: 12px; background: #1e2224; color: #fff; cursor: pointer; }
+.cnui-promo-x:hover { background: #303639; }
+@media (max-width: 599px) { .cnui-promo { left: 8px; width: auto; } }
+
+/* the modal: a transparent layer over the window (a click on it is a click beside the paper), the backdrop fading in */
+.cnui-modal { position: fixed; inset: 0; width: 100%; max-width: none; height: 100%; max-height: none; margin: 0; padding: 0; border: 0; background: none;
+  color: var(--cnui-fg); font: 16px/1.5 "Inter", sans-serif; overflow: hidden; }
+.cnui-modal:focus-visible { outline: none; }
+.cnui-modal::backdrop { background: rgba(0, 0, 0, .5); transition: opacity 225ms cubic-bezier(.4, 0, .2, 1); }
+@starting-style { .cnui-modal[open]::backdrop { opacity: 0; } }
+.cnui-paper { position: absolute; box-sizing: border-box; border-radius: 4px; background: var(--cnui-paper); color: var(--cnui-fg);
+  box-shadow: 0 1px 5px 0 rgba(0,0,0,.2), 0 2px 2px 0 rgba(0,0,0,.14), 0 3px 1px -2px rgba(0,0,0,.12); }
+.cnui-modal :where(button) { font-family: inherit; }
+.cnui-paper hr { height: 1px; margin: 0; border: 0; background: rgb(from var(--cnui-fg) r g b / .12); }
+
+/* Material UI's buttons as connect styles them: text, and contained */
+.cnui-btn { display: inline-flex; box-sizing: border-box; align-items: center; justify-content: center; min-width: 64px; min-height: 36px; padding: 8px 16px;
+  border: 0; border-radius: 4px; background: none; color: var(--cnui-fg); font: 500 14px/1.4 "Inter", sans-serif; cursor: pointer;
+  transition: background-color 250ms cubic-bezier(.4, 0, .2, 1), box-shadow 250ms cubic-bezier(.4, 0, .2, 1); -webkit-tap-highlight-color: transparent; }
+.cnui-btn:hover { background: rgb(from var(--cnui-fg) r g b / .1); }
+.cnui-btn:disabled { color: rgb(from var(--cnui-fg) r g b / .3); cursor: default; background: none; }
+.cnui-btn:focus-visible { outline: none; background: rgb(from var(--cnui-fg) r g b / .12); }
+/* a contained grey one (connect's dialog buttons) */
+.cnui-btn.grey { background: #5c696f; color: #fff; box-shadow: 0 1px 5px 0 rgba(0,0,0,.2), 0 2px 2px 0 rgba(0,0,0,.14), 0 3px 1px -2px rgba(0,0,0,.12); }
+.cnui-btn.grey:hover { background: #4b5559; }
+.cnui-btn.grey:disabled { background: #4b5559; color: rgba(255, 255, 255, .3); box-shadow: none; }
+/* connect's white pill */
+.cnui-btn.white { border-radius: 18px; background: var(--cnui-fg); color: var(--cnui-on); }
+.cnui-btn.white:hover { background: rgb(from var(--cnui-fg) r g b / .7); color: var(--cnui-on); }
+.cnui-btn.white:disabled { background: rgb(from var(--cnui-fg) r g b / .7); color: var(--cnui-on); }
+/* an icon button: 48px round, its ripple left out as connect leaves it */
+.cnui-ibtn { display: inline-flex; flex: none; align-items: center; justify-content: center; box-sizing: border-box; width: 48px; height: 48px; padding: 12px;
+  border: 0; border-radius: 50%; background: none; color: var(--cnui-fg); cursor: pointer; transition: background-color 150ms cubic-bezier(.4, 0, .2, 1); -webkit-tap-highlight-color: transparent; }
+.cnui-ibtn:hover { background: rgb(from var(--cnui-fg) r g b / .1); }
+.cnui-ibtn:disabled { color: rgb(from var(--cnui-fg) r g b / .3); background: none; cursor: default; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cnui-progress, .cnui-progress circle, .cnui-linear i { animation: none !important; }
+}

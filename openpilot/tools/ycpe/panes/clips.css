@@ -1,0 +1,159 @@
+/* connect's clip menu and viewer (DriveView/ClipMenu.jsx) in connect's sizes and palette (pages.css --cn-*) */
+:is(.clips-menu, .clips-viewer) { --clips-bg: var(--cn-card); --clips-soft: color-mix(in srgb, var(--cn-fg) 5%, transparent);
+  --clips-warn: var(--alert-fg); --clips-error: var(--critical-fg);
+  padding: 0; border: 1px solid var(--cn-line); border-radius: 8px; background: var(--clips-bg); color: var(--cn-fg); box-shadow: var(--shadow);
+  font-size: 14px; }
+[data-theme="dark"] :is(.clips-menu, .clips-viewer) { --clips-bg: #1e2224; --clips-warn: #ffcc80; --clips-error: #ff8a80; }
+:is(.clips-menu, .clips-viewer)::backdrop { background: transparent; }
+:is(.clips-menu, .clips-viewer):focus-visible { outline: none; }  /* focused itself on opening, not its first control */
+.clips-viewer::backdrop { background: rgba(0,0,0,.5); }
+:where(.clips-menu, .clips-viewer) button { font: inherit; }
+
+/* its top right corner on the button's, moved in to stay 12px inside the window and up when it would run off the bottom */
+@position-try --clips-up { top: auto; bottom: 12px; }
+.clips-menu { --w: min(360px, 100vw - 24px); position-anchor: --clips; inset: auto; top: anchor(top); right: clamp(12px, anchor(right), 100vw - 12px - var(--w));
+  width: var(--w); max-height: calc(100dvh - 24px); margin: 0; overflow: hidden; position-try-fallbacks: --clips-up; }
+.clips-menu[open] { display: flex; }
+.clips-paper { display: flex; flex-direction: column; width: 100%; min-height: 0; }
+.clips-menu hr { flex: none; width: 100%; margin: 0; border: 0; border-top: 1px solid var(--cn-line); }
+@media (max-width: 600px) {
+  .clips-menu.creating { inset: 0; width: 100vw; max-width: none; height: 100dvh; max-height: none; border: 0; border-radius: 0; }
+  .clips-menu.creating .clips-paper { overflow-y: auto; }
+  .clips-menu.creating .clips-section { flex: none; overflow: visible; }
+}
+
+.clips-body { flex: none; padding: 16px; }
+.clips-head { display: flex; align-items: center; justify-content: space-between; font-size: 16px; }
+.clips-head b { font-weight: 500; }
+.clips-head .clips-close { display: none; margin: -8px -8px -8px 0; }
+@media (max-width: 600px) { .clips-menu.creating .clips-close { display: flex; } }
+.clips-muted, .clips-label { color: var(--cn-muted); }
+.clips-muted { font-size: 12px; line-height: 1.4; }
+.clips-range { display: flex; flex-direction: column; margin: 14px 0; padding: 10px 12px; border-radius: 8px; background: var(--clips-soft); }
+.clips-range-value { font-size: 15px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.clips-field { margin-top: 14px; }
+.clips-label { display: block; margin-bottom: 6px; font-size: 11px; }
+.clips-seg { display: flex; border: 1px solid var(--cn-line); border-radius: 8px; overflow: hidden; }
+.clips-seg-btn { flex: 1 1 0; min-width: 0; min-height: 44px; padding: 5px 4px; border: 0; border-right: 1px solid var(--cn-line); background: none;
+  color: var(--cn-fg); font-size: 12px; line-height: 1.2; cursor: pointer; }
+.clips-seg-btn:last-child { border-right: 0; }
+@media (hover: hover) { .clips-seg-btn:hover, .clips-icon:hover { background: var(--clips-soft); } .clips-create:hover { filter: brightness(.93); } }
+.clips-seg-btn[aria-pressed="true"] { background: color-mix(in srgb, var(--cn-fg) 14%, transparent); }
+.clips-seg-btn:disabled { color: var(--cn-muted); opacity: .5; background: none; cursor: default; }
+.clips-detail { display: block; margin-top: 2px; color: var(--cn-muted); font-size: 10px; }
+.clips-hint { margin: 7px 0 0; color: var(--clips-warn); font-size: 12px; line-height: 1.4; }
+.clips-estimate { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+.clips-size { font-size: 12px; font-weight: 500; }
+.clips-input { width: 100%; padding: 9px 11px; border: 1px solid var(--cn-line); border-radius: 8px; outline: none; background: var(--clips-soft);
+  color: var(--cn-fg); font-size: 13px; }
+.clips-input:focus-visible { border-color: color-mix(in srgb, var(--cn-fg) 40%, transparent); }
+.clips-input::placeholder { color: color-mix(in srgb, var(--cn-fg) 40%, transparent); }
+.clips-error { margin: 10px 0 0; color: var(--clips-error); font-size: 12px; }
+.clips-create { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 32px; margin-top: 16px; padding: 4px 16px; border: 0;
+  border-radius: 16px; background: var(--cn-fg); color: var(--clips-bg); font-weight: 500; cursor: pointer; }
+.clips-create:disabled { background: var(--clips-soft); color: var(--cn-muted); filter: none; cursor: default; }
+
+/* the clips on the device */
+.clips-section { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 13px 16px 16px; }
+.clips-section-head { display: flex; align-items: center; gap: 4px; margin-bottom: 8px; color: var(--cn-muted); font-size: 12px; }
+.clips-info { display: inline-flex; padding: 4px; border-radius: 50%; cursor: help; }
+.clips-section > .clips-error { margin: 0 0 8px; }
+.clips-empty { margin: 0; padding-top: 5px; color: var(--cn-muted); font-size: 13px; line-height: 1.4; }
+.clips-clip { padding: 8px 0; }
+.clips-clip + .clips-clip { border-top: 1px solid var(--clips-soft); }
+.clips-clip:last-child { padding-bottom: 0; }
+.clips-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.clips-details { min-width: 0; }
+.clips-title { font-size: 15px; line-height: 1.35; overflow-wrap: anywhere; }
+.clips-meta { margin-top: 2px; color: var(--cn-muted); font-size: 13px; line-height: 1.4; }
+.clips-meta a { color: inherit; }
+.clips-actions { display: flex; flex: none; align-items: center; gap: 2px; margin: -4px -7px -4px 0; }
+.clips-actions > .clips-meta { margin: 0 4px 0 0; }
+.clips-icon { display: flex; flex: none; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%;
+  background: none; color: var(--cn-fg); cursor: pointer; }
+.clips-icon:disabled { color: color-mix(in srgb, var(--cn-fg) 40%, transparent); background: none; cursor: default; }
+/* encoding (no telling how far), or a download's share */
+.clips-bar { position: relative; height: 5px; margin-top: 8px; overflow: hidden; border-radius: 3px; background: color-mix(in srgb, var(--accent) 25%, transparent); }
+.clips-bar::after { content: ""; position: absolute; inset: 0; background: var(--accent); transform-origin: left; transform: scaleX(var(--p, 0)); }
+.clips-bar.busy { height: 4px; margin-top: 7px; }
+.clips-bar.busy::after { right: 60%; transform: none; animation: clips-busy 1.4s ease-in-out infinite; }
+@keyframes clips-busy { from { translate: -100%; } to { translate: 250%; } }
+@media (prefers-reduced-motion: reduce) { .clips-bar.busy::after { animation: none; right: 0; opacity: .5; } }
+.clips-transfer { margin-top: 8px; color: var(--cn-muted); font-size: 12px; text-align: center; font-variant-numeric: tabular-nums; }
+
+/* the drive view's button (connect.css dims it while the device is offline): on a phone, with it, Video | Map and
+   Clip | Files | More info still on one row */
+@container (max-width: 420px) { .cn-bar:has(.clips-button:not([hidden])) .cn-option { padding: 0 .7em; } }
+
+/* a clip playing */
+.clips-viewer { width: calc(100vw - 32px); max-width: 800px; }
+.clips-viewer-head { display: flex; align-items: flex-start; gap: 4px; padding: 16px 12px 12px 20px; }
+.clips-viewer-title { flex: 1; min-width: 0; padding-top: 1px; }
+.clips-viewer-title b { display: block; overflow: hidden; font-size: 16px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.clips-viewer-head .clips-icon { width: 44px; height: 44px; margin-top: -4px; }
+.clips-viewer video { display: block; width: calc(100% - 40px); max-height: 70vh; aspect-ratio: 1928 / 1208; margin: 0 20px 20px; background: #151819; }
+
+/* ---- user mode: connect's Material UI menu and dialogs, its palette whatever the theme ---- */
+/* the menu's paper (elevation 8) with its list's 8px ends, 32px above its button's top as Material UI's menu places
+   it, kept 16px inside the window, and growing in from the button's corner */
+@position-try --clips-um-up { top: 16px; bottom: auto; }
+.clips-menu.um { --clips-bg: var(--cnui-paper); --clips-soft: rgb(from var(--cnui-fg) r g b / .05); --clips-warn: #ffcc80; --clips-error: #ff8a80;
+  --w: min(360px, 100vw - 24px); top: calc(anchor(top) - 32px); right: clamp(16px, anchor(right), 100vw - 16px - var(--w)); max-height: calc(100dvh - 96px);
+  border: 0; border-radius: 4px; color: var(--cnui-fg); font: 16px/1.5 "Inter", sans-serif; position-try-fallbacks: --clips-um-up;
+  box-shadow: 0 5px 5px -3px rgba(0,0,0,.2), 0 8px 10px 1px rgba(0,0,0,.14), 0 3px 14px 2px rgba(0,0,0,.12);
+  transform-origin: top right; transition: opacity 300ms cubic-bezier(.4, 0, .2, 1), transform 200ms cubic-bezier(.4, 0, .2, 1); }
+@starting-style { .clips-menu.um[open] { opacity: 0; transform: scale(.75, .5625); } }
+.clips-menu.um .clips-paper { padding: 8px 0; box-sizing: border-box; }
+.clips-menu.um hr { border: 0; height: 1px; background: rgb(from var(--cnui-fg) r g b / .12); }
+.clips-menu.um .clips-head b { margin-bottom: 4px; }
+.clips-menu.um .clips-head b { line-height: 1.46429; }
+.clips-menu.um .clips-head .clips-close { width: 48px; height: 48px; padding: 12px; }
+.clips-menu.um .clips-muted { color: rgb(from var(--cnui-fg) r g b / .6); line-height: 1.4; }
+.clips-menu.um .clips-range-value { line-height: 1.46429; }
+.clips-menu.um .clips-label { color: rgb(from var(--cnui-fg) r g b / .6); line-height: 1.46429; }
+.clips-menu.um .clips-seg { border-color: rgb(from var(--cnui-fg) r g b / .1); }
+.clips-menu.um .clips-seg-btn { border-color: rgb(from var(--cnui-fg) r g b / .1); font-weight: 500; transition: background-color 250ms cubic-bezier(.4, 0, .2, 1); }
+.clips-menu.um .clips-seg-btn:hover { background: rgb(from var(--cnui-fg) r g b / .1); }
+.clips-menu.um .clips-seg-btn[aria-pressed="true"] { background: rgb(from var(--cnui-fg) r g b / .14); }
+.clips-menu.um .clips-seg-btn:disabled { color: rgb(from var(--cnui-fg) r g b / .3); opacity: 1; background: none; }
+.clips-menu.um .clips-detail { color: rgb(from var(--cnui-fg) r g b / .6); font-weight: 400; }
+.clips-menu.um .clips-size { line-height: 1.46429; }
+.clips-menu.um .clips-input { border-color: rgb(from var(--cnui-fg) r g b / .1); line-height: 1.5; font-family: inherit; }
+.clips-menu.um .clips-input:focus-visible { border-color: rgb(from var(--cnui-fg) r g b / .1); }
+.clips-menu.um .clips-input::placeholder { color: rgb(from var(--cnui-fg) r g b / .4); }
+.clips-menu.um .clips-create { min-height: 36px; padding: 8px 16px; color: var(--cnui-on); background: var(--cnui-fg); font-size: 14px; line-height: 1.4; transition: background-color 250ms; }
+.clips-menu.um .clips-create:hover { background: #eee; filter: none; }
+.clips-menu.um .clips-create:disabled { background: rgb(from var(--cnui-fg) r g b / .05); color: rgb(from var(--cnui-fg) r g b / .6); }
+.clips-menu.um .clips-section-head { gap: 0; color: rgb(from var(--cnui-fg) r g b / .6); line-height: 1.4; }
+.clips-menu.um .clips-info { margin-left: 8px; padding: 0; border-radius: 0; cursor: pointer; }
+.clips-menu.um .clips-empty { color: rgb(from var(--cnui-fg) r g b / .6); }
+.clips-menu.um .clips-clip + .clips-clip { border-top-color: rgb(from var(--cnui-fg) r g b / .05); }
+.clips-menu.um .clips-meta { color: rgb(from var(--cnui-fg) r g b / .6); }
+.clips-menu.um .clips-icon { padding: 0; transition: background-color 150ms cubic-bezier(.4, 0, .2, 1); }
+.clips-menu.um .clips-icon:hover { background: rgb(from var(--cnui-fg) r g b / .1); }
+.clips-menu.um .clips-icon:disabled { color: rgb(from var(--cnui-fg) r g b / .4); background: none; }
+.clips-menu.um :is(.clips-top, .clips-actions) { gap: 0; }  /* connect's gaps are unitless, so none */
+.clips-menu.um .clips-actions > .clips-meta { margin: 0; }
+.clips-menu.um .clips-clip > .cnui-linear { margin-top: 7px; }
+.clips-menu.um .clips-clip > .cnui-linear:not(.busy) { margin-top: 8px; border-radius: 3px; }
+.clips-menu.um .clips-transfer { color: rgb(from var(--cnui-fg) r g b / .6); }
+@media (max-width: 600px) { .clips-menu.um.creating { inset: 0; max-height: none; border-radius: 0; position-try-fallbacks: none; } }
+
+/* a clip playing: Material UI's dialog (elevation 24), fading in */
+.clips-viewer.um { width: min(800px, 100vw - 96px); max-width: none; max-height: calc(100dvh - 96px); margin: auto; border: 0; border-radius: 4px; background: var(--cnui-deep); color: var(--cnui-fg); font: 16px/1.5 "Inter", sans-serif;
+  box-shadow: 0 11px 15px -7px rgba(0,0,0,.2), 0 24px 38px 3px rgba(0,0,0,.14), 0 9px 46px 8px rgba(0,0,0,.12); transition: opacity 225ms cubic-bezier(.4, 0, .2, 1); }
+@starting-style { .clips-viewer.um[open] { opacity: 0; } }
+.clips-viewer.um .clips-viewer-head { gap: 0; }
+.clips-viewer.um .clips-viewer-title b { line-height: 1.46429; }
+.clips-viewer.um .clips-meta { margin-top: 3px; color: rgb(from var(--cnui-fg) r g b / .6); }
+.clips-viewer.um .clips-viewer-head .clips-icon { width: 48px; height: 48px; color: var(--cnui-fg); }
+.clips-viewer.um .clips-viewer-head .clips-icon:hover { background: rgb(from var(--cnui-fg) r g b / .1); }
+.clips-viewer.um video { aspect-ratio: auto; background: #151819; }
+
+/* deleting a clip: Material UI's dialog, its title, words and the two text buttons */
+.cnui-paper.clips-delete { top: 50%; left: 50%; width: 360px; max-width: calc(100% - 96px); background: var(--cnui-deep); transform: translate(-50%, -50%);
+  box-shadow: 0 11px 15px -7px rgba(0,0,0,.2), 0 24px 38px 3px rgba(0,0,0,.14), 0 9px 46px 8px rgba(0,0,0,.12); }
+.clips-delete h2 { margin: 0; padding: 24px 24px 8px; font-size: 21px; font-weight: 500; line-height: 1.16667; }
+.clips-delete p { margin: 0; padding: 0 24px 24px; color: rgb(from var(--cnui-fg) r g b / .6); font-size: 14px; line-height: 1.5; }
+.clips-delete-actions { display: flex; justify-content: flex-end; gap: 8px; margin: 8px 4px; padding: 8px 16px 16px; }
+.clips-delete-btn { color: #ff8a80; }
