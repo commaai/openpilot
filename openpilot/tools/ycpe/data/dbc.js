@@ -1,6 +1,7 @@
 // DBC files: a port of cabana's dbcfile.cc parser plus an exact round trip. The source is kept as a list of
 // statements; serializing emits each statement's original text unless the model it describes has changed, so
 // unknown sections, formatting and order survive, and edits only rewrite what they touch.
+import {listeners} from "../dom.js";
 
 export const NODE = "XXX";
 export const NORMAL = 0, MUXED = 1, MUX = 2;  // signal types, ordered as in cabana
@@ -300,11 +301,8 @@ export class Dbcs {
     this.undos = [];
     this.index = 0;
     this.clean = new Map();  // DBC -> its last applied edit when saved
-    this.listeners = new Set();
+    Object.assign(this, listeners());  // on(fn), emit(what, arg)
   }
-
-  on(fn) { this.listeners.add(fn); return () => this.listeners.delete(fn); }
-  emit(what, arg) { for (const fn of this.listeners) fn(what, arg); }
 
   // the files that opening a DBC on `buses` unloads
   replaced(buses) { return this.all().filter((f) => this.buses(f).every((b) => buses.includes(b))); }

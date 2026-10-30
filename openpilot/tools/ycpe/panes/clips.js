@@ -3,7 +3,7 @@
 // ranges each camera covers), deleteClip cancels or deletes one, and a ready clip comes back in base64 chunks
 // (getClipChunk). Downloaded clips stay in the Cache API, so they play again without asking the device.
 // clipButton(ctx) is the drive view's Clip button, deviceClips(device) a device's clips
-import {api, versionAtLeast} from "/api.js";
+import {api, memo, versionAtLeast} from "/api.js";
 import {h, css, ask, fmt, download, openModal} from "/dom.js";
 import {icon} from "/icons.js";
 import {perf} from "/perf.js";
@@ -42,23 +42,21 @@ const clipMeta = (clip) => [cameraName(clip.camera), clipLength(clip), mb(clip.s
 // as connect: openpilot 0.11.2 on, with a getVersion that has a commit date (athenad from before clips has none). A yes
 // is remembered, so an offline device still shows its button
 const SUPPORT_KEY = "ycpe_clips_";
-const support = new Map();
+const getVersion = memo((id) => api.athena(id, "getVersion"));
 function supportsClips(device) {
   const id = device.dongle_id;
   if (!versionAtLeast(device, "0.11.2")) return Promise.resolve(false);
   if (Number(localStorage.getItem(SUPPORT_KEY + id)) > 0) return Promise.resolve(true);
   if (!isOnline(device)) return Promise.resolve(false);
-  if (!support.has(id)) {
-    const req = api.athena(id, "getVersion").then((v) => {
-      const date = Number(v?.commit_date);
-      if (!(date > 0)) return support.delete(id) && false;
-      localStorage.setItem(SUPPORT_KEY + id, date);
-      return true;
-    });
-    req.catch(() => support.delete(id));
-    support.set(id, req);
-  }
-  return support.get(id);
+  return getVersion(id).then((v) => {
+    const date = Number(v?.commit_date);
+    if (!(date > 0)) {
+      getVersion.forget(id);  // asked again next time
+      return false;
+    }
+    localStorage.setItem(SUPPORT_KEY + id, date);
+    return true;
+  });
 }
 
 // ---- downloads: a clip's chunks, a few at a time, into the cache; one download per clip however many ask ----

@@ -2,10 +2,11 @@
 // (CanFrames) and hands them over by transfer; a dedicated CAN worker (this file loaded as "can.js?worker")
 // owns them and runs every scan; the main thread keeps per-message summaries only (Can, i.e. store.can).
 import {U8, U32, list} from "./capnp.js";
+import {partition} from "./bounds.js";
 import {DBC, Dbcs, bits, flip, raw, value} from "./dbc.js";
 import {upstream as github} from "./github.js";
 import {client, serve} from "./rpc.js";
-import {latest} from "../dom.js";
+import {events, latest} from "../dom.js";
 
 export const key = (bus, address) => bus * 2 ** 32 + address;
 export const busOf = (k) => Math.floor(k / 2 ** 32);
@@ -159,14 +160,7 @@ const time = (s, i) => s.base + s.t[i];
 const dataAt = (s, m, i) => s.dstart[m] + (i - s.start[m]) * s.stride[m];
 
 // first frame of message m in s after t
-function upper(s, m, t) {
-  let lo = s.start[m], hi = s.start[m + 1];
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    if (time(s, mid) <= t) lo = mid + 1; else hi = mid;
-  }
-  return lo;
-}
+const upper = (s, m, t) => partition(s.start[m], s.start[m + 1], (i) => time(s, i) <= t);
 
 // the last segment starting at or before t
 function segAt(t) {
@@ -441,7 +435,7 @@ export class Can {
     this.worker = new Worker(new URL("./can.js?worker", import.meta.url), {type: "module"});
     this.call = client(this.worker, (e) => this.fail(e.message || "the CAN worker didn't load"));
     this.msgs = new Map();  // key -> {key, bus, address, id, count, t0, t1, size, segs}
-    this.handlers = {};
+    Object.assign(this, events());  // on(event, fn), emit(event, ...args)
     this.dbcs = new Dbcs();
     this.dbcs.on((what, change) => {
       if (what === "saved") return;
@@ -487,12 +481,6 @@ export class Can {
     this.emit("notice");
     return reason;
   }
-
-  on(event, fn) {
-    (this.handlers[event] ||= new Set()).add(fn);
-    return () => this.handlers[event].delete(fn);
-  }
-  emit(event, ...args) { for (const fn of this.handlers[event] || []) fn(...args); }
 
   // a segment's frames from the pipeline worker (route time = mono time + off); summaries stay here. A live session's
   // growing slot comes again with all its frames so far, and replaces what it brought before

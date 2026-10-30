@@ -2,9 +2,10 @@
 // Columns stay packed as the workers sent them and become views on first use. Over the memory budget, the least
 // recently used columns are dropped and re-parsed from the OPFS cache when asked for again.
 import {SEGMENT} from "../api.js";
+import {events} from "../dom.js";
 import {perf} from "../perf.js";
 import {status} from "../status.js";
-import {lowerBound, upperBound} from "./bounds.js";
+import {lowerBound, partition, upperBound} from "./bounds.js";
 import {Loader, POOL} from "./loader.js";
 import * as opfs from "./opfs.js";
 import {Can} from "./can.js";
@@ -27,7 +28,7 @@ export class Store {
     this.budget = budget;
     this.keep = keep;
     this.kept = [];  // the lists asked for since, in order ({service: [globs]}); a parse notes how many it read with
-    this.handlers = {};
+    Object.assign(this, events());  // on(event, fn), emit(event, ...args)
     this.can = new Can(this);
     this.entries = new Map();  // path → {path, type, names?, at: [{pack, k} by segment], views: [], version, used}
     this.monos = new Map();  // /<service>/__logMonoTime → its series
@@ -171,15 +172,6 @@ export class Store {
     const seg = this.segmentAt(this.t), n = seg?.n;
     const waiting = seg && seg.status === "queued";
     this.status.buffering(waiting ? {n, text: `segment ${seg.real ?? n}${seg.retry ? ` · retrying (${seg.retry})` : ""}`} : null);
-  }
-
-  on(event, fn) {
-    (this.handlers[event] ||= new Set()).add(fn);
-    return () => this.handlers[event].delete(fn);
-  }
-
-  emit(event, arg) {
-    for (const fn of this.handlers[event] || []) fn(arg);
   }
 
   // segments are still to load
@@ -472,12 +464,8 @@ export class Store {
     const s = this.series(path);
     if (!s) return undefined;
     const {chunks} = s;
-    let lo = 0, hi = chunks.length;  // first chunk starting after t
-    while (lo < hi) {
-      const mid = (lo + hi) >> 1;
-      if (chunks[mid].tt[0] <= t) lo = mid + 1; else hi = mid;
-    }
-    for (let j = lo - 1; j >= 0; j--) {
+    const after = partition(0, chunks.length, (k) => chunks[k].tt[0] <= t);  // the first chunk starting after t
+    for (let j = after - 1; j >= 0; j--) {
       const v = lastValue(chunks[j], t);
       if (v !== undefined) return v;
     }
@@ -671,11 +659,7 @@ function lastValue(chunk, t) {
 
 // the chunks overlapping [t0, t1], found by binary search: chunks follow each other in time
 function overlapping(chunks, t0, t1) {
-  let lo = 0, hi = chunks.length;
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    if (chunks[mid].tt.at(-1) < t0) lo = mid + 1; else hi = mid;
-  }
+  const lo = partition(0, chunks.length, (k) => chunks[k].tt.at(-1) < t0);
   let end = lo;
   while (end < chunks.length && !(chunks[end].tt[0] > t1)) end++;
   return chunks.slice(lo, end);
