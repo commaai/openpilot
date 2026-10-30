@@ -127,7 +127,7 @@ function connectReferrals(me) {
     h("section", {}, h("ol", {}, STEPS.map(([t, detail], i) => h("li", {},
       h("div", {class: "cn-ref-n"}, h("span", {}, i + 1)),
       h("div", {}, h("span", {class: "cn-sr"}, `Step ${i + 1}: `), h("h2", {}, t), h("p", {}, detail)))))),
-    share,
+    shareBox,
     h("section", {class: "cn-ref-yours"}, h("h2", {}, "Your Referrals"), mine),
     h("p", {class: "cn-ref-foot"}, "Referral rewards become available to claim after each order's return period ends."),
     h("p", {class: "cn-ref-foot"}, "Referrals are subject to ", terms("terms and conditions"), "."));
