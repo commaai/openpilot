@@ -43,10 +43,9 @@
 .plot-popup label { display: grid; grid-template-columns: 96px 1fr; align-items: center; gap: 6px; padding: 0 4px; color: var(--muted); }
 .plot-popup input, .plot-popup select, .plot-popup textarea { min-width: 0; height: 22px; padding: 0 4px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--fg); }
 .plot-popup input[type=color] { padding: 0 2px; }
-.plot-popup:has(> .menu-list) { gap: 0; padding: 4px; }
+.plot-popup:has(> .menu-list) { gap: 0; }
 .plot-popup .tick { display: inline-flex; width: 14px; }
-.plot-popup .menu-row.muted { cursor: default; }
-.plot-popup .menu-row.muted:hover { background: none; }
+.plot-popup .menu-row:disabled { background: none; color: var(--muted); cursor: default; }
 .plot-popup hr { margin: 3px 0; border: 0; border-top: 1px solid var(--line); }
 .plot-popup > button { height: 24px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); cursor: pointer; }
 .plot-popup > button:hover { background: var(--hover); }

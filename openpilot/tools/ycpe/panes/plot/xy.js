@@ -3,7 +3,7 @@
 // redraws only when the results or the view change. The playhead points go on an overlay.
 import {h} from "/dom.js";
 import {icon} from "/icons.js";
-import {colors, fitCanvas, ticks, axes, fmtTick, fmtValue, nextColor} from "./draw.js";
+import {colors, fitCanvas, ticks, axes, fmtTick, fmtValue, nextColor, marker, clip} from "./draw.js";
 import * as view from "./view.js";
 import {menu} from "./menu.js";
 import {exportPng} from "./export.js";
@@ -60,15 +60,16 @@ export function create(ctx, state = {}) {
     while (q.length >= 2) st.curves.push({x: q.shift(), y: q.shift(), color: nextColor(st.curves.map((c) => c.color))});
     pendingX = q[0] ?? null;
     rebuild();
-    refresh();
   }
 
+  // after a change to the curves: the legend anew, and the pairs computed again
   function rebuild() {
     legend.replaceChildren(...st.curves.map((c) => h("div", {class: "row"},
       h("span", {class: "swatch", style: `color:${c.color}`}), h("span", {class: "name", title: name(c)}, h("bdi", {}, name(c))), h("span"),
-      h("button", {class: "x", title: "remove", "aria-label": `Remove ${name(c)}`, onclick: () => { st.curves.splice(st.curves.indexOf(c), 1); rebuild(); refresh(); }}, icon("close", 12)))));
+      h("button", {class: "x", title: "remove", "aria-label": `Remove ${name(c)}`, onclick: () => { st.curves.splice(st.curves.indexOf(c), 1); rebuild(); }}, icon("close", 12)))));
     legend.hidden = !st.curves.length;
     showHint(false);
+    refresh();
   }
 
   // what to drop next, or that a custom series isn't there: they're computed by the time plots that show them
@@ -112,10 +113,7 @@ export function create(ctx, state = {}) {
     g.fillRect(r.x, r.y, r.w, r.h);
     const xt = ticks(x0, x1, r.w / 90), yt = ticks(y0, y1, r.h / 34);
     axes(g, col, r, xt, X, (v) => fmtTick(v, xt.step), yt, Y);
-    g.save();
-    g.beginPath();
-    g.rect(r.x, r.y, r.w, r.h);
-    g.clip();
+    clip(g, r);
     g.lineWidth = 1.25;
     for (const {c, x, y} of results) {
       g.strokeStyle = c.color;
@@ -130,21 +128,10 @@ export function create(ctx, state = {}) {
   function drawOverlay() {
     gOver.clearRect(0, 0, W, H);
     const {r, X, Y} = frame, g = gOver;
-    g.save();
-    g.beginPath();
-    g.rect(r.x, r.y, r.w, r.h);
-    g.clip();
+    clip(g, r);
     for (const res of results) {
       const px = store.valueAt(res.c.x, clock.t), py = store.valueAt(res.c.y, clock.t);
-      if (typeof px !== "number" || typeof py !== "number") continue;
-      g.fillStyle = col.bg;
-      g.beginPath();
-      g.arc(X(px), Y(py), 5.5, 0, 2 * Math.PI);
-      g.fill();
-      g.fillStyle = res.c.color;
-      g.beginPath();
-      g.arc(X(px), Y(py), 4, 0, 2 * Math.PI);
-      g.fill();
+      if (typeof px === "number" && typeof py === "number") marker(g, X(px), Y(py), 4, res.c.color, col);
     }
     g.restore();
     legend.querySelectorAll(".row").forEach((row, k) => {
@@ -180,15 +167,16 @@ export function create(ctx, state = {}) {
     invalidate();
   });
   cv.addEventListener("pointerup", () => { drag = null; });
-  cv.addEventListener("dblclick", () => { st.view = null; invalidate(); });
+  const fit = () => { st.view = null; invalidate(); };
+  cv.addEventListener("dblclick", fit);
   cv.addEventListener("contextmenu", (e) => {
     e.preventDefault();
     menu(e.clientX, e.clientY, [
-      {label: "Equal axes", checked: st.equal, fn: () => { st.equal = !st.equal; st.view = null; invalidate(); }},
-      {label: "Swap X and Y", fn: () => { for (const c of st.curves) [c.x, c.y] = [c.y, c.x]; st.view = null; rebuild(); refresh(); }},
-      {label: "Fit", fn: () => { st.view = null; invalidate(); }},
+      {label: "Equal axes", checked: st.equal, fn: () => { st.equal = !st.equal; fit(); }},
+      {label: "Swap X and Y", fn: () => { for (const c of st.curves) [c.x, c.y] = [c.y, c.x]; st.view = null; rebuild(); }},
+      {label: "Fit", fn: fit},
       {label: "Export PNG", fn: () => exportPng([base, cv], st.curves.map((c) => ({color: c.color, name: name(c), value: ""})), col.bg, col.fg, col.font, "xy")},
-      {label: "Remove all", disabled: !st.curves.length, fn: () => { st.curves = []; pendingX = null; rebuild(); refresh(); }},
+      {label: "Remove all", disabled: !st.curves.length, fn: () => { st.curves = []; pendingX = null; rebuild(); }},
     ]);
   });
 
@@ -213,6 +201,5 @@ export function create(ctx, state = {}) {
   }
 
   rebuild();
-  refresh();
   return pane;
 }

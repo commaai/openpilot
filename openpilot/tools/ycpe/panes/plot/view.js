@@ -3,7 +3,6 @@
 import {SEGMENT} from "/api.js";
 import {listeners} from "/dom.js";
 import {undoHistory} from "/history.js";
-import {perf} from "/perf.js";
 import {status} from "/status.js";
 
 export const PATHS_MIME = "application/x-ycpe-paths";
@@ -76,7 +75,6 @@ export const isUnloaded = (t) => unloadedSpans.some(([a, b]) => t >= a && t < b)
 // base redraws share the frame's budget (perf.left), so opening a layout or a segment landing spreads over a few
 // frames instead of stalling one. A redraw starts with MIN_MS left
 export const MIN_MS = 1.5;
-export const left = () => perf.left();
 
 // ms that inputs changing together (segments arriving) wait to recompute derived series as one
 export const RECOMPUTE_DEBOUNCE_MS = 200;

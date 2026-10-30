@@ -38,7 +38,7 @@ addEventListener("keydown", (e) => { if (e.key === "Escape" && open) close(); })
 // items: [{label, fn, checked?, disabled?} | null (separator)]; the arrow keys move the focus
 export function menu(x, y, items) {
   const check = (it) => it.checked !== undefined;
-  const rows = items.map((it) => it ? h("button", {class: `menu-row ${it.disabled ? "muted" : ""}`, role: check(it) ? "menuitemcheckbox" : "menuitem",
+  const rows = items.map((it) => it ? h("button", {class: "menu-row", role: check(it) ? "menuitemcheckbox" : "menuitem",
     "aria-checked": check(it) && String(!!it.checked), disabled: !!it.disabled, onclick: () => {
     close();
     it.fn();
