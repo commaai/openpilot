@@ -11,7 +11,7 @@ export const KINDS = {
 };
 export const API_KIND = {qlog: "qlogs", rlog: "logs", qcamera: "qcameras", fcamera: "cameras", ecamera: "ecameras", dcamera: "dcameras"};
 // a file's kind by its name; uncompressed logs come only from this machine (dropped or picked)
-const KIND_OF = {...Object.fromEntries(Object.entries(KINDS).flatMap(([k, files]) => files.map((f) => [f, k]))), rlog: "rlog", qlog: "qlog"};
+export const KIND_OF = {...Object.fromEntries(Object.entries(KINDS).flatMap(([k, files]) => files.map((f) => [f, k]))), rlog: "rlog", qlog: "qlog"};
 
 // ---- names: route.py's RE, SegmentRange and logreader.parse_indirect ----
 

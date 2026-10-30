@@ -1,5 +1,5 @@
-/* user mode's device settings: connect's MUI modals (DeviceSettingsModal, UploadQueue) in its dark-only palette, on
-   cnui.css's modal and paper */
+/* user mode's device settings: connect's MUI modals (DeviceSettingsModal, UploadQueue around connect-menus.css's table) in its
+   dark-only palette, on cnui.css's modal and paper */
 .cn-paper { top: 40%; left: 50%; width: 400px; max-width: 90%; padding: 16px; outline: none; transform: translate(-50%, -50%); }
 .cn-paper.cn-unpair { width: 360px; max-width: 80%; }
 .cn-paper.cn-upload-queue { top: 50%; width: max-content; }
@@ -48,12 +48,6 @@
 .cn-iconbtn { display: grid; place-items: center; width: 48px; height: 48px; padding: 0; border: 0; border-radius: 50%; background: none; color: #fff; cursor: pointer;
   transition: background-color .15s cubic-bezier(.4, 0, .2, 1); }
 .cn-iconbtn:hover { background: rgba(255,255,255,.08); }
-.cn-iconbtn.small { width: auto; height: auto; border-radius: 13px; }
-.cn-iconbtn.small:hover { background: none; }
-
-/* MUI's CircularProgress */
-.cn-uploads .cnui-ring { margin: 8px; color: #fff; }
-.cn-cancel-cell .cnui-ring { margin: 1.5px; }
 
 .cn-unpair-error, .cn-unpair-warning { display: flex; align-items: center; margin-top: 15px; padding: 10px; color: #fff; }
 .cn-unpair-error { background: rgba(255,0,0,.3); }
@@ -63,19 +57,3 @@
 .cn-unpair-warning a { color: #fff; text-decoration: underline; }
 .cn-unpair-buttons { display: flex; flex-wrap: wrap-reverse; align-items: baseline; justify-content: space-between; }
 .cn-unpaired { font-size: 14px; font-weight: 500; line-height: 1.71429; }
-
-.cn-uploads { max-height: calc(90vh - 98px); margin: 8px 0; overflow-y: auto; color: rgba(255,255,255,.9); text-align: left; }
-.cn-uploads p { margin: 1em 0; }
-.cn-uploads table { border-collapse: collapse; }
-.cn-uploads :is(th, td) { height: 25px; padding: 0 8px; }
-.cn-seg { display: flex; flex-wrap: wrap; }
-.cn-seg span { white-space: nowrap; }
-.cn-cancel-cell { text-align: center; }
-.cn-upload-progress { display: flex; align-items: center; justify-content: center; font-size: .8rem; }
-.cn-upload-progress > div { position: relative; width: 80%; height: 8px; margin-right: 6px; overflow: hidden; background: rgba(255,255,255,.3); }
-.cn-upload-progress > div::after { content: ""; position: absolute; inset: 0; background: rgba(255,255,255,.8); transform: scaleX(var(--p)); transform-origin: left;
-  transition: transform .5s linear; }
-@media (max-width: 599px) {
-  .cn-uploads :is(th, td) { padding: 0 4px; }
-  .cn-uploads :is(th:nth-child(4), td:nth-child(3):not(:last-child)) { display: none; }
-}

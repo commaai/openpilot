@@ -5,18 +5,17 @@ import {h} from "../dom.js";
 import {icon} from "../icons.js";
 import {isOnline} from "../app.js";
 import {canManage} from "./home.js";
-import {KINDS} from "../data/sources.js";
+import {KINDS, KIND_OF} from "../data/sources.js";
 
 export const UPLOADABLE = ["rlog", "fcamera", "ecamera", "dcamera"];  // qlogs and qcameras upload on their own
 export const LABELS = {qlog: "qlog", rlog: "rlog", qcamera: "qcamera", fcamera: "road", ecamera: "wide", dcamera: "driver"};
-const KIND_OF = Object.fromEntries(Object.entries(KINDS).flatMap(([kind, names]) => names.map((n) => [n, kind])));
 const WEEK = 7 * 86400;
 const POLL_MS = 2000;
 
-// ".../<dongle>/<route>/<segment>/<file>?sig" → {route, n, kind}
-function parseUploadUrl(url) {
+// ".../<dongle>/<route>/<segment>/<file>?sig" → {route, n, file, kind}
+export function parseUploadUrl(url) {
   const [route, n, file] = new URL(url).pathname.split("/").slice(-3);
-  return {route, n: Number(n), kind: KIND_OF[file]};
+  return {route, n: Number(n), file, kind: KIND_OF[file]};
 }
 
 // the "<route>--<segment>/<file>"s athena holds for an offline device, with when each request expires: [[fn, expiry]]
@@ -36,22 +35,74 @@ export const keysIn = (route, [r0, r1], kinds) => segmentsOf(route)
 // the key of an uploaded file's url (".../<segment>/<file>?sig") as kind
 export const urlKey = (url, kind) => `${new URL(url).pathname.split("/").at(-2)}/${kind}`;
 
-// has(key): the file is already uploaded. changed({uploaded}) is called on every state change; uploaded is true
-// when an upload finished, so the caller refreshes its file list.
-export function uploads(route, device, has, changed) {
-  const dongleId = route.fullname.split("|")[0], routeId = route.fullname.split("|")[1];
-  const states = new Map();  // key → {requested} | {queued, current, progress, paused, id} | {notFound} | {error}
-  let polling = null, alive = true;
-  const up = {
-    canUpload: false, metered: false, queue: [], cancelling: new Set(),
+// a device's upload queue: listUploadQueue every 2 s while the device is online and keep() holds, whether it's on a
+// metered connection, and cancel(ids) for those who manage the device. changed(polled) follows every change; polled
+// when the queue was just asked for. A failed ask (not registered, no access, athena down) stops the polling until the
+// next poll(). Without a device (it couldn't be fetched) it's offline.
+export function deviceQueue(device, changed, keep = () => true) {
+  const dongleId = device?.dongle_id;
+  let timer = 0, asks = 0;
+  const q = {
+    queue: [], loaded: false, error: null, metered: false, cancelling: new Set(), cancelError: null, disposed: false,
     offline: () => !device || !isOnline(device),
+    waiting: () => q.queue.filter((u) => !u.current).map((u) => u.id),  // the ids of those not uploading yet
+    cancel: null,  // for those who manage the device, once ready
+    ready: (async () => { if (device && await canManage(device)) q.cancel = cancel; })(),
+    poll, dispose() { q.disposed = true; clearTimeout(timer); },
+  };
+  const emit = (polled = false) => !q.disposed && changed(polled);
+
+  async function cancel(ids) {
+    for (const id of ids) q.cancelling.add(id);
+    q.cancelError = null;
+    emit();
+    try {
+      await api.athena(dongleId, "cancelUpload", {upload_id: ids});
+    } catch (err) {
+      for (const id of ids) q.cancelling.delete(id);
+      q.cancelError = err;
+    }
+    poll();
+  }
+
+  // asks now; of overlapping asks, only the latest counts
+  async function poll() {
+    clearTimeout(timer);
+    await q.ready;
+    if (q.disposed) return;
+    if (q.offline()) return emit();
+    const ask = ++asks;
+    try {
+      if (!q.loaded) q.metered = await api.athena(dongleId, "getNetworkMetered").catch(() => false);
+      const queue = await api.athena(dongleId, "listUploadQueue");
+      if (ask !== asks) return;
+      Object.assign(q, {queue, loaded: true, error: null});
+    } catch (err) {
+      if (ask === asks) { q.error = err; emit(); }
+      return;
+    }
+    q.cancelling = new Set([...q.cancelling].filter((id) => q.queue.some((u) => u.id === id)));
+    emit(true);
+    if (!q.disposed && keep()) timer = setTimeout(poll, POLL_MS);
+  }
+  return q;
+}
+
+// a route's uploads, on its device's queue. has(key): the file is already uploaded. changed({uploaded}) is called on
+// every state change; uploaded is true when an upload finished, so the caller refreshes its file list.
+export function uploads(route, device, has, changed) {
+  const [dongleId, routeId] = route.fullname.split("|");
+  const states = new Map();  // key → {requested} | {queued, current, progress, paused, id} | {notFound} | {error}
+  // asked for while anything is queued or requested
+  const up = Object.assign(deviceQueue(device, (polled) => polled ? sync() : emit(),
+    () => up.queue.length || [...states.values()].some((s) => s.requested)), {
+    canUpload: false,
     state: (key) => states.get(key),
     // the keys of these that can still be asked for
     missing: (keys) => keys.filter((k) => !has(k) && !states.get(k) && UPLOADABLE.includes(k.split("/")[1])),
-    request, cancel: null,  // for those who manage the device
-    dispose() { alive = false; clearTimeout(polling); },
-  };
-  const emit = (uploaded = false) => alive && changed({uploaded});
+    request,  // for those who manage the device
+  });
+  const emit = (uploaded = false) => !up.disposed && changed({uploaded});
 
   async function request(keys) {
     keys = up.missing(keys);
@@ -68,41 +119,26 @@ export function uploads(route, device, has, changed) {
       // a file is missing only when none of its names exist
       const failed = new Set(result?.failed || []);
       set(keys.filter((k) => { const [n, kind] = k.split("/"); return KINDS[kind].every((name) => failed.has(`${routeId}--${n}/${name}`)); }), {notFound: true});
-      poll();
+      up.poll();
     } catch (err) {
       set(keys.filter((k) => states.get(k)?.requested), {error: err.message});
     }
   }
 
-  async function cancel(ids) {
-    for (const id of ids) up.cancelling.add(id);
-    emit();
-    try {
-      await api.athena(dongleId, "cancelUpload", {upload_id: ids});
-    } finally {
-      poll();
-    }
-  }
-
-  // while anything is queued or requested, every 2 s
-  async function poll() {
-    clearTimeout(polling);
-    if (!alive || up.offline()) return;
-    up.queue = await api.athena(dongleId, "listUploadQueue").catch(() => []);
+  // the route's files in the queue just asked for: on their way, or done once they've left it
+  function sync() {
     const before = [...states].filter(([, s]) => s.queued).map(([k]) => k);
     const now = new Set();
-    for (const q of up.queue) {
-      const {route: r, n, kind} = parseUploadUrl(q.url);
+    for (const u of up.queue) {
+      const {route: r, n, kind} = parseUploadUrl(u.url);
       if (r !== routeId || !kind) continue;
       const key = `${n}/${kind}`;
       now.add(key);
-      states.set(key, {queued: true, id: q.id, current: q.current, progress: q.progress, paused: up.metered && !q.allow_cellular});
+      states.set(key, {queued: true, id: u.id, current: u.current, progress: u.progress, paused: up.metered && !u.allow_cellular});
     }
     const done = before.filter((k) => !now.has(k));
     for (const k of done) states.delete(k);
-    up.cancelling = new Set([...up.cancelling].filter((id) => up.queue.some((q) => q.id === id)));
     emit(done.length > 0);
-    if (up.queue.length || [...states.values()].some((s) => s.requested)) polling = setTimeout(poll, POLL_MS);
   }
 
   // uploads requested while the device was offline wait in athena's queue
@@ -115,17 +151,12 @@ export function uploads(route, device, has, changed) {
     emit();
   }
 
-  (async () => {
-    up.canUpload = !!device && await canManage(device);
-    if (up.canUpload) up.cancel = cancel;
+  up.ready.then(() => {
+    up.canUpload = !!up.cancel;
     emit();
-    if (up.offline()) {
-      if (up.canUpload) offlineQueue();
-      return;
-    }
-    up.metered = await api.athena(dongleId, "getNetworkMetered").catch(() => false);
-    poll();
-  })();
+    if (up.offline() && up.canUpload) offlineQueue();
+    up.poll();
+  });
   return up;
 }
 
@@ -148,82 +179,47 @@ export function uploadNotice(up, keys) {
     : "Device on a metered connection: uploads are paused until it's on wifi.");
 }
 
-// the device page's whole upload queue, refreshed every 2 s while it's on the page; resume() picks that up again when
-// the tab is shown. Offline, it's the requests waiting in athena for the device to come back.
+// the device page's whole upload queue, asked every 2 s while it's on the page; resume() asks again as the tab is
+// shown. Offline, it's the requests waiting in athena for the device to come back.
 export function deviceUploads(device) {
-  const dongleId = device.dongle_id;
   const el = h("div", {}, h("p", {class: "muted"}, "Loading…"));
-  const status = h("p", {class: "small error"});
-  const up = {queue: [], metered: false, cancelling: new Set(), offline: () => !isOnline(device), cancel: null};  // cancel: for those who manage it
-  let polling = 0, busy = false, first = true;
+  const q = deviceQueue(device, () => show(), () => el.isConnected);
+  const show = () => q.offline() ? offline().catch((err) => el.replaceChildren(failed(q, err))) : el.replaceChildren(uploadQueue(q));
 
-  async function cancel(ids) {
-    for (const id of ids) up.cancelling.add(id);
-    status.textContent = "";
-    show();
-    try {
-      await api.athena(dongleId, "cancelUpload", {upload_id: ids});
-    } catch (err) {
-      status.textContent = `Cancel failed: ${err.message}`;
+  async function offline() {
+    const waiting = q.cancel ? await offlineFiles(device.dongle_id) : [];
+    el.replaceChildren(h("p", {class: "muted"}, waiting.length ? "Device offline. These uploads start when it's back:" : "Device offline."));
+    if (waiting.length) {
+      el.append(h("table", {class: "list"},
+        h("tr", {}, h("th", {}, "file"), h("th", {}, "requested until")),
+        waiting.map(([fn, expiry]) => h("tr", {}, h("td", {class: "mono"}, fn), h("td", {class: "muted"}, new Date(expiry * 1000).toLocaleString())))));
     }
-    refresh();
   }
-
-  function show() {
-    el.replaceChildren(uploadQueue(up), status);
-  }
-
-  async function load() {
-    if (first) {
-      if (await canManage(device)) up.cancel = cancel;
-      if (!up.offline()) up.metered = await api.athena(dongleId, "getNetworkMetered").catch(() => false);
-      first = false;
-    }
-    if (up.offline()) {
-      const waiting = up.cancel ? await offlineFiles(dongleId) : [];
-      el.replaceChildren(h("p", {class: "muted"}, waiting.length ? "Device offline. These uploads start when it's back:" : "Device offline."));
-      if (waiting.length) {
-        el.append(h("table", {class: "list"},
-          h("tr", {}, h("th", {}, "file"), h("th", {}, "requested until")),
-          waiting.map(([fn, expiry]) => h("tr", {}, h("td", {class: "mono"}, fn), h("td", {class: "muted"}, new Date(expiry * 1000).toLocaleString())))));
-      }
-      return;
-    }
-    up.queue = await api.athena(dongleId, "listUploadQueue");
-    up.cancelling = new Set([...up.cancelling].filter((id) => up.queue.some((q) => q.id === id)));
-    show();
-  }
-
-  function refresh() {
-    clearTimeout(polling);
-    if (busy) return;
-    busy = true;
-    // an error (not registered, no access, athena down) stops the polling until Retry or the tab is shown again
-    load().then(() => {
-      if (!up.offline()) polling = setTimeout(() => el.isConnected && refresh(), POLL_MS);
-    }, (err) => {
-      el.replaceChildren(h("p", {class: "muted", title: err.message}, "Couldn't load the upload queue. ", h("button", {class: "button small", onclick: refresh}, "Retry")));
-    }).finally(() => { busy = false; });
-  }
-  el.resume = refresh;
+  el.resume = q.poll;
   return el;
 }
 
-export function uploadQueue(up) {
-  if (up.offline()) return h("p", {class: "muted"}, "Device offline.");
-  if (!up.queue.length) return h("p", {class: "muted"}, "No uploads.");
-  const waiting = up.queue.filter((q) => !q.current).map((q) => q.id);
+const failed = (q, err) => h("p", {class: "muted", title: err.message}, "Couldn't load the upload queue. ",
+  h("button", {class: "button small", onclick: q.poll}, "Retry"));
+
+// a device queue's table (deviceQueue's, or a route's uploads')
+export function uploadQueue(q) {
+  if (q.offline()) return h("p", {class: "muted"}, "Device offline.");
+  if (q.error) return failed(q, q.error);
+  if (!q.queue.length) return h("p", {class: "muted"}, "No uploads.");
+  const waiting = q.waiting();
   return h("div", {},
     h("table", {class: "list"},
       h("tr", {}, h("th", {}, "segment"), h("th", {}, "file"), h("th", {}, "progress"), h("th")),
-      up.queue.map((q) => {
-        const {route: r, n, kind} = parseUploadUrl(q.url);
+      q.queue.map((u) => {
+        const {route: r, n, kind} = parseUploadUrl(u.url);
         return h("tr", {},
           h("td", {class: "mono"}, `${r}--${n}`),
-          h("td", {}, LABELS[kind] ?? q.path),
-          h("td", {}, q.current ? h("progress", {max: 1, value: q.progress}) : up.metered && !q.allow_cellular ? "paused" : "pending"),
-          h("td", {}, q.current || !up.cancel ? "" : up.cancelling.has(q.id) ? h("span", {class: "spinner"})
-            : h("button", {class: "icon-btn", "aria-label": "Cancel upload", onclick: () => up.cancel([q.id])}, icon("cancel", 18))));
+          h("td", {}, LABELS[kind] ?? u.path),
+          h("td", {}, u.current ? h("progress", {max: 1, value: u.progress}) : q.metered && !u.allow_cellular ? "paused" : "pending"),
+          h("td", {}, u.current || !q.cancel ? "" : q.cancelling.has(u.id) ? h("span", {class: "spinner"})
+            : h("button", {class: "icon-btn", "aria-label": "Cancel upload", onclick: () => q.cancel([u.id])}, icon("cancel", 18))));
       })),
-    up.cancel && h("p", {}, h("button", {class: "button small", disabled: !waiting.length, onclick: () => up.cancel(waiting)}, "Cancel all")));
+    q.cancel && h("p", {}, h("button", {class: "button small", disabled: !waiting.length, onclick: () => q.cancel(waiting)}, "Cancel all")),
+    q.cancelError && h("p", {class: "small error"}, `Cancel failed: ${q.cancelError.message}`));
 }

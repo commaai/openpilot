@@ -4,7 +4,8 @@ import {api, auth, billingReachable} from "../api.js";
 import {h, fmt, css, copyButton, openModal} from "../dom.js";
 import {icon} from "../icons.js";
 import {cnIcon} from "./connect/icons.js";
-import {onlineMark, link, go, isOnline, devicesChanged} from "../app.js";
+import {onlineMark, link, go, devicesChanged} from "../app.js";
+import {deviceQueue} from "./files.js";
 
 const DATE = new Intl.DateTimeFormat(undefined, {year: "numeric", month: "short", day: "numeric"});
 const day = (unixSeconds) => unixSeconds ? DATE.format(unixSeconds * 1000) : null;
@@ -253,48 +254,18 @@ function unpairModal(device) {
   h("div", {class: "cn-unpair-buttons"}, cancel, confirm));
 }
 
-// connect's upload queue: what the device is sending, asked every 2 s while it's open
-function uploadsModal(device) {
-  const dongleId = device.dongle_id;
-  const body = h("div", {class: "cn-uploads"}, spinner(17));
-  const cancelling = new Set();
-  let queue = [], timer = 0;
-  const cancel = (ids) => {
-    ids = ids.filter((id) => queue.some((q) => q.id === id && !q.current));
-    for (const id of ids) cancelling.add(id);
-    show();
-    api.athena(dongleId, "cancelUpload", {upload_id: ids}).catch(() => {}).finally(poll);
+// connect's upload queue (connect-menus.js draws its table): what the device is sending, asked every 2 s while it's open
+async function uploadsModal(device) {
+  const {queueTable} = await import("../panes/connect-menus.js");
+  const q = deviceQueue(device, () => draw());
+  const body = h("div", {class: "cm-queue-body"});
+  const all = contained("Cancel All", () => q.cancel(q.waiting()));
+  const draw = () => {
+    all.disabled = !q.cancel || !q.waiting().length;
+    body.replaceChildren(queueTable(q));
   };
-  const all = contained("Cancel All", () => cancel(queue.map((q) => q.id)));
-  all.disabled = true;
-  function show() {
-    const offline = !isOnline(device);
-    all.disabled = offline || !queue.length;
-    if (offline) return body.replaceChildren(h("p", {}, "device offline"));
-    if (!queue.length) return body.replaceChildren(h("p", {}, "no uploads"));
-    // the one uploading first
-    const rows = [...queue.filter((q) => q.current), ...queue.filter((q) => !q.current)];
-    body.replaceChildren(h("table", {}, h("thead", {}, h("tr", {}, h("th", {}, "segment"), h("th", {}, "type"), h("th", {}, "progress"), h("th"))),
-      h("tbody", {}, rows.map((q) => {
-        const [route, n, file] = new URL(q.url).pathname.split("/").slice(-3), seg = `${route}--${n}`;
-        return h("tr", {}, h("td", {}, h("div", {class: "cn-seg"}, h("span", {}, seg.slice(0, 12)), h("span", {}, seg.slice(12)))),
-          h("td", {}, file.split(".")[0]),
-          q.current ? h("td", {}, h("div", {class: "cn-upload-progress"}, h("div", {style: `--p: ${q.progress}`})))
-            : [h("td", {}, q.paused ? "paused" : "pending"), h("td", {class: "cn-cancel-cell"}, cancelling.has(q.id) ? spinner(15)
-              : h("button", {class: "cn-iconbtn small", "aria-label": "Cancel upload", onclick: () => cancel([q.id])}, cnIcon("cancel", 18)))]);
-      }))));
-  }
-  async function poll() {
-    clearTimeout(timer);
-    if (!el.isConnected) return;
-    if (isOnline(device)) {
-      queue = await api.athena(dongleId, "listUploadQueue").catch(() => queue);
-      for (const id of cancelling) if (!queue.some((q) => q.id === id)) cancelling.delete(id);
-    }
-    show();
-    if (isOnline(device)) timer = setTimeout(poll, 2000);
-  }
-  const el = modal("cn-upload-queue", () => clearTimeout(timer), title("Upload queue", dongleId), body,
+  draw();
+  const el = modal("cn-upload-queue", q.dispose, title("Upload queue", device.dongle_id), body,
     h("div", {class: "cn-modal-buttons"}, all, contained("Close", () => el.close())));
-  poll();
+  q.poll();
 }

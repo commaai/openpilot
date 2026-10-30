@@ -61,16 +61,16 @@
 .cm-tip.above::after { content: ""; position: absolute; top: 100%; left: calc(var(--arrow) - 7px); border: 7px solid transparent; border-top-color: #1e2224; border-bottom: 0; }
 
 /* MUI's CircularProgress (cnui.js), white, centered on the line as connect's */
-:is(.cm-modal, .cm-dialog) .cnui-progress { vertical-align: middle; }
+:is(.cm-modal, .cm-dialog, .cm-queue-body) .cnui-progress { vertical-align: middle; }
 
-/* the upload queue: a paper in the middle of a dimmed window */
+/* the upload queue: a paper in the middle of a dimmed window, and its table (settings.js shows it too) */
 .cm-dialog { width: max-content; max-width: 90%; max-height: none; box-sizing: border-box; padding: 16px; border: 0; border-radius: 4px; outline: 0; background: #30373b;
   box-shadow: 0 11px 15px -7px rgba(0,0,0,.2), 0 24px 38px 3px rgba(0,0,0,.14), 0 9px 46px 8px rgba(0,0,0,.12); }
 .cm-dialog::backdrop { background: rgba(0,0,0,.5); }
 .cm-dialog-title { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; }
 .cm-dialog-h { font-size: 21px; font-weight: 500; line-height: 1.17; }
 .cm-caption { margin-left: 8px; color: rgba(255,255,255,.7); font-size: 12px; line-height: 1.375; }
-.cm-queue-body { margin: 8px 0; overflow-y: auto; color: rgba(255,255,255,.9); text-align: left; }
+.cm-queue-body { max-height: calc(90vh - 98px); margin: 8px 0; overflow-y: auto; color: rgba(255,255,255,.9); text-align: left; }
 .cm-queue-body p { margin: 0; }
 .cm-queue { border-collapse: collapse; }
 .cm-queue :is(th, td) { height: 25px; padding: 0 8px; }
