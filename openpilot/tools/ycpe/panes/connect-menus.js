@@ -6,7 +6,7 @@ import {h, css, openModal} from "/dom.js";
 import {isOnline} from "/app.js";
 import {canManage} from "/pages/home.js";
 import {API_KIND} from "/data/sources.js";
-import {uploads, keysIn, urlKey} from "/pages/files.js";
+import {uploads, keysIn, urlKey, parseUploadUrl} from "/pages/files.js";
 import {cnIcon} from "/pages/connect/icons.js";
 import {progress} from "/pages/cnui.js";
 
@@ -246,34 +246,42 @@ function tip(el, text, above = false) {
   return el;
 }
 
-// connect's upload queue dialog: the device's queue (this drive's and others'), progress, cancel one or all. It owns
-// the uploads from here: closing it ends their polling
+// connect's upload queue dialog, over a route's uploads: it owns them from here, closing it ends their polling
 function queueDialog(up, dongle, watchers) {
-  const body = h("div", {class: "cm-queue-body", style: `max-height: ${innerHeight * 0.9 - 98}px`});
-  const cancelAll = h("button", {class: "cm-dbutton", onclick: () => up.cancel?.(up.queue.filter((q) => !q.current).map((q) => q.id))}, "Cancel All");
+  const body = h("div", {class: "cm-queue-body"});
+  const cancelAll = h("button", {class: "cm-dbutton", onclick: () => up.cancel(up.waiting())}, "Cancel All");
   const dialog = openModal({class: "cm-dialog", "aria-labelledby": "upload-queue-modal", onclose: () => { watchers.clear(); up.dispose(); }},
     h("div", {class: "cm-dialog-title"}, h("span", {class: "cm-dialog-h", id: "upload-queue-modal"}, "Upload queue"), h("span", {class: "cm-caption"}, dongle)),
     h("hr"), body,
     h("div", {class: "cm-dialog-buttons"}, cancelAll, h("button", {class: "cm-dbutton", onclick: () => dialog.close()}, "Close")));
-  const empty = up.queue;  // replaced by the first answer
   function draw() {
-    const narrow = innerWidth < 600, offline = up.offline(), queue = offline ? [] : up.queue;
-    cancelAll.disabled = !queue.some((q) => !q.current);
-    if (!queue.length) return body.replaceChildren(offline ? h("p", {}, "device offline") : up.queue !== empty ? h("p", {}, "no uploads") : spinner(17));
-    body.replaceChildren(h("table", {class: "cm-queue"},
-      h("thead", {}, h("tr", {}, h("th", {}, "segment"), h("th", {}, "type"), h("th", {}, "progress"), !narrow && h("th"))),
-      h("tbody", {}, [...queue].sort((a, b) => b.current - a.current).map((q) => {
-        const [route, n, file] = new URL(q.url).pathname.split("/").slice(-3), seg = `${route}--${n}`;
-        return h("tr", {},
-          h("td", {}, h("div", {class: "cm-seg"}, h("span", {}, seg.slice(0, 12)), h("span", {}, seg.slice(12)))),
-          h("td", {}, file.split(".")[0].slice(0, narrow ? 4 : 64)),
-          q.current
-            ? h("td", {}, h("div", {class: "cm-progress"}, h("div", {style: `transform: translateX(${q.progress * 100 - 100}%)`})))
-            : [!narrow && h("td", {}, up.metered && !q.allow_cellular ? "paused" : "pending"),
-              h("td", {class: "cm-cancel"}, up.cancelling.has(q.id) ? spinner(15)
-                : up.cancel && h("button", {"aria-label": "Cancel upload", onclick: () => up.cancel([q.id])}, cnIcon("cancel", 18)))]);
-      }))));
+    cancelAll.disabled = !up.cancel || !up.waiting().length;
+    body.replaceChildren(queueTable(up));
   }
   watchers.add(draw);
   draw();
+}
+
+// connect's upload queue table (Files/UploadQueue.jsx), for its dialog here and settings': the device's queue (this
+// drive's and others', pages/files.js deviceQueue) with the one uploading first, its progress, and a cancel for each
+// of the rest
+export function queueTable(q) {
+  const narrow = innerWidth < 600;
+  if (q.offline()) return h("p", {}, "device offline");
+  if (q.error) return h("p", {}, "unable to load the upload queue");
+  if (!q.loaded) return spinner(17);
+  if (!q.queue.length) return h("p", {}, "no uploads");
+  return h("table", {class: "cm-queue"},
+    h("thead", {}, h("tr", {}, h("th", {}, "segment"), h("th", {}, "type"), h("th", {}, "progress"), !narrow && h("th"))),
+    h("tbody", {}, [...q.queue].sort((a, b) => b.current - a.current).map((u) => {
+      const {route, n, file} = parseUploadUrl(u.url), seg = `${route}--${n}`;
+      return h("tr", {},
+        h("td", {}, h("div", {class: "cm-seg"}, h("span", {}, seg.slice(0, 12)), h("span", {}, seg.slice(12)))),
+        h("td", {}, file.split(".")[0].slice(0, narrow ? 4 : 64)),
+        u.current
+          ? h("td", {}, h("div", {class: "cm-progress"}, h("div", {style: `transform: translateX(${u.progress * 100 - 100}%)`})))
+          : [!narrow && h("td", {}, q.metered && !u.allow_cellular ? "paused" : "pending"),
+            h("td", {class: "cm-cancel"}, q.cancelling.has(u.id) ? spinner(15)
+              : q.cancel && h("button", {"aria-label": "Cancel upload", onclick: () => q.cancel([u.id])}, cnIcon("cancel", 18)))]);
+    })));
 }
