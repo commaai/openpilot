@@ -6,11 +6,11 @@ import {importLayout, exportLayout, uniqueCustoms, customsOf} from "./import.js"
 
 css(new URL("./picker.css", import.meta.url));
 
-// jotpluggler's own layouts
+// the reference layouts (ref/), from jotpluggler
 const REFERENCES = ["cameras-and-map", "camera-timings", "CAN-bus-debug", "can-states", "controls_mismatch_debug", "driver-monitoring-debug",
   "gps", "gps_vs_llk", "locationd_debug", "longitudinal", "max-torque-debug", "new-layout", "system_lag_debug", "thermal_debug",
   "torque-controller", "tuning", "ublox-debug"];
-const refUrl = (name) => `https://raw.githubusercontent.com/commaai/openpilot/master/openpilot/tools/jotpluggler/layouts/${name}.json`;
+const refUrl = (name) => new URL(`./ref/${name}.json`, import.meta.url).href;
 const TRUSTED = new Set(REFERENCES.map(refUrl));
 
 // src: a File, a URL, the layout text itself or a reference's name (as ?layout= may hold any of those, like

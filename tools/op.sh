@@ -332,11 +332,6 @@ function op_build() {
   fi
 }
 
-function op_juggle() {
-  op_before_cmd
-  op_run_command openpilot/tools/plotjuggler/juggle.py "$@"
-}
-
 function op_lint() {
   op_before_cmd
   op_run_command scripts/lint/lint.sh "$@"
@@ -350,11 +345,6 @@ function op_test() {
 function op_replay() {
   op_before_cmd
   op_run_command openpilot/tools/replay/replay "$@"
-}
-
-function op_cabana() {
-  op_before_cmd
-  op_run_command openpilot/tools/cabana/cabana "$@"
 }
 
 function op_sim() {
@@ -467,9 +457,7 @@ function op_default() {
   echo -e "  ${BOLD}stop${NC}         Stops openpilot"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands [Tooling]:${NC}"
-  echo -e "  ${BOLD}juggle${NC}       Run PlotJuggler"
   echo -e "  ${BOLD}replay${NC}       Run Replay"
-  echo -e "  ${BOLD}cabana${NC}       Run Cabana"
   echo -e "  ${BOLD}clip${NC}         Run clip (linux only)"
   echo -e "  ${BOLD}docs${NC}         Build or serve the openpilot documentation"
   echo -e "  ${BOLD}adb${NC}          Run adb shell"
@@ -499,9 +487,6 @@ function op_default() {
   echo ""
   echo "  op build -j4"
   echo "          Compile openpilot using 4 cores"
-  echo ""
-  echo "  op juggle --demo"
-  echo "          Run PlotJuggler on the demo route"
 }
 
 
@@ -521,8 +506,6 @@ function _op() {
     esim )          shift 1; op_esim "$@" ;;
     setup )         shift 1; op_setup "$@" ;;
     build )         shift 1; op_build "$@" ;;
-    juggle )        shift 1; op_juggle "$@" ;;
-    cabana )        shift 1; op_cabana "$@" ;;
     lint )          shift 1; op_lint "$@" ;;
     test )          shift 1; op_test "$@" ;;
     replay )        shift 1; op_replay "$@" ;;

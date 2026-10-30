@@ -6,13 +6,13 @@ Check out [this blog post](https://blog.comma.ai/how-to-write-a-car-port-for-ope
 
 Testing car ports in your car is very time-consuming. Check out these utilities to do basic checks on your work before running it in your car.
 
-### [Cabana](/openpilot/tools/cabana/README.md)
+### [ycpe](/openpilot/tools/ycpe/README.md)
 
 View your car's CAN signals through DBC files, which openpilot uses to parse and create messages that talk to the car.
 
 Example:
 ```bash
-> openpilot/tools/cabana/cabana '1bbe6bf2d62f58a8|2022-07-14--17-11-43'
+> openpilot/tools/ycpe/serve.py   # then open http://localhost:3000/1bbe6bf2d62f58a8/2022-07-14--17-11-43/can
 ```
 
 ### [tools/car_porting/auto_fingerprint.py](/tools/car_porting/auto_fingerprint.py)
