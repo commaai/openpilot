@@ -7,3 +7,4 @@ fi
 # Reset filters and hooks since releases exclude .venv.
 git config --local core.hooksPath "$(git rev-parse --git-common-dir)/hooks"
 git lfs install --local --force
+./scripts/lfs_transfer.py install
