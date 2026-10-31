@@ -25,11 +25,12 @@ Validator = Callable[[Any], bool]
 def boolean(v: Any) -> bool:
   return isinstance(v, bool)
 
-def integer(v: Any) -> bool:
-  return isinstance(v, int) and not isinstance(v, bool)
+def integer(lo: int, hi: int) -> Validator:
+  return lambda v: isinstance(v, int) and not isinstance(v, bool) and lo <= v <= hi
 
-def number(v: Any) -> bool:
-  return isinstance(v, (int, float)) and not isinstance(v, bool)
+def number(lo: float, hi: float) -> Validator:
+  # also rejects NaN and inf, which json.loads accepts
+  return lambda v: isinstance(v, (int, float)) and not isinstance(v, bool) and lo <= v <= hi
 
 def regex(pattern: str) -> Validator:
   p = re.compile(pattern, re.ASCII)

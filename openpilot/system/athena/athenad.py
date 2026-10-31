@@ -89,7 +89,7 @@ UPLOAD_HEADERS = dict_of(regex(r'[\w\-]+'), regex(PRINTABLE))
 UPLOAD_ID = regex(r'[0-9a-f]{40}')
 CLIP_FILENAME = regex(r'[\w\-][\w\-.]*')
 UPLOAD_FILE = struct(fn=regex(DATA_PATH), url=UPLOAD_URL, headers=UPLOAD_HEADERS,
-                     allow_cellular=boolean, priority=integer)
+                     allow_cellular=boolean, priority=integer(0, DEFAULT_UPLOAD_PRIORITY))
 
 
 class UploadTOSAdapter(HTTPAdapter):
@@ -361,7 +361,7 @@ def _do_upload(upload_item: UploadItem, callback: Callable | None = None) -> req
 
 
 # security: user should be able to request any message from their car
-@dispatcher.add_method(service=one_of(*SERVICE_LIST), timeout=integer)
+@dispatcher.add_method(service=one_of(*SERVICE_LIST), timeout=integer(0, 10_000))
 def getMessage(service: str, timeout: int = 1000) -> dict:
   socket = messaging.sub_sock(service, timeout=timeout)
   try:
@@ -617,11 +617,12 @@ class VideoClips:
 
 
 video_clips = VideoClips()
-dispatcher.add_method(video_clips.createClip, route=regex(RE.ROUTE_NAME), source_start_time=number, source_end_time=number,
-                      clip=struct(camera=regex(r'[a-z]*camera\.hevc'), filename=CLIP_FILENAME, bitrate=number, speedup=integer))
+dispatcher.add_method(video_clips.createClip, route=regex(RE.ROUTE_NAME),
+                      source_start_time=number(0, 24*3600), source_end_time=number(0, 24*3600),
+                      clip=struct(camera=regex(r'[a-z]*camera\.hevc'), filename=CLIP_FILENAME, bitrate=number(1, 20), speedup=integer(1, 10)))
 dispatcher.add_method(video_clips.getClipState, route=optional(regex(RE.ROUTE_NAME)))
 dispatcher.add_method(video_clips.deleteClip, filename=CLIP_FILENAME)
-dispatcher.add_method(video_clips.getClipChunk, filename=CLIP_FILENAME, offset=integer)
+dispatcher.add_method(video_clips.getClipChunk, filename=CLIP_FILENAME, offset=integer(0, 2**32))
 
 
 @dispatcher.add_method(fn=regex(DATA_PATH), url=UPLOAD_URL, headers=UPLOAD_HEADERS)
@@ -699,10 +700,8 @@ def cancelUpload(upload_id: str | list[str]) -> dict[str, int | str]:
   cancelled_uploads.update(cancelled_ids)
   return {"success": 1}
 
-@dispatcher.add_method(latitude=number, longitude=number)
+@dispatcher.add_method(latitude=number(-90, 90), longitude=number(-180, 180))
 def setNavDestination(latitude: float, longitude: float) -> dict[str, int | str]:
-  if not (-90 <= latitude <= 90 and -180 <= longitude <= 180):
-    return {"success": 0, "error": "Invalid destination coordinates"}
   Params().put("NavDestination", {"latitude": latitude, "longitude": longitude}, block=True)
   return {"success": 1}
 
