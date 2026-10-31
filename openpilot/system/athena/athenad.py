@@ -83,9 +83,8 @@ UploadFilesToUrlResponse = dict[str, int | list[UploadItemDict] | list[str]]
 
 # param validators for RPC inputs
 DATA_PATH = r'(?!.*\.\.)[\w\-.][\w\-./]*'  # relative to log root
-PRINTABLE = r'[\x20-\x7e]*'
 UPLOAD_URL = regex(r'https?://[\x21-\x7e]+')
-UPLOAD_HEADERS = dict_of(regex(r'[\w\-]+'), regex(PRINTABLE))
+UPLOAD_HEADERS = dict_of(regex(r'[\w\-]+'), regex(r'[\x20-\x7e]*'))
 UPLOAD_ID = regex(r'[0-9a-f]{40}')
 CLIP_FILENAME = regex(r'[\w\-][\w\-.]*')
 UPLOAD_FILE = struct({"fn": regex(DATA_PATH), "url": UPLOAD_URL, "headers": UPLOAD_HEADERS},
@@ -146,7 +145,6 @@ class UploadItem:
     return self.priority == other.priority
 
 
-dispatcher.add_method(lambda s: s, name="echo", s=regex(PRINTABLE))
 recv_queue: Queue[str] = queue.Queue()
 send_queue: Queue[tuple[int, int, str]] = queue.PriorityQueue()
 upload_queue: Queue[UploadItem] = queue.PriorityQueue()

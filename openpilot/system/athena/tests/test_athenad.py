@@ -128,9 +128,6 @@ class TestAthenadMethods(OpenpilotTestCase):
     assert dispatcher["clearNavDestination"]() == {"success": 1}
     assert self.params.get("NavDestination") is None
 
-  def test_echo(self):
-    assert dispatcher["echo"]("bob") == "bob"
-
   def test_get_message(self):
     with self.assertRaises(TimeoutError) as _:
       dispatcher["getMessage"]("controlsState", timeout=100)
@@ -496,9 +493,9 @@ class TestAthenadMethods(OpenpilotTestCase):
     thread.start()
     try:
       # with params
-      athenad.recv_queue.put_nowait(json.dumps({"method": "echo", "params": ["hello"], "jsonrpc": "2.0", "id": 0}))
+      athenad.recv_queue.put_nowait(json.dumps({"method": "cancelUpload", "params": ["0" * 40], "jsonrpc": "2.0", "id": 0}))
       _, _, resp = athenad.send_queue.get(timeout=3)
-      assert json.loads(resp) == {'result': 'hello', 'id': 0, 'jsonrpc': '2.0'}
+      assert json.loads(resp) == {'result': {'success': 0, 'error': 'not found'}, 'id': 0, 'jsonrpc': '2.0'}
       # without params
       athenad.recv_queue.put_nowait(json.dumps({"method": "getNetworkType", "jsonrpc": "2.0", "id": 0}))
       _, _, resp = athenad.send_queue.get(timeout=3)
