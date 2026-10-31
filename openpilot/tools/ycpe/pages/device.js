@@ -1,7 +1,7 @@
 // the device page: header with location map, then tabs for drives, preserved drives, uploads, users, logs and settings.
 // In user mode it's connect's dashboard: the map, the device's name and buttons, its totals and the drives as cards
 import {api, auth, engagedFraction, utcTimes, versionAtLeast} from "../api.js";
-import {h, fmt, isMetric, openModal, toast} from "../dom.js";
+import {h, fmt, isMetric, toast} from "../dom.js";
 import {icon} from "../icons.js";
 import {devicesChanged, go, isOnline, link, onlineMark} from "../app.js";
 import {perf} from "../perf.js";
@@ -322,7 +322,7 @@ function drivesSection(device, user) {
 const defaultRange = () => [firstPageEnd() - 365 * DAY, firstPageEnd()];
 
 // connect's TimeSelect: a start and an end day within the last year, kept on Save
-function timeSelect(range, onSave) {
+async function timeSelect(range, onSave) {
   const [t0, t1] = range || defaultRange();
   const today = isoDay(Date.now()), yearAgo = isoDay(Date.now() - 365 * DAY);
   const start = h("input", {type: "date", min: yearAgo, max: today, value: isoDay(t0), onchange: () => {
@@ -334,17 +334,17 @@ function timeSelect(range, onSave) {
     if (end.value && end.value < start.value) end.value = start.value;
   }});
   const field = (label, input) => h("label", {class: "cn-ts-field"}, h("span", {}, label), input);
-  const el = openModal({class: "cn-dialog cn-ts"},
-    h("div", {class: "cn-ts-paper", tabindex: -1},
-      h("div", {class: "cn-ts-fields"}, field("Start date:", start), field("End date:", end)),
-      h("hr"),
-      h("div", {class: "cn-ts-buttons"},
-        h("button", {class: "cn-ts-btn cancel", onclick: () => el.close()}, "Cancel"),
-        h("button", {class: "cn-ts-btn save", onclick: () => {
-          el.close();
-          onSave([new Date(`${start.value}T00:00`).getTime(), new Date(`${end.value}T23:59:59.999`).getTime()]);
-        }}, "Save"))));
-  el.firstChild.focus();  // as MUI's modal: the paper, not the first field
+  const {cnModal} = await import("./cnui.js");
+  const {el, paper} = cnModal("Filter drives", "cn-ts");
+  paper.append(
+    h("div", {class: "cn-ts-fields"}, field("Start date:", start), field("End date:", end)),
+    h("hr"),
+    h("div", {class: "cn-ts-buttons"},
+      h("button", {class: "cnui-btn grey", onclick: () => el.close()}, "Cancel"),
+      h("button", {class: "cnui-btn light", onclick: () => {
+        el.close();
+        onSave([new Date(`${start.value}T00:00`).getTime(), new Date(`${end.value}T23:59:59.999`).getTime()]);
+      }}, "Save")));
 }
 
 // connect's totals: distance, drives and hours, the numbers bold

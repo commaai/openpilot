@@ -6,7 +6,7 @@
 .cn-card { display: flex; flex-direction: column; gap: 16px; margin: 16px; border-radius: 8px; background: linear-gradient(#30373b 0%, #272d30 10%, #1d2225 100%); }
 .cn-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: -16px; padding: 12px; }
 .cn-icon { display: flex; flex-shrink: 0; align-items: center; justify-content: center; width: 48px; height: 48px; padding: 0; border: 0; border-radius: 50%;
-  background: none; color: #fff; cursor: pointer; transition: background-color .15s cubic-bezier(.4,0,.2,1); }
+  background: none; color: #fff; cursor: pointer; transition: background-color .15s var(--mui-ease); }
 .cn-icon:hover { background: rgba(255,255,255,.08); }
 .cn-icon:disabled { color: rgba(255,255,255,.3); background: none; cursor: default; }
 .cn-when { min-width: 0; font-size: 18px; font-weight: 500; line-height: 28px; text-align: left; }
@@ -72,7 +72,7 @@
   background: #0c0e0f; }
 @media (min-width: 1536px) { .cn-controls { margin: 0 0 0 calc(30% - 206px); } }
 .cn-controls button { position: relative; display: flex; flex-shrink: 0; align-items: center; justify-content: center; height: 40px; padding: 0; border: 0; border-radius: 50%;
-  background: none; cursor: pointer; transition: background-color .15s cubic-bezier(.4,0,.2,1); }
+  background: none; cursor: pointer; transition: background-color .15s var(--mui-ease); }
 .cn-controls button:hover:not(:disabled) { background-color: rgba(255,255,255,.08); }
 :is(.cn-jump, .cn-mute, .cn-play)::after { content: ""; position: absolute; top: 0; bottom: 0; width: 1px; background: #1e2224; }
 .cn-jump { width: 40px; margin-right: 1px; color: #535f64; }

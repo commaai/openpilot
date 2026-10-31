@@ -3,10 +3,9 @@
 [data-theme="dark"] { --cnui-fg: #fff; --cnui-paper: #30373b; --cnui-deep: #1e2224; --cnui-on: #1e2224; }
 .cnui-icon { flex: none; }
 
-/* Material UI's circular progress: the svg turns, its arc grows and shrinks */
-.cnui-progress { flex: none; color: #57a9e3; animation: cn-rotate 1.4s linear infinite; }
+/* Material UI's circular progress: the svg turns (pages.css spin), its arc grows and shrinks */
+.cnui-progress { flex: none; color: #57a9e3; animation: spin 1.4s linear infinite; }
 .cnui-progress circle { stroke: currentColor; stroke-dasharray: 80px, 200px; stroke-dashoffset: 0; animation: cn-dash 1.4s ease-in-out infinite; }
-@keyframes cn-rotate { to { transform: rotate(360deg); } }
 @keyframes cn-dash {
   0% { stroke-dasharray: 1px, 200px; stroke-dashoffset: 0; }
   50% { stroke-dasharray: 100px, 200px; stroke-dashoffset: -15px; }
@@ -15,7 +14,7 @@
 
 /* connect's own spinner, where it isn't Material UI's: a ring with a gap, --size px, in currentColor */
 .cnui-ring { display: inline-block; box-sizing: border-box; width: var(--size); height: var(--size); border: calc(var(--size) / 12) solid currentColor;
-  border-right-color: transparent; border-radius: 50%; animation: cn-rotate 1.4s linear infinite; }
+  border-right-color: transparent; border-radius: 50%; animation: spin 1.4s linear infinite; }
 
 /* connect's commacare pill, a link to what it is */
 .cnui-care { display: inline-flex; align-items: center; padding: 6px 14px 6px 12px; border: 1px solid #1a974e; border-radius: 12px; color: #1a974e;
@@ -52,31 +51,35 @@
 .cnui-modal { position: fixed; inset: 0; width: 100%; max-width: none; height: 100%; max-height: none; margin: 0; padding: 0; border: 0; background: none;
   color: var(--cnui-fg); font: 16px/1.5 "Inter", sans-serif; overflow: hidden; }
 .cnui-modal:focus-visible { outline: none; }
-.cnui-modal::backdrop { background: rgba(0, 0, 0, .5); transition: opacity 225ms cubic-bezier(.4, 0, .2, 1); }
+.cnui-modal::backdrop { background: rgba(0, 0, 0, .5); transition: opacity 225ms var(--mui-ease); }
 @starting-style { .cnui-modal[open]::backdrop { opacity: 0; } }
 .cnui-paper { position: absolute; box-sizing: border-box; border-radius: 4px; background: var(--cnui-paper); color: var(--cnui-fg);
-  box-shadow: 0 1px 5px 0 rgba(0,0,0,.2), 0 2px 2px 0 rgba(0,0,0,.14), 0 3px 1px -2px rgba(0,0,0,.12); }
+  box-shadow: var(--mui-shadow-2); }
 .cnui-modal :where(button) { font-family: inherit; }
 .cnui-paper hr { height: 1px; margin: 0; border: 0; background: rgb(from var(--cnui-fg) r g b / .12); }
+.cnui-title { margin: 0; font-size: 21px; font-weight: 500; line-height: 1.16667; }
 
 /* Material UI's buttons as connect styles them: text, and contained */
 .cnui-btn { display: inline-flex; box-sizing: border-box; align-items: center; justify-content: center; min-width: 64px; min-height: 36px; padding: 8px 16px;
   border: 0; border-radius: 4px; background: none; color: var(--cnui-fg); font: 500 14px/1.4 "Inter", sans-serif; cursor: pointer;
-  transition: background-color 250ms cubic-bezier(.4, 0, .2, 1), box-shadow 250ms cubic-bezier(.4, 0, .2, 1); -webkit-tap-highlight-color: transparent; }
+  transition: background-color 250ms var(--mui-ease), box-shadow 250ms var(--mui-ease); -webkit-tap-highlight-color: transparent; }
 .cnui-btn:hover { background: rgb(from var(--cnui-fg) r g b / .1); }
 .cnui-btn:disabled { color: rgb(from var(--cnui-fg) r g b / .3); cursor: default; background: none; }
 .cnui-btn:focus-visible { outline: none; background: rgb(from var(--cnui-fg) r g b / .12); }
 /* a contained grey one (connect's dialog buttons) */
-.cnui-btn.grey { background: #5c696f; color: #fff; box-shadow: 0 1px 5px 0 rgba(0,0,0,.2), 0 2px 2px 0 rgba(0,0,0,.14), 0 3px 1px -2px rgba(0,0,0,.12); }
+.cnui-btn.grey { background: #5c696f; color: #fff; box-shadow: var(--mui-shadow-2); }
 .cnui-btn.grey:hover { background: #4b5559; }
 .cnui-btn.grey:disabled { background: #4b5559; color: rgba(255, 255, 255, .3); box-shadow: none; }
+/* a contained white one (TimeSelect's Save) */
+.cnui-btn.light { background: var(--cnui-fg); color: #272c2f; box-shadow: var(--mui-shadow-2); }
+.cnui-btn.light:hover { background: rgb(from var(--cnui-fg) r g b / .7); }
 /* connect's white pill */
 .cnui-btn.white { border-radius: 18px; background: var(--cnui-fg); color: var(--cnui-on); }
 .cnui-btn.white:hover { background: rgb(from var(--cnui-fg) r g b / .7); color: var(--cnui-on); }
 .cnui-btn.white:disabled { background: rgb(from var(--cnui-fg) r g b / .7); color: var(--cnui-on); }
 /* an icon button: 48px round, its ripple left out as connect leaves it */
 .cnui-ibtn { display: inline-flex; flex: none; align-items: center; justify-content: center; box-sizing: border-box; width: 48px; height: 48px; padding: 12px;
-  border: 0; border-radius: 50%; background: none; color: var(--cnui-fg); cursor: pointer; transition: background-color 150ms cubic-bezier(.4, 0, .2, 1); -webkit-tap-highlight-color: transparent; }
+  border: 0; border-radius: 50%; background: none; color: var(--cnui-fg); cursor: pointer; transition: background-color 150ms var(--mui-ease); -webkit-tap-highlight-color: transparent; }
 .cnui-ibtn:hover { background: rgb(from var(--cnui-fg) r g b / .1); }
 .cnui-ibtn:disabled { color: rgb(from var(--cnui-fg) r g b / .3); background: none; cursor: default; }
 

@@ -6,6 +6,7 @@
 import {SEGMENT, api, segmentAt, segmentAtTime} from "/api.js";
 import {h, css} from "/dom.js";
 import {cnIcon} from "/pages/connect/icons.js";
+import {segmented} from "/pages/cnui.js";
 import {loadPane} from "/panes.js";
 import {link} from "/app.js";
 import {strip} from "./strip.js";
@@ -26,14 +27,6 @@ const HMS = new Intl.DateTimeFormat(undefined, {hour: "2-digit", minute: "2-digi
 const DAY = new Intl.DateTimeFormat(undefined, {month: "short", day: "numeric"});
 const YEAR_DAY = new Intl.DateTimeFormat(undefined, {month: "short", day: "numeric", year: "numeric"});
 const WEEKDAY = new Intl.DateTimeFormat(undefined, {weekday: "long"});
-
-// connect's segmented buttons; set(key) shows which is on (null: none). The label's span is what connect's menus
-// open from
-function segmented(options, pick) {
-  const buttons = Object.entries(options).map(([key, label]) => h("button", {class: "cn-option", "data-key": key, "aria-pressed": "false",
-    onclick: (e) => pick(key, e.currentTarget.firstChild)}, h("span", {}, label)));
-  return {el: h("div", {class: "cn-options"}, buttons), set(on) { for (const b of buttons) b.ariaPressed = String(b.dataset.key === on); }};
-}
 
 export function create(ctx, state) {
   const {clock, route, perf} = ctx;
@@ -89,9 +82,9 @@ export function create(ctx, state) {
   }
 
   let media = state.media === "map" ? "map" : "video";
-  const mediaOptions = segmented({video: "Video", map: "Map"}, (key) => { media = key; showMedia(); });
+  const mediaOptions = segmented(["cn-options", "cn-option"], [["video", "Video"], ["map", "Map"]], (key) => { media = key; showMedia(); });
   // connect's menus, over the button
-  const menuOptions = segmented({files: "Files", info: "More info"}, (key, label) =>
+  const menuOptions = segmented(["cn-options", "cn-option"], [["files", "Files"], ["info", "More info"]], (key, label) =>
     import("./connect-menus.js").then((m) => !disposed && m[key === "files" ? "filesMenu" : "infoMenu"](label, ctx)));
   // connect's Clip before them, once the device says it cuts clips (loaded after the view)
   import("./clips.js").then(({clipButton}) => disposed || menuOptions.el.prepend(clipButton(ctx)));

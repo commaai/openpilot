@@ -161,7 +161,6 @@
 /* the switch and cancel dialogs: connect's papers a little above the window's middle */
 .prime-paper { top: 40%; left: 50%; width: 400px; max-width: 90%; padding: 16px; transform: translate(-50%, -50%); font-size: 14px; line-height: 1.46429; }
 .prime-paper p { margin: 0; }
-.prime-paper .prime-modal-title { margin: 0; font-size: 21px; font-weight: 500; line-height: 1.16667; }
 .prime-paper .prime-modal-text { margin-top: 12px; color: rgb(from var(--cnui-fg) r g b / .8); }
 .prime-paper .prime-modal-text b { color: var(--cnui-fg); }
 .prime-paper .prime-modal-busy { display: flex; flex-direction: column; align-items: center; margin-top: 16px; padding: 20px; border-radius: 8px; background: rgba(0, 0, 0, .2); }

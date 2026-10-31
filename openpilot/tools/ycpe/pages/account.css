@@ -57,7 +57,7 @@
 .cn-ref-hidden { visibility: hidden; pointer-events: none; }
 .cn-ref-white, .cn-ref-claim { box-sizing: border-box; display: block; width: 100%; padding: 12px 24px; border: 1px solid #fff; border-radius: 9999px; background: #fff;
   color: #16181a; font: 700 16px/24px "Inter", sans-serif; text-align: center; text-decoration: none; cursor: pointer;
-  transition: transform .15s cubic-bezier(.4, 0, .2, 1), background-color .15s cubic-bezier(.4, 0, .2, 1); }
+  transition: transform .15s var(--mui-ease), background-color .15s var(--mui-ease); }
 :is(.cn-ref-white, .cn-ref-claim:not(.off, [aria-disabled=true])):hover { background: rgba(255,255,255,.9); transform: scale(1.02); }
 :is(.cn-ref-white, .cn-ref-claim:not(.off, [aria-disabled=true])):active { transform: scale(.98); }
 .cn-ref-link { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 10px; padding: 0 16px; color: rgba(255,255,255,.45); font-size: 11px; line-height: 16px; }
