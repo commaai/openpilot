@@ -85,34 +85,105 @@ export function openModal({onclose, busy, ...attrs}, ...children) {
   return el;
 }
 
-// a top-bar button's panel. A click opens one, make(close) → {el, focus, update, closed}: its element, what takes the
-// focus, what refreshes it, what it lets go of once closed. Another click closes it, as do close(), Escape (the focus
-// back on the button) and, if light, a press outside. placed: under the button, but on screen
-export function anchoredPanel(button, make, {light = true, placed = true} = {}) {
-  let open = null;
-  const escape = (e) => { if (e.key === "Escape") { close(); button.focus(); } };
-  const outside = (e) => { if (!open.el.contains(e.target) && !button.contains(e.target)) close(); };
-  function close() {
-    if (!open) return;
-    open.el.remove();
-    open.closed?.();
-    open = null;
-    document.removeEventListener("keydown", escape);
-    document.removeEventListener("pointerdown", outside);
-    button.setAttribute("aria-expanded", "false");
+// a floating panel in the top layer (the native popover API) at `at`, an element (under it) or a point {x, y}, kept on
+// screen; build(close) makes what's in it. Escape or close() closes it and, if light, a press or the focus outside it
+// or another light one opening; the focus then goes back where it was. Its [autofocus] element, else its first menu
+// row or other control, takes the focus. Once closed it's removed, then onclose runs. An anchor says whether it's open
+// (aria-expanded), and pressing it again closes it: null then.
+// (Its own light dismiss, not the browser's: that would close a context menu opened on a press as the press ends.)
+const opened = new WeakMap();  // anchor → its open popover
+let lightOne = null;  // the last light popover opened
+export function popover(at, build, {light = true, onclose, ...attrs} = {}) {
+  const anchor = at instanceof Element ? at : null;
+  if (opened.has(anchor)) {
+    closePopover(opened.get(anchor));
+    return null;
   }
+  if (light) closePopover();
+  const close = () => closePopover(el);
+  const outside = (e) => { if (!el.contains(e.target) && !anchor?.contains(e.target)) close(); };  // a press or the focus
+  const listening = new AbortController(), on = (type, fn) => document.addEventListener(type, fn, {signal: listening.signal});
+  const opener = document.activeElement;
+  const el = h("div", {...attrs, class: `popover ${attrs.class ?? ""}`, popover: "manual", onbeforetoggle: (e) => {
+    if (e.newState === "open") return;
+    listening.abort();
+    if (el.contains(document.activeElement)) opener?.focus({preventScroll: true});
+    opened.delete(anchor);
+    anchor?.setAttribute("aria-expanded", "false");
+  }, ontoggle: (e) => {
+    if (e.newState === "open") return;
+    el.remove();
+    onclose?.();
+  }}, build(close));
+  on("keydown", (e) => { if (e.key === "Escape") close(); });
+  if (light) {
+    on("pointerdown", outside);
+    on("focusin", outside);
+    lightOne = el;
+  }
+  document.body.append(el);
+  el.showPopover(anchor ? {source: anchor} : {});
+  const a = anchor?.getBoundingClientRect(), x = a ? a.left : at.x, y = a ? a.bottom + 4 : at.y;
+  el.style.left = `${Math.max(8, Math.min(x, innerWidth - el.offsetWidth - 8))}px`;
+  el.style.top = `${Math.max(8, Math.min(y, innerHeight - el.offsetHeight - 8))}px`;
+  if (!el.contains(document.activeElement)) {
+    (el.querySelector(".menu-list > :is(a, button:enabled)") ?? el.querySelector("input, select, textarea, button:enabled, a[href]"))?.focus({preventScroll: true});
+  }
+  if (anchor) {
+    opened.set(anchor, el);
+    anchor.setAttribute("aria-expanded", "true");
+  }
+  return el;
+}
+
+// closes popover el if it's open; by default the light one
+export function closePopover(el = lightOne) {
+  if (el?.matches(":popover-open")) el.hidePopover();
+}
+
+// a menu's rows: items are {label, fn, checked?, disabled?} or elements (an <hr>, a row of the caller's); falsy ones
+// are left out. Choosing an item closes the menu and calls fn(); a checkable one (checked a boolean) stays and calls
+// fn(on). The arrow keys, Home and End move between the rows
+export function menuList(items) {
+  const ticks = items.some((it) => typeof it?.checked === "boolean");
+  const row = ({label, fn, checked, disabled}) => {
+    const checkable = typeof checked === "boolean", tick = h("span", {class: "tick"});
+    const set = (on) => { el.setAttribute("aria-checked", String(checked = on)); tick.replaceChildren(on ? icon("check", 14) : ""); };
+    const el = h("button", {class: "menu-row", role: checkable ? "menuitemcheckbox" : "menuitem", disabled, onclick: () => {
+      if (!checkable) {
+        closePopover(el.closest(".popover"));
+        return fn();
+      }
+      set(!checked);
+      fn(checked);
+    }}, ticks && tick, label);
+    if (checkable) set(checked);
+    return el;
+  };
+  const list = h("div", {class: "menu-list", role: "menu", onkeydown: (e) => {
+    const rows = [...list.querySelectorAll(":scope > :is(a, button:enabled)")], k = rows.indexOf(document.activeElement);
+    const to = {ArrowDown: k + 1, ArrowUp: k - 1, Home: 0, End: rows.length - 1}[e.key];
+    if (to === undefined) return;
+    e.preventDefault();
+    e.stopPropagation();  // not the playhead's arrows
+    rows[(to + rows.length) % rows.length]?.focus();
+  }}, items.map((it) => it && !(it instanceof Node) ? row(it) : it));
+  for (const r of list.querySelectorAll(":scope > :is(a, button):not([role])")) r.setAttribute("role", "menuitem");
+  return list;
+}
+
+// a top-bar button's panel, titled: a click opens it, make(close) → {body, actions, update, closed}: what's in it, more
+// buttons for its head, what refreshes it, what it lets go of once closed. Another click closes it, as do its close
+// button, Escape and, if light, a press outside
+export function anchoredPanel(button, title, make, {light = true, ...attrs} = {}) {
+  let open = null;
   button.setAttribute("aria-expanded", "false");
   button.addEventListener("click", () => {
-    if (open) return close();
-    const p = open = make(close), r = placed && button.getBoundingClientRect();
-    if (r) Object.assign(p.el.style, {top: `${r.bottom + 6}px`, width: "min(420px, calc(100vw - 16px))"});
-    document.body.append(p.el);
-    if (r) p.el.style.right = `${Math.max(8, Math.min(innerWidth - r.right, innerWidth - p.el.offsetWidth - 8))}px`;
-    if (light) setTimeout(() => { if (open === p) document.addEventListener("pointerdown", outside); });  // not the press that opened it
-    document.addEventListener("keydown", escape);
-    button.setAttribute("aria-expanded", "true");
-    p.focus.focus();
-    p.update?.();
+    const el = popover(button, (close) => {
+      open = make(close);
+      return [h("div", {class: "panel-head"}, h("b", {}, title), open.actions, h("button", {class: "link", autofocus: true, onclick: close}, "close")), open.body];
+    }, {...attrs, class: `panel ${attrs.class ?? ""}`, role: "dialog", "aria-label": title, light, onclose: () => { open.closed?.(); open = null; }});
+    if (el) open.update?.();
   });
   return {update: () => open?.update?.()};
 }

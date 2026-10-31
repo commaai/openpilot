@@ -1,8 +1,8 @@
 // CAN dialogs: DBC files, find similar bits, find signal, CSV export, route segments
-import {h, ask, download} from "/dom.js";
+import {h, ask, download, popover, menuList} from "/dom.js";
 import {DBC} from "/data/dbc.js";
 import {addrOf, carDbc, hexId} from "/data/can.js";
-import {createSignal, dialog, field, menuItem, popup} from "./common.js";
+import {createSignal, dialog, field} from "./common.js";
 
 const busList = (can) => [...new Set(can.messages().map((m) => m.bus))].sort((a, b) => a - b);
 
@@ -172,11 +172,11 @@ async function saveLocal(can, dbc, note, error, force = false) {
 }
 
 export function toolsMenu(can, ctx, anchor) {
-  popup(anchor, [
-    menuItem("Find similar bits…", () => similarDialog(can)),
-    menuItem("Find signal…", () => findDialog(can, ctx)),
-    menuItem("Export CSV…", () => csvDialog(can, ctx)),
-    menuItem("Route info…", () => segmentsDialog(ctx))]);
+  popover(anchor, () => menuList([
+    {label: "Find similar bits…", fn: () => similarDialog(can)},
+    {label: "Find signal…", fn: () => findDialog(can, ctx)},
+    {label: "Export CSV…", fn: () => csvDialog(can, ctx)},
+    {label: "Route info…", fn: () => segmentsDialog(ctx)}]));
 }
 
 const table = (cols, rows, onRow) => h("div", {class: "can-table"},

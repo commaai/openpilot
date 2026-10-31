@@ -38,15 +38,11 @@
 .plot-pane .legend .x:hover { color: var(--fg); }
 .plot-pane .legend .stats { grid-column: 2 / -1; color: var(--muted); white-space: pre; }
 
-.plot-popup { display: flex; flex-direction: column; gap: 4px; }
+.plot-popup:popover-open { display: flex; flex-direction: column; gap: 4px; }  /* closed, it stays hidden until removed */
 .plot-popup .title { padding: 2px 4px 4px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .plot-popup label { display: grid; grid-template-columns: 96px 1fr; align-items: center; gap: 6px; padding: 0 4px; color: var(--muted); }
 .plot-popup input, .plot-popup select, .plot-popup textarea { min-width: 0; height: 22px; padding: 0 4px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--fg); }
 .plot-popup input[type=color] { padding: 0 2px; }
-.plot-popup:has(> .menu-list) { gap: 0; }
-.plot-popup .tick { display: inline-flex; width: 14px; }
-.plot-popup .menu-row:disabled { background: none; color: var(--muted); cursor: default; }
-.plot-popup hr { margin: 3px 0; border: 0; border-top: 1px solid var(--line); }
 .plot-popup > button { height: 24px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); cursor: pointer; }
 .plot-popup > button:hover { background: var(--hover); }
 .plot-popup > button.danger { color: var(--critical-fg); }
