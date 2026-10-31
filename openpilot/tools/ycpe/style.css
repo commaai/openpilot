@@ -56,7 +56,7 @@ input[type=color] { width: 32px; height: 20px; padding: 0; border: 1px solid var
 input[type=color]::-webkit-color-swatch-wrapper { padding: 2px; }
 input[type=color]::-webkit-color-swatch { border: 0; border-radius: 2px; }
 /* what floats over the page: menus, panels, dialogs */
-.popover, .status-panel, .perf-panel, .ask, .help { border: 1px solid var(--line); border-radius: 8px; background: var(--raised); color: var(--fg); box-shadow: var(--shadow); }
+.popover, .ask, .help { border: 1px solid var(--line); border-radius: 8px; background: var(--raised); color: var(--fg); box-shadow: var(--shadow); }
 .ask, .help { border-radius: 10px; }
 :is(.ask, .help)::backdrop { background: rgba(0,0,0,.35); }
 .ask { max-width: min(420px, calc(100vw - 32px)); padding: 16px 18px 12px; }
@@ -138,8 +138,6 @@ body.in-ws #main { overflow: hidden; }
 .pill-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--line); }
 .pill-bar > i { display: block; height: 100%; background: var(--accent); transition: width 0.2s linear; }
 .load-pill.buffering .pill-bar > i { background: var(--alert); }
-.status-panel { position: fixed; z-index: 50; padding: 8px 10px; }  /* placed and sized by dom.js anchoredPanel */
-.status-head { display: flex; justify-content: space-between; margin-bottom: 6px; }
 .status-row { margin: 6px 0 8px; }
 .status-title { font-size: 11px; margin-bottom: 3px; }
 .status-lane { display: block; width: 100%; height: 10px; }
@@ -168,13 +166,20 @@ body.in-ws #main { overflow: hidden; }
 @container (max-width: 1100px) { .topbar .omni, .topbar .omnibox { min-width: 40px; } .topbar .view { padding: 0 5px; } .topbar .load-pill { max-width: 150px; } .topbar .tabs { min-width: 80px; } .topbar .mode-btn { padding: 0 5px; } }
 /* the device crumb goes as on phones: the route crumb's menu reaches the rest */
 @container (max-width: 900px) { .topbar :is(.hud-drops, .local-badge, .sep), .topbar > .crumb:first-of-type { display: none; } }
-.popover { position: fixed; z-index: 50; min-width: min(220px, calc(100vw - 16px)); max-width: min(340px, calc(100vw - 16px)); max-height: 70vh; overflow: auto; padding: 4px; }
+/* dom.js popover(): placed by it, in the top layer */
+.popover { inset: auto; margin: 0; min-width: min(220px, calc(100vw - 16px)); max-width: min(340px, calc(100vw - 16px)); max-height: 70vh; overflow: auto; padding: 4px; }
 .popover:has(.route-pop) { max-width: min(480px, calc(100vw - 16px)); }  /* the route name diagram on one line */
 .menu-list { display: flex; flex-direction: column; }
 .menu-row { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border: 0; border-radius: 4px; background: none; text-align: left; text-decoration: none; white-space: nowrap; cursor: pointer; }
 .menu-row:hover { background: var(--hover); }
 .menu-row.on { background: var(--active); }
 .menu-row .mono { margin-left: auto; }
+.menu-row:disabled { background: none; color: var(--muted); cursor: default; }
+.menu-row .tick { display: inline-flex; width: 14px; }
+.menu-list hr { margin: 3px 0; border: 0; border-top: 1px solid var(--line); }
+.popover.panel { width: min(420px, calc(100vw - 16px)); max-width: none; padding: 8px 10px; }
+.panel-head { display: flex; gap: 10px; align-items: baseline; margin-bottom: 6px; }
+.panel-head b { flex: 1; }
 .route-pop { display: flex; flex-direction: column; width: max-content; min-width: 320px; max-width: 100%; height: 70vh; }
 .toast { position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%); z-index: 60; padding: 8px 14px; border-radius: 6px; background: var(--fg); color: var(--bg); box-shadow: var(--shadow); }
 /* loading: a glint sweeping along the bar's bottom edge, moved by the compositor so the bar never repaints */
@@ -188,9 +193,6 @@ body.loading .topbar::before { content: ""; position: absolute; left: 0; bottom:
 }
 
 /* perf panel */
-.perf-panel { position: fixed; top: calc(var(--top) + 4px); right: 8px; z-index: 40; width: 380px; padding: 8px; }
-.perf-head { display: flex; gap: 10px; align-items: baseline; margin-bottom: 6px; }
-.perf-head b { flex: 1; }
 .perf-chart { width: 100%; height: 90px; display: block; margin-bottom: 6px; }
 .perf-row { display: grid; grid-template-columns: 1fr 70px 70px; padding: 1px 0; font: 11px var(--mono); font-variant-numeric: tabular-nums; }
 .perf-row.head { color: var(--muted); border-bottom: 1px solid var(--line); }

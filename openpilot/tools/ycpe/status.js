@@ -111,7 +111,7 @@ export const describe = (s) => (s.state === "loading" && s.total ? `${STATE_TEXT
 export function loadPill() {
   const text = h("span");
   const bar = h("span", {class: "pill-bar"}, h("i"));
-  const el = h("button", {class: "load-pill", hidden: true}, text, bar), panel = anchoredPanel(el, statusPanel);
+  const el = h("button", {class: "load-pill", hidden: true}, text, bar), panel = anchoredPanel(el, "Loading", statusPanel);
   const live = document.body.appendChild(h("span", {class: "sr-only", role: "status"}));
   let spoken = "";
   const update = () => {
@@ -152,10 +152,8 @@ export function loadPill() {
   return el;
 }
 
-function statusPanel(close) {
+function statusPanel() {
   const body = h("div", {class: "status-rows"});
-  const closeBtn = h("button", {class: "link", onclick: () => close()}, "close");
-  const el = h("div", {class: "status-panel", role: "dialog", "aria-label": "Loading"}, h("div", {class: "status-head"}, h("b", {}, "Loading"), closeBtn), body);
   const rows = new Map();
   // the lanes' width (the body's), kept from its observer: read in update, it forced a layout on every status change
   let width = 0;
@@ -196,7 +194,7 @@ function statusPanel(close) {
       drawLane(c, k, 0, 0, width, 10);
     }
   }
-  return {el, focus: closeBtn, update, closed: () => sized.disconnect()};
+  return {body, update, closed: () => sized.disconnect()};
 }
 
 // memory and disk in the HUD: what the loaders hold plus the JS heap, and the origin's storage (OPFS caches)

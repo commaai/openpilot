@@ -1,8 +1,8 @@
 .local-badge { flex-shrink: 0; padding: 0 7px; border: 1px solid var(--line); background: var(--bg); color: var(--muted); font: 11px var(--mono); cursor: pointer; }
 .local-badge:hover { color: var(--fg); }
 .local-badge.busy { border-color: var(--accent); color: var(--accent); }
-.local-panel { font-size: 11px; }  /* the rest of it, and its head, are the load status panel's (style.css) */
-.local-head { font-size: 13px; }
+.local-panel { font-size: 11px; }
+.local-panel .panel-head { font-size: 13px; }
 .local-intro, .local-cache, .local-route { margin-bottom: 8px; }
 .local-cache .mono { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .local-bar { height: 3px; margin: 3px 0; background: var(--line); }

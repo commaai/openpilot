@@ -172,7 +172,7 @@ export function create(ctx, state = {}) {
   cv.addEventListener("contextmenu", (e) => {
     e.preventDefault();
     menu(e.clientX, e.clientY, [
-      {label: "Equal axes", checked: st.equal, fn: () => { st.equal = !st.equal; fit(); }},
+      {label: "Equal axes", checked: !!st.equal, fn: () => { st.equal = !st.equal; fit(); }},
       {label: "Swap X and Y", fn: () => { for (const c of st.curves) [c.x, c.y] = [c.y, c.x]; st.view = null; rebuild(); }},
       {label: "Fit", fn: fit},
       {label: "Export PNG", fn: () => exportPng([base, cv], st.curves.map((c) => ({color: c.color, name: name(c), value: ""})), col.bg, col.fg, col.font, "xy")},

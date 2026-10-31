@@ -1,7 +1,7 @@
 // the custom series console: input paths (the first is the time base), a globals block that runs once, and a
 // function body that runs per sample in a worker (data/custom.js)
 import {h} from "/dom.js";
-import {popup, place, close} from "./menu.js";
+import {popup, close} from "./menu.js";
 import {acceptPaths} from "./view.js";
 import {TEMPLATES} from "/data/custom.js";
 
@@ -31,8 +31,9 @@ export function openConsole(x, y, spec, run) {
     error.textContent = "running…";
     run(s).then(close, (e) => { error.textContent = e.message; });
   };
+  const runKey = (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) submit(); };
 
-  const el = popup(x, y,
+  popup(x, y, [
     h("div", {class: "title"}, "Custom series"),
     h("label", {}, "name", name),
     h("label", {}, "template", h("select", {onchange: (e) => {
@@ -51,9 +52,6 @@ export function openConsole(x, y, spec, run) {
     code,
     h("div", {class: "hint"}, "}", size),
     error,
-    h("button", {onclick: submit, title: "ctrl+enter"}, "Run"));
-  el.classList.add("plot-console");
-  place(el, x, y);  // console-sized now
-  el.addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) submit(); });
+    h("button", {onclick: submit, title: "ctrl+enter"}, "Run")], {class: "plot-console", onkeydown: runKey});
   (spec.name ? code : name).focus();
 }

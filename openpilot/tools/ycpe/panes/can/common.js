@@ -48,39 +48,6 @@ export function dialog(title, ...body) {
   return el;
 }
 
-// a popover menu under anchor, focused on its first row; the arrow keys move between rows. rows are menuItem()s,
-// menuCheck()s (which keep it open) or separators. Focus goes back to anchor when it closes
-export function popup(anchor, rows) {
-  const items = () => [...menu.querySelectorAll("[role^=menuitem]")];
-  const menu = h("div", {class: "can-menu", role: "menu", popover: "auto", ontoggle: (e) => {
-    if (e.newState !== "closed") return;
-    menu.remove();
-    anchor.setAttribute("aria-expanded", "false");
-  }, onkeydown: (e) => {
-    const all = items(), k = all.indexOf(document.activeElement);
-    const to = {ArrowDown: k + 1, ArrowUp: k - 1, Home: 0, End: all.length - 1}[e.key];
-    if (to === undefined) return;
-    e.preventDefault();
-    all[(to + all.length) % all.length]?.focus();
-  }}, rows);
-  document.body.append(menu);
-  const r = anchor.getBoundingClientRect();
-  menu.style.left = `${r.left}px`;
-  menu.style.top = `${r.bottom + 2}px`;
-  menu.showPopover({source: anchor});
-  anchor.setAttribute("aria-expanded", "true");
-  items()[0]?.focus();
-  return menu;
-}
-export const menuItem = (label, fn) => h("button", {class: "menu-row", role: "menuitem", onclick: (e) => { e.currentTarget.closest("[popover]").hidePopover(); fn(); }}, label);
-export function menuCheck(label, checked, fn) {
-  const tick = h("span", {class: "tick"});
-  const set = (on) => { row.setAttribute("aria-checked", String(checked = on)); tick.replaceChildren(on ? icon("check", 14) : ""); };
-  const row = h("button", {class: "menu-row", role: "menuitemcheckbox", onclick: () => { set(!checked); fn(checked); }}, tick, label);
-  set(checked);
-  return row;
-}
-
 // a labelled input row for forms
 export const field = (label, input, hint) => h("label", {class: "can-field", title: hint || ""}, h("span", {}, label), input);
 

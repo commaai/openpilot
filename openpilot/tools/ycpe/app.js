@@ -1,7 +1,7 @@
 import {SEGMENT, api, auth, segmentAt, versionAtLeast} from "/api.js";
 import {daemon} from "/daemon.js";
 import {localBadge} from "/local.js";
-import {h, fmt, ask, parseClock, openModal, toast} from "/dom.js";
+import {h, fmt, ask, parseClock, openModal, toast, popover, closePopover, menuList} from "/dom.js";
 import {logo, icon} from "/icons.js";
 import {perf, hud} from "/perf.js";
 import {theme} from "/theme.js";
@@ -93,61 +93,6 @@ let ws = null;  // the open route workspace
 
 // ---- top bar ----
 
-// a popover under anchor; clicking the anchor again, clicking or focusing elsewhere or Escape closes it. Null when it
-// was open. Focus moves into it (arrows step through a menu's rows) and back to the anchor when it closes.
-function menu(anchor, build) {
-  const open = document.querySelector(".popover");
-  closePopover();
-  if (open?._anchor === anchor) return null;
-  const close = () => {
-    if (!el.isConnected) return;
-    const focused = el.contains(document.activeElement);
-    el.remove();
-    anchor.setAttribute("aria-expanded", "false");
-    document.removeEventListener("pointerdown", outside);
-    document.removeEventListener("focusin", outside);
-    document.removeEventListener("keydown", escape);
-    if (focused) anchor.focus();
-  };
-  const outside = (e) => { if (!el.contains(e.target) && !anchor.contains(e.target)) close(); };  // a click or focus
-  const escape = (e) => { if (e.key === "Escape") close(); };
-  const el = h("div", {class: "popover"}, build(close));
-  el._anchor = anchor;
-  el._close = close;
-  const rows = () => [...el.querySelectorAll(".menu-list > :is(button, a)")];
-  if (el.querySelector(".menu-list")) {
-    el.setAttribute("role", "menu");
-    for (const row of rows()) row.setAttribute("role", "menuitem");
-  }
-  el.addEventListener("keydown", (e) => {
-    if (el.getAttribute("role") !== "menu" || (e.key !== "ArrowDown" && e.key !== "ArrowUp")) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const all = rows(), i = all.indexOf(document.activeElement);
-    all[(i + (e.key === "ArrowDown" ? 1 : all.length - 1)) % all.length]?.focus();
-  });
-  anchor.setAttribute("aria-haspopup", "true");
-  anchor.setAttribute("aria-expanded", "true");
-  // under the anchor, inside the window
-  const r = anchor.getBoundingClientRect();
-  el.style.top = `${r.bottom + 4}px`;
-  document.body.append(el);
-  el.style.left = `${Math.max(8, Math.min(r.left, innerWidth - el.offsetWidth - 8))}px`;
-  setTimeout(() => {
-    document.addEventListener("pointerdown", outside);
-    document.addEventListener("focusin", outside);
-    document.addEventListener("keydown", escape);
-    (el.querySelector(".menu-list > .on") || rows()[0] || el.querySelector("button, a[href], input, select"))?.focus();  // once the caller has filled it
-  });
-  return el;
-}
-
-// the open popover, ours or a pane's (they share the class)
-function closePopover() {
-  const open = document.querySelector(".popover");
-  if (open?._close) open._close(); else open?.remove();
-}
-
 // shown once updateTop() names them
 const crumb = (title) => h("button", {class: "crumb", title, hidden: true}, h("span"), icon("down", 16));
 const bar = {
@@ -182,20 +127,22 @@ function topBar() {
       updateTop();
     }
   });
-  bar.device.addEventListener("click", () => menu(bar.device, (close) => h("div", {class: "menu-list"},
-    (state.devices || []).map((d) => h("a", {class: `menu-row ${d.dongle_id === (ws?.dongle || location.pathname.split("/")[1]) ? "on" : ""}`,
-      href: `/${d.dongle_id}`, onclick: (e) => { close(); link(`/${d.dongle_id}`)(e); },
-      onpointerenter: () => prefetchDevice(d.dongle_id)},
-      onlineMark(d), h("span", {}, fmt.deviceName(d)), h("span", {class: "muted mono"}, d.dongle_id.slice(0, 6)))),
+  bar.device.addEventListener("click", () => popover(bar.device, (close) => menuList([
+    ...(state.devices || []).map((d) => {
+      const on = d.dongle_id === (ws?.dongle || location.pathname.split("/")[1]);
+      return h("a", {class: `menu-row ${on ? "on" : ""}`, autofocus: on, href: `/${d.dongle_id}`, onclick: (e) => { close(); link(`/${d.dongle_id}`)(e); },
+        onpointerenter: () => prefetchDevice(d.dongle_id)},
+        onlineMark(d), h("span", {}, fmt.deviceName(d)), h("span", {class: "muted mono"}, d.dongle_id.slice(0, 6)));
+    }),
     !state.devices?.length && h("div", {class: "menu-row muted"},
       !auth.isAuthenticated() ? "Sign in to see your devices" : state.devicesError ? "Couldn't load devices" : "No devices"),
     auth.isAuthenticated() && h("button", {class: "menu-row", onclick: () => { close(); import("/pages/pair.js").then((m) => m.openPair()); }},
-      icon("add", 14), h("span", {}, "Add device")))));
+      icon("add", 14), h("span", {}, "Add device"))])));
   bar.route.addEventListener("click", () => {
     if (!ws || ws.session) return;
     hideAnatomy();
-    const pop = menu(bar.route, () => h("div", {class: "route-pop"}, anatomy()));
-    pop?.firstChild.append(routesPane({route: ws.route, openRoute: (name) => { pop._close(); ws.openRoute(name); }}).el);
+    popover(bar.route, (close) => h("div", {class: "route-pop"}, anatomy(),
+      routesPane({route: ws.route, openRoute: (name) => { close(); ws.openRoute(name); }}).el));
   });
   // the route's name explained while the pointer rests on it
   let card = null, cardTimer = 0;
@@ -203,7 +150,7 @@ function topBar() {
   bar.route.addEventListener("pointerenter", (e) => {
     if (e.pointerType !== "mouse" || !ws || ws.session) return;
     cardTimer = setTimeout(() => {
-      if (document.querySelector(".popover")) return;
+      if (document.querySelector(".popover:not(.panel)")) return;
       const r = bar.route.getBoundingClientRect();
       card = h("div", {class: "rid-card", style: `left: ${Math.max(8, r.left)}px; top: ${r.bottom + 6}px`}, anatomy());
       document.body.append(card);
@@ -227,18 +174,18 @@ function accountButton() {
   account.addEventListener("click", async () => {
     const {accountHead, version, USERADMIN, styled} = await import("/pages/account.js");
     await styled;
-    menu(account, (close) => {
+    popover(account, (close) => {
       const row = (path, label) => h("a", {class: "menu-row", href: path, onclick: (e) => { close(); link(path)(e); }}, label);
       const signedIn = auth.isAuthenticated();
-      return h("div", {class: "menu-list"},
+      return menuList([
         state.me && accountHead(state.me),
         auth.viaDaemon() && h("div", {class: "menu-row muted"}, "signed in via local daemon"),
-        !signedIn && daemon.hasJwt && h("button", {class: "menu-row", onclick: () => { close(); auth.useDaemon(); }}, "Sign in via local daemon"),
+        !signedIn && daemon.hasJwt && {label: "Sign in via local daemon", fn: () => auth.useDaemon()},
         signedIn && row("/account", "Account and developer token"),
         signedIn && row("/referrals", "Referrals"),
         signedIn && h("a", {class: "menu-row", href: USERADMIN, target: "_blank", rel: "noopener", onclick: close}, "Manage account"),
-        signedIn ? h("button", {class: "menu-row", onclick: () => { close(); auth.signOut(); }}, "Sign out") : row(loginPath(), "Sign in"),
-        h("div", {class: "menu-foot"}, version()));
+        signedIn ? {label: "Sign out", fn: () => auth.signOut()} : row(loginPath(), "Sign in"),
+        h("div", {class: "menu-foot"}, version())]);
     });
   });
   return account;
@@ -363,18 +310,18 @@ function showActiveTab() {
 }
 
 function layoutMenu(anchor) {
-  menu(anchor, (close) => layoutPicker({current: () => ws.layout.save(), apply: (m) => ws.applyLayout(m), close, name: ws.view}));
+  popover(anchor, (close) => layoutPicker({current: () => ws.layout.save(), apply: (m) => ws.applyLayout(m), close, name: ws.view}));
 }
 
 function tabMenu(tabEl, i, name) {
   const layout = ws.layout;
-  const item = (label, fn) => h("button", {class: "menu-row", onclick: () => { closePopover(); fn(); updateTop(); }}, label);
-  menu(tabEl, () => h("div", {class: "menu-list"},
+  const item = (label, fn) => ({label, fn: () => { fn(); updateTop(); }});
+  popover(tabEl, () => menuList([
     item("Rename", () => setTimeout(() => renameTab(bar.tablist.children[i], i, name))),
     item("Duplicate", () => layout.addTab(`${name} copy`, structuredClone(layout.save().tabs[i].root))),
     layout.model.tabs.length > 1 && item("Close", () => layout.closeTab(i)),
     item("Open layout…", () => setTimeout(() => layoutMenu(bar.tablist.children[i]))),
-    item(`Reset ${ws.views[ws.view].title} layout`, () => ws.applyLayout(null))));
+    item(`Reset ${ws.views[ws.view].title} layout`, () => ws.applyLayout(null))]));
 }
 
 // double-click a tab to rename it in place

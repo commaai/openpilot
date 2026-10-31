@@ -780,12 +780,12 @@ export function create(ctx, state = {}) {
       {label: "Link x-axis", checked: !st.range, fn: () => { st.range = st.range ? null : [...clock.range]; invalidate(); }},
       {label: "Undo", fn: () => view.undo(clock)},
       {label: "Redo", fn: () => view.redo(clock)},
-      null,
-      {label: "Statistics", checked: st.stats, fn: () => { st.stats = !st.stats; rebuildLegend(); }},
+      h("hr"),
+      {label: "Statistics", checked: !!st.stats, fn: () => { st.stats = !st.stats; rebuildLegend(); }},
       {label: "Export CSV", disabled: !frame?.lines.length, fn: exportCsv},
       {label: "Export PNG", fn: () => exportPng([base, over], st.curves.filter((c) => !c.hidden).map((c) => ({color: c.color, name: label(c), value: rows[st.curves.indexOf(c)].val.textContent})),
         col.bg, col.fg, col.font, st.title || "plot")},
-      null,
+      h("hr"),
       {label: "Custom series…", fn: () => editCode(undefined, e)},
       {label: "Remove all curves", disabled: !st.curves.length, fn: () => removeCurves(st.curves)},
     ]);
@@ -794,7 +794,7 @@ export function create(ctx, state = {}) {
   function yLimits(e) {
     const field = (k) => h("label", {}, k, h("input", {type: "number", step: "any", value: st.y[k] ?? "", placeholder: "auto",
       oninput: (ev) => { st.y = {...st.y, [k]: ev.target.value === "" ? undefined : +ev.target.value}; invalidate(); }}));
-    popup(e.clientX, e.clientY, h("div", {class: "title"}, "Y limits"), field("max"), field("min"));
+    popup(e.clientX, e.clientY, [h("div", {class: "title"}, "Y limits"), field("max"), field("min")]);
   }
 
   async function exportCsv() {

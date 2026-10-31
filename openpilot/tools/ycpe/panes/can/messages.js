@@ -1,7 +1,7 @@
 // cabana's message list: every (bus, address) with its name, rate, count and live bytes; filters, sorting and suppression
-import {h} from "/dom.js";
+import {h, popover, menuList} from "/dom.js";
 import {icon} from "/icons.js";
-import {canOf, hex2, menuCheck, popup, reveal, setText, subs} from "./common.js";
+import {canOf, hex2, reveal, setText, subs} from "./common.js";
 import {dbcDialog, save, toolsMenu} from "./tools.js";
 
 const ROW = matchMedia("(pointer: coarse)").matches ? 28 : 20;  // px per row; can.css agrees
@@ -45,15 +45,15 @@ export function create(ctx, state) {
     h("button", {class: "can-btn", title: "Stop highlighting bytes that just changed", onclick: () => { can.suppressHighlighted(true); toolbar(); }}, "Suppress highlighted"),
     clearBtn, h("button", {class: "can-btn", title: "Tools", "aria-haspopup": "menu", onclick: (e) => toolsMenu(can, ctx, e.currentTarget)}, h("span", {}, "Tools"), icon("down", 14)),
     h("span", {class: "grow"}),
-    h("button", {class: "can-btn", title: "Options", "aria-haspopup": "menu", onclick: (e) => popup(e.currentTarget, [
-      menuCheck("Show unseen DBC messages", unseen, (on) => { unseen = on; refresh(); }),
-      menuCheck("Suppress signals", can.suppressDefined, (on) => can.setSuppressDefined(on)),
+    h("button", {class: "can-btn", title: "Options", "aria-haspopup": "menu", onclick: (e) => popover(e.currentTarget, () => menuList([
+      {label: "Show unseen DBC messages", checked: unseen, fn: (on) => { unseen = on; refresh(); }},
+      {label: "Suppress signals", checked: can.suppressDefined, fn: (on) => can.setSuppressDefined(on)},
       h("hr"),
-      ...COLS.slice(1).map((c) => menuCheck(c.title, getComputedStyle(head.querySelector(`.can-col-${c.id}`)).display !== "none", (on) => {
+      ...COLS.slice(1).map((c) => ({label: c.title, checked: getComputedStyle(head.querySelector(`.can-col-${c.id}`)).display !== "none", fn: (on) => {
         (on ? hidden : shown).delete(c.id);
         (on ? shown : hidden).add(c.id);
         columns();
-      }))])}, icon("more_horiz", 14)));
+      }}))]))}, icon("more_horiz", 14)));
   const notice = h("div", {class: "can-notice muted", hidden: true});
   // the arrow keys move the selection from anywhere in the pane; the selected row is its active descendant
   const el = h("div", {class: "can-pane can-messages", tabindex: 0, role: "group", "aria-label": "CAN messages", onkeydown: key}, tools, notice, h("div", {class: "can-msg-table"}, head, filterRow, body));

@@ -150,10 +150,6 @@
 .can-list-row { display: block; width: 100%; padding: 3px 6px; border: 0; background: none; text-align: left; cursor: pointer; }
 .can-list-row:hover { background: var(--hover); }
 .can-paste { flex: 1; min-height: 200px; padding: 4px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); font: 11px var(--mono); resize: none; }
-.can-menu { margin: 0; padding: 4px; border: 1px solid var(--line); border-radius: 5px; background: var(--raised); color: var(--fg); box-shadow: var(--shadow); font-size: 12px; }
-.can-menu .menu-row { width: 100%; }
-.can-menu hr { margin: 3px 0; border: 0; border-top: 1px solid var(--line); }
-.can-menu .tick { display: inline-flex; width: 14px; }
 .can-picker { width: 420px; height: 320px; }
 .can-picker .can-list-row { display: flex; align-items: center; gap: 6px; padding: 1px 6px; }
 .can-picker .can-list-row input { height: auto; margin: 0; }

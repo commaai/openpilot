@@ -36,7 +36,7 @@ export function localBadge(openRoute) {
   if (!daemon.present) return null;
   css("/local.css");
   const el = h("button", {class: "local-badge", title: "Local daemon (serve.py): disk cache and jobs"}, "local");
-  const panel = anchoredPanel(el, (close) => localPanel(close, openRoute()));
+  const panel = anchoredPanel(el, "Local daemon", (close) => localPanel(close, openRoute()), {class: "local-panel"});
   onJobs(() => { el.classList.toggle("busy", allJobs().some((j) => j.state === "running")); panel.update(); });
   return el;
 }
@@ -52,10 +52,6 @@ function localPanel(close, record) {
   const cache = h("div", {class: "local-cache"});
   const here = h("div", {class: "local-route"});
   const list = h("div", {class: "local-jobs"});
-  const closeBtn = h("button", {class: "link", onclick: () => close()}, "close");
-  const el = h("div", {class: "status-panel local-panel", role: "dialog", "aria-label": "Local daemon"},
-    h("div", {class: "status-head local-head"}, h("b", {}, "Local daemon"), closeBtn),
-    intro, cache, here, list);
   const route = record && !record.live && parseRange(record.fullname) ? record.fullname : null;
   const segs = route && [...Array(record.maxqlog + 1).keys()];
 
@@ -70,7 +66,7 @@ function localPanel(close, record) {
   async function stats() {
     if (!daemon.has("cache")) return;
     const s = await daemon.json(`/local/cache${route ? `?route=${encodeURIComponent(route)}&segs=${segs.length}` : ""}`).catch(() => null);
-    if (!s || !el.isConnected) return;
+    if (!s || !cache.isConnected) return;
     cache.replaceChildren(
       h("div", {}, `shared cache ${fmtBytes(s.bytes)} of ${fmtBytes(s.budget)} · ${s.files} files`),
       h("div", {class: "local-bar"}, h("i", {style: `width: ${Math.min(100, 100 * s.bytes / s.budget).toFixed(1)}%`})),
@@ -99,5 +95,5 @@ function localPanel(close, record) {
   }
 
   let last = 0;  // the cache's stats, asked again at most once a second
-  return {el, focus: closeBtn, update() { update(); if (performance.now() - last > 1000) { last = performance.now(); stats(); } }};
+  return {body: [intro, cache, here, list], update() { update(); if (performance.now() - last > 1000) { last = performance.now(); stats(); } }};
 }
