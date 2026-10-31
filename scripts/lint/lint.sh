@@ -43,6 +43,7 @@ function run() {
 
 function run_tests() {
   run "ruff" ruff check openpilot --quiet
+  run "oxlint" oxlint --deny-warnings openpilot
   run "check_shell" python3 "$DIR/check_shell.py" "${SHELL_FILES[@]}"
   run "check_dependencies" python3 "$DIR/check_dependencies.py"
   run "check_indentation" "$DIR/check_indentation.py" "${PYTHON_FILES[@]}"
@@ -66,6 +67,7 @@ function help() {
   echo ""
   echo -e "${BOLD}${UNDERLINE}Tests:${NC}"
   echo -e "  ${BOLD}ruff${NC}"
+  echo -e "  ${BOLD}oxlint${NC}"
   echo -e "  ${BOLD}check_shell${NC}"
   echo -e "  ${BOLD}check_dependencies${NC}"
   echo -e "  ${BOLD}check_indentation${NC}"

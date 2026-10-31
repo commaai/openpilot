@@ -77,9 +77,9 @@ function localPanel(close, record) {
       h("div", {class: "local-bar"}, h("i", {style: `width: ${Math.min(100, 100 * s.bytes / s.budget).toFixed(1)}%`})),
       h("div", {class: "muted mono"}, s.dir));
     if (!route || !s.route) return here.replaceChildren();
-    const segs = Object.values(s.route.segments), n = segs.length;
-    const count = (kinds) => segs.filter((seg) => kinds.some((k) => seg[k])).length;
-    const bytes = segs.reduce((a, seg) => a + Object.values(seg).reduce((b, f) => b + f.size, 0), 0);
+    const cached = Object.values(s.route.segments), n = cached.length;
+    const count = (kinds) => cached.filter((seg) => kinds.some((k) => seg[k])).length;
+    const bytes = cached.reduce((a, seg) => a + Object.values(seg).reduce((b, f) => b + f.size, 0), 0);
     const logs = count(["rlog", "qlog"]);
     here.replaceChildren(
       h("div", {}, `this route: logs ${logs}/${n} · video ${count(KINDS.video)}/${n} segments · ${fmtBytes(bytes)}`),

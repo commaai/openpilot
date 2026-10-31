@@ -290,7 +290,10 @@ function drivesSection(device, user) {
       api.route.prime(r, r.fullname);
       const now = body.children.length < first && hold;
       body.append(user ? driveCard(r, now) : driveRow(r, owner, now));
-      if (now) loaded.push(body.lastChild.loaded), shown.push(body.lastChild.shown);
+      if (now) {
+        loaded.push(body.lastChild.loaded);
+        shown.push(body.lastChild.shown);
+      }
     }
     if (hold) opening = Promise.race([Promise.allSettled(loaded), sleep(OPENING_MS)]).then(release);
     done = routes.length < LIMIT || !fresh.length;

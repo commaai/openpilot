@@ -146,7 +146,7 @@ function range(s, t0, t1) {
 }
 
 const ops = {
-  derive({path, transform: {kind, param}, inputs}) {
+  derive({transform: {kind, param}, inputs}) {
     const [first, ...rest] = inputs.map((p) => series.get(p));
     const extra = [first.v, ...rest.map((s) => resample(first.t, s.t, s.v))];
     const r = TRANSFORMS[kind].fn(first.t, first.v, param, extra);

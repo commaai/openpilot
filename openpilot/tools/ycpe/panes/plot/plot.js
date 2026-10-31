@@ -402,7 +402,7 @@ export function create(ctx, state = {}) {
     const g = gOver;
     g.clearRect(0, 0, W, H);
     if (!frame) return;
-    const {px, pw, py, ph, X, Y, t0, t1} = frame, top = T, bottom = H - B;
+    const {py, ph, X, Y, t0, t1} = frame, top = T, bottom = H - B;
     const vline = (t, color, dash) => {
       if (t < t0 || t > t1) return;
       const x = Math.round(X(t)) + 0.5;

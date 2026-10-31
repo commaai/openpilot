@@ -142,7 +142,7 @@ async function load(s) {
     s.au.scan(s.data, s.length, true);
     s.done = true;
     if (segs.get(s.n) === s) state(s.n, "ready");
-  } catch (e) {
+  } catch {
     fetching.delete(s.n);
     if (s.abort.signal.aborted) return;
     s.failed = true;
