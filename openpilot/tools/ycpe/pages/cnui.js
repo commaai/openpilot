@@ -1,5 +1,5 @@
-// connect's material pieces for user mode's pairing, prime and clips (Material UI v1 in connect's dark theme): its
-// icons, the circular and linear progress, and a modal on a paper
+// connect's material pieces for user mode's pairing, prime, clips and drives (Material UI v1 in connect's dark theme):
+// its icons, the circular and linear progress, segmented buttons, and a modal on a paper
 import {h, css, openModal} from "../dom.js";
 import {cnIcon as connectIcon} from "./connect/icons.js";
 
@@ -33,6 +33,12 @@ export function progress(size = 40, color = "") {
   return el;
 }
 
+// busy: Material UI's circular progress in user mode (size px, in color), the theme's spinner elsewhere
+export const spinner = (size, color) => userMode() ? progress(size, color) : h("span", {class: "spinner"});
+
+// connect's own spinner, where it isn't Material UI's
+export const ring = (size, label) => h("span", {class: "cnui-ring", style: `--size: ${size}px`, role: "progressbar", "aria-label": label});
+
 // Material UI's linear progress: indeterminate, or a share (0..1). Its cycle runs on the page's clock, so one drawn
 // again (a list rebuilt) carries on where the last left off
 export function linear(share = null) {
@@ -53,4 +59,15 @@ export const promo = (label, title, a, text, dismiss) => h("div", {class: "cnui-
 export function cnModal(label, kind, onclose = () => {}, busy = () => false) {
   const paper = h("div", {class: `cnui-paper ${kind}`});
   return {el: openModal({class: "cnui-modal", "aria-label": label, autofocus: true, onclose, busy}, paper), paper};
+}
+
+// connect's segmented buttons, the group of class group and each button of class button: options [value, label,
+// detail?], the label in a span (connect's menus open from it) and the detail in a small under it. pick(value, span)
+// on a press; set(on, disabled?) marks the one chosen
+export function segmented([group, button], options, pick) {
+  const buttons = options.map(([value, label, detail]) => h("button", {class: button, "data-key": value, "aria-pressed": "false",
+    onclick: (e) => pick(value, e.currentTarget.firstChild)}, h("span", {}, label), detail && h("small", {}, detail)));
+  return {el: h("div", {class: group}, buttons), set(on, disabled = () => false) {
+    options.forEach(([value], i) => { buttons[i].ariaPressed = String(value === on); buttons[i].disabled = disabled(value); });
+  }};
 }

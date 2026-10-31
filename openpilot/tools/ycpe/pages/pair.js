@@ -61,7 +61,7 @@ function modal(title, caption, onclose) {
   const body = h("div", {class: "pair-body"});
   if (userMode()) {
     const {el, paper} = cnModal(title, caption ? "pair-paper" : "pair-paper link", onclose);
-    paper.append(h("div", {class: "pair-title"}, h("h2", {}, title), caption && h("span", {}, caption)), h("hr"), body);
+    paper.append(h("div", {class: "pair-title"}, h("h2", {class: "cnui-title"}, title), caption && h("span", {}, caption)), h("hr"), body);
     return {el, body};
   }
   const el = openModal({class: "pair-dialog", "aria-label": title, autofocus: true, onclose},  // no padding: only the backdrop is the dialog itself

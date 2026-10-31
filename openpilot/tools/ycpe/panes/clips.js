@@ -8,7 +8,7 @@ import {h, css, ask, fmt, download, openModal} from "/dom.js";
 import {icon} from "/icons.js";
 import {perf} from "/perf.js";
 import {isOnline, link} from "/app.js";
-import {userMode, cnIcon, cnModal, progress, linear} from "/pages/cnui.js";
+import {userMode, cnIcon, cnModal, progress, spinner, linear, segmented} from "/pages/cnui.js";
 
 await css(new URL("./clips.css", import.meta.url));
 
@@ -170,15 +170,6 @@ async function viewer(clip, blob, wanted) {
   video.play().catch(() => {});
 }
 
-// connect's segmented buttons: options [value, label, detail?]; set() marks the chosen one
-function segmented(options, pick) {
-  const buttons = options.map(([value, label, detail]) => h("button", {class: "clips-seg-btn", "aria-pressed": "false", onclick: () => pick(value)},
-    label, detail && h("span", {class: "clips-detail"}, detail)));
-  return {el: h("div", {class: "clips-seg"}, buttons), set(on, disabled = () => false) {
-    options.forEach(([value], i) => { buttons[i].ariaPressed = String(value === on); buttons[i].disabled = disabled(value); });
-  }};
-}
-
 // ---- the menu: create a clip of the range (with a route), then the clips on the device ----
 
 // a modal under its button, the button's top right corner its own, as connect's menu; full screen on a phone when it
@@ -191,9 +182,10 @@ function clipMenu(anchor, device, route = null, range = null) {
   const changed = () => perf.invalidate(view);
 
   const field = (label, ...body) => h("div", {class: "clips-field"}, h("span", {class: "clips-label"}, label), body);
-  const cameras = segmented(CAMERAS, (v) => { s.camera = v; changed(); });
-  const quality = segmented(BITRATES, (v) => { s.bitrate = v; changed(); });
-  const speed = segmented(SPEEDUPS.map((v) => [v, `${v}×`]), (v) => { s.speedup = v; changed(); });
+  const choice = (key, options) => segmented(["clips-seg", "clips-seg-btn"], options, (v) => { s[key] = v; changed(); });
+  const cameras = choice("camera", CAMERAS);
+  const quality = choice("bitrate", BITRATES);
+  const speed = choice("speedup", SPEEDUPS.map((v) => [v, `${v}×`]));
   const rangeText = h("div", {class: "clips-range-value"}), hint = h("p", {class: "clips-hint"}, "No camera footage covers this entire range. Choose a smaller range.");
   const output = h("span", {class: "clips-muted"}), size = h("b", {class: "clips-size"});
   const name = h("input", {class: "clips-input", maxlength: 80, spellcheck: false, autocomplete: "off", "aria-label": "Filename", oninput: changed});
@@ -300,7 +292,7 @@ function clipMenu(anchor, device, route = null, range = null) {
       if (ok) el.close();
       else del.textContent = "Delete";
     }}, "Delete");
-    paper.append(h("h2", {}, "Delete clip?"), h("p", {}, `${stem(clip.filename || "") || "this clip"} will be permanently deleted from your comma device.`),
+    paper.append(h("h2", {class: "cnui-title"}, "Delete clip?"), h("p", {}, `${stem(clip.filename || "") || "this clip"} will be permanently deleted from your comma device.`),
       h("div", {class: "clips-delete-actions"}, cancel, del));
   }
 
@@ -369,13 +361,13 @@ function clipMenu(anchor, device, route = null, range = null) {
       const busy = s.clips.some((c) => ACTIVE.has(c.status));
       createBtn.disabled = !online || s.loading || s.creating || busy || duration <= 0 || duration > MAX_DURATION || !validName(name.value)
         || (s.ranges && !covers(s.ranges, s.camera, t0, t1));
-      createBtn.replaceChildren(s.creating ? (um ? progress(18) : h("span", {class: "spinner"})) : !online ? "Device offline" : busy ? "Clip in progress" : "Create clip");
+      createBtn.replaceChildren(s.creating ? spinner(18) : !online ? "Device offline" : busy ? "Clip in progress" : "Create clip");
     }
     error.textContent = s.error || "";
     error.hidden = !s.error;
     // rebuilt, focus kept on the same control
     const focus = list.contains(document.activeElement) && document.activeElement.dataset.focus;
-    list.replaceChildren(...s.loading ? [h("div", {class: "clips-empty"}, um ? progress(18) : h("span", {class: "spinner"}))]
+    list.replaceChildren(...s.loading ? [h("div", {class: "clips-empty"}, spinner(18))]
       : !s.clips.length ? [h("p", {class: "clips-empty"}, online ? "No clips yet" : "Device offline")] : s.clips.map(row));
     if (focus) [...list.querySelectorAll("[data-focus]")].find((b) => b.dataset.focus === focus)?.focus();
   }};

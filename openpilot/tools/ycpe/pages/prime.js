@@ -8,7 +8,7 @@ import {h, css, fmt, ask} from "../dom.js";
 import {icon} from "../icons.js";
 import {link} from "../app.js";
 import {signInCard} from "./login.js";
-import {userMode, cnIcon, cnModal, progress, promo, fill} from "./cnui.js";
+import {userMode, cnIcon, cnModal, progress, spinner, promo, fill} from "./cnui.js";
 
 const COMMACARE = "https://comma.ai/connect#what-is-commacare";
 const FAQ = "https://comma.ai/connect#faq";
@@ -25,10 +25,10 @@ const date = (unixSeconds, f = LONG) => f.format((unixSeconds || 0) * 1000);
 const ext = (href, text) => h("a", {href, target: "_blank", rel: "noopener"}, text);
 // a status block: kind is info, notice, error, success or loading. In user mode connect's: info and notice on its
 // grey, an error on red, loading on a shade (success has its own, show's)
-const note = (kind, ...children) => userMode()
-  ? h("div", {class: `prime-note prime-${kind}`}, kind === "loading" ? progress(19, "#fff") : cnIcon({notice: "priority", error: "error"}[kind] ?? "info", 24), h("div", {}, children))
-  : h("div", {class: `prime-note prime-${kind}`},
-    kind === "loading" ? h("span", {class: "spinner"}) : icon({notice: "warning", error: "warning", success: "check"}[kind] ?? "info", 18), h("div", {}, children));
+const note = (kind, ...children) => h("div", {class: `prime-note prime-${kind}`},
+  kind === "loading" ? spinner(19, "#fff")
+    : userMode() ? cnIcon({notice: "priority", error: "error"}[kind] ?? "info", 24) : icon({notice: "warning", error: "warning", success: "check"}[kind] ?? "info", 18),
+  h("div", {}, children));
 const leaving = (url) => location.assign(url);  // to Stripe, which comes back to this page
 const backPath = () => location.pathname.replace(/\/prime\/?$/, "");
 const backButton = () => {
@@ -88,11 +88,11 @@ function checkout(device, cancelled) {
     onclick: () => { plan = key; update(); }},
   h("b", {}, PLANS[key].name.toLowerCase()), h("span", {class: "prime-price"}, `$${PLANS[key].price}/month`), h("span", {class: "small"}, sub));
   const plans = [planBox("nodata", ["bring your own", h("br"), "sim card"]), planBox("data", ["including data plan", h("br"), "only offered in the U.S."])];
-  const fetching = h("div", {class: "prime-fetching"}, um ? progress(38, "#fff") : h("span", {class: "spinner"}), um ? h("p", {}, "Fetching SIM data") : "Fetching SIM data");
+  const fetching = h("div", {class: "prime-fetching"}, spinner(38, "#fff"), um ? h("p", {}, "Fetching SIM data") : "Fetching SIM data");
   const disabled = h("div"), error = h("div"), charge = h("p", {class: "small prime-charge"});
   const go = h("button", {class: um ? "cnui-btn white prime-go" : "button primary prime-go", disabled: true, onclick: async () => {
     go.disabled = true;
-    go.replaceChildren(um ? progress(19) : h("span", {class: "spinner"}));
+    go.replaceChildren(spinner(19));
     try {
       const resp = await api.prime.checkout(device.dongle_id, plan === "data" ? info.sim_id : undefined, plan);
       if (!resp.url) throw new Error(resp.error || "Billing didn't answer with a checkout");
@@ -287,7 +287,7 @@ function manage(device, stripeSession) {
     const close = () => !busy && el.close();
     const draw = (state, text = "") => {
       const done = state === "success";
-      fill(paper, h("h2", {class: "prime-modal-title"}, done ? `Welcome to ${name}` : `Switch to ${name} plan`),
+      fill(paper, h("h2", {class: "cnui-title"}, done ? `Welcome to ${name}` : `Switch to ${name} plan`),
         done ? [h("div", {class: "prime-modal-ok"}, h("p", {}, text)), h("p", {class: "prime-modal-text"}, switchDone(plan))]
           : h("p", {class: "prime-modal-text"}, switchAbout(plan)),
         state === "loading" && h("div", {class: "prime-modal-busy"}, progress(19, "#fff"), h("p", {}, "Switching your plan…")),
@@ -324,7 +324,7 @@ function manage(device, stripeSession) {
       confirm.disabled = resp.ok;
       if (resp.ok) fetchSub();
     }}, "Cancel subscription");
-    paper.append(h("h2", {class: "prime-modal-title"}, "Cancel prime subscription"), outcome,
+    paper.append(h("h2", {class: "cnui-title"}, "Cancel prime subscription"), outcome,
       h("p", {}, `Device: ${fmt.deviceName(device)} (${dongle})`), h("p", {}, "We're sorry to see you go."),
       h("p", {}, "Your subscription will be cancelled immediately and can be resumed at any time."),
       device.commacare && h("div", {class: "prime-modal-care"}, h("p", {}, careWarning())),

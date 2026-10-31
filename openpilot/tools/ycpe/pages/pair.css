@@ -47,7 +47,6 @@
 .pair-paper.link { top: 40%; }
 .pair-paper.link .pair-title { margin-bottom: 0; }
 .pair-title { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 5px; }
-.pair-title h2 { margin: 0; font-size: 21px; font-weight: 500; line-height: 1.16667; }
 .pair-title span { color: rgb(from var(--cnui-fg) r g b / .7); font-size: 12px; line-height: 1.375; }
 .pair-paper hr { margin-bottom: 10px; }
 .pair-paper.link hr { margin-bottom: 0; }

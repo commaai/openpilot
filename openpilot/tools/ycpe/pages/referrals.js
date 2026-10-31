@@ -7,7 +7,7 @@ import {cnIcon} from "./connect/icons.js";
 import {REFERRALS_SEEN, link} from "../app.js";
 import {signInCard} from "./login.js";
 import {mode} from "./connect/mode.js";
-import {promo} from "./cnui.js";
+import {promo, ring} from "./cnui.js";
 
 const REFER = "https://refer.comma.ai";
 const TERMS = "https://comma.ai/terms#referral-terms";
@@ -74,7 +74,6 @@ function rewardsSection(summary, me) {
 
 // ---- user mode: connect's page, its markup and copy ----
 
-const ring = (size, label) => h("span", {class: "cnui-ring", style: `--size: ${size}px`, role: "progressbar", "aria-label": label});
 const terms = (text) => h("a", {href: TERMS, target: "_blank", rel: "noopener noreferrer"}, text);
 
 function connectReferrals(me) {

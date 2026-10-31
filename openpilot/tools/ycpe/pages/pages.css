@@ -6,6 +6,14 @@
 [data-theme="light"] { --cn-bg: #eef0f2; --cn-card: #fff; --cn-card-end: #f4f6f8; --cn-raised: #e3e6e8; --cn-fg: #1c2024; --cn-muted: #5f666e;
   --cn-line: rgba(0,0,0,.09); --cn-driving: #8fb9de;
   --cn-pill: #fff; --cn-pill-line: #dde1e5; --cn-dim: #77878f; --cn-shade: linear-gradient(transparent 60%, rgba(0,0,0,.08)); }
+/* Material UI's (connect's) easing, and its paper's shadows at the elevations connect uses (cnui.css has its pieces) */
+:root { --mui-ease: cubic-bezier(.4, 0, .2, 1);
+  --mui-shadow-1: 0 1px 3px 0 rgba(0,0,0,.2), 0 1px 1px 0 rgba(0,0,0,.14), 0 2px 1px -1px rgba(0,0,0,.12);
+  --mui-shadow-2: 0 1px 5px 0 rgba(0,0,0,.2), 0 2px 2px 0 rgba(0,0,0,.14), 0 3px 1px -2px rgba(0,0,0,.12);
+  --mui-shadow-6: 0 3px 5px -1px rgba(0,0,0,.2), 0 6px 10px 0 rgba(0,0,0,.14), 0 1px 18px 0 rgba(0,0,0,.12);
+  --mui-shadow-8: 0 5px 5px -3px rgba(0,0,0,.2), 0 8px 10px 1px rgba(0,0,0,.14), 0 3px 14px 2px rgba(0,0,0,.12);
+  --mui-shadow-16: 0 8px 10px -5px rgba(0,0,0,.2), 0 16px 24px 2px rgba(0,0,0,.14), 0 6px 30px 5px rgba(0,0,0,.12);
+  --mui-shadow-24: 0 11px 15px -7px rgba(0,0,0,.2), 0 24px 38px 3px rgba(0,0,0,.14), 0 9px 46px 8px rgba(0,0,0,.12); }
 .page { max-width: 1280px; margin: 0 auto; padding: 12px 16px 32px; }
 .page h3 { margin: 14px 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
 .button.small { margin: 0; padding: 3px 8px; }
@@ -70,7 +78,7 @@
 .login-card > .login-foot { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line); }
 /* user mode's toasts: MUI's Snackbar in connect's theme */
 body:has(.cn-shell, .cn-landing) .toast { bottom: 24px; min-width: 288px; box-sizing: border-box; padding: 14px 24px; border-radius: 4px; background: #303639; color: #fff;
-  font: 400 14px/20px "Inter", sans-serif; box-shadow: 0 3px 5px -1px rgba(0,0,0,.2), 0 6px 10px 0 rgba(0,0,0,.14), 0 1px 18px 0 rgba(0,0,0,.12); }
+  font: 400 14px/20px "Inter", sans-serif; box-shadow: var(--mui-shadow-6); }
 @media (max-width: 599px) { body:has(.cn-shell, .cn-landing) .toast { right: 0; bottom: 0; left: 0; min-width: 0; border-radius: 0; transform: none; } }
 
 /* user mode's sign-in: connect's landing over the whole window, in its dark-only palette */
