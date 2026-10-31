@@ -46,13 +46,12 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.common.version import get_build_metadata
 from openpilot.common.hardware.hw import Paths
 from openpilot.system.athena.rpc import (boolean, dict_of, dispatcher, dumps_call, either, handle, integer, is_call, is_response,
-                                         list_of, loads, number, one_of, optional, regex, struct)
+                                         list_of, loads, number, one_of, regex, struct)
 
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
 LOCAL_PORT_WHITELIST = {22, }  # SSH
-LOCAL_PROXY_URI = r'wss://ssh\.comma\.ai(:(443|8443))?/[0-9a-f]{16}'
 
 LOG_ATTR_NAME = 'user.upload'
 LOG_ATTR_VALUE_MAX_UNIX_TIME = int.to_bytes(2147483647, 4, sys.byteorder)
@@ -225,7 +224,7 @@ def handle_long_poll(ws: WebSocket, exit_event: threading.Event | None) -> None:
 
 def jsonrpc_handler(end_event: threading.Event) -> None:
   dispatcher.add_method(partial(startLocalProxy, end_event), name="startLocalProxy",
-                        remote_ws_uri=regex(LOCAL_PROXY_URI), local_port=one_of(8022, *LOCAL_PORT_WHITELIST))
+                        remote_ws_uri=regex(r'wss://ssh\.comma\.ai(:(443|8443))?/[0-9a-f]{16}'), local_port=one_of(8022, *LOCAL_PORT_WHITELIST))
   while not end_event.is_set():
     try:
       data = recv_queue.get(timeout=1)
@@ -619,7 +618,7 @@ dispatcher.add_method(video_clips.createClip, route=regex(RE.ROUTE_NAME),
                       source_start_time=number(0, 24*3600), source_end_time=number(0, 24*3600),
                       clip=struct({"camera": regex(r'[a-z]*camera\.hevc'), "filename": CLIP_FILENAME, "bitrate": number(1, 20),
                                    "speedup": integer(1, 10)}))
-dispatcher.add_method(video_clips.getClipState, route=optional(regex(RE.ROUTE_NAME)))
+dispatcher.add_method(video_clips.getClipState, route=regex(RE.ROUTE_NAME))
 dispatcher.add_method(video_clips.deleteClip, filename=CLIP_FILENAME)
 dispatcher.add_method(video_clips.getClipChunk, filename=CLIP_FILENAME, offset=integer(0, 2**32))
 
@@ -735,7 +734,6 @@ def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local
     identity_token = Api(dongle_id).get_token()
     ws = create_connection(remote_ws_uri,
                            cookie="jwt=" + identity_token,
-                           redirect_limit=0,
                            enable_multithread=True)
 
     # Set TOS to keep connection responsive while under load.

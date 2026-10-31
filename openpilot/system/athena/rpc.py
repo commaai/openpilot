@@ -39,9 +39,6 @@ def regex(pattern: str) -> Validator:
 def one_of(*choices: Any) -> Validator:
   return lambda v: any(type(v) is type(c) and v == c for c in choices)
 
-def optional(validator: Validator) -> Validator:
-  return lambda v: v is None or validator(v)
-
 def either(*validators: Validator) -> Validator:
   return lambda v: any(validator(v) for validator in validators)
 
@@ -66,8 +63,7 @@ class Dispatcher(dict[str, Callable[..., Any]]):
     def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
       method = name or fn.__name__
       sig = inspect.signature(fn)
-      params = {k for k, p in sig.parameters.items() if p.kind in (p.POSITIONAL_OR_KEYWORD, p.KEYWORD_ONLY)}
-      if len(params) != len(sig.parameters) or params != set(validators):
+      if set(sig.parameters) != set(validators):
         raise TypeError(f"{method}: params {sorted(sig.parameters)} need exactly one validator each, got {sorted(validators)}")
 
       def validated(*args, **kwargs):
