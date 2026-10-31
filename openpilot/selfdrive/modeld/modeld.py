@@ -9,8 +9,8 @@ os.environ['GMMU'] = '0' # for chestnut fast loading, noop for qcom
 os.environ.setdefault('AM_POWER_LIMIT', '100')
 from tinygrad.device import Buffer, Device
 from tinygrad.dtype import DType, dtypes
-from tinygrad.engine.jit import TinyJit
-from tinygrad.engine.realize import lower_and_compile
+from tinygrad.engine.jit import CapturedJit
+from tinygrad.engine.realize import compile_linear, lower_and_compile
 from tinygrad.tensor import Tensor
 from tinygrad.helpers import round_up
 from tinygrad.uop.ops import UOp
@@ -139,6 +139,11 @@ def input_view(buffer: Buffer, shape: tuple[int, ...], dtype: DType, offset: int
   return Tensor(UOp.from_buffer(view, dtype)).reshape(shape)
 
 
+def compile_copy(tensor: Tensor) -> Callable[[], Tensor]:
+  jit = CapturedJit(tensor, compile_linear(tensor.schedule_linear()), [], [])
+  return lambda: jit([], {})
+
+
 class ModelState:
   prev_desire: np.ndarray  # for tracking the rising edge of the pulse
 
@@ -165,10 +170,7 @@ class ModelState:
     for name, next_name in self.state_pairs.items():
       state = self.input_queues[name]
       self.outputs[next_name] = input_view(state._buffer(), state.shape, state.dtype, 0)
-    self.copy_outputs = TinyJit(lambda: self.outputs['outputs'].to('CPU').realize())
-    for _ in range(2):
-      self.copy_inputs()
-      self.copy_outputs()
+    self.copy_outputs = compile_copy(self.outputs['outputs'].to('CPU'))
     self.parser = Parser()
 
   def pack_inputs(self) -> None:
@@ -180,8 +182,9 @@ class ModelState:
     npy_size = sum(round_up(math.prod(shape) * 4, 128) for shape in shapes.values())
     self.packed_input = np.zeros(npy_size + 2 * self.frame_copy_size, dtype=np.uint8)
     self.input_host = Tensor(self.packed_input, device='NPY')
-    self.input_device = self.input_host.to(self.model_device).realize()
-    self.copy_inputs = TinyJit(lambda: self.input_device.assign(self.input_host.to(self.model_device)).realize())
+    self.input_device = self.input_host.to(self.model_device)
+    self.copy_inputs = compile_copy(self.input_device)
+    self.copy_inputs()
     self.npy = {}
     offset = 0
     for name, shape in shapes.items():
