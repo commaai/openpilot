@@ -348,7 +348,7 @@ class TestAthenadMethods(OpenpilotTestCase):
   @with_upload_handler
   def test_cancel_upload(self):
     item = athenad.UploadItem(path="qlog.zst", url="http://localhost:44444/qlog.zst", headers={},
-                              created_at=int(time.time()*1000), id='id', allow_cellular=True)  # noqa: TID251
+                              created_at=int(time.time()*1000), id='0' * 40, allow_cellular=True)  # noqa: TID251
     athenad.upload_queue.put_nowait(item)
     dispatcher["cancelUpload"](item.id)
 
