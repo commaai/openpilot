@@ -48,9 +48,7 @@ ACADOS_SOLVER_TYPE = 'SQP_RTI'
 # much better convergence of the MPC with low iterations
 N = 12
 MAX_T = 10.0
-T_IDXS_LST = [index_function(idx, max_val=MAX_T, max_idx=N) for idx in range(N+1)]
-
-T_IDXS = np.array(T_IDXS_LST)
+T_IDXS = np.array([index_function(idx, max_val=MAX_T, max_idx=N) for idx in range(N+1)])
 FCW_IDXS = T_IDXS < 5.0
 T_DIFFS = np.diff(T_IDXS, prepend=[0.])
 COMFORT_BRAKE = 2.5
@@ -281,8 +279,7 @@ class LongitudinalMpc:
     a_lead_traj = a_lead * np.exp(-a_lead_tau * (T_IDXS**2)/2.)
     v_lead_traj = np.clip(v_lead + np.cumsum(T_DIFFS * a_lead_traj), 0.0, 1e8)
     x_lead_traj = x_lead + np.cumsum(T_DIFFS * v_lead_traj)
-    lead_xv = np.column_stack((x_lead_traj, v_lead_traj))
-    return lead_xv
+    return x_lead_traj, v_lead_traj
 
   def process_lead(self, lead):
     v_ego = self.x0[1]
@@ -304,23 +301,20 @@ class LongitudinalMpc:
     x_lead = np.clip(x_lead, min_x_lead, 1e8)
     v_lead = np.clip(v_lead, 0.0, 1e8)
     a_lead = np.clip(a_lead, -10., 5.)
-    lead_xv = self.extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau)
-    return lead_xv
+    return self.extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau)
 
   def update(self, radarstate, personality=log.LongitudinalPersonality.standard):
     t_follow = get_T_FOLLOW(personality)
 
-    lead_xv_0 = self.process_lead(radarstate.leadOne)
-    lead_xv_1 = self.process_lead(radarstate.leadTwo)
+    x_lead_0, v_lead_0 = self.process_lead(radarstate.leadOne)
+    x_lead_1, v_lead_1 = self.process_lead(radarstate.leadTwo)
 
     # To estimate a safe distance from a moving lead, we calculate how much stopping
     # distance that lead needs as a minimum. We can add that to the current distance
     # and then treat that as a stopped car/obstacle at this new distance.
-    lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1])
-    lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1])
-
-    x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle])
-    self.source = MPC_SOURCES[np.argmin(x_obstacles[0])]
+    lead_0_obstacle = x_lead_0 + get_stopped_equivalence_factor(v_lead_0)
+    lead_1_obstacle = x_lead_1 + get_stopped_equivalence_factor(v_lead_1)
+    self.source = MPC_SOURCES[int(lead_1_obstacle[0] < lead_0_obstacle[0])]
 
     self.yref[:,:] = 0.0
     for i in range(N):
@@ -329,13 +323,13 @@ class LongitudinalMpc:
 
     self.params[:,0] = ACCEL_MIN
     self.params[:,1] = ACCEL_MAX
-    self.params[:,2] = np.min(x_obstacles, axis=1)
+    self.params[:,2] = np.minimum(lead_0_obstacle, lead_1_obstacle)
     self.params[:,3] = np.copy(self.a_prev)
     self.params[:,4] = t_follow
     self.params[:,5] = LEAD_DANGER_FACTOR
 
     self.run()
-    if (np.any(lead_xv_0[FCW_IDXS,0] - self.x_sol[FCW_IDXS,0] < CRASH_DISTANCE) and
+    if (np.any(x_lead_0[FCW_IDXS] - self.x_sol[FCW_IDXS,0] < CRASH_DISTANCE) and
             radarstate.leadOne.modelProb > 0.9):
       self.crash_cnt += 1
     else:
