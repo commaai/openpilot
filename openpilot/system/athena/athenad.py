@@ -88,8 +88,8 @@ UPLOAD_URL = regex(r'https?://[\x21-\x7e]+')
 UPLOAD_HEADERS = dict_of(regex(r'[\w\-]+'), regex(PRINTABLE))
 UPLOAD_ID = regex(r'[0-9a-f]{40}')
 CLIP_FILENAME = regex(r'[\w\-][\w\-.]*')
-UPLOAD_FILE = struct(fn=regex(DATA_PATH), url=UPLOAD_URL, headers=UPLOAD_HEADERS,
-                     allow_cellular=boolean, priority=integer(0, DEFAULT_UPLOAD_PRIORITY))
+UPLOAD_FILE = struct({"fn": regex(DATA_PATH), "url": UPLOAD_URL, "headers": UPLOAD_HEADERS},
+                     {"allow_cellular": boolean, "priority": integer(0, DEFAULT_UPLOAD_PRIORITY)})
 
 
 class UploadTOSAdapter(HTTPAdapter):
@@ -619,7 +619,8 @@ class VideoClips:
 video_clips = VideoClips()
 dispatcher.add_method(video_clips.createClip, route=regex(RE.ROUTE_NAME),
                       source_start_time=number(0, 24*3600), source_end_time=number(0, 24*3600),
-                      clip=struct(camera=regex(r'[a-z]*camera\.hevc'), filename=CLIP_FILENAME, bitrate=number(1, 20), speedup=integer(1, 10)))
+                      clip=struct({"camera": regex(r'[a-z]*camera\.hevc'), "filename": CLIP_FILENAME, "bitrate": number(1, 20),
+                                   "speedup": integer(1, 10)}))
 dispatcher.add_method(video_clips.getClipState, route=optional(regex(RE.ROUTE_NAME)))
 dispatcher.add_method(video_clips.deleteClip, filename=CLIP_FILENAME)
 dispatcher.add_method(video_clips.getClipChunk, filename=CLIP_FILENAME, offset=integer(0, 2**32))
@@ -643,10 +644,6 @@ def uploadFilesToUrls(files_data: list[UploadFileDict]) -> UploadFilesToUrlRespo
   items: list[UploadItemDict] = []
   failed: list[str] = []
   for file in files:
-    if len(file.fn) == 0 or file.fn[0] == '/' or '..' in file.fn or len(file.url) == 0:
-      failed.append(file.fn)
-      continue
-
     path = os.path.join(Paths.log_root(), file.fn)
     if not os.path.exists(path) and not os.path.exists(strip_zst_extension(path)):
       failed.append(file.fn)

@@ -51,15 +51,25 @@ def list_of(validator: Validator) -> Validator:
 def dict_of(key: Validator, value: Validator) -> Validator:
   return lambda v: isinstance(v, dict) and all(key(k) and value(x) for k, x in v.items())
 
-def struct(**fields: Validator) -> Validator:
-  return lambda v: isinstance(v, dict) and all(k in fields and fields[k](x) for k, x in v.items())
+def struct(required: dict[str, Validator], optional_fields: dict[str, Validator] | None = None) -> Validator:
+  fields = required | (optional_fields or {})
+  return lambda v: isinstance(v, dict) and required.keys() <= v.keys() <= fields.keys() and all(fields[k](x) for k, x in v.items())
 
 
-class Dispatcher(dict[str, Callable[..., Any]]):
+class Dispatcher(Mapping[str, Callable[..., Any]]):
   """Every param of every method must have a validator, all input is rejected by default."""
 
-  def __setitem__(self, name: str, fn: Callable[..., Any]) -> None:
-    raise TypeError("register methods with add_method")
+  def __init__(self):
+    self._methods: dict[str, Callable[..., Any]] = {}
+
+  def __getitem__(self, name: str) -> Callable[..., Any]:
+    return self._methods[name]
+
+  def __iter__(self):
+    return iter(self._methods)
+
+  def __len__(self) -> int:
+    return len(self._methods)
 
   def add_method(self, f: Callable[..., Any] | None = None, *, name: str | None = None, **validators: Validator):
     def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
@@ -75,7 +85,7 @@ class Dispatcher(dict[str, Callable[..., Any]]):
             raise TypeError(f"invalid param: {k}")
         return fn(*args, **kwargs)
 
-      super(Dispatcher, self).__setitem__(method, validated)
+      self._methods[method] = validated
       return fn
     return decorator(f) if f is not None else decorator
 
