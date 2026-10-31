@@ -43,17 +43,17 @@ cabana --demo
 To load a specific route for replay, provide the route as an argument:
 
 ```shell
-cabana "5beb9b58bd12b691/0000010a--a51155e496"
+cabana 5beb9b58bd12b691/0000010a--a51155e496
 ```
 
-Replace "5beb9b58bd12b691/0000010a--a51155e496" with your desired route identifier.
+Replace `5beb9b58bd12b691/0000010a--a51155e496` with your desired route identifier.
 
 
 ### Running Cabana with multiple cameras
 To run Cabana with multiple cameras, use the following command:
 
 ```shell
-cabana "5beb9b58bd12b691/0000010a--a51155e496" --cabin --wide-road
+cabana 5beb9b58bd12b691/0000010a--a51155e496 --cabin --wide-road
 ```
 
 ### Streaming CAN Messages from a comma Device

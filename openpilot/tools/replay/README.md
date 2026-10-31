@@ -19,7 +19,7 @@ You can replay a route from your comma account by specifying the route name.
 openpilot/tools/replay/replay <route-name>
 
 # Example:
-openpilot/tools/replay/replay '5beb9b58bd12b691/0000010a--a51155e496'
+openpilot/tools/replay/replay 5beb9b58bd12b691/0000010a--a51155e496
 
 # Replay the default demo route:
 openpilot/tools/replay/replay --demo
@@ -37,7 +37,7 @@ openpilot/tools/replay/replay <route-name> --data_dir="/path_to/route"
 # 5beb9b58bd12b691/0000010a--a51155e496--0
 # 5beb9b58bd12b691/0000010a--a51155e496--1
 # You can replay it like this:
-openpilot/tools/replay/replay "5beb9b58bd12b691/0000010a--a51155e496" --data_dir="/path_to_routes"
+openpilot/tools/replay/replay 5beb9b58bd12b691/0000010a--a51155e496 --data_dir="/path_to_routes"
 ```
 
 ## Usage
