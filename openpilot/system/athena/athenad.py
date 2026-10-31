@@ -45,7 +45,7 @@ from openpilot.tools.lib.helpers import RE
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.version import get_build_metadata
 from openpilot.common.hardware.hw import Paths
-from openpilot.system.athena.rpc import (anything, boolean, dict_of, dispatcher, dumps_call, either, handle, integer, is_call, is_response,
+from openpilot.system.athena.rpc import (boolean, dict_of, dispatcher, dumps_call, either, handle, integer, is_call, is_response,
                                          list_of, loads, number, one_of, optional, regex, string, struct)
 
 
@@ -143,7 +143,7 @@ class UploadItem:
     return self.priority == other.priority
 
 
-dispatcher.add_method(lambda s: s, name="echo", s=anything)
+dispatcher.add_method(lambda s: s, name="echo", s=string)
 recv_queue: Queue[str] = queue.Queue()
 send_queue: Queue[tuple[int, int, str]] = queue.PriorityQueue()
 upload_queue: Queue[UploadItem] = queue.PriorityQueue()

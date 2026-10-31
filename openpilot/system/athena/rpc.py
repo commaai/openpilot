@@ -22,9 +22,6 @@ Validator = Callable[[Any], bool]
 
 # *** param validators ***
 
-def anything(v: Any) -> bool:
-  return True
-
 def boolean(v: Any) -> bool:
   return isinstance(v, bool)
 
