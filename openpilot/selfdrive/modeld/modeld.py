@@ -9,6 +9,7 @@ os.environ['GMMU'] = '0' # for chestnut fast loading, noop for qcom
 os.environ.setdefault('AM_POWER_LIMIT', '100')
 from tinygrad.device import Buffer, Device
 from tinygrad.dtype import DType, dtypes
+from tinygrad.engine.jit import TinyJit
 from tinygrad.engine.realize import lower_and_compile
 from tinygrad.tensor import Tensor
 from tinygrad.helpers import round_up
@@ -164,6 +165,10 @@ class ModelState:
     for name, next_name in self.state_pairs.items():
       state = self.input_queues[name]
       self.outputs[next_name] = input_view(state._buffer(), state.shape, state.dtype, 0)
+    self.copy_outputs = TinyJit(lambda: self.outputs['outputs'].to('CPU').realize())
+    for _ in range(2):
+      self.copy_inputs()
+      self.copy_outputs()
     self.parser = Parser()
 
   def pack_inputs(self) -> None:
@@ -174,16 +179,18 @@ class ModelState:
                                    if name not in self.state_pairs and name != 'new_img'}
     npy_size = sum(round_up(math.prod(shape) * 4, 128) for shape in shapes.values())
     self.packed_input = np.zeros(npy_size + 2 * self.frame_copy_size, dtype=np.uint8)
-    self.input_host = Tensor(self.packed_input, device='NPY')._buffer()
-    self.input_device = Tensor(self.packed_input, device=self.model_device)._buffer()
+    self.input_host = Tensor(self.packed_input, device='NPY')
+    self.input_device = self.input_host.to(self.model_device).realize()
+    self.copy_inputs = TinyJit(lambda: self.input_device.assign(self.input_host.to(self.model_device)).realize())
     self.npy = {}
     offset = 0
     for name, shape in shapes.items():
       self.npy[name] = np.ndarray(shape, dtype=np.float32, buffer=self.packed_input, offset=offset)
-      self.input_queues[name] = input_view(self.input_device, shape, dtypes.float32, offset)
+      self.input_queues[name] = input_view(self.input_device._buffer(), shape, dtypes.float32, offset)
       offset += round_up(self.npy[name].nbytes, 128)
     self.frames = self.packed_input[npy_size:].reshape(2, self.frame_copy_size)
-    self.warp_inputs = {'input_frame': input_view(self.input_device, self.frames.shape, dtypes.uint8, npy_size), 'M_inv': self.input_queues.pop('tfm')}
+    self.warp_inputs = {'input_frame': input_view(self.input_device._buffer(), self.frames.shape, dtypes.uint8, npy_size),
+                        'M_inv': self.input_queues.pop('tfm')}
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
     return {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
@@ -201,14 +208,14 @@ class ModelState:
     self.npy['traffic_convention'][:] = inputs['traffic_convention']
     self.npy['action_t'][:] = inputs['action_t']
 
-    self.input_device.copy_from(self.input_host)
+    self.copy_inputs()
     self.input_queues['new_img'] = self.run_warp(**self.warp_inputs)
     self.run_model(output_buffers=self.outputs, **self.input_queues)
     if self.chestnut and (err := Device[self.outputs['outputs'].device].error_state.host.view(fmt='q')[0]):
       raise RuntimeError(f"chestnut failed with {err}")
     if after_enqueue is not None:
       after_enqueue()
-    model_output = self.outputs['outputs'].numpy()[0]
+    model_output = self.copy_outputs().numpy()[0]
     if self.chestnut and not np.all(np.isfinite(model_output)):
       raise RuntimeError("model output not finite")
     outputs_dict = self.parser.parse_outputs(self.slice_outputs(model_output, self.output_slices))
