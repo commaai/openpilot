@@ -97,19 +97,6 @@ wheels = [
 ]
 
 [[package]]
-name = "comma-deps-acados"
-version = "0.2.2.post103"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "numpy" },
-]
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/12/bd/b8bbb3791b42c5aef32c5ebaeaebcf4d1d712cc9e67222523daa179c7419/comma_deps_acados-0.2.2.post103-py3-none-macosx_11_0_arm64.whl", hash = "sha256:1067e2404c08bab1ebcdd46b00d505f956d2edacc9f50d307b0618b35eff0421", size = 10554192, upload-time = "2026-09-11T22:31:14.412Z" },
-    { url = "https://files.pythonhosted.org/packages/a3/72/31488259bb173161089393e7383ae90a7f3fb76b5d41098639a78bd9699f/comma_deps_acados-0.2.2.post103-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:2ad9fcebef1f65112a9cebe8a093977310602e1325d442dc345beaf512679211", size = 11670466, upload-time = "2026-09-11T22:31:18.634Z" },
-    { url = "https://files.pythonhosted.org/packages/98/eb/83c5ab1275b812ac10988e1ddbfd541088e8a5a883e45f34bd0ee35e2138/comma_deps_acados-0.2.2.post103-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:3b451852e83d62815cead999ab31073db9be60307f772650336cdd4534f12b9e", size = 13139433, upload-time = "2026-09-11T22:31:22.891Z" },
-]
-
-[[package]]
 name = "comma-deps-bootstrap-icons"
 version = "1.10.5.0.post103"
 source = { registry = "https://pypi.org/simple" }
@@ -582,7 +569,6 @@ version = "0.1.0"
 source = { editable = "." }
 default-groups = ["standalone"]
 dependencies = [
-    { name = "comma-deps-acados" },
     { name = "comma-deps-capnproto" },
     { name = "comma-deps-ffmpeg" },
     { name = "comma-deps-gcc-arm-none-eabi" },
@@ -635,7 +621,6 @@ standalone = [
 [package.metadata]
 requires-dist = [
     { name = "codespell", marker = "extra == 'testing'" },
-    { name = "comma-deps-acados" },
     { name = "comma-deps-bootstrap-icons", marker = "extra == 'tools'" },
     { name = "comma-deps-capnproto" },
     { name = "comma-deps-ffmpeg" },
@@ -990,7 +975,7 @@ requires-dist = [
     { name = "mkdocs", marker = "extra == 'docs'" },
     { name = "mkdocs-material", marker = "extra == 'docs'" },
     { name = "mkdocstrings", extras = ["python"], marker = "extra == 'docs'" },
-    { name = "mypy", marker = "extra == 'linting'", specifier = "==1.19.1" },
+    { name = "mypy", marker = "extra == 'linting'", specifier = "==2.3.1" },
     { name = "networkx", marker = "extra == 'testing'" },
     { name = "nibabel", marker = "extra == 'testing'" },
     { name = "numba", marker = "extra == 'testing'", specifier = ">=0.55" },
@@ -1011,7 +996,7 @@ requires-dist = [
     { name = "pytest-split", marker = "extra == 'testing-minimal'" },
     { name = "pytest-xdist", marker = "extra == 'testing-minimal'" },
     { name = "pyyaml", marker = "extra == 'autogen'" },
-    { name = "ruff", marker = "extra == 'linting'", specifier = "==0.14.10" },
+    { name = "ruff", marker = "extra == 'linting'", specifier = "==0.16.4" },
     { name = "safetensors", marker = "extra == 'testing-unit'" },
     { name = "sentencepiece", marker = "extra == 'testing'" },
     { name = "tabulate", marker = "extra == 'testing-unit'" },
@@ -1024,7 +1009,7 @@ requires-dist = [
     { name = "transformers", marker = "extra == 'testing'" },
     { name = "typeguard", marker = "extra == 'linting'" },
     { name = "typing-extensions", marker = "extra == 'linting'" },
-    { name = "z3-solver", marker = "extra == 'testing-minimal'", specifier = "<4.15.4" },
+    { name = "z3-solver", marker = "extra == 'testing-minimal'", specifier = "==5.1.0.0" },
 ]
 provides-extras = ["linting", "testing-minimal", "testing-unit", "testing", "docs", "mesa", "autogen"]
 
