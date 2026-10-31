@@ -88,7 +88,7 @@ name = "Pandad SPI"
 run = "./openpilot/selfdrive/pandad/tests/test_pandad_spi.py"
 
 [jobs.camerad]
-runs-on = ["up-mici", "up-tres"]
+runs-on = "up-mici"  # TODO: re-enable up-tres
 timeout-minutes = 35
 
 [[jobs.camerad.steps]]
