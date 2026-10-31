@@ -1,4 +1,4 @@
-# How to Give Feedback
+# How to give feedback
 
 Feedback is one of the highest leverage ways to contribute to openpilot as a user.
 
@@ -9,11 +9,11 @@ Join the community Discord, then use the form in `#submit-feedback`.
 
 Before posting feedback, please ensure:
 
-- **openpilot is up to date** you should be on the latest openpilot release or nightly
-- **both road-facing cameras have a clear view** your windshield is clean, lenses are clean, etc.
-- **your device is mounted properly** your device must be mounted horizontally center and relatively high on the windshield
+- **openpilot is up to date** You should be on the latest openpilot release or nightly
+- **Both road-facing cameras have a clear view** Your windshield is clean, lenses are clean, etc.
+- **Your device is mounted properly** Your device must be mounted horizontally center and relatively high on the windshield
 
-## Driver Monitoring
+## Driver monitoring
 
 If you find DM annoying while being perfectly attentive, these are likely false positives and we want to fix them!
 In general, driver monitoring feedback is very actionable, and we can fix your complaint within a release cycle.
@@ -22,14 +22,14 @@ To post your feedback:
 
 1. Join the [community Discord](https://discord.comma.ai).
 2. If cabin camera recording is toggled off, temporarily enable cabin camera recording in the settings until you reproduce the issue.
-3. Using comma connect, identify the relevant segment and upload the segment's logs and cabin camera.
+3. Using comma connect, identify the relevant segment and upload the segment's logs and cabin camera video.
 4. Post the segment in the `#openpilot-experience` channel on Discord with a good description.
 
 Before posting feedback, please ensure:
 
-- **openpilot is up to date** you should be on the latest openpilot release or nightly
-- **the cabin camera has a clear view of the driver** ensure nothing blocks view of the driver (e.g. a cable), the lens is clean, etc.
-- **your device is mounted properly** your device must be mounted horizontally center and relatively high on the windshield
+- **openpilot is up to date** You should be on the latest openpilot release or nightly
+- **The cabin camera has a clear view of the driver** Ensure nothing blocks view of the driver (e.g. a cable), the lens is clean, etc.
+- **Your device is mounted properly** Your device must be mounted horizontally center and relatively high on the windshield
 
 ## Other bugs
 
