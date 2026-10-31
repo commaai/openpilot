@@ -117,6 +117,21 @@ class Car:
       safety_config.safetyModel = structs.CarParams.SafetyModel.noOutput
       self.CP.safetyConfigs = [safety_config]
 
+    # BYD LKS latch: persist last state, first boot ON. Panda reads the same
+    # bit from safetyParam and then follows the bus-0 LKS button with us.
+    self._byd_lks_last = None
+    if self.CP.brand == "byd" and self.CI.CS is not None:
+      from opendbc.car.byd.values import BydSafetyFlags
+      if self.params.get("BydLksEnabled") is None:
+        self.params.put_bool("BydLksEnabled", True)
+      lks = self.params.get_bool("BydLksEnabled")
+      self.CI.CS.lks_enabled = lks
+      self._byd_lks_last = lks
+      if not self.CP.passive and self.CP.safetyConfigs:
+        self.CP.safetyConfigs[0].safetyParam &= ~int(BydSafetyFlags.LKS_ON)
+        if lks:
+          self.CP.safetyConfigs[0].safetyParam |= int(BydSafetyFlags.LKS_ON)
+
     if self.CP.secOcRequired:
       # Copy user key if available
       try:
@@ -241,6 +256,10 @@ class Car:
 
   def step(self):
     CS, RD = self.state_update()
+
+    if self._byd_lks_last is not None and self.CI.CS.lks_enabled != self._byd_lks_last:
+      self.params.put_bool("BydLksEnabled", self.CI.CS.lks_enabled)
+      self._byd_lks_last = self.CI.CS.lks_enabled
 
     self.state_publish(CS, RD)
 
