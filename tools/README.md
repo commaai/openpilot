@@ -51,14 +51,13 @@ Learn about the openpilot ecosystem and tools by playing our [CTF](/tools/CTF.md
 └── scripts/            # Miscellaneous scripts
 ```
 
-Development tools such as cabana, plotjuggler, and replay live in [openpilot/tools/](/openpilot/tools/):
+Development tools such as ycpe and replay live in [openpilot/tools/](/openpilot/tools/):
 
 ```
-├── cabana/             # View and plot CAN messages from drives or in realtime
 ├── camerastream/       # Cameras stream over the network
 ├── joystick/           # Control your car with a joystick
 ├── lib/                # Libraries to support the tools and reading openpilot logs
-├── plotjuggler/        # A tool to plot openpilot logs
 ├── replay/             # Replay drives and mock openpilot services
-└── sim/                # Run openpilot in a simulator
+├── sim/                # Run openpilot in a simulator
+└── ycpe/               # Web tool for drives, logs, CAN and video, live or recorded
 ```

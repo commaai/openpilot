@@ -1,0 +1,13 @@
+.layout-picker { display: flex; flex-direction: column; gap: 6px; width: 300px; padding: 4px; }
+.layout-picker .picker-how { display: flex; gap: 10px; align-items: center; color: var(--muted); }
+.layout-picker .picker-how label { display: flex; gap: 4px; align-items: center; color: var(--fg); cursor: pointer; }
+.layout-picker .picker-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.layout-picker .picker-row > button { padding: 4px 10px; white-space: nowrap; border: 1px solid var(--line); border-radius: 5px; background: var(--panel); cursor: pointer; }
+.layout-picker .picker-row > button:hover { background: var(--hover); }
+.layout-picker .picker-row > input { flex: 1; min-width: 0; padding: 4px 6px; border: 1px solid var(--line); border-radius: 5px; background: var(--bg); }
+.layout-picker .picker-status { color: var(--muted); overflow-wrap: anywhere; }
+.layout-picker .picker-status:empty { display: none; }
+.layout-picker .picker-status ul { margin: 4px 0 0; padding-left: 16px; max-height: 120px; overflow: auto; }
+.layout-picker .picker-group { padding: 6px 8px 2px; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+.layout-picker .picker-refs { display: flex; flex-direction: column; }
+.layout-picker .picker-refs .menu-row { padding: 3px 8px; }

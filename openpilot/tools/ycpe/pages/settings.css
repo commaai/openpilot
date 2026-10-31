@@ -1,0 +1,95 @@
+/* user mode's device settings: connect's MUI modals (DeviceSettingsModal, UploadQueue) in its dark-only palette */
+.cn-modal { position: fixed; inset: 0; width: auto; max-width: none; height: auto; max-height: none; margin: 0; padding: 0; border: 0; background: none;
+  color: #fff; font: 400 16px/1.5 "Inter", sans-serif; overflow: hidden; }
+.cn-modal::backdrop { background: rgba(0,0,0,.5); transition: opacity .225s cubic-bezier(.4, 0, .2, 1); }
+@starting-style { .cn-modal[open]::backdrop { opacity: 0; } }
+.cn-paper { position: absolute; top: 40%; left: 50%; box-sizing: border-box; width: 400px; max-width: 90%; padding: 16px; border-radius: 4px; outline: none;
+  background: #30373b; transform: translate(-50%, -50%);
+  box-shadow: 0 1px 5px 0 rgba(0,0,0,.2), 0 2px 2px 0 rgba(0,0,0,.14), 0 3px 1px -2px rgba(0,0,0,.12); }
+.cn-paper.cn-unpair { width: 360px; max-width: 80%; }
+.cn-paper.cn-upload-queue { top: 50%; width: max-content; }
+.cn-paper :is(h2, p) { margin: 0; }
+.cn-paper hr { height: 1px; margin: 0; border: 0; background: rgba(255,255,255,.12); }
+.cn-modal-title { display: flex; align-items: baseline; justify-content: space-between; min-height: 25px; margin-bottom: 5px; }
+.cn-modal-title h2 { font-size: 21px; font-weight: 500; line-height: 1.16667; }
+.cn-modal-title span { color: rgba(255,255,255,.7); font-size: 12px; line-height: 1.375; }
+.cn-upload-queue .cn-modal-title span { margin-left: 8px; }
+.cn-modal-row { display: flex; align-items: flex-end; }
+
+/* MUI's buttons: outlined, and contained in connect's grey */
+.cn-btn { box-sizing: border-box; min-width: 64px; min-height: 36px; margin: 20px 20px 0 0; padding: 8px 16px; border: 1px solid rgba(255,255,255,.23);
+  border-radius: 4px; background: transparent; color: #fff; font: 500 14px/1.4 "Inter", sans-serif; cursor: pointer;
+  transition: background-color .25s cubic-bezier(.4, 0, .2, 1), box-shadow .25s cubic-bezier(.4, 0, .2, 1); }
+.cn-btn:last-child { margin-right: 0; }
+.cn-btn:hover { background: rgba(255,255,255,.08); }
+.cn-btn:disabled { border-color: rgba(255,255,255,.12); color: rgba(255,255,255,.3); cursor: default; }
+.cn-btn.contained { padding: 8px 16px; border: 0; background: #5c696f;
+  box-shadow: 0 1px 5px 0 rgba(0,0,0,.2), 0 2px 2px 0 rgba(0,0,0,.14), 0 3px 1px -2px rgba(0,0,0,.12); }
+.cn-btn.contained:hover { background: #4b5559; }
+.cn-btn.contained:active { box-shadow: 0 5px 5px -3px rgba(0,0,0,.2), 0 8px 10px 1px rgba(0,0,0,.14), 0 3px 14px 2px rgba(0,0,0,.12); }
+.cn-btn.contained:disabled { background: rgba(255,255,255,.12); box-shadow: none; color: rgba(255,255,255,.3); }
+.cn-modal-buttons { text-align: right; }
+.cn-modal-buttons .cn-btn { margin: 0; }
+.cn-modal-buttons .cn-btn + .cn-btn { margin-left: 8px; }
+.cn-upload-queue .cn-modal-buttons .cn-btn { margin-left: 8px; }
+
+.cn-commacare { display: inline-flex; align-items: center; padding: 6px 14px 6px 12px; border: 1px solid #1a974e; border-radius: 12px; color: #1a974e;
+  font-weight: 600; line-height: 1; letter-spacing: .04em; text-decoration: none; cursor: pointer; transition: background-color .15s; }
+.cn-commacare:hover { background: rgba(81,191,135,.1); }
+.cn-commacare img { width: 24px; margin-right: 12px; }
+
+/* the fields: connect's TextField */
+.cn-form { padding: 8px 0; }
+.cn-form-row { min-height: 75px; }
+.cn-form-error { margin-bottom: 5px; padding: 10px; background: #75141d; }
+.cn-form-error p { font-size: 14px; line-height: 1.46429; }
+.cn-field { position: relative; display: inline-flex; flex-direction: column; width: 70%; }
+.cn-field label { position: absolute; top: 0; left: 0; margin: 4px 0 0 16px; color: rgba(255,255,255,.7); font-size: 16px; line-height: 1; pointer-events: none;
+  transform: translate(0, 24px) scale(1); transform-origin: top left; transition: color .2s cubic-bezier(0, 0, .2, 1), transform .2s cubic-bezier(0, 0, .2, 1); }
+.cn-field:has(input:focus) label, .cn-field:has(input:not(:placeholder-shown)) label { transform: translate(0, -2px) scale(.75); }
+.cn-field:has(input:focus) label { color: #79bae8; }
+.cn-input { box-sizing: border-box; width: 100%; margin-top: 16px; overflow: hidden; border: 1px solid #272c2f; border-radius: 20px; }
+.cn-input input { box-sizing: content-box; width: 100%; height: 19px; padding: 12px 16px; border: 0; outline: none; background: none; color: #fff;
+  font: 400 16px/19px "Inter", sans-serif; }
+.cn-input input:focus { box-shadow: none; }
+.cn-input input:focus::placeholder { color: transparent; }
+.cn-field p { margin: 4px 0 0 8px; color: rgba(255,255,255,.7); font-size: 12px; line-height: 1; }
+.cn-fab { position: relative; display: inline-block; margin: 8px; }
+.cn-fab .cn-progress { position: absolute; top: 0; left: 0; z-index: 1; }
+.cn-iconbtn { display: grid; place-items: center; width: 48px; height: 48px; padding: 0; border: 0; border-radius: 50%; background: none; color: #fff; cursor: pointer;
+  transition: background-color .15s cubic-bezier(.4, 0, .2, 1); }
+.cn-iconbtn:hover { background: rgba(255,255,255,.08); }
+.cn-iconbtn.small { width: auto; height: auto; border-radius: 13px; }
+.cn-iconbtn.small:hover { background: none; }
+
+/* MUI's CircularProgress */
+.cn-progress { display: inline-block; box-sizing: border-box; width: var(--size); height: var(--size); border: calc(var(--size) / 12) solid #57a9e3;
+  border-right-color: transparent; border-radius: 50%; animation: cn-spin 1.4s linear infinite; }
+.cn-uploads .cn-progress, .cn-cancel-cell .cn-progress { margin: 8px; border-color: #fff; border-right-color: transparent; }
+.cn-cancel-cell .cn-progress { margin: 1.5px; }
+@keyframes cn-spin { to { transform: rotate(360deg); } }
+
+.cn-unpair-error, .cn-unpair-warning { display: flex; align-items: center; margin-top: 15px; padding: 10px; color: #fff; }
+.cn-unpair-error { background: rgba(255,0,0,.3); }
+.cn-unpair-warning { background: #b85e1f; }
+:is(.cn-unpair-error, .cn-unpair-warning) svg { flex-shrink: 0; }
+:is(.cn-unpair-error, .cn-unpair-warning) p { display: inline-block; margin-left: 10px; font-size: 14px; line-height: 1.46429; }
+.cn-unpair-warning a { color: #fff; text-decoration: underline; }
+.cn-unpair-buttons { display: flex; flex-wrap: wrap-reverse; align-items: baseline; justify-content: space-between; }
+.cn-unpaired { font-size: 14px; font-weight: 500; line-height: 1.71429; }
+
+.cn-uploads { max-height: calc(90vh - 98px); margin: 8px 0; overflow-y: auto; color: rgba(255,255,255,.9); text-align: left; }
+.cn-uploads p { margin: 1em 0; }
+.cn-uploads table { border-collapse: collapse; }
+.cn-uploads :is(th, td) { height: 25px; padding: 0 8px; }
+.cn-seg { display: flex; flex-wrap: wrap; }
+.cn-seg span { white-space: nowrap; }
+.cn-cancel-cell { text-align: center; }
+.cn-upload-progress { display: flex; align-items: center; justify-content: center; font-size: .8rem; }
+.cn-upload-progress > div { position: relative; width: 80%; height: 8px; margin-right: 6px; overflow: hidden; background: rgba(255,255,255,.3); }
+.cn-upload-progress > div::after { content: ""; position: absolute; inset: 0; background: rgba(255,255,255,.8); transform: scaleX(var(--p)); transform-origin: left;
+  transition: transform .5s linear; }
+@media (max-width: 599px) {
+  .cn-uploads :is(th, td) { padding: 0 4px; }
+  .cn-uploads :is(th:nth-child(4), td:nth-child(3):not(:last-child)) { display: none; }
+}
