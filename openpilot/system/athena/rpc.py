@@ -31,11 +31,8 @@ def integer(v: Any) -> bool:
 def number(v: Any) -> bool:
   return isinstance(v, (int, float)) and not isinstance(v, bool)
 
-def string(v: Any) -> bool:
-  return isinstance(v, str)
-
 def regex(pattern: str) -> Validator:
-  p = re.compile(pattern)
+  p = re.compile(pattern, re.ASCII)
   return lambda v: isinstance(v, str) and p.fullmatch(v) is not None
 
 def one_of(*choices: Any) -> Validator:

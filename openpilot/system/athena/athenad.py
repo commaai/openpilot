@@ -46,7 +46,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.common.version import get_build_metadata
 from openpilot.common.hardware.hw import Paths
 from openpilot.system.athena.rpc import (boolean, dict_of, dispatcher, dumps_call, either, handle, integer, is_call, is_response,
-                                         list_of, loads, number, one_of, optional, regex, string, struct)
+                                         list_of, loads, number, one_of, optional, regex, struct)
 
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
@@ -83,9 +83,12 @@ UploadFilesToUrlResponse = dict[str, int | list[UploadItemDict] | list[str]]
 
 # param validators for RPC inputs
 DATA_PATH = r'(?!.*\.\.)[\w\-.][\w\-./]*'  # relative to log root
+PRINTABLE = r'[\x20-\x7e]*'
+UPLOAD_URL = regex(r'https?://[\x21-\x7e]+')
+UPLOAD_HEADERS = dict_of(regex(r'[\w\-]+'), regex(PRINTABLE))
 UPLOAD_ID = regex(r'[0-9a-f]{40}')
 CLIP_FILENAME = regex(r'[\w\-][\w\-.]*')
-UPLOAD_FILE = struct(fn=regex(DATA_PATH), url=regex(r'https?://\S+'), headers=dict_of(string, string),
+UPLOAD_FILE = struct(fn=regex(DATA_PATH), url=UPLOAD_URL, headers=UPLOAD_HEADERS,
                      allow_cellular=boolean, priority=integer)
 
 
@@ -143,7 +146,7 @@ class UploadItem:
     return self.priority == other.priority
 
 
-dispatcher.add_method(lambda s: s, name="echo", s=string)
+dispatcher.add_method(lambda s: s, name="echo", s=regex(PRINTABLE))
 recv_queue: Queue[str] = queue.Queue()
 send_queue: Queue[tuple[int, int, str]] = queue.PriorityQueue()
 upload_queue: Queue[UploadItem] = queue.PriorityQueue()
@@ -616,12 +619,12 @@ class VideoClips:
 video_clips = VideoClips()
 dispatcher.add_method(video_clips.createClip, route=regex(RE.ROUTE_NAME), source_start_time=number, source_end_time=number,
                       clip=struct(camera=regex(r'[a-z]*camera\.hevc'), filename=CLIP_FILENAME, bitrate=number, speedup=integer))
-dispatcher.add_method(video_clips.getClipState, route=optional(string))
+dispatcher.add_method(video_clips.getClipState, route=optional(regex(RE.ROUTE_NAME)))
 dispatcher.add_method(video_clips.deleteClip, filename=CLIP_FILENAME)
 dispatcher.add_method(video_clips.getClipChunk, filename=CLIP_FILENAME, offset=integer)
 
 
-@dispatcher.add_method(fn=regex(DATA_PATH), url=regex(r'https?://\S+'), headers=dict_of(string, string))
+@dispatcher.add_method(fn=regex(DATA_PATH), url=UPLOAD_URL, headers=UPLOAD_HEADERS)
 def uploadFileToUrl(fn: str, url: str, headers: dict[str, str]) -> UploadFilesToUrlResponse:
   # this is because mypy doesn't understand that the decorator doesn't change the return type
   response: UploadFilesToUrlResponse = uploadFilesToUrls([{
@@ -805,7 +808,7 @@ def getNetworkMetered() -> bool:
   return HARDWARE.get_network_metered(network_type)
 
 
-@dispatcher.add_method(sdp=string, enabled=boolean)
+@dispatcher.add_method(sdp=regex(r'[\x20-\x7e\r\n]*'), enabled=boolean)
 def startStream(sdp: str, enabled: bool) -> dict:
   from openpilot.system.webrtc.helpers import StreamRequestBody, post_stream_request, wait_for_webrtcd
   params = Params()
