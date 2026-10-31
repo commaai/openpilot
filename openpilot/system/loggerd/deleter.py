@@ -6,7 +6,7 @@ from openpilot.common.hardware.hw import Paths
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.loggerd.config import get_available_bytes, get_available_percent
 from openpilot.system.loggerd.uploader import listdir_by_creation
-from openpilot.system.loggerd.xattr_cache import getxattr
+from openpilot.system.loggerd.xattr_cache import getxattr_uncached
 
 MIN_BYTES = 5 * 1024 * 1024 * 1024
 MIN_PERCENT = 10
@@ -19,7 +19,8 @@ PRESERVE_COUNT = 5
 
 
 def has_preserve_xattr(d: str) -> bool:
-  return getxattr(os.path.join(Paths.log_root(), d), PRESERVE_ATTR_NAME) == PRESERVE_ATTR_VALUE
+  # loggerd sets this from its own process on userBookmark, so a cached value can be stale
+  return getxattr_uncached(os.path.join(Paths.log_root(), d), PRESERVE_ATTR_NAME) == PRESERVE_ATTR_VALUE
 
 
 def get_preserved_segments(dirs_by_creation: list[str]) -> set[str]:
