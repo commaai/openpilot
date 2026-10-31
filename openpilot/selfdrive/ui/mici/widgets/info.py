@@ -1,4 +1,4 @@
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 
 from openpilot.system.ui.lib.application import FontWeight
 from openpilot.system.ui.widgets import Widget

@@ -1,4 +1,4 @@
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 import time
 from openpilot.system.ui.lib.application import gui_app, MousePos, FONT_SCALE
 from openpilot.system.ui.lib.text_measure import measure_text_cached

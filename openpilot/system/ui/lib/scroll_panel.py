@@ -1,5 +1,5 @@
 import math
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 from enum import IntEnum
 from openpilot.system.ui.lib.application import gui_app, MouseEvent
 from openpilot.common.filter_simple import FirstOrderFilter

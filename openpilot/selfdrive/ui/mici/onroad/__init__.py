@@ -1,4 +1,4 @@
-import pyray as rl
+from openpilot.system.ui.lib import raylib as rl
 
 SIDE_PANEL_WIDTH = 60
 
