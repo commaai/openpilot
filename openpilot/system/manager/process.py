@@ -56,7 +56,6 @@ def join_process(process: Process, timeout: float) -> None:
 
 class ManagerProcess(ABC):
   daemon = False
-  sigkill = False
   should_run: Callable[[bool, Params, car.CarParams], bool]
   proc: Process | None = None
   enabled = True
@@ -75,7 +74,7 @@ class ManagerProcess(ABC):
       if not self.shutting_down:
         cloudlog.info(f"killing {self.name}")
         if sig is None:
-          sig = signal.SIGKILL if self.sigkill else signal.SIGINT
+          sig = signal.SIGINT
         self.signal(sig)
         self.shutting_down = True
 
@@ -126,13 +125,12 @@ class ManagerProcess(ABC):
 
 
 class NativeProcess(ManagerProcess):
-  def __init__(self, name, cwd, cmdline, should_run, enabled=True, sigkill=False):
+  def __init__(self, name, cwd, cmdline, should_run, enabled=True):
     self.name = name
     self.cwd = cwd
     self.cmdline = cmdline
     self.should_run = should_run
     self.enabled = enabled
-    self.sigkill = sigkill
     self.launcher = nativelauncher
 
   def start(self) -> None:
@@ -151,12 +149,11 @@ class NativeProcess(ManagerProcess):
 
 
 class PythonProcess(ManagerProcess):
-  def __init__(self, name, module, should_run, enabled=True, sigkill=False):
+  def __init__(self, name, module, should_run, enabled=True):
     self.name = name
     self.module = module
     self.should_run = should_run
     self.enabled = enabled
-    self.sigkill = sigkill
     self.launcher = launcher
 
   def start(self) -> None:

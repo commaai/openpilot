@@ -244,7 +244,7 @@ class TorqueEstimator(ParameterEstimator):
     return msg
 
 
-def main(demo=False):
+def main():
   config_realtime_process([0, 1, 2, 3], 5)
 
   DEBUG = bool(int(os.getenv("DEBUG", "0")))
@@ -274,9 +274,4 @@ def main(demo=False):
 
 
 if __name__ == "__main__":
-  import argparse
-
-  parser = argparse.ArgumentParser(description='Process the --demo argument.')
-  parser.add_argument('--demo', action='store_true', help='A boolean for demo mode.')
-  args = parser.parse_args()
-  main(demo=args.demo)
+  main()
