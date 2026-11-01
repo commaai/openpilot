@@ -2,6 +2,10 @@ msgid ""
 msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 
+#: openpilot/system/ui/widgets/list_view.py
+msgid "Error"
+msgstr ""
+
 #: openpilot/system/ui/widgets/confirm_dialog.py
 #: openpilot/system/ui/widgets/html_render.py
 msgid "OK"
@@ -136,30 +140,6 @@ msgstr ""
 msgid "Forget Wi-Fi Network \"{}\"?"
 msgstr ""
 
-#: openpilot/system/ui/widgets/list_view.py
-msgid "Error"
-msgstr ""
-
-#: openpilot/selfdrive/ui/widgets/pairing_dialog.py
-msgid "Pair your device to your comma account"
-msgstr ""
-
-#: openpilot/selfdrive/ui/widgets/pairing_dialog.py
-msgid "Go to https://connect.comma.ai on your phone"
-msgstr ""
-
-#: openpilot/selfdrive/ui/widgets/pairing_dialog.py
-msgid "Click \"add new device\" and scan the QR code on the right"
-msgstr ""
-
-#: openpilot/selfdrive/ui/widgets/pairing_dialog.py
-msgid "Bookmark connect.comma.ai to your home screen to use it like an app"
-msgstr ""
-
-#: openpilot/selfdrive/ui/widgets/pairing_dialog.py
-msgid "QR Code Error"
-msgstr ""
-
 #: openpilot/selfdrive/ui/widgets/ssh_key.py
 msgid "LOADING"
 msgstr ""
@@ -220,24 +200,24 @@ msgstr ""
 msgid "Become a comma prime member at connect.comma.ai"
 msgstr ""
 
-#: openpilot/selfdrive/ui/widgets/offroad_alerts.py
-msgid "Close"
+#: openpilot/selfdrive/ui/widgets/pairing_dialog.py
+msgid "Pair your device to your comma account"
 msgstr ""
 
-#: openpilot/selfdrive/ui/widgets/offroad_alerts.py
-msgid "Snooze Update"
+#: openpilot/selfdrive/ui/widgets/pairing_dialog.py
+msgid "Go to https://connect.comma.ai on your phone"
 msgstr ""
 
-#: openpilot/selfdrive/ui/widgets/offroad_alerts.py
-msgid "Acknowledge Excessive Actuation"
+#: openpilot/selfdrive/ui/widgets/pairing_dialog.py
+msgid "Click \"add new device\" and scan the QR code on the right"
 msgstr ""
 
-#: openpilot/selfdrive/ui/widgets/offroad_alerts.py
-msgid "Reboot and Update"
+#: openpilot/selfdrive/ui/widgets/pairing_dialog.py
+msgid "Bookmark connect.comma.ai to your home screen to use it like an app"
 msgstr ""
 
-#: openpilot/selfdrive/ui/widgets/offroad_alerts.py
-msgid "No release notes available."
+#: openpilot/selfdrive/ui/widgets/pairing_dialog.py
+msgid "QR Code Error"
 msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/device.py
@@ -270,8 +250,32 @@ msgstr ""
 msgid "Please connect to Wi-Fi to complete initial pairing"
 msgstr ""
 
-#: openpilot/selfdrive/ui/layouts/home.py
-msgid "UPDATE"
+#: openpilot/selfdrive/ui/widgets/offroad_alerts.py
+msgid "Close"
+msgstr ""
+
+#: openpilot/selfdrive/ui/widgets/offroad_alerts.py
+msgid "Snooze Update"
+msgstr ""
+
+#: openpilot/selfdrive/ui/widgets/offroad_alerts.py
+msgid "Close"
+msgstr ""
+
+#: openpilot/selfdrive/ui/widgets/offroad_alerts.py
+msgid "Snooze Update"
+msgstr ""
+
+#: openpilot/selfdrive/ui/widgets/offroad_alerts.py
+msgid "Acknowledge Excessive Actuation"
+msgstr ""
+
+#: openpilot/selfdrive/ui/widgets/offroad_alerts.py
+msgid "Reboot and Update"
+msgstr ""
+
+#: openpilot/selfdrive/ui/widgets/offroad_alerts.py
+msgid "No release notes available."
 msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/home.py
@@ -348,6 +352,16 @@ msgstr ""
 msgid "ERROR"
 msgstr ""
 
+#: openpilot/selfdrive/ui/layouts/home.py
+msgid "UPDATE"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/home.py
+msgid "{} ALERT"
+msgid_plural "{} ALERTS"
+msgstr[0] ""
+msgstr[1] ""
+
 #: openpilot/selfdrive/ui/layouts/onboarding.py
 msgid "Welcome to openpilot"
 msgstr ""
@@ -370,6 +384,262 @@ msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/onboarding.py
 msgid "Decline, uninstall openpilot"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Preview the cabin camera to ensure that driver monitoring has good visibility. (vehicle must be off)"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down."
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Review the rules, features, and limitations of openpilot"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Select a language"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Are you sure you want to reset calibration?"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Reset"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "<br><br>Steering lag calibration is complete."
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Are you sure you want to reboot?"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Reboot"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Are you sure you want to power off?"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Power Off"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Pair Device"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "PAIR"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Reset Calibration"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "RESET"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Dongle ID"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Serial"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Cabin Camera"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "PREVIEW"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Review Training Guide"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "REVIEW"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Regulatory"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "VIEW"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Change Language"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "CHANGE"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Disengage to Reset Calibration"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "<br><br>Steering lag calibration is {}% complete."
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Disengage to Reboot"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "Disengage to Power Off"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid "N/A"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid " Steering torque response calibration is complete."
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/device.py
+msgid " Your device is pointed {:.1f}° {} and {:.1f}° {}."
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/onboarding.py
+msgid "You must accept the Terms and Conditions to use openpilot. Read the latest terms at https://comma.ai/terms before continuing."
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/onboarding.py
+msgid "Decline"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/onboarding.py
+msgid "Agree"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/onboarding.py
+msgid "You must accept the Terms and Conditions in order to use openpilot."
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/onboarding.py
+msgid "Decline, uninstall openpilot"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "When enabled, pressing the accelerator pedal will disengage openpilot."
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Enable driver monitoring even when openpilot is not engaged."
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Upload data from the cabin camera and help improve the driver monitoring algorithm."
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Display speed in km/h instead of mph."
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect."
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Driving Personality"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Changing this setting will restart openpilot if the car is powered on."
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Experimental mode is currently unavailable on this car since the car's stock ACC is used for longitudinal control."
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Enable openpilot"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Experimental Mode"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Disengage on Accelerator Pedal"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Enable Lane Departure Warnings"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Always-On Driver Monitoring"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Record and Upload Cabin Camera"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Record and Upload Microphone Audio"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Use Metric System"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "openpilot longitudinal control may come in a future update."
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Aggressive"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Standard"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Relaxed"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode."
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/settings.py
+msgid "Device"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/settings.py
+msgid "Network"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/settings.py
+msgid "Toggles"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/settings.py
+msgid "Software"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/settings.py
+msgid "Firehose"
+msgstr ""
+
+#: openpilot/selfdrive/ui/layouts/settings/settings.py
+msgid "Developer"
 msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/developer.py
@@ -514,262 +784,8 @@ msgstr ""
 msgid "up to date, last checked {}"
 msgstr ""
 
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Preview the cabin camera to ensure that driver monitoring has good visibility. (vehicle must be off)"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down."
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Review the rules, features, and limitations of openpilot"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Select a language"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Are you sure you want to reset calibration?"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Reset"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "<br><br>Steering lag calibration is complete."
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Are you sure you want to reboot?"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Reboot"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Are you sure you want to power off?"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Power Off"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Pair Device"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "PAIR"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Reset Calibration"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "RESET"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Dongle ID"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Serial"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Cabin Camera"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "PREVIEW"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Review Training Guide"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "REVIEW"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Regulatory"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "VIEW"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Change Language"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "CHANGE"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Disengage to Reset Calibration"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "<br><br>Steering lag calibration is {}% complete."
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Disengage to Reboot"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "Disengage to Power Off"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "N/A"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid " Steering torque response calibration is complete."
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid " Your device is pointed {:.1f}° {} and {:.1f}° {}."
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "down"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "up"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "left"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid "right"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/device.py
-msgid " Steering torque response calibration is {}% complete."
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/settings.py
-msgid "Device"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/settings.py
-msgid "Network"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/settings.py
-msgid "Toggles"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/settings.py
-msgid "Software"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/settings.py
-msgid "Firehose"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/settings.py
-msgid "Developer"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/initial_cruise_speed.py
-#: openpilot/selfdrive/ui/onroad/hud_renderer.py
-msgid "km/h"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/initial_cruise_speed.py
-#: openpilot/selfdrive/ui/onroad/hud_renderer.py
-msgid "mph"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "When enabled, pressing the accelerator pedal will disengage openpilot."
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Enable driver monitoring even when openpilot is not engaged."
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Upload data from the cabin camera and help improve the driver monitoring algorithm."
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Display speed in km/h instead of mph."
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect."
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Following Distance"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Changing this setting will restart openpilot if the car is powered on."
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Enable openpilot"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Disengage on Accelerator Pedal"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Enable Lane Departure Warnings"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Always-On Driver Monitoring"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Record and Upload Cabin Camera"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Record and Upload Microphone Audio"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Use Metric System"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Initial Max Speed"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Aggressive"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Standard"
-msgstr ""
-
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Relaxed"
-msgstr ""
-
-#: openpilot/selfdrive/ui/onroad/hud_renderer.py
-msgid "MAX"
+#: openpilot/selfdrive/ui/onroad/cabin_camera_dialog.py
+msgid "camera starting"
 msgstr ""
 
 #: openpilot/selfdrive/ui/onroad/alert_renderer.py
@@ -792,7 +808,15 @@ msgstr ""
 msgid "Reboot Device"
 msgstr ""
 
-#: openpilot/selfdrive/ui/onroad/cabin_camera_dialog.py
-msgid "camera starting"
+#: openpilot/selfdrive/ui/onroad/hud_renderer.py
+msgid "MAX"
+msgstr ""
+
+#: openpilot/selfdrive/ui/onroad/hud_renderer.py
+msgid "km/h"
+msgstr ""
+
+#: openpilot/selfdrive/ui/onroad/hud_renderer.py
+msgid "mph"
 msgstr ""
 
