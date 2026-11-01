@@ -1,4 +1,6 @@
+import inspect
 import json
+import re
 from collections.abc import Callable, Mapping
 from typing import Any
 
@@ -15,12 +17,62 @@ SERVER_ERROR = -32000
 
 JsonDict = dict[str, Any]
 MethodMap = Mapping[str, Callable[..., Any]]
+Validator = Callable[[Any], bool]
+
+
+# *** param validators ***
+
+def boolean(v: Any) -> bool:
+  return isinstance(v, bool)
+
+def integer(lo: int, hi: int) -> Validator:
+  return lambda v: isinstance(v, int) and not isinstance(v, bool) and lo <= v <= hi
+
+def number(lo: float, hi: float) -> Validator:
+  # also rejects NaN and inf, which json.loads accepts
+  return lambda v: isinstance(v, (int, float)) and not isinstance(v, bool) and lo <= v <= hi
+
+def regex(pattern: str) -> Validator:
+  p = re.compile(pattern, re.ASCII)
+  return lambda v: isinstance(v, str) and p.fullmatch(v) is not None
+
+def one_of(*choices: Any) -> Validator:
+  return lambda v: any(type(v) is type(c) and v == c for c in choices)
+
+def either(*validators: Validator) -> Validator:
+  return lambda v: any(validator(v) for validator in validators)
+
+def list_of(validator: Validator) -> Validator:
+  return lambda v: isinstance(v, list) and all(validator(x) for x in v)
+
+def dict_of(key: Validator, value: Validator) -> Validator:
+  return lambda v: isinstance(v, dict) and all(key(k) and value(x) for k, x in v.items())
+
+def struct(required: dict[str, Validator], optional_fields: dict[str, Validator] | None = None) -> Validator:
+  fields = required | (optional_fields or {})
+  return lambda v: isinstance(v, dict) and required.keys() <= v.keys() <= fields.keys() and all(fields[k](x) for k, x in v.items())
 
 
 class Dispatcher(dict[str, Callable[..., Any]]):
-  def add_method(self, f: Callable[..., Any] | None = None, *, name: str | None = None):
+  """Every param of every method must have a validator, all input is rejected by default."""
+
+  def __setitem__(self, name: str, fn: Callable[..., Any]) -> None:
+    raise TypeError("register methods with add_method")
+
+  def add_method(self, f: Callable[..., Any] | None = None, *, name: str | None = None, **validators: Validator):
     def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
-      self[name or fn.__name__] = fn
+      method = name or fn.__name__
+      sig = inspect.signature(fn)
+      if set(sig.parameters) != set(validators):
+        raise TypeError(f"{method}: params {sorted(sig.parameters)} need exactly one validator each, got {sorted(validators)}")
+
+      def validated(*args, **kwargs):
+        for k, v in sig.bind(*args, **kwargs).arguments.items():
+          if not validators[k](v):
+            raise TypeError(f"invalid param: {k}")
+        return fn(*args, **kwargs)
+
+      super(Dispatcher, self).__setitem__(method, validated)
       return fn
     return decorator(f) if f is not None else decorator
 
