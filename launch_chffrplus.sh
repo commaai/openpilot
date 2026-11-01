@@ -87,6 +87,8 @@ function launch {
     agnos_init
   fi
 
+  (cd "$DIR" && ./scripts/lfs_transfer.py install) || return 1
+
   # write tmux scrollback to a file
   tmux capture-pane -pq -S-1000 > /tmp/launch_log
 
