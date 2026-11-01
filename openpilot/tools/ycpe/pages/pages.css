@@ -1,0 +1,381 @@
+/* route browser pages: home, device page, logs; the small controls here are shared with the info pane */
+/* connect's palette, for the pages on a phone; light is its daytime twin */
+[data-theme="dark"] { --cn-bg: #1d2225; --cn-card: #30373b; --cn-card-end: #1d2225; --cn-raised: #394044; --cn-fg: #fff; --cn-muted: rgba(255,255,255,.6);
+  --cn-line: rgba(255,255,255,.1); --cn-driving: #175886;
+  --cn-pill: #0c0e0f; --cn-pill-line: #1e2224; --cn-dim: #6e7d84; --cn-shade: linear-gradient(transparent 4%, rgba(255,255,255,.025) 10%, rgba(0,0,0,.1) 25%, rgba(0,0,0,.4)); }
+[data-theme="light"] { --cn-bg: #eef0f2; --cn-card: #fff; --cn-card-end: #f4f6f8; --cn-raised: #e3e6e8; --cn-fg: #1c2024; --cn-muted: #5f666e;
+  --cn-line: rgba(0,0,0,.09); --cn-driving: #8fb9de;
+  --cn-pill: #fff; --cn-pill-line: #dde1e5; --cn-dim: #77878f; --cn-shade: linear-gradient(transparent 60%, rgba(0,0,0,.08)); }
+.page { max-width: 1280px; margin: 0 auto; padding: 12px 16px 32px; }
+.page h3 { margin: 14px 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.button.small { margin: 0; padding: 3px 8px; }
+.button.tiny { margin: 0; padding: 0 6px; font-size: 11px; }
+.button.danger { border-color: var(--critical); color: var(--critical-fg); }
+.button:disabled { opacity: .5; cursor: default; }
+.field { height: 26px; padding: 0 8px; border: 1px solid var(--line); border-radius: 5px; background: var(--bg); }
+.field:focus { border-color: var(--accent); }
+.icon-btn { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0; border: 0; border-radius: 4px; background: none; color: var(--muted); cursor: pointer; text-decoration: none; }
+.icon-btn:hover { background: var(--hover); color: var(--fg); }
+.nowrap { white-space: nowrap; }
+.right { text-align: right; }
+.spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* dense tables */
+.list { width: 100%; border-collapse: collapse; }
+.list th { position: sticky; top: 0; z-index: 1; padding: 4px 8px; background: var(--bg); border-bottom: 1px solid var(--line); color: var(--muted); font-weight: 500; text-align: left; white-space: nowrap; }
+.list td { padding: 3px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.list tr.clickable { cursor: pointer; }
+.list tr.clickable:hover td { background: var(--hover); }
+.list a { text-decoration: none; font-weight: 600; }
+.list .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dl { display: inline-flex; padding: 2px; border-radius: 4px; color: var(--accent); }
+.dl:hover { background: var(--hover); }
+.list-foot { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; }
+
+/* home */
+.recent { margin-bottom: 18px; }
+.recent h3 { margin-top: 0; }
+.local-entry { margin: 14px 0; text-align: center; }
+.add-device { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; }
+
+/* omnibox dropdown */
+.omni { position: relative; display: inline-flex; flex-shrink: 1; min-width: 80px; }
+.omni-list { position: absolute; top: calc(100% + 4px); left: 6px; z-index: 60; width: 380px; max-width: calc(100vw - 16px); max-height: 60vh; overflow: auto; padding: 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--raised); box-shadow: var(--shadow); }
+.omni-row { display: flex; justify-content: space-between; gap: 12px; padding: 5px 8px; border-radius: 4px; text-decoration: none; white-space: nowrap; }
+.omni-row:hover { background: var(--hover); }
+.omni-row.on { background: var(--active); }
+.omni-row .mono { overflow: hidden; text-overflow: ellipsis; }
+
+/* login, auth callback, sign-in card */
+.login { display: flex; justify-content: center; padding: 12vh 16px 32px; }
+.login-card { width: 340px; padding: 22px 24px 18px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); box-shadow: var(--shadow); text-align: center; }
+.login-card > p { margin: 8px 0; }
+.login-mark { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 6px; font-size: 20px; font-weight: 800; letter-spacing: .02em; }
+.login-mark svg { color: var(--fg); }
+.providers { display: flex; flex-direction: column; gap: 6px; margin: 16px 0 12px; }
+.providers .button { margin: 0; padding: 8px 14px; font-weight: 600; }
+.provider { position: relative; }
+.last-used { position: absolute; top: 50%; right: 8px; translate: 0 -50%; padding: 1px 7px; border-radius: 99px; background: var(--active); color: var(--muted); font-size: 10px; font-weight: 500; }
+.token { margin: 6px 0; text-align: left; }
+.token summary { color: var(--muted); cursor: pointer; text-align: center; }
+.token summary:hover { color: var(--fg); }
+.token-form { display: flex; gap: 6px; }
+.token-form .field { flex: 1; min-width: 0; }
+.token-form .button { margin: 0; }
+.login-card > .login-foot { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line); }
+/* user mode's toasts: MUI's Snackbar in connect's theme */
+body:has(.cn-shell, .cn-landing) .toast { bottom: 24px; min-width: 288px; box-sizing: border-box; padding: 14px 24px; border-radius: 4px; background: #303639; color: #fff;
+  font: 400 14px/20px "Inter", sans-serif; box-shadow: 0 3px 5px -1px rgba(0,0,0,.2), 0 6px 10px 0 rgba(0,0,0,.14), 0 1px 18px 0 rgba(0,0,0,.12); }
+@media (max-width: 599px) { body:has(.cn-shell, .cn-landing) .toast { right: 0; bottom: 0; left: 0; min-width: 0; border-radius: 0; transform: none; } }
+
+/* user mode's sign-in: connect's landing over the whole window, in its dark-only palette */
+/* no header there: the landing is the whole window */
+body:has(.cn-landing) #app > .cn-header { display: none; }
+.cn-landing { position: fixed; inset: 0; z-index: 30; display: flex; flex-direction: column; justify-content: center; background: #1d2225; color: #fff; font: 400 16px/24px "Inter", sans-serif; }
+.cn-landing > .cn-devmode { position: absolute; top: 14px; right: 16px; border-color: rgba(255,255,255,.1); color: #fff; }
+.cn-landing > .cn-devmode:hover { background: rgba(255,255,255,.1); }
+.cn-landing-body { display: flex; flex-direction: column; align-items: center; overflow-y: auto; padding: 20px; }
+.cn-landing-body p { margin: 0; line-height: 1.46429em; }
+.cn-landing-logo { display: flex; flex-shrink: 0; align-items: center; justify-content: center; width: 84px; height: 84px; border-radius: 16px; background: #1e2224; }
+.cn-landing-logo img { height: 45px; }
+.cn-landing-gap { flex-shrink: 2; height: 60px; }
+.cn-landing-title { font-size: 36px; font-weight: 800; text-align: center; }
+.cn-landing-lead { width: 380px; max-width: 90%; margin: 10px 0 30px !important; font-size: 18px; text-align: center; }
+.cn-login { position: relative; display: flex; align-items: center; justify-content: center; width: 400px; max-width: 90%; height: 80px; margin-bottom: 10px;
+  border-radius: 80px; background: #fff; text-decoration: none; cursor: pointer; }
+.cn-login:hover { background: #eee; }
+.cn-login img { height: 40px; }
+.cn-login p { width: 190px; color: #000; font-size: 18px; font-weight: 600; text-align: center; white-space: nowrap; }
+.cn-last-used { position: absolute; right: 22px; bottom: -8px; padding: 1px 10px; border: 3px solid #1d2225; border-radius: 99px; background: #e6ebee; color: #4a5861;
+  font-size: 11px; font-weight: 500; line-height: 16px; white-space: nowrap; pointer-events: none; }
+.cn-landing-note { max-width: 384px; margin: 8px 0 32px; font-size: 14px; line-height: 20px; text-align: center; }
+.login-status { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 20px 0 10px; color: var(--muted); }
+.device-name { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; white-space: nowrap; }
+.device-name > span { overflow: hidden; text-overflow: ellipsis; }
+.device-info .device-name { white-space: normal; }
+.device-name .field { width: 180px; height: 22px; font-weight: 400; }
+@media (hover: hover) {  /* the device list's rename pencils show on the row being pointed at */
+  .list .device-name .icon-btn { opacity: 0; }
+  .list tr:hover .device-name .icon-btn, .list .device-name .icon-btn:focus-visible { opacity: 1; }
+}
+
+/* device page */
+.device-head { display: flex; gap: 16px; align-items: stretch; margin-bottom: 8px; }
+.device-info { flex: 1; min-width: 0; display: grid; grid-template-columns: auto 1fr; align-content: center; gap: 4px 10px; }
+.device-info > :is(.kv, .stats) { grid-column: 1 / -1; }
+.device-info > h2 { min-width: 0; }
+.device-actions { display: flex; align-items: center; gap: 4px; }
+.device-info h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 18px; }
+.kv { display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--muted); }
+.device-map { width: 400px; height: 150px; flex-shrink: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--bg); }
+.page-tabs { display: flex; gap: 2px; margin: 4px 0 8px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.page-tabs .tab { flex-shrink: 0; height: 28px; margin-bottom: -1px; }
+.drive-row { display: grid; grid-template-columns: 190px 64px 72px 64px minmax(120px, 1fr) minmax(160px, 38%) 64px; gap: 0 12px; align-items: center;
+  height: 31px; padding: 0 8px; border-bottom: 1px solid var(--line); text-decoration: none; white-space: nowrap;
+  content-visibility: auto; contain-intrinsic-size: auto 31px; }
+.drive-row > * { overflow: hidden; text-overflow: ellipsis; }
+a.drive-row:hover { background: var(--hover); }
+.drives { isolation: isolate; }
+.drive-row.head { position: sticky; top: 0; z-index: 2; height: 26px; background: var(--bg); color: var(--muted); font-weight: 500; content-visibility: visible; }
+.drive-row .num { text-align: right; font-variant-numeric: tabular-nums; }
+.dr-detail, .online-pill, .list-foot .filter { display: none; }
+.dr-place:empty::before, .dr-dash::before { content: "–"; }
+.stats { min-height: 1lh; }  /* its line is there before the numbers, so nothing under it moves */
+.stats b { font-weight: inherit; }
+/* a drive's details: a second line across its row, with the list's details on */
+.dr-more { display: none; grid-column: 1 / -1; align-items: center; gap: 0 14px; padding-bottom: 6px; font-size: 11px; }
+.drives.details .dr-more { display: flex; }
+.drives.details .drive-row { grid-template-rows: 31px auto; height: auto; contain-intrinsic-size: auto 52px; }
+.dr-more > * { flex-shrink: 0; }
+.dr-more > .mono { flex-shrink: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.dr-more .official { padding: 0 4px; border-radius: 3px; background: color-mix(in srgb, var(--engaged) 24%, transparent); color: var(--fg); }
+.dr-preserve { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; }
+.dr-preserve:empty { display: none; }
+/* small labels: a preserved drive, a device whose uploads are ignored */
+.tag { display: inline-block; padding: 0 6px; border-radius: 8px; background: var(--active); color: var(--fg); font-size: 10px; font-weight: 600;
+  line-height: 16px; letter-spacing: .03em; text-transform: uppercase; white-space: nowrap; }
+.tag.bad { background: color-mix(in srgb, var(--critical) 22%, transparent); color: var(--critical-fg); }
+.list td > .tag { margin-left: 6px; }
+.drive-opts { display: flex; align-items: center; gap: 12px; }
+.drive-opts label { display: inline-flex; align-items: center; gap: 5px; }
+.drive-opts .field { height: 24px; }
+/* beside the device's name: its car battery (online only) and, before 0.11.2, a camera snapshot */
+.battery { display: inline-flex; flex-shrink: 0; align-items: center; gap: 2px; height: 20px; padding: 0 8px 0 5px; border-radius: 10px; background: var(--active);
+  color: var(--muted); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.battery.ok { background: color-mix(in srgb, var(--engaged) 24%, transparent); color: var(--fg); }
+.battery.low { background: color-mix(in srgb, var(--critical) 24%, transparent); color: var(--critical-fg); }
+.snapshot { position: relative; display: flex; justify-content: center; gap: 8px; margin: 0 0 8px; }
+.snapshot > :is(img, .snapshot-missing) { width: 450px; max-width: calc(50% - 20px); border-radius: 6px; }
+.snapshot-missing { display: flex; flex-direction: column; justify-content: center; aspect-ratio: 1928 / 1208; padding: 0 40px; background: var(--panel); text-align: center; }
+.snapshot > .icon-btn { position: absolute; top: 0; right: 0; }
+.warn { display: flex; align-items: flex-start; gap: 8px; max-width: 640px; padding: 8px 10px; border-radius: 6px; background: color-mix(in srgb, var(--alert) 14%, transparent); }
+.warn > svg { flex-shrink: 0; color: var(--alert-fg); }
+.pubkey { display: flex; align-items: center; gap: 4px; }
+.pubkey > .mono { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* a drive's strip (panes/strip.js): spans over the segments' sprites, each repeated across its segment as connect does
+   (sized 120% tall so the sprite's black band falls outside) */
+.strip { --spans: 5px; position: relative; height: 24px; border-radius: 3px; overflow: hidden; background: var(--bg); contain: strict; }
+.strip-track { position: absolute; top: 0; bottom: 0; left: 0; width: 100%; }
+.strip-spans { position: absolute; left: 0; right: 0; top: 0; height: var(--spans); background: var(--driving); }
+.strip-spans span { position: absolute; top: 0; height: 100%; min-width: 1px; }
+.strip-thumbs { position: absolute; left: 0; right: 0; top: var(--spans); bottom: 0; }
+.strip-thumbs span { position: absolute; top: 0; height: 100%; background: 0 0 / auto 120% repeat-x; }
+.strip-spans .engaged { background: var(--engaged); }
+.strip-spans .override { background: var(--override); }
+.strip-spans .alert { background: var(--alert); }
+.strip-spans .critical { background: var(--critical); }
+.strip-spans .bookmark { background: var(--bookmark); }
+.strip .fade > span { animation: strip-in .2s ease-out; }  /* a band that came in after the strip was shown */
+@keyframes strip-in { from { opacity: 0; } }
+.inline-form { display: flex; gap: 6px; align-items: center; }
+.inline-form .field { width: 260px; }
+.list.settings { max-width: 640px; table-layout: fixed; }  /* a public key ellipsizes rather than widening it */
+.list.settings td:first-child { width: 140px; }
+
+/* log viewer */
+.log-dialog { width: min(1100px, 92vw); height: 82vh; padding: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--fg); box-shadow: var(--shadow); }
+.log-dialog[open] { display: flex; flex-direction: column; }
+.log-dialog::backdrop { background: rgba(0,0,0,.45); }
+.log-head { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+.log-head .mono { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.log-dialog > :last-child:not(.log-head) { flex: 1; min-height: 0; overflow: auto; margin: 0; padding: 8px 12px; }
+.log-text { font: 11px/1.45 var(--mono); white-space: pre; }
+.log-text mark { background: color-mix(in srgb, var(--accent) 40%, transparent); color: inherit; border-radius: 2px; }
+.boot-filter { width: 220px; }
+.boot-summary { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-bottom: 8px; }
+.boot-section { border-top: 1px solid var(--line); }
+.boot-section summary { display: flex; align-items: center; gap: 8px; padding: 4px 0; cursor: pointer; }
+.boot-section summary::before { content: "▸"; color: var(--muted); }
+.boot-section[open] summary::before { content: "▾"; }
+.boot-section summary .mono { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.boot-section summary .icon-btn { margin-left: auto; }
+.boot-section .log-text { margin: 0 0 8px; overflow-x: auto; }
+/* blocks of 100 lines; as wide as their longest, since the containment clips */
+.boot-section .log-text > div { content-visibility: auto; contain-intrinsic-size: auto 1px auto 1595px; width: max-content; min-width: 100%; }
+
+/* narrower: no version column; phones: no places, the timeline under each drive, the device and log tables down to
+   what identifies a row, and tap targets of at least 32px */
+@media (max-width: 900px) {
+  .drive-row { grid-template-columns: 170px 56px 64px 56px minmax(100px, 1fr) minmax(160px, 34%); }
+  .drive-row > :nth-child(7) { display: none; }
+}
+@media (max-width: 760px) {
+  .page { padding: 8px 12px 24px; }
+  .device-info h2 { font-size: 16px; }
+  .list.devices { table-layout: fixed; }
+  .list.devices :is(th, td):is(:nth-child(3), :nth-child(4), :nth-child(5)) { display: none; }
+  .list.devices :is(th, td):first-child { width: 24px; }
+  .list.devices :is(th, td):last-child { width: 76px; }
+  .list.devices td:nth-child(2) a { display: block; margin: -8px 0; padding: 8px 0; }  /* the whole cell height taps */
+  .recent .list td:is(:nth-child(5), :nth-child(6)) { display: none; }
+  .list.crashes :is(th, td):nth-child(2) { display: none; }
+  .list.crashes td:nth-child(3) { word-break: break-all; }
+  .list td { height: 36px; }
+  .page-tabs .tab { height: 36px; }
+  /* the strip scrolls: its right edge fades out until it's scrolled to the end */
+  .page-tabs { mask: linear-gradient(to right, #000 calc(100% - 32px), transparent) 0 0 / calc(100% + 32px) 100% no-repeat;
+    animation: tabs-more linear both; animation-timeline: scroll(self inline); }
+  .page .icon-btn, .page .dl { min-width: 32px; min-height: 32px; justify-content: center; align-items: center; }
+  :is(.page, .page-msg, .login-card) :is(.button, .field) { min-height: 32px; }
+}
+
+@keyframes tabs-more { from { mask-size: 100% 100%; } }
+
+/* a phone's pages look like connect's: the device page under its map, the name with an online pill and the totals,
+   then the drives as cards (when and how long, where from and to, the strip full width along the bottom); home in
+   the same type and colors */
+@media (max-width: 760px) {
+  .topbar { background: var(--cn-bg); }
+  :is(.device-page, .home-page) { min-height: 100%; background: var(--cn-bg); color: var(--cn-fg); font-size: 15px; --driving: var(--cn-driving); }
+  .device-page { padding: 0 0 24px; }
+  .device-head { flex-direction: column; gap: 0; margin: 0; }
+  .device-head .device-map { order: -1; width: 100%; height: 160px; border: 0; border-bottom: 1px solid var(--cn-line); border-radius: 0; }
+  .device-info { grid-template-columns: 1fr auto; gap: 8px 12px; padding: 14px 16px 12px; }
+  .device-info h2 { grid-column: 1 / -1; gap: 10px; font-size: 22px; font-weight: 500; }
+  .device-info h2 > .dot, .device-info .kv, .stats-week { display: none; }
+  .device-info .device-name { min-width: 0; }
+  /* the totals, and across from them the battery and snapshot as connect's pills */
+  .device-info > .stats { grid-area: 2 / 1; align-self: center; }
+  .device-actions { grid-area: 2 / 2; gap: 8px; }
+  .device-actions > :is(.battery, .icon-btn) { height: 32px; min-width: 32px; padding: 0 12px; border-radius: 16px; background: var(--cn-raised); font-size: 14px; }
+  .device-actions > .icon-btn { padding: 0; }
+  .device-actions > .battery.ok { background: color-mix(in srgb, var(--engaged) 40%, var(--cn-raised)); color: var(--cn-fg); }
+  .device-actions > .battery.low { background: color-mix(in srgb, var(--critical) 40%, var(--cn-raised)); color: var(--cn-fg); }
+  .snapshot { justify-content: flex-start; margin: 0; overflow-x: auto; scroll-snap-type: x mandatory; }
+  .snapshot > :is(img, .snapshot-missing) { flex: 0 0 100%; max-width: none; border-radius: 0; scroll-snap-align: start; }
+  .online-pill { display: inline-flex; flex-shrink: 0; align-items: center; height: 40px; margin-left: auto; padding: 0 18px; border-radius: 20px;
+    background: var(--cn-raised); color: var(--cn-muted); font-size: 15px; font-weight: 500; }
+  .online-pill.online { color: #2ea44f; }
+  .stats { display: flex; gap: 12px; color: var(--cn-fg); } .stats b { font-weight: 600; }
+  .device-page .page-tabs { margin: 0 0 4px; padding: 0 8px; border-color: var(--cn-line); }
+  .device-page .tab-body { padding: 0 16px; }
+  .device-page .list-foot { flex-wrap: wrap; }
+  .drive-opts { order: 1; flex-basis: 100%; flex-wrap: wrap; gap: 8px 16px; padding-top: 10px; color: var(--cn-muted); font-size: 15px; }
+  .drive-opts:not(.open) { display: none; }  /* Filter opens them */
+  .drive-opts .field { height: 36px; }
+  .list-foot .filter { display: inline-flex; align-items: center; gap: 8px; height: 40px; margin: 0; padding: 0 12px; border: 0; border-radius: 6px;
+    background: linear-gradient(var(--cn-card), var(--cn-card-end) 150%); color: var(--cn-fg); font-size: 15px; }
+  .drives { display: flex; flex-direction: column; gap: 12px; }
+  .drive-row.head { display: none; }
+  .drive-row { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "when dur" "when dist" "from to" "more more" "strip strip"; gap: 0 12px;
+    height: auto; padding: 18px 18px 0; overflow: hidden; border: 0; border-top: 1px solid var(--cn-line); border-radius: 8px;
+    background: linear-gradient(var(--cn-card), var(--cn-card-end)); line-height: 1.5; contain-intrinsic-size: auto 178px; }
+  a.drive-row:hover { background: linear-gradient(var(--cn-card), var(--cn-card-end)); }
+  a.drive-row:active { filter: brightness(1.1); }
+  .dr-when { grid-area: when; }
+  :is(.dr-when > b, .dr-hours) { display: block; overflow: hidden; text-overflow: ellipsis; color: var(--cn-fg); }
+  .dr-dash::before { content: " to "; white-space: pre; }
+  .dr-dur { grid-area: dur; font-weight: 600; }
+  .dr-dist { grid-area: dist; }
+  :is(.dr-engaged, .dr-version, .dr-arrow) { display: none; }
+  .dr-places { display: contents; }
+  .dr-place { min-height: 2lh; margin-top: 12px; font-weight: 600; }  /* the lines its place will take, so the card doesn't grow */
+  .dr-place.none { min-height: 0; margin: 0; }
+  .dr-place:empty::before { content: none; }
+  .dr-place > span { display: block; overflow: hidden; text-overflow: ellipsis; }
+  .dr-detail { font-weight: 400; }
+  .dr-from { grid-area: from; }
+  .dr-to { grid-area: to; text-align: right; }
+  .drives.details .drive-row { grid-template-rows: none; }
+  .dr-more { grid-area: more; flex-wrap: wrap; gap: 2px 12px; margin-top: 12px; padding: 0; color: var(--cn-muted); font-size: 13px; line-height: 1.4; }
+  .drive-row > .strip { grid-area: strip; --spans: 12px; height: 32px; margin: 18px -18px 0; border-radius: 0; }
+  .drive-row .strip-spans::after { content: ""; position: absolute; inset: 0; z-index: 2; background: var(--cn-shade); }
+  .home-page .page { padding: 8px 16px 24px; }
+  .home-page .list td { height: 52px; border-color: var(--cn-line); }
+  .home-page .list th { background: var(--cn-bg); border-color: var(--cn-line); }
+  .home-page .list.devices a { font-size: 17px; font-weight: 500; }
+}
+
+/* every view but files on a phone (drive, plot, can, and the ones made here): its panes stacked in one scroll, each
+   a height of its own, the playbar docked below. A routes pane is hidden in every view: the route crumb has the list.
+   The files view keeps its one pane, which scrolls itself. A phone on its side too: tiled, its panes would be slivers */
+@media (max-width: 760px), (pointer: coarse) and (max-height: 500px) {
+  .ws:not([data-view="files"]) .workspace { display: block; overflow-y: auto; container-type: size; }
+  .ws:not([data-view="files"]) .layout { display: block; }
+  .ws:not([data-view="files"]) .split { flex-direction: column; gap: 4px; }
+  .ws:not([data-view="files"]) .split > * { flex: none !important; }  /* over the layout's inline sizes */
+  .ws:not([data-view="files"]) :is(.divider, .pane-tools) { display: none; }
+  .ws:not([data-view="files"]) .pane-head { touch-action: auto; }  /* nothing to dock into: the page scrolls from it */
+  .ws .pane:has(> .pane-body > .routes-pane) { display: none; }
+  .ws:not([data-view="files"]) .pane-body { flex: none; height: 50vh; }
+  /* the camera and plots no taller than the workspace shows, under their heads */
+  .ws:not([data-view="files"]) .pane-body:has(> .camera-pane) { height: auto; aspect-ratio: 526 / 330; max-height: calc(100cqh - var(--head)); }
+  .ws:not([data-view="files"]) .pane-body:has(> .map-pane) { height: 45vh; }
+  .ws:not([data-view="files"]) .pane-body:has(> .info-pane) { height: auto; contain: none; }
+  .ws:not([data-view="files"]) .pane-body:has(> .files-pane) { height: 70vh; }
+  .ws:not([data-view="files"]) .info-pane { position: static; overflow: visible; }
+  .ws:not([data-view="files"]) .pane-body:has(> .plot-pane) { height: min(max(200px, 40vh), calc(100cqh - var(--head))); }
+  /* the series browser is a drawer: its filter and a few rows, opening over the plots while it has the focus (a tap
+     on a plot, or a double-tapped series going in, closes it) */
+  .ws:not([data-view="files"]) .pane:has(> .pane-body > .browser) { z-index: 2; }
+  .ws:not([data-view="files"]) .pane-body:has(> .browser) { height: 124px; }
+  .ws:not([data-view="files"]) .pane:has(> .pane-body > .browser):focus-within { margin-bottom: calc(124px - 60vh); box-shadow: var(--shadow); }
+  .ws:not([data-view="files"]) .pane:has(> .pane-body > .browser):focus-within > .pane-body { height: 60vh; }
+  /* cabana's list, then the selected message's bits, signals and history, then the charts */
+  .ws:not([data-view="files"]) .pane-body:has(> .can-messages) { height: 60vh; }
+  .ws:not([data-view="files"]) .pane-body:has(> .can-binary) { height: 260px; }
+  .ws:not([data-view="files"]) .pane-body:has(> .can-signals) { height: 45vh; }
+  .ws:not([data-view="files"]) .pane-body:has(> .can-history) { height: 40vh; }
+  .ws:not([data-view="files"]) .pane-body:has(> .can-charts) { height: 70vh; }
+  .ws[data-view="files"] .divider { display: none; }
+  .ws[data-view="files"] .split > * { flex: 1 1 0 !important; }  /* the files pane takes the routes list's width too */
+  /* the content gets the width: panes edge to edge, a line between them */
+  .ws .layout { padding: 0; }
+  .ws .pane { border-width: 0 0 1px; border-radius: 0; }
+  /* the connect view's one pane fills the workspace and scrolls itself */
+  .ws[data-view="connect"] :is(.workspace, .layout) { display: flex; }
+  .ws[data-view="connect"] .pane-body { flex: 1; height: auto; }
+}
+
+/* every view on a phone: the views and tabs on a row of their own under the bar, the timeline gets the playbar */
+@media (max-width: 760px) {
+  .topbar :is(.brand > span, .sep, .hud, .local-badge) { display: none; }
+  .topbar > .crumb:first-of-type { display: none; }  /* the device: the route crumb's menu reaches the rest */
+  /* from the route's load on, so the row is there before the views and nothing shifts when they fill in */
+  body:is(.in-ws, .opening) .topbar { flex-wrap: wrap; row-gap: 2px; height: auto; padding: 6px 8px; }
+  body:is(.in-ws, .opening) .topbar::after { content: ""; flex-basis: 100%; order: 1; }  /* the line break */
+  body:is(.in-ws, .opening) .topbar .views { display: flex; min-height: calc(var(--top) - 8px); }
+  body:is(.in-ws, .opening) .topbar .views:empty { visibility: hidden; }
+  /* the omnibox is a search button until it's tapped; the load pill shrinks rather than wrapping the first row */
+  body:is(.in-ws, .opening) .topbar .load-pill { flex: 1 1 0; min-width: 0; }
+  body:is(.in-ws, .opening) .topbar .omni { flex: 0 0 40px; min-width: 40px; }
+  body:is(.in-ws, .opening) .topbar .omnibox:not(:focus) { margin-left: 0; padding: 0; border-color: transparent; color: transparent; background: center / 20px no-repeat
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%238a939c' d='M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z'/%3E%3C/svg%3E"); }
+  body:is(.in-ws, .opening) .topbar .omnibox:not(:focus)::placeholder { color: transparent; }
+  body:is(.in-ws, .opening) .topbar .crumb { max-width: calc(100vw - 232px); }  /* so they fit on a 320px phone */
+  body:is(.in-ws, .opening) .topbar .load-pill { max-width: fit-content; }
+  body:is(.in-ws, .opening) .topbar .grow { min-width: 0; }  /* holds the buttons at the end while the load pill comes and goes */
+  body:is(.in-ws, .opening) .topbar .omnibox { width: 100%; min-width: 0; }
+  /* typing, the omnibox takes the whole first row, its list under it inside the window */
+  .topbar .omni:focus-within { position: absolute; top: 6px; left: 8px; right: 8px; z-index: 1; }
+  .topbar .omni:focus-within .omnibox { width: 100%; margin-left: 0; }
+  .omni-list { left: auto; right: 0; }
+  .topbar :is(.views, .tabs) { order: 2; margin-left: 0; }
+  .topbar .tabs { flex: 1; max-width: none; }
+  /* the playbar's controls on one row, the timeline the whole width under them */
+  .playbar { flex-wrap: wrap; height: auto; padding: 4px 8px calc(4px + env(safe-area-inset-bottom)); row-gap: 0; }
+  .playbar > .pb-clock { flex: 1; min-width: 0; }
+  .playbar > .pb-track { order: 1; flex-basis: 100%; }
+  .playbar .tbtn { min-width: 40px; min-height: 40px; }
+  .playbar .play { width: 40px; height: 40px; }
+  .playbar .rate { height: 32px; }
+  .playbar .pb-clock { overflow: hidden; }
+}
+/* small phones: no keyboard help on a touchscreen, no 1 s steps (the timeline is a finger wide) */
+@media (max-width: 380px) {
+  @media (pointer: coarse) { .topbar .help-btn { display: none; } }
+  .playbar > .tbtn:is(:first-child, :nth-child(3)) { display: none; }
+}
+
+/* fingers: every control in the bars at least 32 px tall */
+@media (pointer: coarse) {
+  :root { --top: 44px; --head: 34px; }
+  .topbar :is(.brand, .crumb, .tbtn, .load-pill, .view, .tab), .playbar :is(.tbtn, select) { min-height: 32px; min-width: 32px; }
+  .topbar .omnibox { min-height: 32px; }
+  .pane-type, .pane-btn { height: 32px; }
+  .pane-btn { width: 32px; }
+  .tab .x { align-self: stretch; align-items: center; justify-content: center; min-width: 32px; opacity: .7; }  /* no hover to reveal it */
+  @container (max-width: 860px) { .topbar .hud { display: none; } }  /* the bigger buttons leave the omnibox no room */
+  .divider::before { content: ""; position: absolute; z-index: 1; inset: -8px; }  /* a 20px grip, over the panes' edges */
+}

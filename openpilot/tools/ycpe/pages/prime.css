@@ -1,0 +1,188 @@
+/* comma prime (pages/prime.js): connect's narrow column of plans and status blocks, in its palette */
+.prime-page { max-width: 460px; padding-top: 18px; color: var(--cn-fg); }
+.prime-page h2 { margin: 14px 12px 0; font-size: 24px; }
+.prime-page a:not(.button, .icon-btn) { color: var(--engaged); }
+.prime-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.prime-head .icon-btn { min-width: 36px; height: 36px; border-radius: 50%; color: var(--cn-fg); }
+.prime-dongle { color: var(--cn-dim); font-size: 12px; }
+
+.prime-checks { margin: 22px 0 0 12px; padding: 0 7px; list-style: none; }
+.prime-checks li { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 6px; font-size: 14px; }
+.prime-checks svg { flex-shrink: 0; color: var(--engaged); }
+
+.prime-commacare { margin-top: 20px; padding: 10px 14px 10px 12px; border: 1px solid var(--engaged); border-radius: 12px; }
+.prime-commacare b { color: var(--engaged); letter-spacing: .04em; }
+.prime-commacare p { margin: 6px 0 0; font-size: 13px; }
+
+.prime-plans { position: relative; display: flex; gap: 4px; height: 140px; margin-top: 22px; }
+.prime-plan { display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: space-around; padding: 8px 0; border: 2px solid transparent;
+  border-radius: 18px; background: var(--cn-card); color: var(--cn-fg); font: inherit; font-weight: 600; text-align: center; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.prime-plan b { font-size: 1.2rem; }
+.prime-plan .prime-price { font-size: 1.5rem; }
+.prime-plan .small { font-size: 12px; font-weight: 400; line-height: 1.35; }
+.prime-plan[aria-pressed="true"] { border-color: var(--cn-fg); }
+.prime-plan:disabled { opacity: .45; cursor: default; }
+.prime-plans:has(.prime-fetching:not([hidden])) .prime-plan { opacity: .2; }
+.prime-fetching { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; font-size: 14px; }
+.prime-fetching .spinner { width: 30px; height: 30px; border-width: 3px; }
+.prime-fetching[hidden] { display: none; }
+
+.prime-note { display: flex; align-items: flex-start; gap: 10px; margin-top: 16px; padding: 8px 12px; border-radius: 12px; background: var(--cn-raised); }
+.prime-note > svg, .prime-note > .spinner { flex-shrink: 0; margin-top: 1px; }
+.prime-note p { margin: 0; }
+.prime-note p + p { margin-top: 4px; }
+.prime-note.prime-error { background: color-mix(in srgb, var(--critical) 22%, transparent); }
+.prime-note.prime-error > svg { color: var(--critical-fg); }
+.prime-note.prime-notice > svg { color: var(--alert-fg); }
+.prime-note.prime-success { background: color-mix(in srgb, var(--engaged) 22%, transparent); }
+.prime-note.prime-success > svg { color: var(--engaged); }
+.prime-page > p { margin: 20px 0 0; }
+
+/* connect's round white buttons: the main one filled, the rest outlined */
+.button.prime-go { display: block; width: 100%; height: 42px; margin: 20px 0 0; border: 1px solid var(--cn-fg); border-radius: 21px; background: var(--cn-fg); color: var(--cn-bg);
+  font-weight: 500; text-align: center; line-height: 28px; }
+.button.prime-go:hover:not(:disabled) { background: var(--cn-fg); opacity: .8; }
+.button.prime-go:not(.primary) { background: none; color: var(--cn-fg); }
+.button.prime-go:not(.primary):hover:not(:disabled) { background: var(--cn-line); opacity: 1; }
+.prime-go .spinner { border-color: var(--cn-dim); border-top-color: currentColor; }
+.prime-buttons { display: flex; flex-direction: column; }
+.prime-buttons .button.prime-go { margin-top: 10px; }
+.button.prime-cancel { border-color: var(--cn-dim); }
+.prime-charge { margin: 16px 0 0; font-size: 13px; }
+
+.prime-items { margin: 20px 0 0; }
+.prime-item + .prime-item { margin-top: 18px; }
+.prime-item dt { font-size: 16px; font-weight: 600; }
+.prime-item dd { margin: 4px 0 0 10px; }
+.prime-item .muted { color: var(--cn-muted); font-size: .9em; }
+.prime-pill { display: inline-flex; margin-top: 14px; padding: 6px 14px; border: 1px solid var(--engaged); border-radius: 12px; font-weight: 600; letter-spacing: .04em; text-decoration: none; }
+.prime-pill:hover { background: color-mix(in srgb, var(--engaged) 10%, transparent); }
+
+/* the switch and cancel confirmations (dom.js ask) */
+.prime-ask { display: flex; flex-direction: column; gap: 8px; }
+.prime-ask > b { font-size: 16px; }
+.prime-ask .warn { padding: 8px 10px; }
+
+/* connect's sign-up card over the device page's top right (clear of the map's location button), where the referral card sits when there's one */
+.prime-promo-slot { position: relative; z-index: 5; max-width: 1280px; height: 0; margin: 0 auto; }
+.prime-promo { position: absolute; top: 10px; right: 56px; box-sizing: border-box; width: 360px; padding: 12px 16px; border: 1px solid var(--cn-pill-line);
+  border-radius: 22px; background: var(--cn-raised); color: var(--cn-fg); box-shadow: var(--shadow); }
+.prime-promo-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; }
+.prime-promo-head b { font-size: 20px; line-height: 31px; }
+.prime-promo-head .button { min-width: 90px; padding: 5px 20px; border-radius: 15px; text-align: center; }
+.prime-promo p { margin: 0; opacity: .9; }
+.prime-dismiss.icon-btn { position: absolute; top: -8px; left: -6px; min-width: 24px; height: 24px; border: 1px solid var(--cn-pill-line); border-radius: 12px;
+  background: var(--cn-pill); color: var(--cn-fg); }
+
+@media (max-width: 599px) {
+  .prime-page { padding-top: 6px; }
+  .prime-promo { right: 44px; left: 8px; width: auto; }
+}
+
+/* ---- user mode: connect's (PrimeCheckout.jsx, PrimeManage.jsx, Notification), in its palette whatever the theme ---- */
+.prime-page.um { max-width: none; margin: 0; padding: 0; color: var(--cnui-fg); font: 16px/1.5 "Inter", sans-serif; }
+.prime-page.um :is(h2, h3, p) { margin: 0; }
+.prime-page.um a:not(.cnui-btn, .cnui-ibtn, .prime-pill) { color: #1a974e; text-decoration: underline; }
+.prime-page.um a:not(.cnui-btn, .cnui-ibtn, .prime-pill):hover { color: #178645; }
+.prime-page.um .prime-body1 { font-size: 14px; line-height: 1.46429; }
+.prime-page.um .cnui-btn.prime-go { width: 100%; }
+.prime-page.um .prime-note { display: flex; align-items: center; margin-top: 24px; padding: 8px 12px; border-radius: 12px; background: rgb(from var(--cnui-fg) r g b / .08); }
+.prime-page.um .prime-note > div { margin-left: 10px; font-size: 14px; line-height: 1.46429; }
+.prime-page.um .prime-note a { color: var(--cnui-fg); }
+.prime-page.um .prime-note.prime-error { margin-top: 8px; background: rgba(255, 0, 0, .2); }
+
+/* checkout: a 430px column, its blocks 24px apart (16px on a phone) */
+.prime-page.um:not(:has(> .prime-manage)) { display: flex; flex-direction: column; max-width: 430px; margin: 18px 24px; --block: 24px; --checks: 7px; }
+.prime-page.um .prime-head { display: flex; align-items: center; justify-content: space-between; max-width: 410px; }
+.prime-page.um .prime-head-device { display: flex; align-items: center; }
+.prime-page.um .prime-head-device aside { margin-right: 8px; font-size: 14px; font-weight: 500; line-height: 1.71429; }
+.prime-page.um .prime-dongle { color: #525e66; font-size: 12px; line-height: 1.375; }
+.prime-page.um h2.prime-title { margin: 0 12px; font-size: 16px; font-weight: 400; line-height: 1.5; }
+.prime-page.um .prime-block { margin-top: var(--block); }
+.prime-page.um .prime-block-slot > :not(:empty) { margin-top: var(--block); }
+.prime-page.um .prime-block-slot .prime-note { margin-top: 0; }
+.prime-page.um .prime-checks { margin-left: 12px; padding: 0; }
+.prime-page.um .prime-checks svg { color: var(--cnui-fg); }
+.prime-page.um .cnui-ibtn { color: var(--cnui-fg); }
+.prime-page.um .prime-checks > div { display: flex; align-items: center; margin-bottom: 4px; padding: 0 var(--checks); }
+.prime-page.um .prime-checks svg { align-self: flex-start; }
+.prime-page.um .prime-checks p { margin: 0 0 0 14px; font-size: 14px; line-height: 1.5; }
+.prime-page.um .prime-commacare { padding: 10px 14px 10px 12px; border: 1px solid #1a974e; border-radius: 12px; }
+.prime-page.um .prime-commacare > div { display: flex; align-items: center; font-size: 14px; line-height: 1.46429; }
+.prime-page.um .prime-commacare img { width: 24px; margin-right: 12px; }
+.prime-page.um .prime-commacare strong { color: #1a974e; letter-spacing: .04em; }
+.prime-page.um .prime-commacare p { font-size: 14px; font-weight: 500; line-height: 1.71429; }
+.prime-page.um .prime-past { padding: 10px 14px; border-radius: 12px; background: rgb(from var(--cnui-fg) r g b / .08); color: rgb(from var(--cnui-fg) r g b / .7); }
+.prime-page.um .prime-past p { font-size: 14px; font-weight: 500; line-height: 1.71429; }
+.prime-page.um .prime-past a { color: rgb(from var(--cnui-fg) r g b / .7); }
+.prime-page.um .prime-plans { position: relative; display: block; height: auto; margin: var(--block) -6px 0; }
+.prime-page.um .prime-plans > div:first-child { display: flex; justify-content: space-around; height: 140px; }
+.prime-page.um .prime-plan { flex: none; width: 160px; padding: 8px 0; border: 2px solid transparent; border-radius: 18px; background: rgb(from var(--cnui-fg) r g b / .1);
+  color: var(--cnui-fg); font: 600 16px/1.5 "Inter", sans-serif; opacity: 1; cursor: pointer; }
+.prime-page.um .prime-plan:first-child { margin-right: 2px; }
+.prime-page.um .prime-plan:last-child { margin-left: 2px; }
+.prime-page.um .prime-plan b { font-size: 1.2rem; font-weight: 600; }
+.prime-page.um .prime-plan .prime-price { font-size: 1.5rem; }
+.prime-page.um .prime-plan .small { font-size: .8rem; font-weight: 400; line-height: 1.5; }
+.prime-page.um .prime-plan[aria-pressed="true"] { border-color: var(--cnui-fg); }
+.prime-page.um .prime-plan:disabled { background: rgb(from var(--cnui-fg) r g b / .05); color: rgb(from var(--cnui-fg) r g b / .4); cursor: default; }
+.prime-page.um .prime-plans:has(.prime-fetching:not([hidden])) .prime-plan { background: rgb(from var(--cnui-fg) r g b / .03); color: rgb(from var(--cnui-fg) r g b / .2); opacity: 1; }
+.prime-page.um .prime-fetching { gap: 0; height: 140px; bottom: auto; font-size: 14px; }
+.prime-page.um .prime-fetching p { margin-top: 10px; font-size: .9rem; line-height: 1.46429; }
+.prime-page.um .prime-block .cnui-btn.prime-go { height: 42px; margin: 0; border-radius: 21px; }
+.prime-page.um .prime-charge { font-size: 13px; line-height: 1.46429; }
+.prime-page.um .prime-charge[hidden] { display: none; }
+@media (max-height: 600px) { .prime-page.um .prime-plans > div:first-child, .prime-page.um .prime-fetching { height: 110px; } }
+@media (max-width: 520px) { .prime-page.um:not(:has(> .prime-manage)) { margin: 6px 12px; --block: 16px; --checks: 8px; } }
+
+/* manage: a bar with the back button over the page, each ruled off; 220px buttons (the width on a phone) */
+.prime-page.um .prime-manage { display: flex; flex-direction: column; }
+.prime-page.um .prime-manage[hidden] { display: none; }
+.prime-page.um .prime-bar { padding: 8px 36px; border-bottom: 1px solid rgb(from var(--cnui-fg) r g b / .1); }
+.prime-page.um .prime-main { padding: 16px 36px; }
+.prime-page.um .prime-main > h2 { font-size: 21px; font-weight: 500; line-height: 1.16667; }
+.prime-page.um .prime-item { margin-top: 20px; }
+.prime-page.um .prime-item h3 { margin: 0; color: var(--cnui-fg); font-size: 16px; font-weight: 400; line-height: 1.5; letter-spacing: 0; text-transform: none; }
+.prime-page.um .prime-item > :not(h3) { margin-left: 10px; font-size: 14px; line-height: 1.46429; }
+.prime-page.um .prime-item span { color: rgb(from var(--cnui-fg) r g b / .7); font-size: .9em; line-height: 20.5px; }
+.prime-page.um .prime-item-device aside { font-size: 14px; font-weight: 500; line-height: 1.71429; }
+.prime-page.um .prime-item-device span { display: block; font-size: 14.4px; line-height: 1.375; }
+.prime-page.um .prime-pill { display: inline-flex; align-items: center; margin-top: 14px; padding: 6px 14px 6px 12px; border: 1px solid #1a974e; border-radius: 12px;
+  color: #1a974e; font-weight: 600; line-height: 1; letter-spacing: .04em; text-decoration: none; transition: background-color 150ms; }
+.prime-page.um .prime-pill:hover { background: rgba(81, 191, 135, .1); color: #1a974e; }
+.prime-page.um .prime-pill img { width: 24px; margin-right: 12px; }
+.prime-page.um .prime-buttons { display: flex; flex-direction: column; max-width: 450px; margin-top: 20px; }
+.prime-page.um .prime-buttons .cnui-btn.prime-go { width: 220px; margin-top: 10px; }
+.prime-page.um .prime-buttons .cnui-btn.prime-cancel { border: 1px solid #424a4f; background: transparent; color: var(--cnui-fg); }
+.prime-page.um .prime-buttons .cnui-btn.prime-cancel:hover { background: rgb(from var(--cnui-fg) r g b / .1); }
+.prime-page.um .prime-main .prime-note:not(.prime-error, .prime-loading, .prime-success) { margin-top: 12px; }
+.prime-page.um .prime-main .prime-note.prime-error { margin-top: 15px; padding: 10px; border-radius: 0; }
+.prime-page.um .prime-note.prime-loading { margin-top: 15px; padding: 10px; border-radius: 0; background: rgba(0, 0, 0, .2); }
+.prime-page.um .prime-note.prime-success { display: block; margin-top: 15px; padding: 10px; border-radius: 0; background: rgba(0, 255, 0, .2); }
+.prime-page.um .prime-note.prime-success p { display: inline-block; margin-left: 10px; font-size: 14px; line-height: 1.46429; }
+.prime-page.um .prime-note.prime-success p:first-child { font-weight: 600; }
+@media (max-width: 520px) { .prime-page.um :is(.prime-bar, .prime-main) { padding-inline: 16px; } }
+@media (max-width: 513px) { .prime-page.um .prime-buttons .cnui-btn.prime-go { width: 100%; } }
+
+/* the switch and cancel dialogs: connect's papers a little above the window's middle */
+.prime-paper { top: 40%; left: 50%; width: 400px; max-width: 90%; padding: 16px; transform: translate(-50%, -50%); font-size: 14px; line-height: 1.46429; }
+.prime-paper p { margin: 0; }
+.prime-paper .prime-modal-title { margin: 0; font-size: 21px; font-weight: 500; line-height: 1.16667; }
+.prime-paper .prime-modal-text { margin-top: 12px; color: rgb(from var(--cnui-fg) r g b / .8); }
+.prime-paper .prime-modal-text b { color: var(--cnui-fg); }
+.prime-paper .prime-modal-busy { display: flex; flex-direction: column; align-items: center; margin-top: 16px; padding: 20px; border-radius: 8px; background: rgba(0, 0, 0, .2); }
+.prime-paper .prime-modal-busy p { margin-top: 8px; color: rgb(from var(--cnui-fg) r g b / .8); }
+.prime-paper .prime-modal-error { margin-top: 16px; padding: 12px; border-radius: 8px; background: color-mix(in oklab, oklch(.637 .237 25.331) 20%, transparent); color: oklch(.936 .032 17.717); }
+.prime-paper .prime-modal-ok { margin-top: 16px; padding: 12px; border-radius: 8px; background: color-mix(in oklab, oklch(.723 .219 149.579) 20%, transparent); color: oklch(.962 .044 156.743); }
+.prime-paper .prime-modal-buttons { margin-top: 16px; overflow: hidden; }
+.prime-paper .prime-modal-confirm { width: 170px; }
+.prime-paper .prime-modal-close { float: right; }
+/* cancelling (its own paper's styles): each line 10px apart, the outcome on brighter red and green */
+.prime-paper.cancel > p { margin-top: 10px; }
+.prime-paper.cancel .prime-modal-error, .prime-paper.cancel .prime-modal-ok { margin-top: 10px; padding: 10px; border-radius: 0; color: var(--cnui-fg); }
+.prime-paper.cancel .prime-modal-error { background: rgba(255, 0, 0, .3); }
+.prime-paper.cancel .prime-modal-ok { background: rgba(0, 255, 0, .3); }
+.prime-paper.cancel .prime-modal-buttons { margin-top: 0; }
+.prime-paper.cancel .prime-modal-buttons .cnui-btn { margin-top: 10px; }
+.prime-paper .prime-modal-care { margin-top: 12px; padding: 10px; background: #b85e1f; }
+.prime-paper .prime-modal-care a { color: #fff; text-decoration: underline; }

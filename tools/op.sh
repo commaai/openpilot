@@ -332,9 +332,28 @@ function op_build() {
   fi
 }
 
-function op_juggle() {
+function op_ycpe() {
   op_before_cmd
-  op_run_command openpilot/tools/plotjuggler/juggle.py "$@"
+  op_run_command openpilot/tools/ycpe/serve.py "$@"
+}
+
+# cabana and plotjuggler are now ycpe: their route, --demo or live source opens in its view
+function op_ycpe_view() {
+  local view=$1 path="" query=""
+  shift
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --demo ) path="5beb9b58bd12b691/0000010a--a51155e496/$view" ;;
+      --stream | --zmq ) path="live/local" ;;
+      --panda ) path="live/panda" ;;
+      --layout ) shift; query="?layout=$1" ;;
+      -* ) ;;
+      * ) path="${1/|//}/$view" ;;
+    esac
+    shift
+  done
+  echo "cabana and plotjuggler are now part of ycpe"
+  op_ycpe --open "/$path$query"
 }
 
 function op_lint() {
@@ -350,11 +369,6 @@ function op_test() {
 function op_replay() {
   op_before_cmd
   op_run_command openpilot/tools/replay/replay "$@"
-}
-
-function op_cabana() {
-  op_before_cmd
-  op_run_command openpilot/tools/cabana/cabana "$@"
 }
 
 function op_sim() {
@@ -467,9 +481,10 @@ function op_default() {
   echo -e "  ${BOLD}stop${NC}         Stops openpilot"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands [Tooling]:${NC}"
-  echo -e "  ${BOLD}juggle${NC}       Run PlotJuggler"
+  echo -e "  ${BOLD}ycpe${NC}         Run ycpe: drives, plots, CAN and video in the browser"
+  echo -e "  ${BOLD}cabana${NC}       Open a route's CAN view in ycpe"
+  echo -e "  ${BOLD}juggle${NC}       Open a route's plots in ycpe"
   echo -e "  ${BOLD}replay${NC}       Run Replay"
-  echo -e "  ${BOLD}cabana${NC}       Run Cabana"
   echo -e "  ${BOLD}clip${NC}         Run clip (linux only)"
   echo -e "  ${BOLD}docs${NC}         Build or serve the openpilot documentation"
   echo -e "  ${BOLD}adb${NC}          Run adb shell"
@@ -499,9 +514,6 @@ function op_default() {
   echo ""
   echo "  op build -j4"
   echo "          Compile openpilot using 4 cores"
-  echo ""
-  echo "  op juggle --demo"
-  echo "          Run PlotJuggler on the demo route"
 }
 
 
@@ -521,8 +533,9 @@ function _op() {
     esim )          shift 1; op_esim "$@" ;;
     setup )         shift 1; op_setup "$@" ;;
     build )         shift 1; op_build "$@" ;;
-    juggle )        shift 1; op_juggle "$@" ;;
-    cabana )        shift 1; op_cabana "$@" ;;
+    ycpe )          shift 1; op_ycpe "$@" ;;
+    cabana )        shift 1; op_ycpe_view can "$@" ;;
+    juggle )        shift 1; op_ycpe_view plot "$@" ;;
     lint )          shift 1; op_lint "$@" ;;
     test )          shift 1; op_test "$@" ;;
     replay )        shift 1; op_replay "$@" ;;

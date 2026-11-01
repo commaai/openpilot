@@ -1,0 +1,91 @@
+/* the connect view: connect's DriveView as connect draws it (DriveView, Timeline, Media, DriveVideo, TimeDisplay), in
+   its palette whatever our theme, and at its breakpoints (window widths: Tailwind's sm, md and 2xl) */
+.connect-pane { --cn-bg: #1d2225; --cn-fg: #fff; --cn-line: rgba(255,255,255,.1); --driving: #175886; --engaged: #178645; --override: #919b95;
+  --alert: #da6f25; --critical: #c92231; --bookmark: #e3d756; color-scheme: dark; overflow-y: auto; scrollbar-gutter: stable; background: var(--cn-bg); color: var(--cn-fg);
+  font: 16px/1.5 "Inter", sans-serif; container-type: inline-size; overscroll-behavior: contain; }
+.cn-card { display: flex; flex-direction: column; gap: 16px; margin: 16px; border-radius: 8px; background: linear-gradient(#30373b 0%, #272d30 10%, #1d2225 100%); }
+.cn-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: -16px; padding: 12px; }
+.cn-icon { display: flex; flex-shrink: 0; align-items: center; justify-content: center; width: 48px; height: 48px; padding: 0; border: 0; border-radius: 50%;
+  background: none; color: #fff; cursor: pointer; transition: background-color .15s cubic-bezier(.4,0,.2,1); }
+.cn-icon:hover { background: rgba(255,255,255,.08); }
+.cn-icon:disabled { color: rgba(255,255,255,.3); background: none; cursor: default; }
+.cn-when { min-width: 0; font-size: 18px; font-weight: 500; line-height: 28px; text-align: left; }
+.cn-weekday { display: none; }
+@media (min-width: 640px) { .cn-weekday { display: inline; } }
+
+/* the timeline: 12 px of spans on the drive's blue, 20 px of thumbnails, the 44 px ruler with what's after the
+   playhead dimmed behind a faint line, and the hover bead under it. Only the ruler takes presses; a finger scrolls the
+   page vertically. The selection grows on its own layer: in the page's, a drag re-rastered it, and that raster's first
+   GPU programs held a frame 70-160 ms */
+.cn-timeline { position: relative; cursor: default; touch-action: pan-y; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.cn-timeline .strip { --spans: 12px; height: 32px; border-radius: 0; background: none; }
+.cn-timeline .strip-thumbs { display: none; }
+.cn-timeline .strip-spans::after { content: ""; position: absolute; inset: 0; z-index: 2;
+  background: linear-gradient(rgba(0,0,0,0) 4%, rgba(255,255,255,.025) 10%, rgba(0,0,0,.1) 25%, rgba(0,0,0,.4)); }
+.cn-thumbs { position: absolute; top: 12px; left: 0; z-index: 1; width: 100%; height: 20px; overflow: hidden; white-space: nowrap; pointer-events: none; }
+.cn-thumbs > div { display: inline-block; height: 20px; background: 0 0 / auto 24px repeat-x; }
+.cn-ruler { position: relative; height: 44px; overflow: hidden; background: #25333d; cursor: pointer; touch-action: none; contain: strict; }
+.cn-left { position: absolute; inset: 0; border-left: 1px solid #d8dddf; background: rgba(29,34,37,.9); opacity: .45; }
+.cn-selection { position: absolute; top: 32px; bottom: 0; left: 0; z-index: 2; pointer-events: none;
+  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.3); border-width: 0 1px; will-change: transform; }
+.cn-bead { position: absolute; top: 83px; left: 0; z-index: 4; width: 80px; padding: 3px 4px; border: 1px solid rgba(255,255,255,.1); border-radius: 14px;
+  background: #272c2f; color: #fff; font-size: 11.2px; text-align: center; pointer-events: none; }
+.cn-timeline:focus-visible { outline: none; }
+
+.cn-body { display: flex; flex-direction: column; gap: 16px; padding: 0 12px 12px; }
+@media (min-width: 768px) { .cn-body { padding: 0 32px 32px; } }
+.cn-bar { display: flex; flex-wrap: wrap; justify-content: space-between; }
+@media (min-width: 1536px) { .cn-bar { justify-content: center; } }
+.cn-options { display: flex; align-items: center; width: max-content; border: 1px solid rgba(255,255,255,.1); border-radius: 50px; }
+.cn-option { display: flex; flex-direction: column; justify-content: center; align-items: center; min-width: 44px; min-height: 32px; padding: 0 15px;
+  border: 0; border-right: 1px solid rgba(255,255,255,.1); background: none; color: var(--cn-fg); font-size: 12px; font-weight: 500; line-height: 17.57px;
+  cursor: pointer; }
+.cn-option:last-child { border-right: 0; }
+.cn-options:first-child .cn-option[aria-pressed="false"] { opacity: .6; }
+.cn-option[aria-disabled="true"] { opacity: .7; cursor: default; }
+
+/* the video with its overlay (connect's spinner, or why there's no video), and the map: 300 px tall alone, beside the
+   video from 2xl */
+.cn-media { display: flex; justify-content: center; gap: 20px; }
+.cn-box { position: relative; flex: 0 1 100%; min-width: 0; }
+.cn-box > * { position: absolute; inset: 0; }
+.cn-video { max-width: 964px; min-height: 200px; margin: 0 auto; aspect-ratio: 1.593; }
+.cn-map { min-height: 300px; }
+.connect-pane .cn-map .tilemap { cursor: default; }
+.connect-pane .cn-map .tilemap-credit { display: none; }  /* connect turns the attribution off */
+@media (min-width: 1536px) { .cn-video { flex-basis: 60%; margin: 0; } .cn-video + .cn-map { flex-basis: 40%; } }
+.connect-pane .camera-pane { background: none; }
+.connect-pane .camera-pane :is(.camera-picker, .camera-note, .camera-alert), .cn-video .camera-mute { display: none; }  /* the pill has its mute */
+.connect-pane .camera-pane.buffering :is(video, canvas) { opacity: 1; }
+.connect-pane .camera-pane .camera-buffering { inset: 0; z-index: 50; min-width: 0; max-width: none; padding: 0; border-radius: 0; background: rgba(22,24,26,.667); color: #fff;
+  font-size: 14px; line-height: 1.46429; transform: none; }
+.connect-pane .camera-pane .camera-buffering > * { display: none; }
+.connect-pane .camera-pane .camera-buffering[data-kind="wait"]::before { content: ""; position: absolute; top: calc(50% - 25px); left: calc(50% - 25px); width: 50px; height: 50px;
+  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="22 22 44 44"><style>svg{animation:r 1.4s linear infinite;transform-origin:44px 44px}circle{stroke-dasharray:80px,200px;animation:d 1.4s ease-in-out infinite}@keyframes r{to{transform:rotate(360deg)}}@keyframes d{0%{stroke-dasharray:1px,200px;stroke-dashoffset:0}50%{stroke-dasharray:100px,200px;stroke-dashoffset:-15px}to{stroke-dasharray:100px,200px;stroke-dashoffset:-125px}}</style><circle cx="44" cy="44" r="20" fill="none" stroke="%23fff" stroke-width="4"/></svg>'); }
+.connect-pane .camera-pane .camera-buffering[data-kind="absent"] > span { position: relative; top: calc(50% - 25px); display: block; padding: 0 8px; text-align: center; }
+.connect-pane .camera-pane .camera-buffering[data-kind="absent"] > span::before { content: ""; display: block; width: 24px; height: 24px; margin: 0 auto 8px;
+  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path fill="%23fff" d="M480-280q14 0 24-9 9-10 9-24t-9-23q-10-10-24-10t-23 9q-10 10-10 24t9 23q10 10 24 10Zm-27-153h60v-253h-60v253Zm27 353q-82 0-155-31t-127-86q-55-55-86-128-32-73-32-155 0-83 32-156 31-73 86-127t127-85q73-32 156-32 82 0 155 32 73 31 127 85t86 127q31 73 31 156 0 82-31 155t-86 127q-54 55-127 86-73 32-156 32Zm1-60q141 0 240-99t99-241q0-142-99-241t-241-99q-141 0-240 99-100 99-100 241 0 141 100 241t241 99Zm-1-340Z"/></svg>'); }
+
+/* connect's pill (TimeDisplay, thin): 10 s back and forward, the wall clock and segment, its speed steps, mute and
+   play, each in its box of a 1 px rule */
+.cn-controls { display: flex; align-items: center; width: 400px; max-width: 100%; height: 50px; margin: 0 auto; padding: 0 8px; border-radius: 32px;
+  background: #0c0e0f; }
+@media (min-width: 1536px) { .cn-controls { margin: 0 0 0 calc(30% - 206px); } }
+.cn-controls button { position: relative; display: flex; flex-shrink: 0; align-items: center; justify-content: center; height: 40px; padding: 0; border: 0; border-radius: 50%;
+  background: none; cursor: pointer; transition: background-color .15s cubic-bezier(.4,0,.2,1); }
+.cn-controls button:hover:not(:disabled) { background-color: rgba(255,255,255,.08); }
+:is(.cn-jump, .cn-mute, .cn-play)::after { content: ""; position: absolute; top: 0; bottom: 0; width: 1px; background: #1e2224; }
+.cn-jump { width: 40px; margin-right: 1px; color: #535f64; }
+.cn-jump::after { right: -1px; }
+.cn-jump svg { width: 32px; height: 32px; }
+.cn-now { flex: 1 1 0; min-width: 0; margin: 0 8px; font-size: 15px; font-weight: 500; line-height: 21.96px; text-align: center; font-variant-numeric: tabular-nums; }
+.cn-speed { display: flex; flex-direction: column; align-items: center; min-width: 40px; margin-right: 8px; }
+.cn-controls .cn-step { width: 12px; height: 12px; color: #424a4f; }
+.cn-step:disabled { visibility: hidden; }
+.cn-speed-text { font-size: 14px; font-weight: 500; line-height: 24px; }
+.cn-mute { width: 40px; margin-left: 1px; color: #fff; }
+:is(.cn-mute, .cn-play)::after { left: -1px; }
+.cn-mute svg { width: 32px; height: 32px; }
+.cn-mute:disabled { color: #535f64; cursor: default; }
+.cn-controls .cn-play { width: 48px; height: 48px; margin-left: 1px; color: #fff; }
+.cn-play::after { top: 1px; bottom: -1px; }

@@ -1,0 +1,280 @@
+/* Inter from Google Fonts' files directly (their stylesheet would add a round trip before the first paint). One variable
+   font per script covers every weight; text waits briefly for it, then shows in the fallback */
+@font-face { font-family: "Inter"; font-weight: 100 900; font-display: fallback; src: url("https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Inter"; font-weight: 100 900; font-display: fallback; src: url("https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa25L7SUc.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+/* ycpe shell: themes, top bar, layout, panes, playback bar */
+:root {
+  --engaged: #178645; --alert: #da6f25; --critical: #c92231; --bookmark: #e3b341;
+  --font: "Inter", system-ui, sans-serif; --mono: ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
+  --top: 36px; --head: 22px;
+  accent-color: var(--accent);  /* checkboxes, radios, progress bars */
+}
+[data-theme="light"] {
+  --bg: #eef0f2; --panel: #fff; --raised: #fff; --fg: #1c2024; --fg-rgb: 28,32,36; --muted: #5f666e; --line: #dde1e5;
+  --hover: rgba(0,0,0,.05); --active: rgba(0,0,0,.09); --accent: #2f6fde; --accent-fg: #fff;
+  --driving: #c3d1de; --override: #6c7570; --range: rgba(47,111,222,.55); --loop: rgba(47,111,222,.12); --shadow: 0 6px 24px rgba(0,0,0,.14);
+  --alert-fg: #b35614; --critical-fg: var(--critical);  /* the state colors as small text */
+  color-scheme: light;
+}
+[data-theme="dark"] {
+  --bg: #0d1013; --panel: #15191d; --raised: #1c2126; --fg: #e3e7eb; --fg-rgb: 227,231,235; --muted: #8a939c; --line: #2a3138;
+  --hover: rgba(255,255,255,.06); --active: rgba(255,255,255,.11); --accent: #4c8dff; --accent-fg: #0d1013;
+  --driving: #0b1d2e; --override: #919b95; --range: rgba(76,141,255,.6); --loop: rgba(76,141,255,.14); --shadow: 0 8px 28px rgba(0,0,0,.5);
+  --alert-fg: var(--alert); --critical-fg: #ff6b78;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }  /* over the classes that set a display */
+html, body { margin: 0; height: 100%; }
+body { font: 12px/1.4 var(--font); color: var(--fg); background: var(--bg); -webkit-font-smoothing: antialiased; }
+body.in-ws { overflow: hidden; }
+a { color: inherit; }
+button, input, select { font: inherit; color: inherit; }
+/* dropdowns draw their lists in the page (Chrome's customizable select), so the lists take the theme: a native one can
+   ignore the page's color-scheme (macOS draws its own) and highlights in the system's blue. Important, as a pane's own
+   `appearance` would silently bring the native one back: style the select, its ::picker-icon and ::picker(select)
+   instead (the harness lints for a native one). Heights stay the panes' own */
+select, ::picker(select) { appearance: base-select !important; }
+select { display: inline-flex; gap: 6px; min-block-size: 0; min-inline-size: 0; }
+select::picker-icon { content: ""; align-self: center; width: 4px; height: 4px; margin: 0 1px 2px auto; border: solid var(--muted); border-width: 0 1.5px 1.5px 0; rotate: 45deg; transition: none; }
+select:open::picker-icon { margin: 2px 1px 0 auto; rotate: 225deg; }
+::picker(select) { margin: 2px 0; padding: 3px; border: 1px solid var(--line); border-radius: 5px; background: var(--raised); color: var(--fg); box-shadow: var(--shadow); }
+option { min-block-size: 0; padding: 2px 12px 2px 6px; border-radius: 3px; color: var(--fg); font-weight: normal; white-space: nowrap; }
+option:hover, option:focus-visible { background: var(--hover); outline: none; }
+option::checkmark { color: var(--accent); }
+/* the rest the browser draws itself, in the theme too: text selection, a tap's flash, autofilled fields, the date
+   fields' parts, color swatches. Its dialogs (confirm, alert, prompt) don't take a theme at all: dom.js ask() instead */
+:root { -webkit-tap-highlight-color: transparent; }
+::selection { background: color-mix(in srgb, var(--accent) 35%, transparent); }
+input:autofill { -webkit-text-fill-color: var(--fg); box-shadow: inset 0 0 0 100px var(--raised); caret-color: var(--fg); }
+input::-webkit-datetime-edit-fields-wrapper { padding: 0; }
+:is(input::-webkit-datetime-edit-day-field, input::-webkit-datetime-edit-month-field, input::-webkit-datetime-edit-year-field):focus { border-radius: 2px; background: var(--accent); color: var(--accent-fg); }
+input::-webkit-calendar-picker-indicator { cursor: pointer; opacity: .6; }
+input[type=color] { width: 32px; height: 20px; padding: 0; border: 1px solid var(--line); border-radius: 4px; background: none; cursor: pointer; }
+input[type=color]::-webkit-color-swatch-wrapper { padding: 2px; }
+input[type=color]::-webkit-color-swatch { border: 0; border-radius: 2px; }
+.ask { max-width: min(420px, calc(100vw - 32px)); padding: 16px 18px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--raised); color: var(--fg); box-shadow: var(--shadow); }
+.ask::backdrop { background: rgba(0,0,0,.35); }
+.ask p { margin: 0 0 12px; overflow-wrap: anywhere; }
+.ask-buttons { display: flex; justify-content: flex-end; gap: 4px; }
+.ask .button { margin: 0; }
+.button.primary { border-color: var(--accent); background: var(--accent); color: var(--accent-fg); }
+.button.primary:hover { background: var(--accent); filter: brightness(1.1); }
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
+.muted { color: var(--muted); }
+::placeholder { color: var(--muted); opacity: 1; }  /* the browser's grey is under 4.5:1, and some fields have no other label */
+.sr-only { position: absolute; top: 0; left: 0; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.mono { font-family: var(--mono); }
+.small { font-size: 11px; }
+.center { text-align: center; }
+.error { color: var(--critical-fg); }
+.link { border: 0; background: none; padding: 0; color: var(--accent); cursor: pointer; }
+.link:hover { text-decoration: underline; }
+.link:focus-visible { outline-offset: 2px; border-radius: 3px; }  /* clear of the text */
+.button { display: inline-block; margin: 4px; padding: 6px 14px; border: 1px solid var(--line); border-radius: 6px; background: var(--raised); text-decoration: none; cursor: pointer; }
+.button:hover { background: var(--hover); }
+.button:active { background: var(--active); }
+.chip { padding: 4px 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--raised); cursor: pointer; }
+.chip:hover { border-color: var(--accent); }
+.dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; box-shadow: inset 0 0 0 1.5px var(--muted); flex-shrink: 0; }  /* offline: a ring */
+.dot.online { background: #2ea44f; box-shadow: none; }
+#app { display: flex; flex-direction: column; height: 100%; }
+#main { flex: 1; min-height: 0; overflow: auto; }
+body.in-ws #main { overflow: hidden; }
+
+/* top bar */
+/* user mode's header comes with its module: until then the bar is its size, and shows none of developer mode's */
+[data-mode="user"] #app > .topbar { height: 64px; background: var(--cn-bg); }
+[data-mode="user"] #app > .topbar > * { visibility: hidden; }
+.topbar { display: flex; align-items: center; gap: 6px; height: var(--top); padding: 0 8px; background: var(--panel); border-bottom: 1px solid var(--line); flex-shrink: 0; position: relative; z-index: 20; container-type: inline-size; overflow-x: clip; }  /* never wider than the window, whatever it holds */
+.brand { display: flex; align-items: center; gap: 6px; padding: 0 6px 0 2px; font-weight: 800; font-size: 14px; letter-spacing: .02em; text-decoration: none; }
+.brand svg { display: block; color: var(--fg); }
+.crumb { display: flex; flex-shrink: 0; align-items: center; max-width: 180px; padding: 3px 2px 3px 6px; border: 0; border-radius: 4px; background: none; font-weight: 600; white-space: nowrap; cursor: pointer; }
+.crumb > span { overflow: hidden; text-overflow: ellipsis; }
+.crumb > svg { flex-shrink: 0; color: var(--muted); }
+.crumb:hover { background: var(--hover); }
+.crumb:has(.rid) { max-width: 260px; }
+.topbar > .crumb:first-of-type { flex-shrink: 1; min-width: 64px; }  /* the device gives way first: a bare dongle id is long, and the route card has it */
+.sep { color: var(--muted); }
+.omnibox { width: 200px; min-width: 80px; flex-shrink: 1; height: 24px; margin-left: 6px; padding: 0 8px; border: 1px solid var(--line); border-radius: 5px; background: var(--bg); }
+.omnibox:focus { border-color: var(--accent); }
+.views, .tabs { display: flex; flex-shrink: 0; align-items: center; gap: 1px; margin-left: 8px; }
+.views { padding: 2px; border-radius: 6px; background: var(--bg); }
+.views:empty, .tabs:empty { display: none; }
+/* the tabs (they scroll) and the load pill (it ellipsizes) give way when the bar is full */
+.tabs { flex-shrink: 1; min-width: 100px; max-width: 40vw; overflow-x: auto; scrollbar-width: none; }
+.tablist { display: flex; flex-shrink: 0; align-items: center; gap: 1px; }
+.view { height: 22px; padding: 0 10px; border: 0; border-radius: 4px; background: none; color: var(--muted); font-weight: 600; cursor: pointer; }
+.view:hover { color: var(--fg); }
+.view.on { background: var(--raised); color: var(--fg); box-shadow: 0 0 0 1px var(--line); }
+.tab { display: flex; flex-shrink: 0; align-items: center; height: 24px; padding: 0 8px; border: 0; border-bottom: 2px solid transparent; background: none; color: var(--muted); cursor: pointer; white-space: nowrap; }
+.topbar .tab:not(.add) { padding: 0; }  /* the name and close buttons pad themselves */
+.tab:has(.x) { min-width: 64px; }
+.tab:hover { color: var(--fg); }
+.tab.on { color: var(--fg); border-bottom-color: var(--accent); }
+.tab-name { flex: 1; align-self: stretch; padding: 0 4px 0 8px; border: 0; background: none; color: inherit; text-align: left; cursor: inherit; }
+.tab-name:only-child { padding-right: 8px; }
+/* on the trailing edge, so a click on a short tab's middle selects it */
+.tab .x { display: flex; margin-right: 4px; padding: 0 2px; border: 0; border-radius: 3px; background: none; color: inherit; opacity: 0; cursor: pointer; }
+.tab:hover .x, .tab .x:focus-visible { opacity: .7; }
+.tab .x:hover { background: var(--active); opacity: 1; }
+.tab.add { padding: 0 4px; }
+.grow { flex: 1; }
+/* the top bar's chips: the load pill, the local badge (local.css) and the HUD */
+.load-pill, .topbar .local-badge, .hud { display: flex; align-items: center; height: 22px; border-radius: 11px; }
+.load-pill:hover, .topbar .local-badge:hover, .hud:hover { border-color: var(--muted); }  /* before the warning borders, which stay */
+.load-pill { position: relative; flex-shrink: 1; min-width: 70px; padding: 0 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); font: 11px var(--mono); white-space: nowrap; cursor: pointer; overflow: hidden; max-width: 240px; }
+.load-pill > span:first-child { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.load-pill svg { display: block; }
+.load-pill.done { flex-shrink: 0; color: var(--muted); }  /* short, once loaded: readable rather than squeezed */
+.load-pill.loaded { min-width: 0; }
+.load-pill.buffering { border-color: var(--alert); color: var(--alert-fg); }
+.pill-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--line); }
+.pill-bar > i { display: block; height: 100%; background: var(--accent); transition: width 0.2s linear; }
+.load-pill.buffering .pill-bar > i { background: var(--alert); }
+.status-panel { position: fixed; z-index: 50; width: 420px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--raised); box-shadow: var(--shadow); }
+.status-head { display: flex; justify-content: space-between; margin-bottom: 6px; }
+.status-row { margin: 6px 0 8px; }
+.status-title { font-size: 11px; margin-bottom: 3px; }
+.status-lane { display: block; width: 100%; height: 10px; }
+.status-tip { height: 14px; font: 10px var(--mono); }
+.status-errors { height: auto; color: var(--critical-fg); white-space: pre-wrap; }
+.hud-mem { color: var(--muted); }
+.tbtn { min-width: 24px; height: 24px; padding: 0 5px; border: 0; border-radius: 4px; background: none; color: var(--muted); cursor: pointer; }
+.tbtn:hover { background: var(--hover); color: var(--fg); }
+.tbtn:active { background: var(--active); }
+.tbtn.on { color: var(--accent); }
+.tbtn.mode-btn { flex-shrink: 0; padding: 0 8px; border: 1px solid var(--line); border-radius: 12px; color: var(--fg); font-weight: 600; white-space: nowrap; }  /* to user mode */
+/* a phone: "Simple", and in a route at the end of the views' row (its tabs scroll in what's left), the first row full */
+@media (max-width: 760px) {
+  .topbar .mode-btn > span { display: none; }
+  body.in-ws .topbar .mode-btn { order: 2; }
+  body.in-ws .topbar .tabs { min-width: 56px; }
+}
+.hud { flex-shrink: 0; gap: 6px; padding: 0 8px; border: 1px solid var(--line); background: var(--bg); font: 11px var(--mono); font-variant-numeric: tabular-nums; cursor: pointer; white-space: nowrap; }
+.hud.bad { border-color: var(--critical); }
+.hud-fps { min-width: 3.6em; }
+.hud-ms { min-width: 4.2em; color: var(--muted); }
+.hud-drops { color: var(--muted); }
+.hud-spark { width: 40px; height: 18px; }
+/* a narrower bar sheds the least needed first (after the chips' own display) */
+@container (max-width: 1400px) { .topbar :is(.hud-spark, .hud-mem, .mode-btn > span) { display: none; } }
+@container (max-width: 1200px) { .topbar .hud-ms, .topbar .brand > span { display: none; } }
+@container (max-width: 1100px) { .topbar .omni, .topbar .omnibox { min-width: 40px; } .topbar .view { padding: 0 5px; } .topbar .load-pill { max-width: 150px; } .topbar .tabs { min-width: 80px; } .topbar .mode-btn { padding: 0 5px; } }
+/* the device crumb goes as on phones: the route crumb's menu reaches the rest */
+@container (max-width: 900px) { .topbar :is(.hud-drops, .local-badge, .sep), .topbar > .crumb:first-of-type { display: none; } }
+.popover { position: fixed; z-index: 50; min-width: min(220px, calc(100vw - 16px)); max-width: min(340px, calc(100vw - 16px)); max-height: 70vh; overflow: auto; padding: 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--raised); box-shadow: var(--shadow); }
+.popover:has(.route-pop) { max-width: min(480px, calc(100vw - 16px)); }  /* the route name diagram on one line */
+.menu-list { display: flex; flex-direction: column; }
+.menu-row { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border: 0; border-radius: 4px; background: none; text-align: left; text-decoration: none; white-space: nowrap; cursor: pointer; }
+.menu-row:hover { background: var(--hover); }
+.menu-row.on { background: var(--active); }
+.menu-row .mono { margin-left: auto; }
+.route-pop { display: flex; flex-direction: column; width: max-content; min-width: 320px; max-width: 100%; height: 70vh; }
+.toast { position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%); z-index: 60; padding: 8px 14px; border-radius: 6px; background: var(--fg); color: var(--bg); box-shadow: var(--shadow); }
+/* loading: a glint sweeping along the bar's bottom edge, moved by the compositor so the bar never repaints */
+body.loading .topbar::before { content: ""; position: absolute; left: 0; bottom: 0; width: 40%; height: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent); pointer-events: none; animation: scan 1s linear infinite; }
+@keyframes scan { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+/* no decorative motion: loading is a still underline, spinners stop (pages.css's too) */
+@media (prefers-reduced-motion: reduce) {
+  body.loading .topbar::before { width: 100%; background: var(--accent); animation: none; }
+  .spinner { animation: none !important; }
+  *, *::before, *::after { transition-duration: 0s !important; }
+}
+
+/* perf panel */
+.perf-panel { position: fixed; top: calc(var(--top) + 4px); right: 8px; z-index: 40; width: 380px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--raised); box-shadow: var(--shadow); }
+.perf-head { display: flex; gap: 10px; align-items: baseline; margin-bottom: 6px; }
+.perf-head b { flex: 1; }
+.perf-chart { width: 100%; height: 90px; display: block; margin-bottom: 6px; }
+.perf-row { display: grid; grid-template-columns: 1fr 70px 70px; padding: 1px 0; font: 11px var(--mono); font-variant-numeric: tabular-nums; }
+.perf-row.head { color: var(--muted); border-bottom: 1px solid var(--line); }
+.perf-row > :not(:first-child) { text-align: right; }
+.perf-row.mark { grid-template-columns: auto 1fr; gap: 12px; }  /* counters, not ms: the value takes the rest */
+.perf-row .bad { color: var(--critical-fg); }
+.perf-longs { margin-top: 6px; max-height: 120px; overflow: auto; }
+
+/* workspace + layout */
+.ws { display: flex; flex-direction: column; height: 100%; }
+.workspace { flex: 1; min-height: 0; display: flex; }
+#main > .ws-wait { height: 100%; }
+.ws-wait { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--muted); }
+.layout { flex: 1; display: flex; min-width: 0; padding: 4px; gap: 0; }
+.layout > * { flex: 1; }
+.split { display: flex; min-width: 0; min-height: 0; }
+.split.row { flex-direction: row; }
+.split.col { flex-direction: column; }
+.divider { position: relative; flex: 0 0 4px; background: transparent; transition: background .1s; touch-action: none; }
+.split.row > .divider { cursor: col-resize; }
+.split.col > .divider { cursor: row-resize; }
+.divider:hover, .divider:active, .divider:focus-visible { background: var(--accent); outline: none; }
+.pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; container-type: inline-size; border: 1px solid var(--line); border-radius: 5px; background: var(--panel); }
+/* dragged to dock the pane; a finger on it drags the pane, not the page */
+.pane-head { display: flex; align-items: center; gap: 4px; height: var(--head); padding: 0 2px 0 4px; border-bottom: 1px solid var(--line); flex-shrink: 0; cursor: grab; touch-action: none; }
+/* as wide as the chosen type, its chevron (the next sibling) drawn over its right padding, so it opens the picker too */
+.pane-type { field-sizing: content; min-width: 0; max-width: 130px; flex-shrink: 1; height: 18px; padding: 0 14px 0 2px; border: 0; background: none; color: var(--muted); font-weight: 600; text-overflow: ellipsis; cursor: pointer; }
+.pane-type::picker-icon { display: none; }  /* the svg after it is the chevron */
+.pane-type + svg { flex-shrink: 0; margin-left: -18px; color: var(--muted); pointer-events: none; }
+.pane-type:hover, .pane-type:hover + svg { color: var(--fg); }
+.pane-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+.pane-tools { display: flex; flex-shrink: 0; margin-left: auto; opacity: .75; transition: opacity .1s; }
+/* narrow panes keep only maximize and close */
+@container (max-width: 180px) { .pane-tools .pane-btn:nth-child(-n+2) { display: none; } }
+.pane:is(:hover, :focus-within) .pane-tools { opacity: 1; }
+.pane-btn { width: 20px; height: 18px; padding: 0; border: 0; border-radius: 3px; background: none; color: var(--muted); cursor: pointer; line-height: 1; }
+.pane-btn:hover { background: var(--active); color: var(--fg); }
+.pane-body { position: relative; flex: 1; min-height: 0; overflow: hidden; contain: strict; }  /* a pane's changes never relayout the page */
+.pane-body > * { position: absolute; inset: 0; }
+.empty-pane { display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 6px; padding: 12px; }
+.pane-missing { display: flex; align-items: center; justify-content: center; color: var(--muted); }
+/* the connect view is a page: its pane without chrome, with its own timeline and controls instead of the playback bar */
+.ws[data-view="connect"] .layout { padding: 0; }
+.ws[data-view="connect"] .layout > .pane { border: 0; border-radius: 0; }
+.ws[data-view="connect"] .layout > .pane > .pane-head, .ws[data-view="connect"] .playbar { display: none; }
+
+/* routes pane */
+.routes-pane { overflow: auto; }
+.route-row { display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-bottom: 1px solid var(--line); text-decoration: none; }
+.route-row:hover { background: var(--hover); }
+.route-row.current { background: var(--active); box-shadow: inset 2px 0 var(--accent); }
+.route-row.current .muted { color: color-mix(in srgb, var(--muted), var(--fg) 35%); }  /* still 4.5:1 on the darker row */
+.route-thumb { width: 64px; height: 36px; border-radius: 3px; object-fit: cover; object-position: top; background: var(--bg); flex-shrink: 0; }  /* the sprite's 16:9 frame, not its black band */
+.route-when { display: flex; flex-direction: column; min-width: 0; white-space: nowrap; }
+.routes-pane .more { display: block; margin: 8px auto; }
+.route-pop .routes-pane { position: static; flex: 1; min-height: 0; }
+
+/* playback bar */
+.playbar { display: flex; align-items: center; gap: 4px; height: 44px; padding: 0 8px; background: var(--panel); border-top: 1px solid var(--line); flex-shrink: 0; }
+.playbar .play { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border-radius: 50%; background: var(--fg); color: var(--bg); font-size: 11px; }
+.playbar .play:hover { background: var(--fg); color: var(--bg); opacity: .85; }
+.rate { height: 22px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); font-variant-numeric: tabular-nums; }
+.pb-clock { display: flex; flex-direction: column; min-width: 120px; padding: 0 6px; font: 11px/1.3 var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pb-time { width: 100%; padding: 0; border: 0; background: none; font: inherit; text-align: left; cursor: text; }
+input.pb-time { outline: 1px solid var(--line); border-radius: 2px; }
+input.pb-time[aria-invalid] { outline-color: var(--critical); }
+.pb-track { position: relative; flex: 1; min-width: 0; }
+.pb-canvas { display: block; width: 100%; height: 32px; cursor: pointer; touch-action: none; }
+.pb-tip { position: absolute; bottom: calc(100% + 4px); width: 136px; padding: 3px; border: 1px solid var(--line); border-radius: 6px; background: var(--raised); box-shadow: var(--shadow); text-align: center; font: 11px var(--mono); pointer-events: none; }
+.pb-thumb { height: 96px; margin-bottom: 2px; border-radius: 3px; background: var(--bg) center / cover; }
+
+/* simple pages */
+.page-msg { max-width: 520px; margin: 12vh auto; padding: 0 16px; text-align: center; }
+.page-msg h2 { font-size: 20px; margin: 0 0 8px; }
+
+/* pane docking */
+body.docking, body.docking * { cursor: grabbing !important; user-select: none; }
+.dock-hint { position: fixed; z-index: 45; border: 2px solid var(--accent); border-radius: 5px; background: var(--loop); pointer-events: none; transition: all .08s ease-out; }
+.tab-edit { width: 90px; height: 20px; padding: 0 4px; border: 1px solid var(--accent); border-radius: 3px; background: var(--bg); }
+.help { padding: 0; border: 1px solid var(--line); border-radius: 10px; background: var(--raised); color: var(--fg); box-shadow: var(--shadow); }
+.help::backdrop { background: rgba(0,0,0,.35); }
+.help-card { min-width: min(380px, calc(100vw - 32px)); padding: 14px 18px; }
+.help-head { display: flex; justify-content: space-between; align-items: baseline; }
+.help h2 { margin: 0; font-size: 13px; }
+.help dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 10px 0 0; }
+.help dt { text-align: right; white-space: nowrap; }
+.help dd { margin: 0; color: var(--muted); }
+@media (max-width: 480px) { .help dl { grid-template-columns: 1fr; row-gap: 2px; } .help dt { margin-top: 6px; text-align: left; white-space: normal; } }  /* a phone: each key over what it does */
+kbd { display: inline-block; min-width: 18px; margin-left: 3px; padding: 0 5px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; background: var(--bg); font: 11px var(--mono); text-align: center; }

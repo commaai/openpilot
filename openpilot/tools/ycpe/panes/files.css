@@ -1,0 +1,45 @@
+/* files pane: source bar, a virtualized segment table under a sticky header, the upload queue */
+.files-pane { display: flex; flex-direction: column; font-size: 12px; }
+.files-pane .fp-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 6px 8px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
+.files-pane .fp-source { height: 22px; max-width: 280px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--fg); }
+.files-pane .fp-summary { margin-right: auto; color: var(--muted); white-space: nowrap; }  /* the request-alls at the end */
+.files-pane .fp-notes { flex-shrink: 0; }
+.files-pane .fp-notes > * { margin: 4px 8px; }
+.files-pane .notice { display: flex; align-items: center; gap: 6px; padding: 4px 8px; border: 1px solid var(--alert); border-radius: 5px; }
+.files-pane .notice svg { color: var(--alert); flex-shrink: 0; }
+.files-pane .fp-scroll { position: relative; flex: 1; min-height: 0; overflow: auto; contain: strict; }
+.files-pane .fp-row { display: grid; grid-template-columns: 44px 120px repeat(6, minmax(92px, 1fr)); column-gap: 8px; align-items: center; min-width: 776px; height: 26px; padding: 0 8px; border-bottom: 1px solid var(--line); }
+.files-pane .fp-body { position: relative; min-width: 792px; }
+.files-pane .fp-body > .fp-row { position: absolute; top: 0; left: 0; right: 0; contain: strict; }
+.files-pane .fp-body > .fp-row:hover { background: var(--hover); }
+.files-pane .fp-head { position: sticky; top: 0; z-index: 1; height: 40px; background: var(--panel); color: var(--muted); font-weight: 600; }
+.files-pane .fp-head .fp-cell { flex-direction: column; align-items: flex-start; gap: 0; }
+.files-pane .fp-kind { display: flex; align-items: center; gap: 2px; color: var(--fg); }
+.files-pane .fp-total { max-width: 100%; overflow: hidden; text-overflow: ellipsis; font-weight: 400; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.files-pane .fp-seg { font-variant-numeric: tabular-nums; color: var(--muted); }
+.files-pane .fp-src { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.files-pane .fp-cell { display: flex; align-items: center; gap: 3px; min-width: 0; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.files-pane a.fp-cell { justify-self: start; padding: 1px 4px 1px 2px; text-decoration: none; }
+.files-pane .icon-btn:disabled { opacity: .35; cursor: default; }
+.files-pane .fp-queue { flex-shrink: 0; max-height: 40%; overflow: auto; padding: 4px 8px; border-top: 1px solid var(--line); }
+.files-pane .fp-queue summary { color: var(--muted); cursor: pointer; }
+.files-pane .fp-queue progress { width: 120px; height: 6px; vertical-align: middle; }
+/* a phone: narrower columns, no source column when one source is picked (the picker says it), the segment number
+   pinned while the kinds scroll sideways */
+@media (max-width: 760px) {
+  .files-pane .fp-bar { gap: 8px; }
+  .files-pane .fp-source { min-width: 0; flex-shrink: 1; }
+  .files-pane .fp-summary { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .files-pane .fp-row { grid-template-columns: 36px 96px repeat(6, minmax(84px, 1fr)); min-width: 708px; }
+  .files-pane .fp-body { min-width: 708px; }
+  .files-pane:not(:has(option[value="auto"]:checked)) .fp-row { grid-template-columns: 36px repeat(6, minmax(84px, 1fr)); min-width: 604px; }
+  .files-pane:not(:has(option[value="auto"]:checked)) .fp-body { min-width: 604px; }
+  .files-pane:not(:has(option[value="auto"]:checked)) .fp-src { display: none; }
+  .files-pane .fp-seg { position: sticky; left: 0; z-index: 1; align-self: stretch; display: flex; align-items: center; margin-left: -8px; padding-left: 8px; background: var(--panel); }
+}
+@media (pointer: coarse) {
+  .files-pane .fp-body > .fp-row { height: 36px; }
+  .files-pane .fp-source { height: 32px; }
+  .files-pane .fp-head { height: 52px; }  /* the kinds' buttons and totals */
+  .files-pane .icon-btn, .files-pane a.fp-cell { min-width: 32px; min-height: 32px; }
+}

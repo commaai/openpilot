@@ -83,14 +83,6 @@ openpilot/tools/replay/replay <route-name>
 cd openpilot/selfdrive/ui && ./ui.py
 ```
 
-## Work with plotjuggler
-If you want to use replay with plotjuggler, you can stream messages by running:
-
-```bash
-openpilot/tools/replay/replay <route-name>
-openpilot/tools/plotjuggler/juggle.py --stream
-```
-
 ## watch3
 
 watch all three cameras simultaneously from your comma three routes with watch3

@@ -1,0 +1,83 @@
+/* plot panes: time plot, XY plot, their popups */
+.plot-pane { position: absolute; inset: 0; overflow: hidden; user-select: none; }
+.plot-pane canvas { position: absolute; left: 0; top: 0; }
+.plot-pane canvas.over { cursor: crosshair; touch-action: none; }
+.plot-pane canvas.over:focus-visible { outline: none; }  /* keys still work in a focused plot; the ring only covered the curves */
+/* the phone's stacked views scroll: a finger moving up or down scrolls them, sideways it pans, two pinch time; on
+   the y-axis it pans the values */
+.plot-pane .ygrip { display: none; position: absolute; left: 0; top: 0; bottom: 0; touch-action: none; }
+@media (max-width: 760px), (pointer: coarse) and (max-height: 500px) {
+  .ws:not([data-view="files"]) .plot-pane canvas.over { touch-action: pan-y; }
+  .ws:not([data-view="files"]) .plot-pane .ygrip { display: block; }
+}
+/* in the corner under the y-axis, while its values are locked */
+.plot-pane .yauto { position: absolute; left: 3px; bottom: 2px; height: 16px; padding: 0 5px; border: 1px solid var(--line); border-radius: 3px;
+  background: var(--raised); color: var(--muted); font: 10px var(--font); cursor: pointer; }
+.plot-pane .yauto:hover { border-color: var(--accent); color: var(--fg); }
+.plot-pane.drop::after { content: ""; position: absolute; inset: 2px; border: 2px dashed var(--accent); border-radius: 4px; pointer-events: none; }
+.plot-pane .empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 0 16px; color: var(--muted); text-align: center; pointer-events: none; }
+
+.plot-pane .legend { position: absolute; top: 8px; right: 12px; max-width: min(70%, 440px); max-height: calc(100% - 36px); overflow: auto; padding: 2px 0;
+  border: 1px solid var(--line); border-radius: 4px; background: color-mix(in srgb, var(--raised) 88%, transparent); font: 11px var(--mono); }
+.plot-pane .legend .row { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto 14px; align-items: center; gap: 6px; padding: 0 4px 0 6px; line-height: 17px; }
+.plot-pane .legend .row:hover { background: var(--hover); }
+.plot-pane .legend .row.off { opacity: .45; }
+.plot-pane .legend button { min-width: 0; padding: 0; border: 0; background: none; cursor: pointer; }
+.plot-pane .legend .swatch { height: 17px; background: linear-gradient(currentColor, currentColor) center / 10px 3px no-repeat; }
+/* a long path loses its head, not its field name: the text runs right to left inside an ltr isolate */
+.plot-pane .legend .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; text-align: left; }
+/* a narrow pane keeps its y labels: the legend stays right of the gutter, with names only */
+.plot-pane.narrow .legend { max-width: calc(100% - 70px); }
+.plot-pane.narrow .legend .row { grid-template-columns: 10px minmax(0, 1fr) 14px; }
+.plot-pane.narrow .legend .val { display: none; }
+.plot-pane.tiny .legend .name { display: none; }
+.plot-pane.tiny .legend .row { grid-template-columns: 10px 14px; }
+.plot-pane .legend .val { min-width: 5ch; max-width: 24ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right; font-variant-numeric: tabular-nums; }
+.plot-pane .legend .x { display: grid; place-items: center; height: 17px; visibility: hidden; color: var(--muted); }
+.plot-pane .legend .row:is(:hover, :focus-within) .x { visibility: visible; }
+.plot-pane .legend .x:hover { color: var(--fg); }
+.plot-pane .legend .stats { grid-column: 2 / -1; color: var(--muted); white-space: pre; }
+
+.plot-popup { display: flex; flex-direction: column; gap: 4px; }
+.plot-popup .title { padding: 2px 4px 4px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.plot-popup label { display: grid; grid-template-columns: 96px 1fr; align-items: center; gap: 6px; padding: 0 4px; color: var(--muted); }
+.plot-popup input, .plot-popup select, .plot-popup textarea { min-width: 0; height: 22px; padding: 0 4px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--fg); }
+.plot-popup input[type=color] { padding: 0 2px; }
+.plot-popup:has(> .menu-list) { gap: 0; padding: 4px; }
+.plot-popup .tick { display: inline-flex; width: 14px; }
+.plot-popup .menu-row.muted { cursor: default; }
+.plot-popup .menu-row.muted:hover { background: none; }
+.plot-popup hr { margin: 3px 0; border: 0; border-top: 1px solid var(--line); }
+.plot-popup > button { height: 24px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); cursor: pointer; }
+.plot-popup > button:hover { background: var(--hover); }
+.plot-popup > button.danger { color: var(--critical-fg); }
+
+/* series browser */
+.browser { position: absolute; inset: 0; display: flex; flex-direction: column; }
+.browser .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 4px; border-bottom: 1px solid var(--line); }
+.browser .filter { flex: 1; min-width: 0; height: 22px; padding: 0 6px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); }
+.browser .filter:focus { border-color: var(--accent); }
+@container (max-width: 260px) { .browser .filter { flex-basis: 100%; min-width: 100px; } }
+.browser label { display: flex; align-items: center; gap: 2px; white-space: nowrap; }
+.browser .count { min-width: 5ch; text-align: right; font: 11px var(--mono); }
+.browser .note { padding: 8px; color: var(--muted); }
+.browser .note.error { color: var(--critical-fg); }
+.browser .scroller { position: relative; flex: 1; min-height: 0; overflow: auto; }
+.browser .window { position: absolute; left: 0; right: 0; top: 0; }
+.browser .row { display: flex; align-items: center; height: 18px; padding-right: 6px; font: 11px var(--mono); white-space: nowrap; cursor: default; }
+.browser .row:hover { background: var(--hover); }
+.browser .row.sel { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.browser .scroller:focus-visible { outline: 0; }
+.browser .scroller:focus-visible .row.cur { box-shadow: inset 0 0 0 1px var(--accent); }
+@media (pointer: coarse) { .browser .row { height: 28px; } .browser .filter { height: 30px; } }  /* fingers; browser.js agrees */
+.browser .twisty { flex-shrink: 0; display: flex; width: 12px; color: var(--muted); }
+.browser .row:not(.branch) .twisty svg { visibility: hidden; }
+.browser .row.open .twisty svg { transform: rotate(90deg); }
+.browser .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.browser .val { flex-shrink: 0; max-width: 45%; margin-left: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* custom series console */
+.plot-popup.plot-console { width: 460px; max-width: calc(100vw - 8px); max-height: calc(100vh - 8px); }
+.plot-console textarea { flex: none; height: auto; padding: 4px; font: 11px/1.4 var(--mono); resize: vertical; tab-size: 2; }
+.plot-console .hint { padding: 0 4px; color: var(--muted); font: 11px var(--mono); }
+.plot-console .error { min-height: 1.4em; padding: 0 4px; white-space: pre-wrap; }

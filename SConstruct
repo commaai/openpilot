@@ -292,8 +292,6 @@ SConscript([
 if GetOption('extras') and arch != "comma_arm64":
   SConscript([
     'openpilot/tools/replay/SConscript',
-    'openpilot/tools/cabana/SConscript',
-    'openpilot/tools/jotpluggler/SConscript',
   ])
 
 

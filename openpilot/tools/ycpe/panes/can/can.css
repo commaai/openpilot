@@ -1,0 +1,162 @@
+/* CAN panes (cabana). Colors come only from theme variables. */
+.can-pane { display: flex; flex-direction: column; min-height: 0; font-size: 12px; outline: none; }
+.can-pane:focus-visible, .can-sig-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.can-toolbar { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; padding: 3px 4px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
+.can-notice { padding: 2px 6px; border-bottom: 1px solid var(--line); }
+.can-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.can-btn { height: 20px; padding: 0 7px; border: 1px solid var(--line); border-radius: 3px; background: var(--raised); cursor: pointer; white-space: nowrap; }
+.can-btn:hover:not(:disabled) { border-color: var(--accent); }
+.can-btn:disabled { opacity: .45; cursor: default; }
+.can-btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
+.can-btn.primary:hover:not(:disabled) { filter: brightness(1.1); }
+.can-dbc-btn { min-width: 7ch; max-width: 24ch; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+.can-icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 20px; height: 18px; padding: 0; border: 0; border-radius: 3px; background: none; color: var(--muted); cursor: pointer; font-size: 11px; }
+/* icons centred, and tucked in beside a label (a span); text-only buttons stay blocks so the DBC chip can ellipsize */
+.can-btn:has(> svg) { display: inline-flex; align-items: center; justify-content: center; gap: 2px; }
+.can-btn > svg:first-child:not(:only-child) { margin-left: -3px; }
+.can-btn > svg:last-child:not(:only-child) { margin-right: -3px; }
+.can-icon:hover { background: var(--active); color: var(--fg); }
+.can-icon.on { background: var(--active); color: var(--accent); }
+/* the binary view's way back to the list, only where a phone stacks the panes in one scroll (pages.css) */
+.can-back { display: none; }
+@media (max-width: 760px), (pointer: coarse) and (max-height: 500px) { .ws:not([data-view="files"]) .can-back { display: inline-flex; } }
+@media (pointer: coarse) { .can-back { width: 32px; height: 32px; } }  /* fingers */
+.can-check { display: inline-flex; align-items: center; gap: 3px; color: var(--muted); white-space: nowrap; }
+.can-select, .can-filter { height: 20px; padding: 0 4px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); }
+.can-filter { width: 110px; }
+.can-empty { padding: 16px; color: var(--muted); text-align: center; }
+.can-comment { width: 100%; color: var(--muted); white-space: pre-wrap; }
+
+/* messages */
+/* the DBC chip gives up its width before the toolbar wraps */
+.can-messages .can-dbc-btn { flex: 1 1 7ch; max-width: calc-size(max-content, min(size, 24ch)); }
+.can-msg-table { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.can-msg-head, .can-msg-filters, .can-msg-row { display: flex; padding: 0 4px; }
+.can-msg-head { height: 20px; align-items: center; color: var(--muted); font-weight: 600; cursor: pointer; user-select: none; }
+/* sort buttons; :where() leaves the numeric columns their right alignment */
+:where(.can-msg-head > button) { height: 100%; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.can-msg-filters { padding-bottom: 3px; border-bottom: 1px solid var(--line); gap: 2px; }
+.can-msg-filters input { min-width: 0; height: 18px; padding: 0 3px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); font-size: 11px; }
+.can-col { flex: 0 0 auto; min-width: 0; padding: 0 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; box-sizing: border-box; }
+.can-col-name { flex: 1 1 140px; } .can-col-bus { width: 34px; } .can-col-id { width: 72px; } .can-col-node { flex: 0 1 110px; min-width: 64px; }
+.can-col-freq { width: 40px; } .can-col-count { width: 56px; } .can-col-bytes { flex: 0 1 158px; }
+/* narrow panes drop node and count, then freq, then the bytes, but for columns turned on in the menu; the bus stays, as
+   one ID is often on several */
+.can-messages { container-type: inline-size; }
+.can-hide-bus .can-col-bus, .can-hide-id .can-col-id, .can-hide-node .can-col-node, .can-hide-freq .can-col-freq,
+.can-hide-count .can-col-count, .can-hide-bytes .can-col-bytes { display: none; }
+@container (max-width: 560px) { .can-col-node, .can-col-count { display: none; } }
+@container (max-width: 400px) { .can-col-freq { display: none; } }
+@container (max-width: 300px) { .can-col-bytes { display: none; } }
+.can-show-bus .can-col-bus, .can-show-node .can-col-node, .can-show-freq .can-col-freq,
+.can-show-count .can-col-count, .can-show-bytes .can-col-bytes { display: block; }
+.can-col-name { min-width: 70px; }
+.can-col-bus, .can-col-freq, .can-col-count { text-align: right; font-variant-numeric: tabular-nums; }
+/* contained: a row's new text lays out the row alone, not the panes around the list */
+.can-msg-body { position: relative; flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; contain: strict; }
+.can-msg-spacer { position: relative; }
+.can-msg-row { position: absolute; top: 0; left: 0; right: 0; height: 20px; align-items: center; cursor: pointer; contain: strict; }
+@media (pointer: coarse) { .can-msg-row { height: 28px; } }  /* fingers; messages.js agrees */
+.can-msg-row:hover { background: var(--hover); }
+.can-msg-row.selected { background: var(--active); box-shadow: inset 2px 0 var(--accent); }
+.can-msg-row.inactive { color: var(--muted); }
+.can-msg-row .can-col-id, .can-msg-row .can-col-bytes { font-family: var(--mono); }
+.can-col-bytes span, .can-hist-row > span > span { display: inline-block; width: 2.3ch; margin-right: 1px; text-align: center; border-radius: 2px; }
+/* byte changes: up, down, periodic; --a fades from 1 to 0 over two seconds */
+.can-chg1, .can-chg2, .can-chg3 { background: color-mix(in srgb, var(--c) calc(var(--a) * 55%), transparent); }
+.can-chg1 { --c: var(--accent); } .can-chg2 { --c: var(--critical); } .can-chg3 { --c: var(--muted); }
+
+/* binary view */
+.can-binary-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.can-binary-scroll { flex: 1; min-height: 0; overflow: auto; }
+/* fingers scroll the page across it; binary.js starts their drag on a sideways move or a hold */
+.can-binary-canvas { display: block; width: 100%; cursor: crosshair; touch-action: pan-y; }
+.can-binary-info { flex-shrink: 0; padding: 2px 6px; border-top: 1px solid var(--line); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.can-binary-info:empty { display: none; }
+
+/* signals */
+.can-sig-list { flex: 1; min-height: 0; overflow-y: auto; }
+.can-sig { border-bottom: 1px solid var(--line); }
+.can-sig.hover > .can-sig-row, .can-sig-row:hover { background: var(--hover); }
+.can-sig-row { display: flex; align-items: center; gap: 6px; height: 24px; padding: 0 4px; cursor: pointer; }
+.can-swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+.can-sig-name { flex: 1 1 40%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.can-spark { flex: 0 0 80px; width: 80px; height: 18px; }
+.can-sig-value { flex: 0 0 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--mono); text-align: right; }
+.can-sig-editor { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; padding: 6px 8px 8px 20px; background: var(--bg); }
+.can-field { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.can-field > span:first-child { flex: 0 0 64px; color: var(--muted); }
+.can-field input:not([type=checkbox]), .can-field select, .can-field textarea { flex: 1; min-width: 0; height: 20px; padding: 0 4px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); }
+.can-field textarea { height: auto; padding: 2px 4px; resize: vertical; font: inherit; }
+.can-sig-editor .can-field:has(textarea), .can-sig-editor .can-field:nth-last-child(1), .can-sig-editor .error { grid-column: 1 / -1; }
+.can-sig-editor .error:empty { display: none; }
+/* narrow panes: no sparklines (as cabana's compact layout), and the editor in one column */
+.can-signals { container-type: inline-size; }
+@container (max-width: 360px) {
+  .can-spark { display: none; }
+  .can-sig-value { flex-basis: 76px; }
+  .can-sig-editor { grid-template-columns: 1fr; padding-left: 8px; }
+}
+
+/* history */
+.can-hist-row { display: grid; gap: 6px; height: 20px; align-items: center; padding: 0 6px; white-space: nowrap; }
+.can-hist-row > span { overflow: hidden; text-overflow: ellipsis; }
+.can-hist-head { flex-shrink: 0; border-bottom: 1px solid var(--line); color: var(--muted); font-weight: 600; }
+.can-msg-spacer > .can-hist-row { position: absolute; left: 0; right: 0; cursor: pointer; }
+.can-msg-spacer > .can-hist-row:hover { background: var(--hover); }
+
+/* dialog tables */
+.can-table { display: table; width: 100%; border-collapse: collapse; }
+.can-table-head, .can-table-row { display: table-row; }
+.can-table-head > span { display: table-cell; position: sticky; top: 0; padding: 2px 6px; background: var(--panel); color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.can-table-row > span { display: table-cell; padding: 1px 6px; white-space: nowrap; }
+.can-table-row { cursor: pointer; }
+.can-table-row:hover { background: var(--hover); }
+
+/* charts */
+.can-tabs { display: flex; align-items: center; gap: 2px; padding: 0 4px; border-bottom: 1px solid var(--line); }
+.can-tablist { display: flex; align-items: center; gap: 2px; min-width: 0; }
+.can-tab { display: inline-flex; align-items: center; color: var(--muted); border-bottom: 2px solid transparent; }
+.can-tab.active { color: var(--fg); border-bottom-color: var(--accent); }
+.can-tab:not(.active):hover { color: var(--fg); }
+.can-tab-name { padding: 2px 8px; border: 0; border-radius: 3px; background: none; color: inherit; font: inherit; cursor: pointer; }
+.can-tab-name:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.can-charts-grid { flex: 1; min-height: 0; overflow-y: auto; display: grid; grid-auto-rows: 200px; gap: 4px; padding: 4px; }
+.can-chart { display: flex; flex-direction: column; min-height: 0; border: 1px solid var(--line); border-radius: 4px; }
+.can-chart-bar { display: flex; align-items: center; height: 16px; padding: 0 2px 0 6px; color: var(--muted); cursor: grab; }
+.can-chart-plot { position: relative; flex: 1; min-height: 0; }
+
+/* dialogs and menus */
+.can-dialog { min-width: 420px; max-width: min(900px, 92vw); max-height: 86vh; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--fg); box-shadow: var(--shadow); font-size: 12px; }
+.can-dialog.can-wide { width: 820px; }
+.can-dialog::backdrop { background: rgba(0, 0, 0, .3); }
+.can-dialog-head { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-bottom: 1px solid var(--line); }
+.can-x { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; padding: 0; border: 0; background: none; color: var(--muted); font-size: 16px; cursor: pointer; border-radius: 3px; }
+.can-x:hover { background: var(--active); color: var(--fg); }
+.can-dialog-body { display: flex; flex-direction: column; gap: 8px; padding: 10px; max-height: calc(86vh - 40px); overflow: auto; }
+.can-form { display: flex; flex-direction: column; gap: 5px; }
+.can-form-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.can-form-2 > div { display: flex; flex-direction: column; gap: 5px; }
+.can-form .can-field > span:first-child { flex-basis: 110px; }
+.can-dialog input, .can-dialog select { height: 22px; padding: 0 4px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); }
+.can-dialog .can-row input { width: 80px; }
+.can-results { max-height: 50vh; overflow: auto; }
+.can-files { display: flex; flex-direction: column; gap: 4px; }
+.can-file { display: flex; align-items: center; gap: 4px; padding: 4px 6px; border: 1px solid var(--line); border-radius: 4px; }
+.can-file-actions { margin-left: auto; display: flex; gap: 4px; }
+.can-dbc-open { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.can-col-flex { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.can-list { height: 260px; overflow-y: auto; border: 1px solid var(--line); border-radius: 4px; }
+.can-recent { height: auto; max-height: 110px; flex-shrink: 0; }
+.can-recent > .muted { padding: 2px 6px; }
+.can-list-row { display: block; width: 100%; padding: 3px 6px; border: 0; background: none; text-align: left; cursor: pointer; }
+.can-list-row:hover { background: var(--hover); }
+.can-paste { flex: 1; min-height: 200px; padding: 4px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); font: 11px var(--mono); resize: none; }
+.can-menu { margin: 0; padding: 4px; border: 1px solid var(--line); border-radius: 5px; background: var(--raised); color: var(--fg); box-shadow: var(--shadow); font-size: 12px; }
+.can-menu .menu-row { width: 100%; }
+.can-menu hr { margin: 3px 0; border: 0; border-top: 1px solid var(--line); }
+.can-menu .tick { display: inline-flex; width: 14px; }
+.can-picker { width: 420px; height: 320px; }
+.can-picker .can-list-row { display: flex; align-items: center; gap: 6px; padding: 1px 6px; }
+.can-picker .can-list-row input { height: auto; margin: 0; }
+.can-dialog .can-filter { width: 100%; box-sizing: border-box; }
