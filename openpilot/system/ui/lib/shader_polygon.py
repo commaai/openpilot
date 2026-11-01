@@ -142,15 +142,6 @@ class ShaderState:
 
     self.initialized = True
 
-  def cleanup(self):
-    if not self.initialized:
-      return
-    if self.shader:
-      rl.unload_shader(self.shader)
-      self.shader = None
-
-    self.initialized = False
-
 
 def _configure_shader_color(state: ShaderState, color: Optional[rl.Color],  # noqa: UP045  # rl.Color is a function, so `rl.Color | None` fails
                             gradient: Gradient | None, origin_rect: rl.Rectangle):
@@ -231,8 +222,3 @@ def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray,
   rl.begin_shader_mode(state.shader)
   rl.draw_triangle_strip(tri_strip, len(tri_strip), rl.WHITE)
   rl.end_shader_mode()
-
-
-def cleanup_shader_resources():
-  state = ShaderState.get_instance()
-  state.cleanup()

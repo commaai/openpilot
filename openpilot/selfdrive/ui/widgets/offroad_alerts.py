@@ -21,7 +21,6 @@ class AlertColors:
   BACKGROUND = rl.Color(57, 57, 57, 255)
   BUTTON = rl.WHITE
   BUTTON_PRESSED = rl.Color(200, 200, 200, 255)
-  BUTTON_TEXT = rl.BLACK
   SNOOZE_BG = rl.Color(79, 79, 79, 255)
   SNOOZE_BG_PRESSED = rl.Color(100, 100, 100, 255)
   TEXT = rl.WHITE

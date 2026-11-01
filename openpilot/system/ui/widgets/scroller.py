@@ -131,10 +131,6 @@ class _Scroller(Widget):
       self.scroll_panel.set_offset(scroll_offset)
 
   @property
-  def is_auto_scrolling(self) -> bool:
-    return self._scrolling_to[0] is not None
-
-  @property
   def items(self) -> list[Widget]:
     return self._items
 

@@ -116,19 +116,6 @@ def is_response(msg: JsonDict) -> bool:
   return "id" in msg and ("result" in msg or "error" in msg)
 
 
-def error_message(err: Any) -> str:
-  """Normalize JSON-RPC object errors and plain-string errors."""
-  if isinstance(err, str):
-    return err
-  if isinstance(err, dict):
-    data = err.get("data")
-    if isinstance(data, dict) and data.get("message"):
-      return str(data["message"])
-    if err.get("message") is not None:
-      return str(err["message"])
-  return str(err)
-
-
 def _invoke(fn: Callable[..., Any], params: Any) -> Any:
   if params is None:
     return fn()

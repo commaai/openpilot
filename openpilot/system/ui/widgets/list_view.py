@@ -223,9 +223,6 @@ class MultipleButtonAction(ItemAction):
     if 0 <= index < len(self.buttons):
       self.selected_button = index
 
-  def get_selected_button(self) -> int:
-    return self.selected_button
-
   def _render(self, rect: rl.Rectangle):
     spacing = RIGHT_ITEM_PADDING
     button_y = rect.y + (rect.height - BUTTON_HEIGHT) / 2
@@ -437,10 +434,6 @@ class ListItem(Widget):
 
 
 # Factory functions
-def simple_item(title: str | Callable[[], str], callback: Callable | None = None) -> ListItem:
-  return ListItem(title=title, callback=callback)
-
-
 def toggle_item(title: str | Callable[[], str], description: str | Callable[[], str] | None = None, initial_state: bool = False,
                 callback: Callable | None = None, icon: str = "", enabled: bool | Callable[[], bool] = True) -> ListItem:
   action = ToggleAction(initial_state=initial_state, enabled=enabled, callback=callback)

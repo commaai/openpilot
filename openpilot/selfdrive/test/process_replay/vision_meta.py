@@ -25,11 +25,6 @@ def meta_from_encode_index(encode_index):
   return meta
 
 
-def meta_from_stream_type(stream_type):
-  meta = next((VideoStreamMeta(*meta) for meta in VIPC_STREAM_METADATA if meta[2] == stream_type), None)
-  return meta
-
-
 def available_streams(lr=None):
   if lr is None:
     return [VideoStreamMeta(*meta) for meta in VIPC_STREAM_METADATA]

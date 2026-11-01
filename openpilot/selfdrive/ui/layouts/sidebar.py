@@ -25,7 +25,6 @@ NetworkType = log.DeviceState.NetworkType
 # Color scheme
 class Colors:
   WHITE = rl.WHITE
-  WHITE_DIM = rl.Color(255, 255, 255, 85)
   GRAY = rl.Color(84, 84, 84, 255)
 
   # Status colors

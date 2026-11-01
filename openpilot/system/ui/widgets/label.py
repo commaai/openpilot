@@ -300,13 +300,6 @@ class UnifiedLabel(Widget):
       self._spacing_pixels = size * self._letter_spacing  # Recalculate spacing
       self._cached_text = None  # Invalidate cache
 
-  def set_letter_spacing(self, letter_spacing: float):
-    """Update letter spacing (as percentage, e.g., 0.1 = 10%)."""
-    if self._letter_spacing != letter_spacing:
-      self._letter_spacing = letter_spacing
-      self._spacing_pixels = self._font_size * letter_spacing
-      self._cached_text = None  # Invalidate cache
-
   def set_line_height(self, line_height: float):
     """Update line height (multiplier, e.g., 1.0 = default)."""
     new_line_height = line_height * 0.9

@@ -218,9 +218,6 @@ class BigButton(BaseButton):
   def get_value(self) -> str:
     return self.value
 
-  def get_text(self):
-    return self.text
-
   def trigger_grow_animation(self, duration: float = 0.65):
     self._grow_animation_until = rl.get_time() + duration
 
