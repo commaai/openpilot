@@ -990,7 +990,7 @@ requires-dist = [
     { name = "mkdocs", marker = "extra == 'docs'" },
     { name = "mkdocs-material", marker = "extra == 'docs'" },
     { name = "mkdocstrings", extras = ["python"], marker = "extra == 'docs'" },
-    { name = "mypy", marker = "extra == 'linting'", specifier = "==1.19.1" },
+    { name = "mypy", marker = "extra == 'linting'", specifier = "==2.3.1" },
     { name = "networkx", marker = "extra == 'testing'" },
     { name = "nibabel", marker = "extra == 'testing'" },
     { name = "numba", marker = "extra == 'testing'", specifier = ">=0.55" },
@@ -1011,7 +1011,7 @@ requires-dist = [
     { name = "pytest-split", marker = "extra == 'testing-minimal'" },
     { name = "pytest-xdist", marker = "extra == 'testing-minimal'" },
     { name = "pyyaml", marker = "extra == 'autogen'" },
-    { name = "ruff", marker = "extra == 'linting'", specifier = "==0.14.10" },
+    { name = "ruff", marker = "extra == 'linting'", specifier = "==0.16.4" },
     { name = "safetensors", marker = "extra == 'testing-unit'" },
     { name = "sentencepiece", marker = "extra == 'testing'" },
     { name = "tabulate", marker = "extra == 'testing-unit'" },
@@ -1024,7 +1024,7 @@ requires-dist = [
     { name = "transformers", marker = "extra == 'testing'" },
     { name = "typeguard", marker = "extra == 'linting'" },
     { name = "typing-extensions", marker = "extra == 'linting'" },
-    { name = "z3-solver", marker = "extra == 'testing-minimal'", specifier = "<4.15.4" },
+    { name = "z3-solver", marker = "extra == 'testing-minimal'", specifier = "==5.1.0.0" },
 ]
 provides-extras = ["linting", "testing-minimal", "testing-unit", "testing", "docs", "mesa", "autogen"]
 

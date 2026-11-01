@@ -59,20 +59,8 @@ pkg_names = ['acados', 'capnproto', 'ffmpeg', 'json11', 'ncurses', 'zstd']
 pkgs = [importlib.import_module(name) for name in pkg_names]
 acados = pkgs[pkg_names.index('acados')]
 ffmpeg = pkgs[pkg_names.index('ffmpeg')]
-# Shared package ships .so/.dylib; older device venvs still have static .a only.
-# Keep static link deps (x264/z/va/drm) when the installed package is static so
-# COMMA_HARDWARE CI works without upgrading the device venv yet.
-# TODO: drop the static fallback once device venvs have comma-deps-ffmpeg>=7.1.0.post94
-_ffmpeg_lib_names = os.listdir(ffmpeg.LIB_DIR) if os.path.isdir(ffmpeg.LIB_DIR) else []
-ffmpeg_shared = any(
-  n.startswith('libavcodec.so') or (n.startswith('libavcodec') and n.endswith('.dylib'))
-  for n in _ffmpeg_lib_names
-)
+ffmpeg_shared = True
 ffmpeg_libs = ['avformat', 'avcodec', 'swresample', 'avutil']
-if not ffmpeg_shared:
-  ffmpeg_libs += ['x264', 'z']
-  if arch != "Darwin":
-    ffmpeg_libs += ['va', 'va-drm', 'drm']
 acados_include_dirs = [
   acados.INCLUDE_DIR,
   os.path.join(acados.INCLUDE_DIR, "blasfeo", "include"),
