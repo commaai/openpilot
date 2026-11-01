@@ -146,7 +146,7 @@ env = Environment(
     "#rednose_repo/rednose/helpers",
     [x.LIB_DIR for x in pkgs],
   ],
-  RPATH=[ffmpeg.LIB_DIR] if ffmpeg_shared else [],
+  RPATH=[ffmpeg.LIB_DIR],
   CYTHONCFILESUFFIX=".cpp",
   COMPILATIONDB_USE_ABSPATH=True,
   REDNOSE_ROOT="#rednose_repo",
