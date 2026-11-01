@@ -21,6 +21,8 @@ run = """
 mkdir -p /data/ci/tmp
 # Bypass the AGNOS system-install shim; this environment is on /data.
 TMPDIR=/data/ci/tmp UV_PYTHON_PREFERENCE=only-managed PYTHONWARNINGS=default /usr/bin/uv sync --frozen --inexact || exit 1
+PATH="$PWD/.venv/bin:$PATH" git lfs install --local --skip-smudge || exit 1
+PATH="$PWD/.venv/bin:$PATH" git lfs pull || exit 1
 for p in msgq_repo/msgq opendbc_repo/opendbc rednose_repo/rednose teleoprtc_repo/teleoprtc tinygrad_repo/tinygrad; do ln -sfn "$p" "${p#*/}"; done
 cd openpilot/system/manager && ./build.py
 """
