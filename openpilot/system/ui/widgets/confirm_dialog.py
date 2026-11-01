@@ -1,4 +1,4 @@
-import pyray as rl
+import raylib_nb as rl
 from collections.abc import Callable
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.multilang import tr

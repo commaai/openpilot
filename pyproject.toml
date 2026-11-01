@@ -47,7 +47,7 @@ dependencies = [
   "zstandard",  # this can go once we're on Python 3.14+
 
   # ui
-  "comma-deps-raylib",
+  "raylib-nanobind",
 ]
 
 [project.optional-dependencies]
@@ -134,11 +134,11 @@ lint.flake8-implicit-str-concat.allow-multiline = false
 
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
 "time.time".msg = "Use time.monotonic. time.time can skip due to its reference clock, you probably want a monotonic clock"
-"pyray.measure_text_ex".msg = "Use openpilot.system.ui.lib.text_measure"
-"pyray.is_mouse_button_pressed".msg = "This can miss events. Use Widget._handle_mouse_press"
-"pyray.is_mouse_button_released".msg = "This can miss events. Use Widget._handle_mouse_release"
-"pyray.draw_text".msg = "Use a function (such as rl.draw_font_ex) that takes font as an argument"
-"pyray.draw_texture".msg = "Use rl.draw_texture_ex for float position support"
+"raylib_nb.measure_text_ex".msg = "Use openpilot.system.ui.lib.text_measure"
+"raylib_nb.is_mouse_button_pressed".msg = "This can miss events. Use Widget._handle_mouse_press"
+"raylib_nb.is_mouse_button_released".msg = "This can miss events. Use Widget._handle_mouse_release"
+"raylib_nb.draw_text".msg = "Use a function (such as rl.draw_font_ex) that takes font as an argument"
+"raylib_nb.draw_texture".msg = "Use rl.draw_texture_ex for float position support"
 
 [tool.ruff.format]
 quote-style = "preserve"
@@ -162,3 +162,4 @@ pandacan = { path = "panda", editable = true }
 rednose = { path = "rednose_repo", editable = true }
 teleoprtc = { path = "teleoprtc_repo", editable = true }
 tinygrad = { path = "tinygrad_repo", editable = true }
+raylib-nanobind = { git = "https://github.com/commaai/raylib.git", rev = "7a9d876fff8bb040cfda5961d88f440e2b6c6e18" }

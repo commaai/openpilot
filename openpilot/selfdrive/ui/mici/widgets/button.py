@@ -1,5 +1,5 @@
 import math
-import pyray as rl
+import raylib_nb as rl
 from typing import TYPE_CHECKING, Union
 from enum import Enum
 from collections.abc import Callable
@@ -85,7 +85,7 @@ class BigCircleButton(BaseButton):
   def _draw_content(self, btn_y: float):
     # draw icon
     icon_color = rl.Color(255, 255, 255, int(255 * 0.9)) if self.enabled else rl.Color(255, 255, 255, int(255 * 0.35))
-    rl.draw_texture_ex(self._txt_icon, (self._rect.x + (self._rect.width - self._txt_icon.width) / 2 + self._icon_offset[0],
+    rl.draw_texture_ex(self._txt_icon, rl.Vector2(self._rect.x + (self._rect.width - self._txt_icon.width) / 2 + self._icon_offset[0],
                                         btn_y + (self._rect.height - self._txt_icon.height) / 2 + self._icon_offset[1]), 0, 1.0, icon_color)
 
   def _render(self, _):
@@ -99,7 +99,7 @@ class BigCircleButton(BaseButton):
     scale = self._scale_filter.update(PRESSED_SCALE if self.is_pressed else 1.0)
     btn_x = self._rect.x + (self._rect.width * (1 - scale)) / 2
     btn_y = self._rect.y + (self._rect.height * (1 - scale)) / 2
-    rl.draw_texture_ex(txt_bg, (btn_x, btn_y), 0, scale, rl.WHITE)
+    rl.draw_texture_ex(txt_bg, rl.Vector2(btn_x, btn_y), 0, scale, rl.WHITE)
 
     self._draw_content(btn_y)
 
@@ -132,7 +132,7 @@ class BigCircleToggle(BigCircleButton):
 
     # draw status icon
     rl.draw_texture_ex(self._txt_toggle_enabled if self._checked else self._txt_toggle_disabled,
-                       (self._rect.x + (self._rect.width - self._txt_toggle_enabled.width) / 2, btn_y + 5),
+                       rl.Vector2(self._rect.x + (self._rect.width - self._txt_toggle_enabled.width) / 2, btn_y + 5),
                        0, 1.0, rl.WHITE)
 
 
@@ -283,9 +283,9 @@ class BigButton(BaseButton):
       rl.draw_rectangle_rounded(scaled_rect, 0.4, 7, rl.Color(0, 0, 0, int(255 * 0.5)))
 
       self._draw_content(btn_y)
-      rl.draw_texture_ex(txt_bg, (btn_x, btn_y), 0, scale, rl.WHITE)
+      rl.draw_texture_ex(txt_bg, rl.Vector2(btn_x, btn_y), 0, scale, rl.WHITE)
     else:
-      rl.draw_texture_ex(txt_bg, (btn_x, btn_y), 0, scale, rl.WHITE)
+      rl.draw_texture_ex(txt_bg, rl.Vector2(btn_x, btn_y), 0, scale, rl.WHITE)
       self._draw_content(btn_y)
 
 
@@ -314,9 +314,9 @@ class BigToggle(BigButton):
   def _draw_pill(self, x: float, y: float, checked: bool):
     # draw toggle icon top right
     if checked:
-      rl.draw_texture_ex(self._txt_enabled_toggle, (x, y), 0, 1.0, rl.WHITE)
+      rl.draw_texture_ex(self._txt_enabled_toggle, rl.Vector2(x, y), 0, 1.0, rl.WHITE)
     else:
-      rl.draw_texture_ex(self._txt_disabled_toggle, (x, y), 0, 1.0, rl.WHITE)
+      rl.draw_texture_ex(self._txt_disabled_toggle, rl.Vector2(x, y), 0, 1.0, rl.WHITE)
 
   def _draw_content(self, btn_y: float):
     super()._draw_content(btn_y)

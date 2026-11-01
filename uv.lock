@@ -208,19 +208,6 @@ wheels = [
 ]
 
 [[package]]
-name = "comma-deps-raylib"
-version = "6.0.0.1.post103"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "cffi" },
-]
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/6f/e3/21e3be3ad1e2382b9ecab7d836e7ca19ea0959fe714d539a71c6b87ba510/comma_deps_raylib-6.0.0.1.post103-py3-none-macosx_11_0_arm64.whl", hash = "sha256:d8bef63b7e49bc8704eda9fecdefbff01d7f6c9027069cb1b1f5150cac077ed1", size = 1885397, upload-time = "2026-09-11T22:33:22.617Z" },
-    { url = "https://files.pythonhosted.org/packages/3d/4d/cceaf969d771af8870094d06bb84dca805f9268584a9a3c134dfee2307c7/comma_deps_raylib-6.0.0.1.post103-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:d9b9bebb39167442bacf627958d57ae95e452550ced1b68337cbf2a73375856a", size = 21707647, upload-time = "2026-09-11T22:33:26.533Z" },
-    { url = "https://files.pythonhosted.org/packages/27/ce/e8b941bcf0b213ca9cb4d8cb69b18398b4dad77923925d80bc3281837461/comma_deps_raylib-6.0.0.1.post103-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:942ec942ec01005f05584eede1a6add483043e8e8f764e68cfebb7c21c443b89", size = 20722617, upload-time = "2026-09-11T22:33:31.158Z" },
-]
-
-[[package]]
 name = "comma-deps-zstd"
 version = "1.5.6.post103"
 source = { registry = "https://pypi.org/simple" }
@@ -588,13 +575,13 @@ dependencies = [
     { name = "comma-deps-gcc-arm-none-eabi" },
     { name = "comma-deps-git-lfs" },
     { name = "comma-deps-json11" },
-    { name = "comma-deps-raylib" },
     { name = "comma-deps-zstd" },
     { name = "inputs" },
     { name = "jeepney" },
     { name = "numpy" },
     { name = "pycapnp" },
     { name = "pyjwt", extra = ["crypto"] },
+    { name = "raylib-nanobind" },
     { name = "requests" },
     { name = "scons" },
     { name = "setproctitle" },
@@ -645,7 +632,6 @@ requires-dist = [
     { name = "comma-deps-json11" },
     { name = "comma-deps-libusb", marker = "extra == 'tools'" },
     { name = "comma-deps-ncurses", marker = "extra == 'tools'" },
-    { name = "comma-deps-raylib" },
     { name = "comma-deps-zstd" },
     { name = "coverage", marker = "extra == 'testing'" },
     { name = "inputs" },
@@ -657,6 +643,7 @@ requires-dist = [
     { name = "pandacan", marker = "extra == 'submodules'", editable = "panda" },
     { name = "pycapnp", specifier = "==2.1.0" },
     { name = "pyjwt", extras = ["crypto"] },
+    { name = "raylib-nanobind", git = "https://github.com/commaai/raylib.git?rev=7a9d876fff8bb040cfda5961d88f440e2b6c6e18" },
     { name = "rednose", marker = "extra == 'submodules'", editable = "rednose_repo" },
     { name = "requests" },
     { name = "ruff", marker = "extra == 'testing'" },
@@ -806,6 +793,11 @@ sdist = { url = "https://files.pythonhosted.org/packages/66/c0/0c8b6ad9f17a802ee
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ec/57/56b9bcc3c9c6a792fcbaf139543cee77261f3651ca9da0c93f5c1221264b/python_dateutil-2.9.0.post0-py2.py3-none-any.whl", hash = "sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427", size = 229892, upload-time = "2024-03-01T18:36:18.57Z" },
 ]
+
+[[package]]
+name = "raylib-nanobind"
+version = "6.0.0.0"
+source = { git = "https://github.com/commaai/raylib.git?rev=7a9d876fff8bb040cfda5961d88f440e2b6c6e18#7a9d876fff8bb040cfda5961d88f440e2b6c6e18" }
 
 [[package]]
 name = "rednose"
@@ -990,7 +982,7 @@ requires-dist = [
     { name = "mkdocs", marker = "extra == 'docs'" },
     { name = "mkdocs-material", marker = "extra == 'docs'" },
     { name = "mkdocstrings", extras = ["python"], marker = "extra == 'docs'" },
-    { name = "mypy", marker = "extra == 'linting'", specifier = "==1.19.1" },
+    { name = "mypy", marker = "extra == 'linting'", specifier = "==2.3.1" },
     { name = "networkx", marker = "extra == 'testing'" },
     { name = "nibabel", marker = "extra == 'testing'" },
     { name = "numba", marker = "extra == 'testing'", specifier = ">=0.55" },
@@ -1011,7 +1003,7 @@ requires-dist = [
     { name = "pytest-split", marker = "extra == 'testing-minimal'" },
     { name = "pytest-xdist", marker = "extra == 'testing-minimal'" },
     { name = "pyyaml", marker = "extra == 'autogen'" },
-    { name = "ruff", marker = "extra == 'linting'", specifier = "==0.14.10" },
+    { name = "ruff", marker = "extra == 'linting'", specifier = "==0.16.4" },
     { name = "safetensors", marker = "extra == 'testing-unit'" },
     { name = "sentencepiece", marker = "extra == 'testing'" },
     { name = "tabulate", marker = "extra == 'testing-unit'" },
@@ -1024,7 +1016,7 @@ requires-dist = [
     { name = "transformers", marker = "extra == 'testing'" },
     { name = "typeguard", marker = "extra == 'linting'" },
     { name = "typing-extensions", marker = "extra == 'linting'" },
-    { name = "z3-solver", marker = "extra == 'testing-minimal'", specifier = "<4.15.4" },
+    { name = "z3-solver", marker = "extra == 'testing-minimal'", specifier = "==5.1.0.0" },
 ]
 provides-extras = ["linting", "testing-minimal", "testing-unit", "testing", "docs", "mesa", "autogen"]
 

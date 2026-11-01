@@ -1,7 +1,7 @@
 import threading
 
 import numpy as np
-import pyray as rl
+import raylib_nb as rl
 from collections.abc import Callable
 from openpilot.cereal import log
 from openpilot.cereal.visionipc import VisionStreamType
@@ -41,13 +41,13 @@ class ProfileActionButton(Widget):
 
   def _render(self, _):
     bg_txt = self._bg_pressed_txt if self.is_pressed else self._bg_txt
-    rl.draw_texture_ex(bg_txt, (self._rect.x + (self._rect.width - self._bg_txt.width) / 2,
+    rl.draw_texture_ex(bg_txt, rl.Vector2(self._rect.x + (self._rect.width - self._bg_txt.width) / 2,
                                 self._rect.y + (self._rect.height - self._bg_txt.height) / 2), 0, 1.0, rl.WHITE)
     color = rl.Color(255, 105, 115, 255) if self._delete else DEFAULT_TEXT_COLOR
     if not self.enabled:
       color = rl.Color(color.r, color.g, color.b, 90)
     if self._trash_txt:
-      rl.draw_texture_ex(self._trash_txt, (self._rect.x + (self._rect.width - self._trash_txt.width) / 2,
+      rl.draw_texture_ex(self._trash_txt, rl.Vector2(self._rect.x + (self._rect.width - self._trash_txt.width) / 2,
                                           self._rect.y + (self._rect.height - self._trash_txt.height) / 2), 0, 1.0, color)
     else:
       gui_label(self._rect, "Aa", 30, color=color, alignment=TextAlignment.CENTER)
@@ -229,9 +229,9 @@ class EsimProfileButton(BigButton):
       self._cellular_manager.nickname_profile(self._profile.iccid, nickname.strip())
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
-    if self._show_delete_btn and rl.check_collision_point_rec(mouse_pos, self._delete_btn.rect):
+    if self._show_delete_btn and rl.check_collision_point_rec(rl.Vector2(mouse_pos.x, mouse_pos.y), self._delete_btn.rect):
       return
-    if self._rename_btn is not None and rl.check_collision_point_rec(mouse_pos, self._rename_btn.rect):
+    if self._rename_btn is not None and rl.check_collision_point_rec(rl.Vector2(mouse_pos.x, mouse_pos.y), self._rename_btn.rect):
       return
     super()._handle_mouse_release(mouse_pos)
 
@@ -263,10 +263,10 @@ class EsimProfileButton(BigButton):
       self._sub_label.render(sub_label_rect)
 
     if self._comma_txt:
-      rl.draw_texture_ex(self._comma_txt, (self._rect.x + 36, btn_y + 38), 0.0, 1.0, rl.WHITE)
+      rl.draw_texture_ex(self._comma_txt, rl.Vector2(self._rect.x + 36, btn_y + 38), 0.0, 1.0, rl.WHITE)
     else:
       cell_icon = self._cell_full_txt if active else self._cell_none_txt
-      rl.draw_texture_ex(cell_icon, (self._rect.x + 30, btn_y + 38), 0.0, 1.0, rl.WHITE)
+      rl.draw_texture_ex(cell_icon, rl.Vector2(self._rect.x + 30, btn_y + 38), 0.0, 1.0, rl.WHITE)
 
     btn_x = self._rect.x + self._rect.width - (ProfileActionButton.MARGIN - ProfileActionButton.HORIZONTAL_MARGIN)
     btn_bottom = btn_y + self._rect.height

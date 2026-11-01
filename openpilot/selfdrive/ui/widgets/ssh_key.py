@@ -1,4 +1,4 @@
-import pyray as rl
+import raylib_nb as rl
 import requests
 import threading
 from collections.abc import Callable
@@ -109,7 +109,7 @@ class SshKeyAction(ItemAction):
       rl.draw_text_ex(
         self._text_font,
         self._username,
-        (rect.x + rect.width - BUTTON_WIDTH - text_size.x - 30, rect.y + (rect.height - text_size.y) / 2),
+        rl.Vector2(rect.x + rect.width - BUTTON_WIDTH - text_size.x - 30, rect.y + (rect.height - text_size.y) / 2),
         VALUE_FONT_SIZE,
         1.0,
         rl.Color(170, 170, 170, 255),

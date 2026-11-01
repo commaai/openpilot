@@ -2,7 +2,7 @@
 import os
 import argparse
 import coverage
-import pyray as rl
+import raylib_nb as rl
 
 from tqdm import tqdm
 from typing import Literal

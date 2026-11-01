@@ -2,7 +2,7 @@
 import sys
 import subprocess
 import threading
-import pyray as rl
+import raylib_nb as rl
 from enum import IntEnum
 
 from openpilot.common.hardware import HARDWARE

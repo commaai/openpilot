@@ -1,4 +1,4 @@
-import pyray as rl
+import raylib_nb as rl
 from dataclasses import dataclass, field
 from enum import IntEnum
 from collections.abc import Callable
@@ -147,14 +147,14 @@ class SettingsLayout(Widget):
 
   def _handle_mouse_release(self, mouse_pos: MousePos) -> None:
     # Check close button
-    if rl.check_collision_point_rec(mouse_pos, self._close_btn_rect):
+    if rl.check_collision_point_rec(rl.Vector2(mouse_pos.x, mouse_pos.y), self._close_btn_rect):
       if self._close_callback:
         self._close_callback()
       return
 
     # Check navigation buttons
     for panel_type, panel_info in self._panels.items():
-      if rl.check_collision_point_rec(mouse_pos, panel_info.button_rect):
+      if rl.check_collision_point_rec(rl.Vector2(mouse_pos.x, mouse_pos.y), panel_info.button_rect):
         self.set_current_panel(panel_type)
         return
 

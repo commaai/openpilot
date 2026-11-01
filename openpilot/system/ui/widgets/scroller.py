@@ -1,4 +1,4 @@
-import pyray as rl
+import raylib_nb as rl
 import numpy as np
 from collections.abc import Callable, Sequence
 

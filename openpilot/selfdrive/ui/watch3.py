@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import pyray as rl
+import raylib_nb as rl
 
 from openpilot.cereal.visionipc import VisionStreamType
 from openpilot.system.ui.lib.application import gui_app

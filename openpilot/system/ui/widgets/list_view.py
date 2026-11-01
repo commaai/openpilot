@@ -1,6 +1,6 @@
 import math
 import os
-import pyray as rl
+import raylib_nb as rl
 from collections.abc import Callable
 from abc import ABC
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, TextAlignment, TextAlignmentVertical
@@ -236,7 +236,7 @@ class MultipleButtonAction(ItemAction):
 
       # Check button state
       mouse_pos = rl.get_mouse_position()
-      is_pressed = rl.check_collision_point_rec(mouse_pos, button_rect) and self.enabled and self.is_pressed
+      is_pressed = rl.check_collision_point_rec(rl.Vector2(mouse_pos.x, mouse_pos.y), button_rect) and self.enabled and self.is_pressed
       is_selected = i == self.selected_button
 
       # Button colors
@@ -267,7 +267,7 @@ class MultipleButtonAction(ItemAction):
     for i, _ in enumerate(self.buttons):
       button_x = self._rect.x + i * (self.button_width + spacing)
       button_rect = rl.Rectangle(button_x, button_y, self.button_width, BUTTON_HEIGHT)
-      if rl.check_collision_point_rec(mouse_pos, button_rect):
+      if rl.check_collision_point_rec(rl.Vector2(mouse_pos.x, mouse_pos.y), button_rect):
         self.selected_button = i
         if self.callback:
           self.callback(i)
@@ -319,7 +319,7 @@ class ListItem(Widget):
     # Check not in action rect
     if self.action_item:
       action_rect = self.get_right_item_rect(self._rect)
-      if rl.check_collision_point_rec(mouse_pos, action_rect):
+      if rl.check_collision_point_rec(rl.Vector2(mouse_pos.x, mouse_pos.y), action_rect):
         # Click was on right item, don't toggle description
         return
 

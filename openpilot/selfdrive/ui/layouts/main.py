@@ -1,4 +1,4 @@
-import pyray as rl
+import raylib_nb as rl
 from enum import IntEnum
 import openpilot.cereal.messaging as messaging
 from openpilot.system.ui.lib.application import gui_app

@@ -1,6 +1,6 @@
 import math
 import numpy as np
-import pyray as rl
+import raylib_nb as rl
 from collections.abc import Callable
 
 from openpilot.common.swaglog import cloudlog
@@ -71,13 +71,13 @@ class WifiIcon(Widget):
     else:
       strength_icon = self._wifi_low_txt
 
-    rl.draw_texture_ex(strength_icon, (self._rect.x, self._rect.y + self._rect.height - strength_icon.height), 0.0, 1.0, rl.WHITE)
+    rl.draw_texture_ex(strength_icon, rl.Vector2(self._rect.x, self._rect.y + self._rect.height - strength_icon.height), 0.0, 1.0, rl.WHITE)
 
     # Render lock icon at lower right of wifi icon if secured
     if self._network.security_type not in (SecurityType.OPEN, SecurityType.UNSUPPORTED):
       lock_x = self._rect.x + self._rect.width - self._lock_txt.width
       lock_y = self._rect.y + self._rect.height - self._lock_txt.height + 6
-      rl.draw_texture_ex(self._lock_txt, (lock_x, lock_y), 0.0, 1.0, rl.WHITE)
+      rl.draw_texture_ex(self._lock_txt, rl.Vector2(lock_x, lock_y), 0.0, 1.0, rl.WHITE)
 
 
 class WifiButton(BigButton):
@@ -144,7 +144,7 @@ class WifiButton(BigButton):
     return (self._is_saved and not self._wrong_password) or self._is_connecting
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
-    if self._show_forget_btn and rl.check_collision_point_rec(mouse_pos, self._forget_btn.rect):
+    if self._show_forget_btn and rl.check_collision_point_rec(rl.Vector2(mouse_pos.x, mouse_pos.y), self._forget_btn.rect):
       return
     super()._handle_mouse_release(mouse_pos)
 
@@ -251,12 +251,12 @@ class ForgetButton(Widget):
 
   def _render(self, _):
     bg_txt = self._bg_pressed_txt if self.is_pressed else self._bg_txt
-    rl.draw_texture_ex(bg_txt, (self._rect.x + (self._rect.width - self._bg_txt.width) / 2,
+    rl.draw_texture_ex(bg_txt, rl.Vector2(self._rect.x + (self._rect.width - self._bg_txt.width) / 2,
                                 self._rect.y + (self._rect.height - self._bg_txt.height) / 2), 0, 1.0, rl.WHITE)
 
     trash_x = self._rect.x + (self._rect.width - self._trash_txt.width) / 2
     trash_y = self._rect.y + (self._rect.height - self._trash_txt.height) / 2
-    rl.draw_texture_ex(self._trash_txt, (trash_x, trash_y), 0, 1.0, rl.WHITE)
+    rl.draw_texture_ex(self._trash_txt, rl.Vector2(trash_x, trash_y), 0, 1.0, rl.WHITE)
 
 
 class ScanningButton(BigButton):

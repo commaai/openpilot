@@ -1,6 +1,6 @@
 import platform
 import numpy as np
-import pyray as rl
+import raylib_nb as rl
 
 from openpilot.cereal.visionipc import VisionStreamType
 from msgq.visionipc import VisionIpcClient, VisionBuf
@@ -266,8 +266,8 @@ class CameraView(Widget):
       y_data = self.frame.data[: self.frame.uv_offset]
       uv_data = self.frame.data[self.frame.uv_offset:]
 
-      rl.update_texture(self.texture_y, rl.ffi.cast("void *", rl.ffi.from_buffer(y_data)))
-      rl.update_texture(self.texture_uv, rl.ffi.cast("void *", rl.ffi.from_buffer(uv_data)))
+      rl.update_texture(self.texture_y, y_data)
+      rl.update_texture(self.texture_uv, uv_data)
       self._texture_needs_update = False
 
     # Render with shader

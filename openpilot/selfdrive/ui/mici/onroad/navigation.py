@@ -1,5 +1,5 @@
 import numpy as np
-import pyray as rl
+import raylib_nb as rl
 
 from msgq.visionipc import VisionIpcClient
 from openpilot.cereal.visionipc import VisionStreamType
@@ -54,7 +54,7 @@ class NavigationPanel(Widget):
     frame = self._client.recv(timeout_ms=0)
     if frame is not None:
       gray = np.frombuffer(frame.data, dtype=np.uint8, count=SIZE * SIZE)
-      rl.update_texture(self._texture, rl.ffi.cast("void *", rl.ffi.from_buffer(MAP_COLORS[gray])))
+      rl.update_texture(self._texture, MAP_COLORS[gray])
       # Without a usable map, mapsd publishes black frames with a zero timestamp.
       self._frame_time = rl.get_time() if self._client.timestamp_sof else 0.0
 
