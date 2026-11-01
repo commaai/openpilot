@@ -116,42 +116,6 @@ std::string logger_get_identifier(std::string key) {
   return util::string_format("%08x--%s", cnt, ss.str().c_str());
 }
 
-std::string zstd_decompress(const std::string &in) {
-  ZSTD_DCtx *dctx = ZSTD_createDCtx();
-  assert(dctx != nullptr);
-
-  // Initialize input and output buffers
-  ZSTD_inBuffer input = {in.data(), in.size(), 0};
-
-  // Estimate and reserve memory for decompressed data
-  size_t estimatedDecompressedSize = ZSTD_getFrameContentSize(in.data(), in.size());
-  if (estimatedDecompressedSize == ZSTD_CONTENTSIZE_ERROR || estimatedDecompressedSize == ZSTD_CONTENTSIZE_UNKNOWN) {
-    estimatedDecompressedSize = in.size() * 2;  // Use a fallback size
-  }
-
-  std::string decompressedData;
-  decompressedData.reserve(estimatedDecompressedSize);
-
-  const size_t bufferSize = ZSTD_DStreamOutSize();  // Recommended output buffer size
-  std::string outputBuffer(bufferSize, '\0');
-
-  while (input.pos < input.size) {
-    ZSTD_outBuffer output = {outputBuffer.data(), bufferSize, 0};
-
-    size_t result = ZSTD_decompressStream(dctx, &output, &input);
-    if (ZSTD_isError(result)) {
-      break;
-    }
-
-    decompressedData.append(outputBuffer.data(), output.pos);
-  }
-
-  ZSTD_freeDCtx(dctx);
-  decompressedData.shrink_to_fit();
-  return decompressedData;
-}
-
-
 static void log_sentinel(LoggerState *log, SentinelType type, int exit_signal = 0) {
   MessageBuilder msg;
   auto sen = msg.initEvent().initSentinel();

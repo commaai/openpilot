@@ -230,9 +230,6 @@ class MiciOffroadAlerts(Scroller):
                key=lambda item: (item.alert_data.severity, bool(item.alert_data.icon)), default=None)
     return item.icon if item is not None else None
 
-  def scrolling(self):
-    return self._scroller.scroll_panel.is_touch_valid()
-
   def set_pairing_callback(self, callback: Callable[[], None]):
     for alert_item in self.alert_items:
       if alert_item.alert_data.key == "Offroad_Pairing":

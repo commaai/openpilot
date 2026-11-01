@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cassert>
-#include <fstream>
 #include <map>
 #include <string>
 #include <algorithm>  // for std::clamp
@@ -27,24 +26,6 @@ public:
     static const auto it = device_map.find(get_name());
     assert(it != device_map.end());
     return it->second;
-  }
-
-  static std::string get_serial() {
-    static std::string serial("");
-    if (serial.empty()) {
-      std::ifstream stream("/proc/cmdline");
-      std::string cmdline;
-      std::getline(stream, cmdline);
-
-      auto start = cmdline.find("serialno=");
-      if (start == std::string::npos) {
-        serial = "cccccc";
-      } else {
-        auto end = cmdline.find(" ", start + 9);
-        serial = cmdline.substr(start + 9, end - start - 9);
-      }
-    }
-    return serial;
   }
 
   static void set_ir_power(int percent) {

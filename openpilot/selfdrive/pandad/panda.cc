@@ -59,9 +59,6 @@ std::string Panda::serial_read(int port_number) {
   return ret;
 }
 
-void Panda::set_uart_baud(int uart, int rate) {
-  handle->control_write(0xe4, uart, int(rate / 300));
-}
 
 cereal::PandaState::PandaType Panda::get_hw_type() {
   unsigned char hw_query[1] = {0};
@@ -107,11 +104,6 @@ std::optional<std::vector<uint8_t>> Panda::get_firmware_version() {
   return ((read_1 == 64) && (read_2 == 64)) ? std::make_optional(fw_sig_buf) : std::nullopt;
 }
 
-std::optional<std::string> Panda::get_serial() {
-  char serial_buf[17] = {'\0'};
-  int err = handle->control_read(0xd0, 0, 0, (uint8_t*)serial_buf, 16);
-  return err >= 0 ? std::make_optional(serial_buf) : std::nullopt;
-}
 
 bool Panda::up_to_date() {
   if (auto fw_sig = get_firmware_version()) {
@@ -130,29 +122,16 @@ void Panda::set_power_saving(bool power_saving) {
   handle->control_write(0xe7, power_saving, 0);
 }
 
-void Panda::enable_deepsleep() {
-  handle->control_write(0xfb, 0, 0);
-}
 
 void Panda::send_heartbeat(bool engaged) {
   handle->control_write(0xf3, engaged, 0);
 }
 
-void Panda::set_can_speed_kbps(uint16_t bus, uint16_t speed) {
-  handle->control_write(0xde, bus, (speed * 10));
-}
 
 void Panda::set_can_fd_auto(uint16_t bus, bool enabled) {
   handle->control_write(0xe8, bus, enabled);
 }
 
-void Panda::set_data_speed_kbps(uint16_t bus, uint16_t speed) {
-  handle->control_write(0xf9, bus, (speed * 10));
-}
-
-void Panda::set_canfd_non_iso(uint16_t bus, bool non_iso) {
-  handle->control_write(0xfc, bus, non_iso);
-}
 
 static uint8_t len_to_dlc(uint8_t len) {
   if (len <= 8) {

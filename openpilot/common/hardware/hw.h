@@ -33,10 +33,6 @@ namespace Path {
     return util::getenv("PARAMS_ROOT", Hardware::PC() ? (Path::comma_home() + "/params") : "/data/params");
   }
 
-  inline std::string rsa_file() {
-    return Hardware::PC() ? Path::comma_home() + "/persist/comma/id_rsa" : "/persist/comma/id_rsa";
-  }
-
   inline std::string swaglog_ipc() {
     return "/tmp/logmessage" + Path::openpilot_prefix();
   }
@@ -47,12 +43,4 @@ namespace Path {
     }
     return "/tmp/comma_download_cache" + Path::openpilot_prefix() + "/";
   }
-
- inline std::string shm_path() {
-    #ifdef __APPLE__
-     return"/tmp";
-    #else
-     return "/dev/shm";
-    #endif
- }
 }  // namespace Path

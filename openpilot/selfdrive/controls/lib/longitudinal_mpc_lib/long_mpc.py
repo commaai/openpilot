@@ -26,7 +26,6 @@ LongitudinalPlanSource = log.LongitudinalPlan.LongitudinalPlanSource
 MPC_SOURCES = (LongitudinalPlanSource.lead0, LongitudinalPlanSource.lead1)
 
 X_DIM = 3
-U_DIM = 1
 PARAM_DIM = 6
 COST_E_DIM = 5
 COST_DIM = COST_E_DIM + 1

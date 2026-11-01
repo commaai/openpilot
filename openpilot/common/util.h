@@ -77,7 +77,6 @@ bool ends_with(const std::string &s, const std::string &suffix);
 std::string strip(const std::string &str);
 
 // ***** random helpers *****
-int random_int(int min, int max);
 std::string random_string(std::string::size_type length);
 
 // **** file helpers *****

@@ -71,8 +71,3 @@ class Sensor:
   @staticmethod
   def parse_16bit(lsb: int, msb: int) -> int:
     return ctypes.c_int16((msb << 8) | lsb).value
-
-  @staticmethod
-  def parse_20bit(b2: int, b1: int, b0: int) -> int:
-    combined = ctypes.c_uint32((b0 << 16) | (b1 << 8) | b2).value
-    return ctypes.c_int32(combined).value // (1 << 4)

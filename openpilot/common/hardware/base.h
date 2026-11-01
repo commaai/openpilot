@@ -13,7 +13,6 @@ public:
   static std::string get_name() { return ""; }
   static cereal::InitData::DeviceType get_device_type() { return cereal::InitData::DeviceType::UNKNOWN; }
 
-  static std::string get_serial() { return "cccccc"; }
 
   static std::map<std::string, std::string> get_init_logs(bool route_log = false) {
     return {};
