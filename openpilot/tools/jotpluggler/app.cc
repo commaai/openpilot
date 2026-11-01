@@ -829,7 +829,7 @@ void draw_sidebar(AppSession *session, const UiMetrics &ui, UiState *state, bool
       const std::string current_layout = session->layout_path.empty() ? std::string("untitled") : session->layout_path.stem().string();
       for (const std::string &layout_name : layouts) {
         const bool selected = layout_name == current_layout;
-        if (ImGui::Selectable(layout_name.c_str(), selected) && !selected) {
+        if (ImGui::Selectable(layout_name.c_str(), selected)) {
           reload_layout(session, state, layout_name);
         }
         if (selected) {
@@ -1644,7 +1644,8 @@ void draw_workspace(AppSession *session, const UiMetrics &ui, UiState *state) {
       };
       TabActionKind pending_action = TabActionKind::None;
       int pending_tab_index = -1;
-      bool custom_series_tab_open = state->custom_series.open;
+      const bool custom_open_at_start = state->custom_series.open;
+      bool custom_series_tab_open = custom_open_at_start;
       bool suppress_aux_tabs_this_frame = state->request_close_tab && session->layout.tabs.size() == 1;
       for (size_t i = 0; i < session->layout.tabs.size(); ++i) {
         const WorkspaceTab &tab = session->layout.tabs[i];
@@ -1767,6 +1768,11 @@ void draw_workspace(AppSession *session, const UiMetrics &ui, UiState *state) {
       if (!custom_series_tab_open) {
         state->custom_series.open = false;
         state->custom_series.request_select = false;
+      }
+      if (custom_open_at_start && !state->custom_series.open) {
+        // Editor hid the DockSpace while open (render.cc); rebuild dock tree on close.
+        request_tab_selection(state, state->active_tab_index);
+        mark_tab_dock_dirty(state, state->active_tab_index);
       }
 
       if (rename_tab_rect.has_value()) {
