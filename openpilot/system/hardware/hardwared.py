@@ -436,6 +436,8 @@ def hardware_thread(end_event, hw_queue) -> None:
     msg.deviceState.carBatteryCapacityUwh = max(0, power_monitor.get_car_battery_capacity())
     current_power_draw = HARDWARE.get_current_power_draw()
     msg.deviceState.powerDrawW = current_power_draw
+    msg.deviceState.voltage = HARDWARE.get_voltage()
+    msg.deviceState.current = HARDWARE.get_current()
 
     som_power_draw = HARDWARE.get_som_power_draw()
     msg.deviceState.somPowerDrawW = som_power_draw

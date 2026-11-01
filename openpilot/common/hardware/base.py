@@ -118,6 +118,12 @@ class HardwareBase(ABC):
   def get_current_power_draw(self):
     return 0
 
+  def get_voltage(self) -> int:
+    return 0
+
+  def get_current(self) -> int:
+    return 0
+
   def get_som_power_draw(self):
     return 0
 
