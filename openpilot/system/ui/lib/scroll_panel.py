@@ -1,5 +1,5 @@
 import math
-import pyray as rl
+import raylib_nb as rl
 from enum import IntEnum
 from openpilot.system.ui.lib.application import gui_app, MouseEvent
 from openpilot.common.filter_simple import FirstOrderFilter
@@ -77,7 +77,7 @@ class GuiScrollPanel:
 
   def _handle_mouse_event(self, mouse_event: MouseEvent, bounds: rl.Rectangle, content: rl.Rectangle):
     if self._scroll_state == ScrollState.IDLE:
-      if rl.check_collision_point_rec(mouse_event.pos, bounds):
+      if rl.check_collision_point_rec(rl.Vector2(mouse_event.pos.x, mouse_event.pos.y), bounds):
         if mouse_event.left_pressed:
           self._start_mouse_y = mouse_event.pos.y
           # Interrupt scrolling with new drag

@@ -1,5 +1,5 @@
 from enum import IntEnum
-import pyray as rl
+import raylib_nb as rl
 import numpy as np
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, MouseEvent
 from openpilot.system.ui.lib.text_measure import measure_text_cached
@@ -85,7 +85,7 @@ class Key(Widget):
     text_size = measure_text_cached(self._font, self.char, self._get_font_size())
     x = self._rect.x + self._rect.width / 2 - text_size.x / 2
     y = self._rect.y + self._rect.height / 2 - text_size.y / 2
-    rl.draw_text_ex(self._font, self.char, (x, y), self._get_font_size(), 0, self._color)
+    rl.draw_text_ex(self._font, self.char, rl.Vector2(x, y), self._get_font_size(), 0, self._color)
 
     if DEBUG:
       rl.draw_circle(int(self._rect.x), int(self._rect.y), 5, rl.RED)  # Debug: draw circle around key

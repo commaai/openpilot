@@ -1,4 +1,4 @@
-import pyray as rl
+import raylib_nb as rl
 
 SIDE_PANEL_WIDTH = 60
 

@@ -1,4 +1,4 @@
-import pyray as rl
+import raylib_nb as rl
 import time
 
 from openpilot.common.api import Api

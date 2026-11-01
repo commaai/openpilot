@@ -1,5 +1,5 @@
 import re
-import pyray as rl
+import raylib_nb as rl
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any

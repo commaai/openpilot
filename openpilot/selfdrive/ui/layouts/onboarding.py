@@ -3,7 +3,7 @@ import re
 import threading
 from enum import IntEnum
 
-import pyray as rl
+import raylib_nb as rl
 from openpilot.common.basedir import BASEDIR
 from openpilot.system.ui.lib.application import FontWeight, gui_app, TextAlignment
 from openpilot.system.ui.lib.multilang import tr
@@ -61,16 +61,16 @@ class TrainingGuide(Widget):
       self._image_objs.append(gui_app._load_image_from_path(path))
 
   def _handle_mouse_release(self, mouse_pos):
-    if rl.check_collision_point_rec(mouse_pos, STEP_RECTS[self._step]):
+    if rl.check_collision_point_rec(rl.Vector2(mouse_pos.x, mouse_pos.y), STEP_RECTS[self._step]):
       # Record DM camera?
       if self._step == DM_RECORD_STEP:
-        yes = rl.check_collision_point_rec(mouse_pos, DM_RECORD_YES_RECT)
+        yes = rl.check_collision_point_rec(rl.Vector2(mouse_pos.x, mouse_pos.y), DM_RECORD_YES_RECT)
         print(f"putting RecordFront to {yes}")
         ui_state.params.put_bool("RecordFront", yes, block=True)
 
       # Restart training?
       elif self._step == len(self._image_paths) - 1:
-        if rl.check_collision_point_rec(mouse_pos, RESTART_TRAINING_RECT):
+        if rl.check_collision_point_rec(rl.Vector2(mouse_pos.x, mouse_pos.y), RESTART_TRAINING_RECT):
           self._step = -1
 
       self._step += 1

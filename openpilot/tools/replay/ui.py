@@ -4,7 +4,7 @@ import os
 import sys
 
 import numpy as np
-import pyray as rl
+import raylib_nb as rl
 
 import openpilot.cereal.messaging as messaging
 from openpilot.common.basedir import BASEDIR
@@ -204,7 +204,7 @@ def ui_thread():
     mask = np.any(img > 0, axis=2)
     overlay_img[:, :, :3] = img
     overlay_img[:, :, 3] = mask * 255
-    rl.update_texture(overlay_texture, rl.ffi.cast("void *", overlay_img.ctypes.data))
+    rl.update_texture(overlay_texture, overlay_img)
     rl.draw_texture(overlay_texture, 0, 0, rl.WHITE)  # noqa: TID251
 
     # display alerts
@@ -221,7 +221,7 @@ def ui_thread():
     # Convert lid_overlay to RGBA and update top_down texture
     # lid_overlay is (384, 960), need to transpose to (960, 384) for row-major RGBA buffer
     lid_rgba = palette[lid_overlay.T]
-    rl.update_texture(top_down_texture, rl.ffi.cast("void *", np.ascontiguousarray(lid_rgba).ctypes.data))
+    rl.update_texture(top_down_texture, np.ascontiguousarray(lid_rgba))
     rl.draw_texture(top_down_texture, 640, 0, rl.WHITE)  # noqa: TID251
 
     SPACING = 25

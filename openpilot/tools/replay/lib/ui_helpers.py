@@ -2,7 +2,7 @@ import itertools
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pyray as rl
+import raylib_nb as rl
 
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.artist import Artist
@@ -151,7 +151,7 @@ def init_plots(arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_co
       axs[plot_select[i]].draw_artist(plots[i])
 
     raw_data = np.ascontiguousarray(canvas.buffer_rgba(), dtype=np.uint8)
-    rl.update_texture(plot_texture, rl.ffi.cast("void *", raw_data.ctypes.data))
+    rl.update_texture(plot_texture, raw_data)
     return plot_texture
 
   return draw_plots

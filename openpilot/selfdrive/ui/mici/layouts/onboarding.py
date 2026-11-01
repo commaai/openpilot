@@ -1,6 +1,6 @@
 import math
 import numpy as np
-import pyray as rl
+import raylib_nb as rl
 from collections.abc import Callable
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.selfdrive.ui.mici.widgets.qr import QR
