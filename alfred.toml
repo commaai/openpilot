@@ -1,5 +1,5 @@
 [env]
-PYTHONPATH = "/data/ci/tree/openpilot/.venv/lib/python3.12/site-packages:/data/ci/tree/openpilot"
+PYTHONPATH = "/data/ci/tree/openpilot/.venv/raylib:/data/ci/tree/openpilot"
 UV_CACHE_DIR = "/data/ci/uv-cache"
 UV_PYTHON_INSTALL_DIR = "/data/ci/uv-python"
 TERM = "xterm-256color"
@@ -20,9 +20,10 @@ name = "Build openpilot"
 run = """
 mkdir -p /data/ci/tmp
 # Bypass the AGNOS system-install shim; this environment is on /data.
-TMPDIR=/data/ci/tmp UV_PYTHON_PREFERENCE=only-managed PYTHONWARNINGS=default /usr/bin/uv sync --frozen --inexact || exit 1
-PATH="$PWD/.venv/bin:$PATH" git lfs install --local --skip-smudge || exit 1
-PATH="$PWD/.venv/bin:$PATH" git lfs pull || exit 1
+raylib_source=$(python3 -c 'import tomllib; s = tomllib.load(open("pyproject.toml", "rb"))["tool"]["uv"]["sources"]["raylib-nanobind"]; print("git+" + s["git"] + "@" + s["rev"])') || exit 1
+TMPDIR=/data/ci/tmp UV_PYTHON_PREFERENCE=only-managed PYTHONWARNINGS=default /usr/bin/uv pip install --python "$(cat .python-version)" --target .venv/raylib --no-deps "$raylib_source" || exit 1
+git lfs install --local --skip-smudge || exit 1
+git lfs pull || exit 1
 for p in msgq_repo/msgq opendbc_repo/opendbc rednose_repo/rednose teleoprtc_repo/teleoprtc tinygrad_repo/tinygrad; do ln -sfn "$p" "${p#*/}"; done
 cd openpilot/system/manager && ./build.py
 """
