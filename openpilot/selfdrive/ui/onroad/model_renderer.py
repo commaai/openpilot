@@ -38,7 +38,6 @@ class LeadVehicle:
 class ModelRenderer(Widget):
   LANE_LINE_WIDTHS = (0.025, 0.025, 0.025, 0.025)
   ROAD_EDGE_WIDTH = 0.025
-  SMOOTH_PATH_END = True
 
   def __init__(self):
     super().__init__()
@@ -322,7 +321,7 @@ class ModelRenderer(Widget):
     points = line[:max_idx + 1]
 
     # Interpolate around max_idx so path end is smooth (max_distance is always >= p0.x)
-    if self.SMOOTH_PATH_END and 0 < max_idx < line.shape[0] - 1:
+    if 0 < max_idx < line.shape[0] - 1:
       p0 = line[max_idx]
       p1 = line[max_idx + 1]
       x0, x1 = p0[0], p1[0]

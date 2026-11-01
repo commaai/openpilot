@@ -31,7 +31,6 @@ class LeadVehicle:
 class ModelRenderer(BaseModelRenderer):
   LANE_LINE_WIDTHS = (0.12, 0.16, 0.16, 0.16)
   ROAD_EDGE_WIDTH = 0.16
-  SMOOTH_PATH_END = False
 
   def __init__(self):
     super().__init__()
