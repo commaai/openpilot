@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+
+<head>
+  <title>tinychat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+
+  <script defer src="assets/cdn.jsdelivr.net/npm/@alpine-collective/toolkit@1.0.2/dist/cdn.min.js"></script>
+  <script defer src="assets/cdn.jsdelivr.net/npm/@alpinejs/intersect@3.x.x/dist/cdn.min.js"></script>
+  <script defer src="assets/cdn.jsdelivr.net/npm/@alpinejs/focus@3.x.x/dist/cdn.min.js"></script>
+  <script defer src="assets/unpkg.com/@marcreichel/alpine-autosize@1.3.x/dist/alpine-autosize.min.js"></script>
+  <script defer src="assets/unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <script src="assets/unpkg.com/dompurify@3.1.5/dist/purify.min.js"></script>
+  <script src="assets/unpkg.com/marked@13.0.0/marked.min.js"></script>
+  <script src="assets/unpkg.com/marked-highlight@2.1.2/lib/index.umd.js"></script>
+  <script src="assets/unpkg.com/@highlightjs/cdn-assets@11.9.0/highlight.min.js"></script>
+
+  <script src="index.js"></script>
+
+  <link rel="stylesheet" href="assets/cdn.jsdelivr.net/npm/purecss@3.0.0/build/base-min.css">
+  <link rel="stylesheet" href="assets/cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="assets/unpkg.com/@highlightjs/cdn-assets@11.9.0/styles/vs2015.min.css">
+
+  <link rel="stylesheet" href="index.css">
+  <link rel="stylesheet" href="common.css">
+</head>
+
+<body>
+  <main x-data="state" x-init="console.log(endpoint)">
+    <div class="home centered" x-show="home === 0" x-transition x-effect="
+      $refs.inputForm.focus();
+      if (home === 1) setTimeout(() => home = 2, 100);
+      if (home === -1) setTimeout(() => home = 0, 100);
+    " @popstate.window="
+      if (home === 2) {
+        home = -1;
+        cstate = { time: null, messages: [] };
+        time_till_first = 0;
+        tokens_per_second = 0;
+        total_tokens = 0;
+      }
+    ">
+      <h1 class="title megrim-regular">tinychat</h1>
+      <div class="histories-container-container">
+        <template x-if="histories.length">
+          <div class="histories-start"></div>
+        </template>
+        <div class="histories-container" x-intersect="
+          $el.scrollTo({ top: 0, behavior: 'smooth' });
+        ">
+          <template x-for="_state in histories.toSorted((a, b) => b.time - a.time)">
+            <div x-data="{ otx: 0, trigger: 75 }" class="history" @click="
+            cstate = _state;
+            updateTotalTokens(cstate.messages);
+            home = 1;
+            // ensure that going back in history will go back to home
+            window.history.pushState({}, '', '/');
+          " @touchstart="
+            otx = $event.changedTouches[0].clientX;
+          " @touchmove="
+            $el.style.setProperty('--tx', $event.changedTouches[0].clientX - otx);
+            $el.style.setProperty('--opacity', 1 - (Math.abs($event.changedTouches[0].clientX - otx) / trigger));
+          " @touchend="
+            if (Math.abs($event.changedTouches[0].clientX - otx) > trigger) removeHistory(_state);
+            $el.style.setProperty('--tx', 0);
+            $el.style.setProperty('--opacity', 1);
+          ">
+              <h3 x-text="new Date(_state.time).toLocaleString()"></h3>
+              <p x-text="$truncate(_state.messages[0].content, 80)"></p>
+              <!-- delete button -->
+              <button class="history-delete-button" @click.stop="removeHistory(_state);">
+                <i class=" fas fa-trash"></i>
+              </button>
+            </div>
+          </template>
+        </div>
+        <template x-if="histories.length">
+          <div class="histories-end"></div>
+        </template>
+      </div>
+    </div>
+    <div x-ref="messages" class="messages" x-init="
+      $watch('cstate', value => {
+        $el.innerHTML = '';
+        value.messages.forEach(({ role, content }) => {
+          const div = document.createElement('div');
+          div.className = `message message-role-${role}`;
+          try {
+            div.innerHTML = DOMPurify.sanitize(marked.parse(content));
+          } catch (e) {
+            console.log(content);
+            console.error(e);
+          }
+
+          // add a clipboard button to all code blocks
+          const codeBlocks = div.querySelectorAll('.hljs');
+          codeBlocks.forEach(codeBlock => {
+            const button = document.createElement('button');
+            button.className = 'clipboard-button';
+            button.innerHTML = '<i class=\'fas fa-clipboard\'></i>';
+            button.onclick = () => {
+              // navigator.clipboard.writeText(codeBlock.textContent);
+              const range = document.createRange();
+              range.setStartBefore(codeBlock);
+              range.setEndAfter(codeBlock);
+              window.getSelection()?.removeAllRanges();
+              window.getSelection()?.addRange(range);
+              document.execCommand('copy');
+              window.getSelection()?.removeAllRanges();
+
+              button.innerHTML = '<i class=\'fas fa-check\'></i>';
+              setTimeout(() => button.innerHTML = '<i class=\'fas fa-clipboard\'></i>', 1000);
+            };
+            codeBlock.appendChild(button);
+          });
+
+          $el.appendChild(div);
+        });
+
+        $el.scrollTo({ top: $el.scrollHeight, behavior: 'smooth' });
+      });
+    " x-intersect="
+      $el.scrollTo({ top: $el.scrollHeight, behavior: 'smooth' });
+    " x-show="home === 2" x-transition>
+    </div>
+    <div class="input-container">
+      <div class="input-performance">
+        <span class="input-performance-point">
+          <p class="monospace" x-text="(time_till_first / 1000).toFixed(2)"></p>
+          <p class="megrim-regular">SEC TO FIRST TOKEN</p>
+        </span>
+        <span class="input-performance-point">
+          <p class="monospace" x-text="tokens_per_second.toFixed(1)"></p>
+          <p class="megrim-regular">TOKENS/SEC</p>
+        </span>
+        <span class="input-performance-point">
+          <p class="monospace" x-text="total_tokens"></p>
+          <p class="megrim-regular">TOKENS</p>
+        </span>
+      </div>
+      <div class="input">
+        <textarea x-ref="inputForm" id="input-form" class="input-form" autofocus rows=1 x-autosize
+          :placeholder="generating ? 'Generating...' : 'Say something'" :disabled="generating" @input="
+            home = (home === 0) ? 1 : home
+            if (cstate.messages.length === 0 && $el.value === '') home = -1;
+
+            if ($el.value !== '') {
+              const messages = [...cstate.messages];
+              messages.push({ role: 'user', content: $el.value });
+              updateTotalTokens(messages);
+            } else {
+              if (cstate.messages.length === 0) total_tokens = 0;
+              else updateTotalTokens(cstate.messages);
+            }
+          " x-effect="
+            console.log(generating);
+            if (!generating) $nextTick(() => {
+              $el.focus();
+              setTimeout(() => $refs.messages.scrollTo({ top: $refs.messages.scrollHeight, behavior: 'smooth' }), 100);
+            });
+          " @keydown.enter="await handleEnter($event)" @keydown.escape.window="$focus.focus($el)"></textarea>
+        <button class="input-button" :disabled="generating" @click="await handleSend()">
+          <i class="fas" :class="generating ? 'fa-spinner fa-spin' : 'fa-paper-plane'"></i>
+        </button>
+      </div>
+    </div>
+  </main>
+</body>
+
+</html>

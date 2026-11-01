@@ -1,0 +1,4 @@
+include README.md pyproject.toml setup.py SConstruct SConscript
+recursive-include site_scons *.py
+recursive-include msgq *.py *.pyx *.pxd *.h *.cc
+global-exclude *.so *.o *.os *.a *.pyc
