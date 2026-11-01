@@ -67,6 +67,8 @@ else:
 
 
 class CameraView(Widget):
+  FRAGMENT_SHADER = FRAME_FRAGMENT_SHADER
+
   def __init__(self, name: str, stream_type: VisionStreamType):
     super().__init__()
     self._name = name
@@ -83,7 +85,7 @@ class CameraView(Widget):
 
     self._texture_needs_update = True
     self.last_connection_attempt: float = 0.0
-    self.shader = rl.load_shader_from_memory(VERTEX_SHADER, FRAME_FRAGMENT_SHADER)
+    self.shader = rl.load_shader_from_memory(VERTEX_SHADER, self.FRAGMENT_SHADER)
     self._texture1_loc: int = rl.get_shader_location(self.shader, "texture1") if not COMMA_HARDWARE else -1
 
     self.frame: VisionBuf | None = None
@@ -150,6 +152,7 @@ class CameraView(Widget):
     # Clean up shader
     if self.shader and self.shader.id:
       rl.unload_shader(self.shader)
+      self.shader.id = 0
 
     self.frame = None
     self.available_streams.clear()
@@ -253,6 +256,7 @@ class CameraView(Widget):
 
     # Render with shader
     rl.begin_shader_mode(self.shader)
+    self._set_shader_uniforms()
     rl.draw_texture_pro(self.egl_texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
     rl.end_shader_mode()
 
@@ -272,9 +276,13 @@ class CameraView(Widget):
 
     # Render with shader
     rl.begin_shader_mode(self.shader)
+    self._set_shader_uniforms()
     rl.set_shader_value_texture(self.shader, self._texture1_loc, self.texture_uv)
     rl.draw_texture_pro(self.texture_y, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
     rl.end_shader_mode()
+
+  def _set_shader_uniforms(self) -> None:
+    pass
 
   def _ensure_connection(self) -> bool:
     if not self.client.is_connected():
