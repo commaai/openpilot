@@ -1,4 +1,4 @@
-import pyray as rl
+import raylib_nb as rl
 from openpilot.cereal import log, messaging
 from openpilot.cereal.visionipc import VisionStreamType
 from openpilot.selfdrive.ui.mici.onroad.cameraview import CameraView
@@ -217,8 +217,8 @@ class BaseCabinCameraDialog(Widget):
       fill_opacity = eye_prob
       orange_opacity = 1.0 - eye_prob
 
-      rl.draw_texture_v(self._eye_orange_texture, (eye_x, eye_y), rl.Color(255, 255, 255, int(255 * orange_opacity)))
-      rl.draw_texture_v(self._eye_fill_texture, (eye_x, eye_y), rl.Color(255, 255, 255, int(255 * fill_opacity)))
+      rl.draw_texture_v(self._eye_orange_texture, rl.Vector2(eye_x, eye_y), rl.Color(255, 255, 255, int(255 * orange_opacity)))
+      rl.draw_texture_v(self._eye_fill_texture, rl.Vector2(eye_x, eye_y), rl.Color(255, 255, 255, int(255 * fill_opacity)))
 
     # Draw sunglasses indicator based on sunglasses probability
     # Position glasses centered between the two eyes at top left

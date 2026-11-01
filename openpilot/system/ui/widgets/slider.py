@@ -1,7 +1,7 @@
 import abc
 from collections.abc import Callable
 
-import pyray as rl
+import raylib_nb as rl
 
 from openpilot.system.ui.lib.application import gui_app, FontWeight, TextAlignment, TextAlignmentVertical
 from openpilot.system.ui.widgets import Widget
@@ -90,7 +90,7 @@ class SliderBase(Widget, abc.ABC):
         self._circle_bg_txt.width + self.HORIZONTAL_PADDING * 2,
         self._rect.height,
       )
-      if rl.check_collision_point_rec(mouse_event.pos, circle_button_rect):
+      if rl.check_collision_point_rec(rl.Vector2(mouse_event.pos.x, mouse_event.pos.y), circle_button_rect):
         self._start_x_circle = mouse_event.pos.x
         self._is_dragging_circle = True
         self._circle_press_time = rl.get_time()

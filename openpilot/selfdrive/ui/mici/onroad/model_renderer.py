@@ -1,6 +1,6 @@
 import colorsys
 import numpy as np
-import pyray as rl
+import raylib_nb as rl
 from openpilot.cereal import log, messaging
 from opendbc.car.structs import car
 from dataclasses import dataclass, field

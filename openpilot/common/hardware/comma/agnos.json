@@ -1,7 +1,7 @@
 [
   {
     "name": "xbl",
-    "url": "https://commadist.azureedge.net/agnosupdate/xbl-e8acf2a9cc7f0ce84cb803bfea9477f765c0d7b4daf26048e59651b9e6a7bfbb.img.xz",
+    "url": "https://gitlab.com/commaai/ci-artifacts/-/raw/agnos-builder/pr-695/xbl-e8acf2a9cc7f0ce84cb803bfea9477f765c0d7b4daf26048e59651b9e6a7bfbb.img.xz",
     "hash": "e8acf2a9cc7f0ce84cb803bfea9477f765c0d7b4daf26048e59651b9e6a7bfbb",
     "hash_raw": "e8acf2a9cc7f0ce84cb803bfea9477f765c0d7b4daf26048e59651b9e6a7bfbb",
     "size": 3282256,
@@ -12,7 +12,7 @@
   },
   {
     "name": "xbl_config",
-    "url": "https://commadist.azureedge.net/agnosupdate/xbl_config-758552ecf92b5569677197783bf0ccb73d7f961685308e45d3276ac9dd974f85.img.xz",
+    "url": "https://gitlab.com/commaai/ci-artifacts/-/raw/agnos-builder/pr-695/xbl_config-758552ecf92b5569677197783bf0ccb73d7f961685308e45d3276ac9dd974f85.img.xz",
     "hash": "758552ecf92b5569677197783bf0ccb73d7f961685308e45d3276ac9dd974f85",
     "hash_raw": "758552ecf92b5569677197783bf0ccb73d7f961685308e45d3276ac9dd974f85",
     "size": 98124,
@@ -23,7 +23,7 @@
   },
   {
     "name": "abl",
-    "url": "https://commadist.azureedge.net/agnosupdate/abl-29fd7ed1c012e599420764840f9f11286d34dbff4adaf102a447f06d8c5e0b35.img.xz",
+    "url": "https://gitlab.com/commaai/ci-artifacts/-/raw/agnos-builder/pr-695/abl-29fd7ed1c012e599420764840f9f11286d34dbff4adaf102a447f06d8c5e0b35.img.xz",
     "hash": "29fd7ed1c012e599420764840f9f11286d34dbff4adaf102a447f06d8c5e0b35",
     "hash_raw": "29fd7ed1c012e599420764840f9f11286d34dbff4adaf102a447f06d8c5e0b35",
     "size": 274432,
@@ -34,7 +34,7 @@
   },
   {
     "name": "aop",
-    "url": "https://commadist.azureedge.net/agnosupdate/aop-78b2287ca219a0811b3004c523fa0f4749e4d1fd92be3aba61699305b7943ad1.img.xz",
+    "url": "https://gitlab.com/commaai/ci-artifacts/-/raw/agnos-builder/pr-695/aop-78b2287ca219a0811b3004c523fa0f4749e4d1fd92be3aba61699305b7943ad1.img.xz",
     "hash": "78b2287ca219a0811b3004c523fa0f4749e4d1fd92be3aba61699305b7943ad1",
     "hash_raw": "78b2287ca219a0811b3004c523fa0f4749e4d1fd92be3aba61699305b7943ad1",
     "size": 184364,
@@ -45,7 +45,7 @@
   },
   {
     "name": "devcfg",
-    "url": "https://commadist.azureedge.net/agnosupdate/devcfg-f71df3a86958c093ba3969254c4db025187eef9385427f1ade946742939b43cc.img.xz",
+    "url": "https://gitlab.com/commaai/ci-artifacts/-/raw/agnos-builder/pr-695/devcfg-f71df3a86958c093ba3969254c4db025187eef9385427f1ade946742939b43cc.img.xz",
     "hash": "f71df3a86958c093ba3969254c4db025187eef9385427f1ade946742939b43cc",
     "hash_raw": "f71df3a86958c093ba3969254c4db025187eef9385427f1ade946742939b43cc",
     "size": 40336,
@@ -56,28 +56,28 @@
   },
   {
     "name": "boot",
-    "url": "https://commadist.azureedge.net/agnosupdate/boot-6171465bb58806a62cf24c1d415f0be7cc9a364f9fa996bf337bd1104267bdc4.img.xz",
-    "hash": "6171465bb58806a62cf24c1d415f0be7cc9a364f9fa996bf337bd1104267bdc4",
-    "hash_raw": "6171465bb58806a62cf24c1d415f0be7cc9a364f9fa996bf337bd1104267bdc4",
-    "size": 46962688,
+    "url": "https://gitlab.com/commaai/ci-artifacts/-/raw/agnos-builder/pr-695/boot-a379b0b99b00eef6eafc0f999fc4996e56e90f7fe3020a9b9b6ebc26d3dd6138.img.xz",
+    "hash": "a379b0b99b00eef6eafc0f999fc4996e56e90f7fe3020a9b9b6ebc26d3dd6138",
+    "hash_raw": "a379b0b99b00eef6eafc0f999fc4996e56e90f7fe3020a9b9b6ebc26d3dd6138",
+    "size": 47159296,
     "sparse": false,
     "full_check": true,
     "has_ab": true,
-    "ondevice_hash": "fca58663090c9fd2021a0b69e93e7604816955f926f7d6706ed0b34bb75a770b"
+    "ondevice_hash": "af8720410a3e78d80530787f3aa148a57533dcb0e3b5aa7c8f8e21ab2f696738"
   },
   {
     "name": "system",
-    "url": "https://commadist.azureedge.net/agnosupdate/system-7300706856a09243c7667add29e88904b09b6d989a4159b766e16ef2ee3c81dd.img.xz",
-    "hash": "527c4071f8bf51d6893134461c30c4b464b2545d4ac61ded480b64ee91bf7919",
-    "hash_raw": "7300706856a09243c7667add29e88904b09b6d989a4159b766e16ef2ee3c81dd",
+    "url": "https://gitlab.com/commaai/ci-artifacts/-/raw/agnos-builder/pr-695/system-e4bf373366d07c69b4119179131496b184314feff38e5d091f6d5737d7fd9a94.img.xz",
+    "hash": "13ec75b732bab878ce92a467be195ee2c3da1de1d9f7af9835417acae3a48dc3",
+    "hash_raw": "e4bf373366d07c69b4119179131496b184314feff38e5d091f6d5737d7fd9a94",
     "size": 2147483648,
     "sparse": true,
     "full_check": false,
     "has_ab": true,
-    "ondevice_hash": "9ea485e1f4eb07b7a2818724addd6a0090c6268e176110da9ed569c865a580d4",
+    "ondevice_hash": "040762c0d15f088183779c66f427a53d128c1fa92a874c9cd4796bf5750cae5d",
     "alt": {
-      "hash": "7300706856a09243c7667add29e88904b09b6d989a4159b766e16ef2ee3c81dd",
-      "url": "https://commadist.azureedge.net/agnosupdate/system-7300706856a09243c7667add29e88904b09b6d989a4159b766e16ef2ee3c81dd.img",
+      "hash": "e4bf373366d07c69b4119179131496b184314feff38e5d091f6d5737d7fd9a94",
+      "url": "https://gitlab.com/commaai/ci-artifacts/-/raw/agnos-builder/pr-695/system-e4bf373366d07c69b4119179131496b184314feff38e5d091f6d5737d7fd9a94.img",
       "size": 2147483648
     }
   }

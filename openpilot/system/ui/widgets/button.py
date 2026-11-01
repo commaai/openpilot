@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from enum import IntEnum
 
-import pyray as rl
+import raylib_nb as rl
 
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, TextAlignment
 from openpilot.system.ui.widgets import Widget

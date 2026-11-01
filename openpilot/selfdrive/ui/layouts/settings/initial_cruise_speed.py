@@ -1,5 +1,5 @@
 import time
-import pyray as rl
+import raylib_nb as rl
 
 from openpilot.common.constants import CV
 from openpilot.selfdrive.car.cruise import V_CRUISE_INITIAL, V_CRUISE_MAX

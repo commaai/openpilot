@@ -1,5 +1,5 @@
 import os
-import pyray as rl
+import raylib_nb as rl
 from collections.abc import Callable
 from typing import Union
 

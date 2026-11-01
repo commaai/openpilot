@@ -31,41 +31,46 @@ function install_linux_deps() {
   fi
 
   local missing_linux_deps=0
-  for cmd in gcc g++ make curl curl-config git; do
+  for cmd in gcc g++ make curl curl-config git pkg-config; do
     if ! command -v "$cmd" > /dev/null 2>&1; then
       missing_linux_deps=1
       break
     fi
   done
 
-  # ------------------------------------------------
-  # dependencies should never be added to this list.
-  # these are only for inflating bare docker images
-  # to their desktop equivalents.
-  #
-  # from a real desktop OS image, we install uv
-  # then use that to install all the dependencies
-  # specified in pyproject.toml.
-  # ------------------------------------------------
+  # The source-built raylib bindings need X11, OpenGL and EGL headers.
+  # AGNOS supplies its comma/headless backend dependencies in the OS image.
+  if [[ ! -f /AGNOS && ! -f /TICI ]] &&
+     ! pkg-config --exists xrandr xinerama xcursor xi gl egl glesv2 gbm libdrm; then
+    missing_linux_deps=1
+  fi
+
   if [[ "$missing_linux_deps" -eq 0 ]]; then
     # the native package managers are slow, so skip if we can
     echo "[ ] system packages already installed t=$SECONDS"
   elif command -v apt-get > /dev/null 2>&1; then
     "${SUDO[@]}" apt-get update
-    "${SUDO[@]}" apt-get install -y --no-install-recommends ca-certificates build-essential curl libcurl4-openssl-dev locales git xclip wl-clipboard
+    "${SUDO[@]}" apt-get install -y --no-install-recommends ca-certificates build-essential curl libcurl4-openssl-dev locales git xclip wl-clipboard \
+      pkg-config libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl-dev libegl-dev libgles-dev libgbm-dev libdrm-dev
   elif command -v dnf > /dev/null 2>&1; then
-    "${SUDO[@]}" dnf install -y ca-certificates gcc gcc-c++ make curl libcurl-devel glibc-langpack-en git
+    "${SUDO[@]}" dnf install -y ca-certificates gcc gcc-c++ make curl libcurl-devel glibc-langpack-en git \
+      pkgconf-pkg-config libXrandr-devel libXinerama-devel libXcursor-devel libXi-devel mesa-libGL-devel mesa-libEGL-devel mesa-libGLES-devel mesa-libgbm-devel libdrm-devel
   elif command -v yum > /dev/null 2>&1; then
-    "${SUDO[@]}" yum install -y ca-certificates gcc gcc-c++ make curl libcurl-devel glibc-langpack-en git
+    "${SUDO[@]}" yum install -y ca-certificates gcc gcc-c++ make curl libcurl-devel glibc-langpack-en git \
+      pkgconf-pkg-config libXrandr-devel libXinerama-devel libXcursor-devel libXi-devel mesa-libGL-devel mesa-libEGL-devel mesa-libGLES-devel mesa-libgbm-devel libdrm-devel
   elif command -v pacman > /dev/null 2>&1; then
-    "${SUDO[@]}" pacman -Syu --noconfirm --needed base-devel ca-certificates curl git
+    "${SUDO[@]}" pacman -Syu --noconfirm --needed base-devel ca-certificates curl git \
+      pkgconf libxrandr libxinerama libxcursor libxi libglvnd mesa libdrm
   elif command -v zypper > /dev/null 2>&1; then
     "${SUDO[@]}" zypper --non-interactive refresh
-    "${SUDO[@]}" zypper --non-interactive install ca-certificates gcc gcc-c++ make curl libcurl-devel glibc-locale git
+    "${SUDO[@]}" zypper --non-interactive install ca-certificates gcc gcc-c++ make curl libcurl-devel glibc-locale git \
+      pkgconf-pkg-config libXrandr-devel libXinerama-devel libXcursor-devel libXi-devel Mesa-libGL-devel Mesa-libEGL-devel Mesa-libGLESv2-devel libgbm-devel libdrm-devel
   elif command -v apk > /dev/null 2>&1; then
-    "${SUDO[@]}" apk add --no-cache ca-certificates build-base curl curl-dev musl-locales git
+    "${SUDO[@]}" apk add --no-cache ca-certificates build-base curl curl-dev musl-locales git \
+      pkgconf libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev mesa-dev libdrm-dev
   elif command -v xbps-install > /dev/null 2>&1; then
-    "${SUDO[@]}" xbps-install -Syu base-devel ca-certificates curl git libcurl-devel glibc-locales
+    "${SUDO[@]}" xbps-install -Syu base-devel ca-certificates curl git libcurl-devel glibc-locales \
+      pkg-config libXrandr-devel libXinerama-devel libXcursor-devel libXi-devel libglvnd-devel MesaLib-devel libgbm-devel libdrm-devel
   else
     echo "Unsupported Linux distribution. Supported package managers: apt-get, dnf, yum, pacman, zypper, apk, xbps-install."
     exit 1

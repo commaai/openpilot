@@ -4,7 +4,7 @@ import functools
 import itertools
 
 import numpy as np
-import pyray as rl
+import raylib_nb as rl
 
 
 # (ec codewords per block, block count) for levels L, M, Q, H, versions 1-40
@@ -237,12 +237,8 @@ def make_texture(data: str, inverted: bool = False) -> rl.Texture:
   gray = ((modules == inverted) * 255).astype(np.uint8)
   img_array = np.dstack((gray, gray, gray, np.full_like(gray, 255)))
 
-  rl_image = rl.Image()
-  rl_image.data = rl.ffi.cast("void *", img_array.ctypes.data)
-  rl_image.width = img_array.shape[1]
-  rl_image.height = img_array.shape[0]
-  rl_image.mipmaps = 1
-  rl_image.format = rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8
+  rl_image = rl.Image(img_array, img_array.shape[1], img_array.shape[0], 1,
+                      rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8)
   return rl.load_texture_from_image(rl_image)
 
 

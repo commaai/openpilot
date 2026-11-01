@@ -12,7 +12,7 @@ import requests
 
 SPARSE_CHUNK_FMT = struct.Struct('H2xI4x')
 
-AGNOS_MANIFEST_FILE = "openpilot/system/hardware/comma/agnos.json"
+AGNOS_MANIFEST_FILE = "openpilot/common/hardware/comma/agnos.json"
 
 
 class StreamingDecompressor:

@@ -1,4 +1,4 @@
-import pyray as rl
+import raylib_nb as rl
 import numpy as np
 import math
 from openpilot.cereal import log
@@ -159,7 +159,7 @@ class DriverStateRenderer(Widget):
       color = rl.Color(166, 166, 166, 255)
 
     if f.x > 0.01:
-      rl.draw_line_ex((start_x, start_y), (end_x, end_y), 12, color)
+      rl.draw_line_ex(rl.Vector2(start_x, start_y), rl.Vector2(end_x, end_y), 12, color)
 
   def get_driver_data(self):
     sm = ui_state.sm
@@ -193,9 +193,9 @@ class DriverStateRenderer(Widget):
       pitchd = math.degrees(pitch)
       yawd = math.degrees(yaw)
 
-      rl.draw_line_ex((0, 100), (200, 100), 3, rl.RED)
-      rl.draw_line_ex((0, 120), (200, 120), 3, rl.RED)
-      rl.draw_line_ex((0, 140), (200, 140), 3, rl.RED)
+      rl.draw_line_ex(rl.Vector2(0, 100), rl.Vector2(200, 100), 3, rl.RED)
+      rl.draw_line_ex(rl.Vector2(0, 120), rl.Vector2(200, 120), 3, rl.RED)
+      rl.draw_line_ex(rl.Vector2(0, 140), rl.Vector2(200, 140), 3, rl.RED)
 
       pitch_x = 100 + pitchd
       yaw_x = 100 + yawd

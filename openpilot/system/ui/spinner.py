@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import pyray as rl
+import raylib_nb as rl
 import select
 import sys
 
@@ -25,7 +25,7 @@ DEGREES_PER_SECOND = 360.0  # one full rotation per second
 MARGIN_H = 100
 FONT_SIZE = 96
 LINE_HEIGHT = 104
-DARKGRAY = (55, 55, 55, 255)
+DARKGRAY = rl.Color(55, 55, 55, 255)
 
 
 def clamp(value, min_value, max_value):
