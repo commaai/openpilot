@@ -1,5 +1,8 @@
 [env]
-PYTHONPATH = "/data/ci/tree/openpilot"  # the tree
+PYTHONPATH = "/data/ci/tree/openpilot/.venv/lib/python3.12/site-packages:/data/ci/tree/openpilot"
+UV_CACHE_DIR = "/data/ci/uv-cache"
+UV_PYTHON_INSTALL_DIR = "/data/ci/uv-python"
+TMPDIR = "/data/ci/tmp"
 TERM = "xterm-256color"
 PYTHONWARNINGS = "error"
 PYTHONFAULTHANDLER = "1"
@@ -16,6 +19,8 @@ QCOM_PRIORITY = "12"
 [steps.build]
 name = "Build openpilot"
 run = """
+mkdir -p "$TMPDIR"
+uv sync --frozen --inexact
 for p in msgq_repo/msgq opendbc_repo/opendbc rednose_repo/rednose teleoprtc_repo/teleoprtc tinygrad_repo/tinygrad; do ln -sfn "$p" "${p#*/}"; done
 cd openpilot/system/manager && ./build.py
 """
