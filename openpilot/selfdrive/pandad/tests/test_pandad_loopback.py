@@ -27,6 +27,10 @@ def publish_device_state(pm, started):
 
 @retry(attempts=3)
 def setup_pandad():
+  if 'UP_REMOTE' in os.environ:
+    from ultimate_provisioning import UP
+    UP.remote().reset()  # a steady harness: the panda clears its CAN queues when it changes
+
   params = Params()
   params.clear_all()
 

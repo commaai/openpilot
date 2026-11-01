@@ -110,8 +110,8 @@ if __name__ == "__main__":
   if args.up:
     from ultimate_provisioning import UP
     up = UP.remote()
-    up.set_harness_orientation(UP.HARNESS_ORIENTATION_1)
-    setup(up)
+    up.reset()
+    up.set_ignition(True)
     up.can_replay([[m for m in send if m[-1] <= 2] for send in CAN_MSGS])
   else:
     connect()
