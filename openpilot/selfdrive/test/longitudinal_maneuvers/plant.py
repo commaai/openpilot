@@ -6,9 +6,10 @@ from openpilot.cereal import log
 import openpilot.cereal.messaging as messaging
 from openpilot.common.realtime import Ratekeeper, DT_MDL
 from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
+from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import T_DIFFS, T_IDXS
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner
-from openpilot.selfdrive.controls.radard import _LEAD_ACCEL_TAU
+from openpilot.selfdrive.controls.radard import _LEAD_ACCEL_TAU, RADAR_TO_CAMERA
 
 
 class Plant:
@@ -97,6 +98,18 @@ class Plant:
     if not self.only_lead2:
       radar.radarState.leadOne = lead
     radar.radarState.leadTwo = lead
+
+    # Simulate model lead predictions with the previous decaying-acceleration forecast.
+    # Positions are cumulative in the stationary ego frame, not future relative gaps.
+    lead_a = np.clip(a_lead, -10.0, 5.0) * np.exp(-_LEAD_ACCEL_TAU * T_IDXS**2 / 2.0)
+    lead_v = np.clip(v_lead + np.cumsum(T_DIFFS * lead_a), 0.0, 1e8)
+    lead_x = d_rel + RADAR_TO_CAMERA + np.cumsum(T_DIFFS * lead_v)
+    model.modelV2.init('leadsV3', 3)
+    for i in range(2):
+      model_lead = model.modelV2.leadsV3[i]
+      model_lead.prob = float(prob_lead) if i == 1 or not self.only_lead2 else 0.0
+      model_lead.x = np.interp(ModelConstants.LEAD_T_IDXS, T_IDXS, lead_x).tolist()
+      model_lead.v = np.interp(ModelConstants.LEAD_T_IDXS, T_IDXS, lead_v).tolist()
 
     # Simulate model predicting slightly faster speed
     # this is to ensure lead policy is effective when model
