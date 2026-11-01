@@ -59,7 +59,6 @@ pkg_names = ['acados', 'capnproto', 'ffmpeg', 'json11', 'ncurses', 'zstd']
 pkgs = [importlib.import_module(name) for name in pkg_names]
 acados = pkgs[pkg_names.index('acados')]
 ffmpeg = pkgs[pkg_names.index('ffmpeg')]
-ffmpeg_shared = True
 ffmpeg_libs = ['avformat', 'avcodec', 'swresample', 'avutil']
 acados_include_dirs = [
   acados.INCLUDE_DIR,
