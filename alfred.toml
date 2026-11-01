@@ -19,7 +19,7 @@ QCOM_PRIORITY = "12"
 name = "Build openpilot"
 run = """
 mkdir -p /data/ci/tmp
-TMPDIR=/data/ci/tmp uv sync --frozen --inexact
+TMPDIR=/data/ci/tmp UV_PYTHON_PREFERENCE=only-managed uv sync --frozen --inexact || exit 1
 for p in msgq_repo/msgq opendbc_repo/opendbc rednose_repo/rednose teleoprtc_repo/teleoprtc tinygrad_repo/tinygrad; do ln -sfn "$p" "${p#*/}"; done
 cd openpilot/system/manager && ./build.py
 """
