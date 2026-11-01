@@ -6,8 +6,11 @@
 
 #include "imgui.h"
 #include "imgui_internal.h"
+#include "common/util.h"
 #include "tools/cabana/settings.h"
+#ifndef __EMSCRIPTEN__
 #include "tools/cabana/streams/devicestream.h"
+#endif
 #include "tools/cabana/streams/replaystream.h"
 #include "tools/cabana/ui/dialogs/filedialog.h"
 #include "tools/cabana/ui/dialogs/messagebox.h"
@@ -69,6 +72,9 @@ std::unique_ptr<AbstractStream> OpenReplayWidget::open() {
     if (cameras_[1]) flags |= REPLAY_FLAG_CABIN_CAMERA;
     if (cameras_[2]) flags |= REPLAY_FLAG_WIDE_ROAD;
     if (flags == REPLAY_FLAG_NONE && !cameras_[0]) flags = REPLAY_FLAG_NO_VIPC;
+#ifdef __EMSCRIPTEN__
+    if (cameras_[0]) flags |= REPLAY_FLAG_QCAMERA;
+#endif
 
     if (replay_stream->loadRoute(route, data_dir, flags)) {
       return replay_stream;
@@ -82,6 +88,7 @@ const uint32_t speeds[] = {10U, 20U, 50U, 100U, 125U, 250U, 500U, 1000U};
 const uint32_t data_speeds[] = {10U, 20U, 50U, 100U, 125U, 250U, 500U, 1000U, 2000U, 5000U};
 }
 
+#ifndef __EMSCRIPTEN__
 OpenPandaWidget::OpenPandaWidget() {
   if (can && dynamic_cast<PandaStream *>(can) != nullptr) {
     already_connected_ = true;
@@ -206,7 +213,7 @@ std::unique_ptr<AbstractStream> OpenDeviceWidget::open() {
   return std::make_unique<DeviceStream>(msgq ? "" : ip);
 }
 
-#ifdef __linux__
+#if defined(__linux__) && !defined(__EMSCRIPTEN__)
 
 OpenSocketCanWidget::OpenSocketCanWidget() {
   refreshDevices();
@@ -246,6 +253,7 @@ std::unique_ptr<AbstractStream> OpenSocketCanWidget::open() {
   }
 }
 #endif
+#endif  // __EMSCRIPTEN__
 
 void StreamSelector::open(Callback on_done) {
   on_done_ = std::move(on_done);
@@ -255,6 +263,7 @@ void StreamSelector::open(Callback on_done) {
   dbc_file_.clear();
   widgets_.clear();
   widgets_.push_back(std::make_unique<OpenReplayWidget>());
+#ifndef __EMSCRIPTEN__
   widgets_.push_back(std::make_unique<OpenPandaWidget>());
 #ifdef __linux__
   if (SocketCanStream::available()) {
@@ -262,6 +271,7 @@ void StreamSelector::open(Callback on_done) {
   }
 #endif
   widgets_.push_back(std::make_unique<OpenDeviceWidget>());
+#endif
 }
 
 void StreamSelector::draw() {
