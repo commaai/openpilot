@@ -734,6 +734,7 @@ def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local
     identity_token = Api(dongle_id).get_token()
     ws = create_connection(remote_ws_uri,
                            cookie="jwt=" + identity_token,
+                           redirect_limit=0,
                            enable_multithread=True)
 
     # Set TOS to keep connection responsive while under load.
