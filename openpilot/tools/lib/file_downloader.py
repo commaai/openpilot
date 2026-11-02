@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 CLI tool for downloading files and querying the comma API.
-Called by C++ replay/cabana via subprocess.
+Called by C++ replay via subprocess.
 
 Subcommands:
   route-files <route>    - Get route file URLs as JSON
