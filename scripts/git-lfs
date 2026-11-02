@@ -38,6 +38,10 @@ abort_filter() {
 }
 
 if lfs="$(find_lfs)"; then
+  if [ "${1:-}" = pre-push ]; then
+    shift
+    exec python3 "$(dirname "$0")/lfs_refs.py" "$lfs" "$@"
+  fi
   exec "$lfs" "$@"
 fi
 
