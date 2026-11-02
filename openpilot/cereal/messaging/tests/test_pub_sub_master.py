@@ -64,7 +64,7 @@ class TestSubMaster(OpenpilotTestCase):
     for i in range(10):
       msg = messaging.new_message(sock)
       pub_sock.send(msg.to_bytes())
-      sm.update_msgs(time.monotonic(), {sock: msg})
+      sm.update_msgs(time.monotonic(), [msg])
       assert sm.frame == i
       assert all(sm.updated.values())
 
