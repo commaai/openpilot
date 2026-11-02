@@ -1,3 +1,6 @@
+# a UP's DUT starts each job with an empty /data: these come back from master's last good job, as it left them
+cache = ["/data/scons_cache"]
+
 [env]
 PYTHONPATH = "/data/ci/tree/openpilot"  # the tree
 TERM = "xterm-256color"
