@@ -1,0 +1,8 @@
+/* a live session's controls in the playbar (playbar.js) */
+.pb-live { height: 22px; padding: 0 8px; border: 1px solid var(--line); border-radius: 11px; background: var(--raised); font: 600 10px var(--mono); text-transform: uppercase; letter-spacing: .05em; white-space: nowrap; cursor: pointer; }
+.pb-live::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 5px; border-radius: 50%; background: var(--muted); vertical-align: 0; }
+.pb-live.on { border-color: var(--critical); color: var(--critical-fg); cursor: default; }
+.pb-live.on::before { background: var(--critical); }
+.pb-live:not(.on):hover { border-color: var(--accent); }
+.pb-state { display: flex; align-items: center; gap: 6px; max-width: 280px; overflow: hidden; color: var(--muted); font-size: 11px; white-space: nowrap; text-overflow: ellipsis; }
+.pb-state[data-state="error"] { color: var(--critical-fg); }
