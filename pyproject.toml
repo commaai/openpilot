@@ -71,7 +71,7 @@ tools = [
 ]
 
 submodules = [
-  "msgq-ipc",
+  "msgq-ipc[build]",
   "opendbc",
   "pandacan",
   "rednose",

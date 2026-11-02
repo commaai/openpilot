@@ -19,8 +19,8 @@ class Camera:
     self.cap.set(cv.CAP_PROP_FRAME_HEIGHT, 720.0)
     self.cap.set(cv.CAP_PROP_FPS, 25.0)
 
-    self.W = self.cap.get(cv.CAP_PROP_FRAME_WIDTH)
-    self.H = self.cap.get(cv.CAP_PROP_FRAME_HEIGHT)
+    self.W = int(self.cap.get(cv.CAP_PROP_FRAME_WIDTH))
+    self.H = int(self.cap.get(cv.CAP_PROP_FRAME_HEIGHT))
 
   @classmethod
   def bgr2nv12(self, bgr):

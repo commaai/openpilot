@@ -151,7 +151,7 @@ env = Environment(
   COMPILATIONDB_USE_ABSPATH=True,
   REDNOSE_ROOT="#rednose_repo",
   tools=["default", "cython", "compilation_db", "rednose_filter"],
-  toolpath=["#msgq_repo/site_scons/site_tools", "#rednose_repo/site_scons/site_tools"],
+  toolpath=["#rednose_repo/site_scons/site_tools"],
 )
 # SCons' Darwin linker tool doesn't define the variables used to expand RPATH.
 if arch == "Darwin":

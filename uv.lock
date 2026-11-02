@@ -505,19 +505,35 @@ name = "msgq-ipc"
 version = "1.1"
 source = { virtual = "msgq_repo" }
 
+[package.optional-dependencies]
+build = [
+    { name = "nanobind" },
+    { name = "scons" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "codespell", marker = "extra == 'dev'" },
     { name = "cppcheck", marker = "extra == 'dev'" },
     { name = "cpplint", marker = "extra == 'dev'" },
-    { name = "cython", marker = "extra == 'dev'" },
     { name = "lefthook", marker = "extra == 'dev'" },
+    { name = "msgq-ipc", extras = ["build"], marker = "extra == 'dev'" },
+    { name = "nanobind", marker = "extra == 'build'", specifier = ">=2.12" },
     { name = "ruff", marker = "extra == 'dev'" },
-    { name = "scons", marker = "extra == 'dev'" },
+    { name = "scons", marker = "extra == 'build'" },
     { name = "setuptools", marker = "extra == 'dev'" },
     { name = "ty", marker = "extra == 'dev'" },
 ]
-provides-extras = ["dev"]
+provides-extras = ["build", "dev"]
+
+[[package]]
+name = "nanobind"
+version = "3.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/c7/1f/e28fae715401e8f57400e72aeaff4fde12046d31828164f34f61f0816da8/nanobind-3.1.0.tar.gz", hash = "sha256:6661e3dc1434d78781ccf7913442d90361dab395c3424efadb63bbb6ddea7ea3", size = 1145390, upload-time = "2026-09-18T15:59:42.726Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/36/c1/6fd56f7a02a478d54a1a3e6000eccd34b446b1c45cbf0d002fe5d2937126/nanobind-3.1.0-py3-none-any.whl", hash = "sha256:96984dbe8154ffb86e653b1b60aaeed6985c710c5e75ad0279eb87943c66292d", size = 316917, upload-time = "2026-09-18T15:59:37.796Z" },
+]
 
 [[package]]
 name = "numpy"
@@ -606,7 +622,7 @@ dependencies = [
 
 [package.optional-dependencies]
 submodules = [
-    { name = "msgq-ipc" },
+    { name = "msgq-ipc", extra = ["build"] },
     { name = "opendbc" },
     { name = "pandacan" },
     { name = "rednose" },
@@ -651,7 +667,7 @@ requires-dist = [
     { name = "inputs" },
     { name = "jeepney" },
     { name = "matplotlib", marker = "extra == 'tools'" },
-    { name = "msgq-ipc", marker = "extra == 'submodules'", virtual = "msgq_repo" },
+    { name = "msgq-ipc", extras = ["build"], marker = "extra == 'submodules'", virtual = "msgq_repo" },
     { name = "numpy", specifier = ">=2.0" },
     { name = "opendbc", marker = "extra == 'submodules'", editable = "opendbc_repo" },
     { name = "pandacan", marker = "extra == 'submodules'", editable = "panda" },
@@ -990,7 +1006,7 @@ requires-dist = [
     { name = "mkdocs", marker = "extra == 'docs'" },
     { name = "mkdocs-material", marker = "extra == 'docs'" },
     { name = "mkdocstrings", extras = ["python"], marker = "extra == 'docs'" },
-    { name = "mypy", marker = "extra == 'linting'", specifier = "==1.19.1" },
+    { name = "mypy", marker = "extra == 'linting'", specifier = "==2.3.1" },
     { name = "networkx", marker = "extra == 'testing'" },
     { name = "nibabel", marker = "extra == 'testing'" },
     { name = "numba", marker = "extra == 'testing'", specifier = ">=0.55" },
@@ -1011,7 +1027,7 @@ requires-dist = [
     { name = "pytest-split", marker = "extra == 'testing-minimal'" },
     { name = "pytest-xdist", marker = "extra == 'testing-minimal'" },
     { name = "pyyaml", marker = "extra == 'autogen'" },
-    { name = "ruff", marker = "extra == 'linting'", specifier = "==0.14.10" },
+    { name = "ruff", marker = "extra == 'linting'", specifier = "==0.16.4" },
     { name = "safetensors", marker = "extra == 'testing-unit'" },
     { name = "sentencepiece", marker = "extra == 'testing'" },
     { name = "tabulate", marker = "extra == 'testing-unit'" },
@@ -1024,7 +1040,7 @@ requires-dist = [
     { name = "transformers", marker = "extra == 'testing'" },
     { name = "typeguard", marker = "extra == 'linting'" },
     { name = "typing-extensions", marker = "extra == 'linting'" },
-    { name = "z3-solver", marker = "extra == 'testing-minimal'", specifier = "<4.15.4" },
+    { name = "z3-solver", marker = "extra == 'testing-minimal'", specifier = "==5.1.0.0" },
 ]
 provides-extras = ["linting", "testing-minimal", "testing-unit", "testing", "docs", "mesa", "autogen"]
 
