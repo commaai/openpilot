@@ -505,19 +505,26 @@ name = "msgq-ipc"
 version = "1.1"
 source = { virtual = "msgq_repo" }
 
+[package.optional-dependencies]
+build = [
+    { name = "nanobind" },
+    { name = "scons" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "codespell", marker = "extra == 'dev'" },
     { name = "cppcheck", marker = "extra == 'dev'" },
     { name = "cpplint", marker = "extra == 'dev'" },
     { name = "lefthook", marker = "extra == 'dev'" },
-    { name = "nanobind", marker = "extra == 'dev'", specifier = ">=2.12" },
+    { name = "msgq-ipc", extras = ["build"], marker = "extra == 'dev'" },
+    { name = "nanobind", marker = "extra == 'build'", specifier = ">=2.12" },
     { name = "ruff", marker = "extra == 'dev'" },
-    { name = "scons", marker = "extra == 'dev'" },
+    { name = "scons", marker = "extra == 'build'" },
     { name = "setuptools", marker = "extra == 'dev'" },
     { name = "ty", marker = "extra == 'dev'" },
 ]
-provides-extras = ["dev"]
+provides-extras = ["build", "dev"]
 
 [[package]]
 name = "nanobind"
@@ -601,7 +608,6 @@ dependencies = [
     { name = "comma-deps-zstd" },
     { name = "inputs" },
     { name = "jeepney" },
-    { name = "nanobind" },
     { name = "numpy" },
     { name = "pycapnp" },
     { name = "pyjwt", extra = ["crypto"] },
@@ -616,7 +622,7 @@ dependencies = [
 
 [package.optional-dependencies]
 submodules = [
-    { name = "msgq-ipc" },
+    { name = "msgq-ipc", extra = ["build"] },
     { name = "opendbc" },
     { name = "pandacan" },
     { name = "rednose" },
@@ -661,8 +667,7 @@ requires-dist = [
     { name = "inputs" },
     { name = "jeepney" },
     { name = "matplotlib", marker = "extra == 'tools'" },
-    { name = "msgq-ipc", marker = "extra == 'submodules'", virtual = "msgq_repo" },
-    { name = "nanobind" },
+    { name = "msgq-ipc", extras = ["build"], marker = "extra == 'submodules'", virtual = "msgq_repo" },
     { name = "numpy", specifier = ">=2.0" },
     { name = "opendbc", marker = "extra == 'submodules'", editable = "opendbc_repo" },
     { name = "pandacan", marker = "extra == 'submodules'", editable = "panda" },

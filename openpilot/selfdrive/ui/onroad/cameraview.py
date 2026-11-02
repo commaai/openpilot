@@ -76,7 +76,7 @@ class CameraView(Widget):
     self._clients = {stream: VisionIpcClient(name, stream, conflate=True) for stream in VisionStreamType}
     self.client = self._clients[stream_type]
     self._stream_type: VisionStreamType = stream_type
-    self.available_streams: set[int] = set()
+    self.available_streams: set[VisionStreamType] = set()
 
     # Target stream for switching
     self._target_client: VisionIpcClient | None = None
@@ -300,7 +300,7 @@ class CameraView(Widget):
 
       cloudlog.debug(f"Connected to {self._name} stream: {self._stream_type}, buffers: {self.client.num_buffers}")
       self._initialize_textures()
-      self.available_streams = self.client.available_streams(self._name, block=False)
+      self.available_streams = {VisionStreamType(s) for s in self.client.available_streams(self._name, block=False)}
 
     return True
 

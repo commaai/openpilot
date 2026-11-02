@@ -22,7 +22,6 @@ dependencies = [
 
   # core
   "scons",
-  "nanobind",  # msgq bindings
   "pycapnp==2.1.0",  # 2.2 introduces a memory leak due to cyclic references
   "numpy >=2.0",
 
@@ -72,7 +71,7 @@ tools = [
 ]
 
 submodules = [
-  "msgq-ipc",
+  "msgq-ipc[build]",
   "opendbc",
   "pandacan",
   "rednose",
