@@ -217,7 +217,8 @@ class Car:
 
     if RD is not None:
       tracks_msg = messaging.new_message('radarTracks')
-      tracks_msg.valid = not any(RD.errors.to_dict().values())
+      # only CAN errors are invalid like carState, selfdrived handles the radar's own errors
+      tracks_msg.valid = not RD.errors.canError
       tracks_msg.radarTracks = RD
       self.pm.send('radarTracks', tracks_msg)
 
