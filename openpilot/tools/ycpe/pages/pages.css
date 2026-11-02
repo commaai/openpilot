@@ -1,0 +1,262 @@
+/* route browser pages: home, device page, logs; the small controls here are shared with the info pane */
+/* connect's palette, for user mode and the panes it shares; light is its daytime twin */
+[data-theme="dark"] { --cn-bg: #1d2225; --cn-card: #30373b; --cn-card-end: #1d2225; --cn-raised: #394044; --cn-fg: #fff; --cn-muted: rgba(255,255,255,.6);
+  --cn-line: rgba(255,255,255,.1); --cn-driving: #175886;
+  --cn-pill: #0c0e0f; --cn-pill-line: #1e2224; --cn-dim: #6e7d84; --cn-shade: linear-gradient(transparent 4%, rgba(255,255,255,.025) 10%, rgba(0,0,0,.1) 25%, rgba(0,0,0,.4)); }
+[data-theme="light"] { --cn-bg: #eef0f2; --cn-card: #fff; --cn-card-end: #f4f6f8; --cn-raised: #e3e6e8; --cn-fg: #1c2024; --cn-muted: #5f666e;
+  --cn-line: rgba(0,0,0,.09); --cn-driving: #8fb9de;
+  --cn-pill: #fff; --cn-pill-line: #dde1e5; --cn-dim: #77878f; --cn-shade: linear-gradient(transparent 60%, rgba(0,0,0,.08)); }
+/* Material UI's (connect's) easing, and its paper's shadows at the elevations connect uses (cnui.css has its pieces) */
+:root { --mui-ease: cubic-bezier(.4, 0, .2, 1);
+  --mui-shadow-1: 0 1px 3px 0 rgba(0,0,0,.2), 0 1px 1px 0 rgba(0,0,0,.14), 0 2px 1px -1px rgba(0,0,0,.12);
+  --mui-shadow-2: 0 1px 5px 0 rgba(0,0,0,.2), 0 2px 2px 0 rgba(0,0,0,.14), 0 3px 1px -2px rgba(0,0,0,.12);
+  --mui-shadow-6: 0 3px 5px -1px rgba(0,0,0,.2), 0 6px 10px 0 rgba(0,0,0,.14), 0 1px 18px 0 rgba(0,0,0,.12);
+  --mui-shadow-8: 0 5px 5px -3px rgba(0,0,0,.2), 0 8px 10px 1px rgba(0,0,0,.14), 0 3px 14px 2px rgba(0,0,0,.12);
+  --mui-shadow-16: 0 8px 10px -5px rgba(0,0,0,.2), 0 16px 24px 2px rgba(0,0,0,.14), 0 6px 30px 5px rgba(0,0,0,.12);
+  --mui-shadow-24: 0 11px 15px -7px rgba(0,0,0,.2), 0 24px 38px 3px rgba(0,0,0,.14), 0 9px 46px 8px rgba(0,0,0,.12); }
+.page { max-width: 1280px; margin: 0 auto; padding: 12px 16px 32px; }
+.page h3 { margin: 14px 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.button.small { margin: 0; padding: 3px 8px; }
+.button.danger { border-color: var(--critical); color: var(--critical-fg); }
+.button:disabled { opacity: .5; cursor: default; }
+.field { height: 26px; padding: 0 8px; border: 1px solid var(--line); border-radius: 5px; background: var(--bg); }
+.field:focus { border-color: var(--accent); }
+.icon-btn { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0; border: 0; border-radius: 4px; background: none; color: var(--muted); cursor: pointer; text-decoration: none; }
+.icon-btn:hover { background: var(--hover); color: var(--fg); }
+.nowrap { white-space: nowrap; }
+.right { text-align: right; }
+.spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; vertical-align: middle; }
+.spinner.big { width: 28px; height: 28px; border-width: 3px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* dense tables */
+.list { width: 100%; border-collapse: collapse; }
+.list th { position: sticky; top: 0; z-index: 1; padding: 4px 8px; background: var(--bg); border-bottom: 1px solid var(--line); color: var(--muted); font-weight: 500; text-align: left; white-space: nowrap; }
+.list td { padding: 3px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.list tr.clickable { cursor: pointer; }
+.list tr.clickable:hover td { background: var(--hover); }
+.list a { text-decoration: none; font-weight: 600; }
+.list .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dl { display: inline-flex; padding: 2px; border-radius: 4px; color: var(--accent); }
+.dl:hover { background: var(--hover); }
+.list-foot { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; }
+
+/* home */
+.add-device { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; }
+
+/* the omnibox */
+.omni { position: relative; display: flex; min-width: 0; }
+
+/* login, auth callback, sign-in card */
+.login { display: flex; justify-content: center; padding: 12vh 16px 32px; }
+.login-card { width: 340px; padding: 22px 24px 18px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); box-shadow: var(--shadow); text-align: center; }
+.login-card > p { margin: 8px 0; }
+.login-mark { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 6px; font-size: 20px; font-weight: 800; letter-spacing: .02em; }
+.login-mark svg { color: var(--fg); }
+.providers { display: flex; flex-direction: column; gap: 6px; margin: 16px 0 12px; }
+.providers .button { margin: 0; padding: 8px 14px; font-weight: 600; }
+.provider { position: relative; }
+.last-used { position: absolute; top: 50%; right: 8px; translate: 0 -50%; padding: 1px 7px; border-radius: 99px; background: var(--active); color: var(--muted); font-size: 10px; font-weight: 500; }
+.token { margin: 6px 0; text-align: left; }
+.token summary { color: var(--muted); cursor: pointer; text-align: center; }
+.token summary:hover { color: var(--fg); }
+.token-form { display: flex; gap: 6px; }
+.token-form .field { flex: 1; min-width: 0; }
+.token-form .button { margin: 0; }
+.login-card > .login-foot { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line); }
+/* user mode's toasts: MUI's Snackbar in connect's theme */
+body:has(.cn-shell, .cn-landing) .toast { bottom: 24px; min-width: 288px; box-sizing: border-box; padding: 14px 24px; border-radius: 4px; background: #303639; color: #fff;
+  font: 400 14px/20px "Inter", sans-serif; box-shadow: var(--mui-shadow-6); }
+@media (max-width: 599px) { body:has(.cn-shell, .cn-landing) .toast { right: 0; bottom: 0; left: 0; min-width: 0; border-radius: 0; transform: none; } }
+
+/* user mode's sign-in: connect's landing over the whole window, in its dark-only palette */
+/* no header there: the landing is the whole window */
+body:has(.cn-landing) #app > .cn-header { display: none; }
+.cn-landing { position: fixed; inset: 0; z-index: 30; display: flex; flex-direction: column; justify-content: center; background: #1d2225; color: #fff; font: 400 16px/24px "Inter", sans-serif; }
+.cn-landing > .cn-devmode { position: absolute; top: 14px; right: 16px; border-color: rgba(255,255,255,.1); color: #fff; }
+.cn-landing > .cn-devmode:hover { background: rgba(255,255,255,.1); }
+.cn-landing-body { display: flex; flex-direction: column; align-items: center; overflow-y: auto; padding: 20px; }
+.cn-landing-body p { margin: 0; line-height: 1.46429em; }
+.cn-landing-logo { display: flex; flex-shrink: 0; align-items: center; justify-content: center; width: 84px; height: 84px; border-radius: 16px; background: #1e2224; }
+.cn-landing-logo img { height: 45px; }
+.cn-landing-gap { flex-shrink: 2; height: 60px; }
+.cn-landing-title { font-size: 36px; font-weight: 800; text-align: center; }
+.cn-landing-lead { width: 380px; max-width: 90%; margin: 10px 0 30px !important; font-size: 18px; text-align: center; }
+.cn-login { position: relative; display: flex; align-items: center; justify-content: center; width: 400px; max-width: 90%; height: 80px; margin-bottom: 10px;
+  border-radius: 80px; background: #fff; text-decoration: none; cursor: pointer; }
+.cn-login:hover { background: #eee; }
+.cn-login img { height: 40px; }
+.cn-login p { width: 190px; color: #000; font-size: 18px; font-weight: 600; text-align: center; white-space: nowrap; }
+.cn-last-used { position: absolute; right: 22px; bottom: -8px; padding: 1px 10px; border: 3px solid #1d2225; border-radius: 99px; background: #e6ebee; color: #4a5861;
+  font-size: 11px; font-weight: 500; line-height: 16px; white-space: nowrap; pointer-events: none; }
+.cn-landing-note { max-width: 384px; margin: 8px 0 32px; font-size: 14px; line-height: 20px; text-align: center; }
+.login-status { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 20px 0 10px; color: var(--muted); }
+.device-name { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; white-space: nowrap; }
+.device-name > span { overflow: hidden; text-overflow: ellipsis; }
+.device-info .device-name { white-space: normal; }
+.device-name .field { width: 180px; height: 22px; font-weight: 400; }
+@media (hover: hover) {  /* the device list's rename pencils show on the row being pointed at */
+  .list .device-name .icon-btn { opacity: 0; }
+  .list tr:hover .device-name .icon-btn, .list .device-name .icon-btn:focus-visible { opacity: 1; }
+}
+
+/* device page */
+.device-head { display: flex; gap: 16px; align-items: stretch; margin-bottom: 8px; }
+.device-info { flex: 1; min-width: 0; display: grid; grid-template-columns: auto 1fr; align-content: center; gap: 4px 10px; }
+.device-info > :is(.kv, .stats) { grid-column: 1 / -1; }
+.device-info > h2 { min-width: 0; }
+.device-actions { display: flex; align-items: center; gap: 4px; }
+.device-info h2 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 18px; }
+.kv { display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--muted); }
+.device-map { width: 400px; height: 150px; flex-shrink: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--bg); }
+.page-tabs { display: flex; gap: 2px; margin: 4px 0 8px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.page-tabs .tab { flex-shrink: 0; height: 28px; margin-bottom: -1px; }
+.stats { min-height: 1lh; }  /* its line is there before the numbers, so nothing under it moves */
+/* small labels: a preserved drive, a device whose uploads are ignored */
+.tag { display: inline-block; padding: 0 6px; border-radius: 8px; background: var(--active); color: var(--fg); font-size: 10px; font-weight: 600;
+  line-height: 16px; letter-spacing: .03em; text-transform: uppercase; white-space: nowrap; }
+.tag.bad { background: color-mix(in srgb, var(--critical) 22%, transparent); color: var(--critical-fg); }
+.list td > .tag { margin-left: 6px; }
+/* beside the device's name: its car battery (online only) and, before 0.11.2, a camera snapshot */
+.battery { display: inline-flex; flex-shrink: 0; align-items: center; gap: 2px; height: 20px; padding: 0 8px 0 5px; border-radius: 10px; background: var(--active);
+  color: var(--muted); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.battery.ok { background: color-mix(in srgb, var(--engaged) 24%, transparent); color: var(--fg); }
+.battery.low { background: color-mix(in srgb, var(--critical) 24%, transparent); color: var(--critical-fg); }
+.snapshot { position: relative; display: flex; justify-content: center; gap: 8px; margin: 0 0 8px; }
+.snapshot > :is(img, .snapshot-missing) { width: 450px; max-width: calc(50% - 20px); border-radius: 6px; }
+.snapshot-missing { display: flex; flex-direction: column; justify-content: center; aspect-ratio: 1928 / 1208; padding: 0 40px; background: var(--panel); text-align: center; }
+.snapshot > .icon-btn { position: absolute; top: 0; right: 0; }
+.warn { display: flex; align-items: flex-start; gap: 8px; max-width: 640px; padding: 8px 10px; border-radius: 6px; background: color-mix(in srgb, var(--alert) 14%, transparent); }
+.warn > svg { flex-shrink: 0; color: var(--alert-fg); }
+.pubkey { display: flex; align-items: center; gap: 4px; }
+.pubkey > .mono { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* a drive's strip (panes/strip.js): spans over the segments' sprites, each repeated across its segment as connect does
+   (sized 120% tall so the sprite's black band falls outside) */
+.strip { --spans: 5px; position: relative; height: 24px; border-radius: 3px; overflow: hidden; background: var(--bg); contain: strict; }
+.strip-track { position: absolute; top: 0; bottom: 0; left: 0; width: 100%; }
+.strip-spans { position: absolute; left: 0; right: 0; top: 0; height: var(--spans); background: var(--driving); }
+.strip-spans span { position: absolute; top: 0; height: 100%; min-width: 1px; }
+.strip-thumbs { position: absolute; left: 0; right: 0; top: var(--spans); bottom: 0; }
+.strip-thumbs span { position: absolute; top: 0; height: 100%; background: 0 0 / auto 120% repeat-x; }
+.strip-spans .engaged { background: var(--engaged); }
+.strip-spans .override { background: var(--override); }
+.strip-spans .alert { background: var(--alert); }
+.strip-spans .critical { background: var(--critical); }
+.strip-spans .bookmark { background: var(--bookmark); }
+.strip .fade > span { animation: strip-in .2s ease-out; }  /* a band that came in after the strip was shown */
+@keyframes strip-in { from { opacity: 0; } }
+.inline-form { display: flex; gap: 6px; align-items: center; }
+.inline-form .field { width: 260px; }
+.list.settings { max-width: 640px; table-layout: fixed; }  /* a public key ellipsizes rather than widening it */
+.list.settings th { position: static; width: 140px; padding: 3px 8px; background: none; font-weight: inherit; vertical-align: middle; white-space: normal; }
+
+/* log viewer */
+.log-dialog { width: min(1100px, 92vw); height: 82vh; padding: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--fg); box-shadow: var(--shadow); }
+.log-dialog[open] { display: flex; flex-direction: column; }
+.log-dialog::backdrop { background: rgba(0,0,0,.45); }
+.log-head { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+.log-head .mono { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.log-dialog > :last-child:not(.log-head) { flex: 1; min-height: 0; overflow: auto; margin: 0; padding: 8px 12px; }
+.log-text { font: 11px/1.45 var(--mono); white-space: pre; }
+.log-text mark { background: color-mix(in srgb, var(--accent) 40%, transparent); color: inherit; border-radius: 2px; }
+.boot-filter { width: 220px; }
+.boot-summary { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-bottom: 8px; }
+.boot-section { border-top: 1px solid var(--line); }
+.boot-section summary { display: flex; align-items: center; gap: 8px; padding: 4px 0; cursor: pointer; }
+.boot-section summary::before { content: "▸"; color: var(--muted); }
+.boot-section[open] summary::before { content: "▾"; }
+.boot-section summary .mono { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.boot-section summary .icon-btn { margin-left: auto; }
+.boot-section .log-text { margin: 0 0 8px; overflow-x: auto; }
+/* blocks of 100 lines; as wide as their longest, since the containment clips */
+.boot-section .log-text > div { content-visibility: auto; contain-intrinsic-size: auto 1px auto 1595px; width: max-content; min-width: 100%; }
+
+/* phones: the device and log tables down to what identifies a row, and tap targets of at least 32px */
+@media (max-width: 760px) {
+  .page { padding: 8px 12px 24px; }
+  .device-info h2 { font-size: 16px; }
+  .list.devices { table-layout: fixed; }
+  .list.devices :is(th, td):is(:nth-child(3), :nth-child(4), :nth-child(5)) { display: none; }
+  .list.devices :is(th, td):first-child { width: 24px; }
+  .list.devices :is(th, td):last-child { width: 76px; }
+  .list.devices td:nth-child(2) a { display: block; margin: -8px 0; padding: 8px 0; }  /* the whole cell height taps */
+  .list.crashes :is(th, td):nth-child(2) { display: none; }
+  .list.crashes td:nth-child(3) { word-break: break-all; }
+  .list td { height: 36px; }
+  .page-tabs .tab { height: 36px; }
+  /* the strip scrolls: its right edge fades out until it's scrolled to the end */
+  .page-tabs { mask: linear-gradient(to right, #000 calc(100% - 32px), transparent) 0 0 / calc(100% + 32px) 100% no-repeat;
+    animation: tabs-more linear both; animation-timeline: scroll(self inline); }
+  .page .icon-btn, .page .dl { min-width: 32px; min-height: 32px; justify-content: center; align-items: center; }
+  :is(.page, .page-msg, .login-card) :is(.button, .field) { min-height: 32px; }
+}
+
+@keyframes tabs-more { from { mask-size: 100% 100%; } }
+
+/* every tab on a phone: its panes stacked in one scroll, each a height of its own, the playbar docked below. A phone
+   on its side too: tiled, its panes would be slivers */
+@media (max-width: 760px), (pointer: coarse) and (max-height: 500px) {
+  .ws .workspace { display: block; overflow-y: auto; container-type: size; }
+  .ws .layout { display: block; }
+  .ws .split { flex-direction: column; gap: 4px; }
+  .ws .split > * { flex: none !important; }  /* over the layout's inline sizes */
+  .ws :is(.divider, .pane-tools) { display: none; }
+  .ws .pane-head { touch-action: auto; }  /* nothing to dock into: the page scrolls from it */
+  .ws .pane-body { flex: none; height: 50vh; }
+  /* the camera and plots no taller than the workspace shows, under their heads */
+  .ws .pane-body:has(> .camera-pane) { height: auto; aspect-ratio: 526 / 330; max-height: calc(100cqh - var(--head)); }
+  .ws .pane-body:has(> .map-pane) { height: 45vh; }
+  .ws .pane-body:has(> .plot-pane) { height: min(max(200px, 40vh), calc(100cqh - var(--head))); }
+  /* the series browser is a drawer: its filter and a few rows, opening over the plots while it has the focus (a tap
+     on a plot, or a double-tapped series going in, closes it) */
+  .ws .pane:has(> .pane-body > .browser) { z-index: 2; }
+  .ws .pane-body:has(> .browser) { height: 124px; }
+  .ws .pane:has(> .pane-body > .browser):focus-within { margin-bottom: calc(124px - 60vh); box-shadow: var(--shadow); }
+  .ws .pane:has(> .pane-body > .browser):focus-within > .pane-body { height: 60vh; }
+  /* cabana's list, then the selected message's bits, signals and history, then the charts */
+  .ws .pane-body:has(> .can-messages) { height: 60vh; }
+  .ws .pane-body:has(> .can-binary) { height: 260px; }
+  .ws .pane-body:has(> .can-signals) { height: 45vh; }
+  .ws .pane-body:has(> .can-history) { height: 40vh; }
+  .ws .pane-body:has(> .can-charts) { height: 70vh; }
+  /* the content gets the width: panes edge to edge, a line between them */
+  .ws .layout { padding: 0; }
+  .ws .pane { border-width: 0 0 1px; border-radius: 0; }
+  /* the connect view's one pane fills the workspace and scrolls itself */
+  .ws[data-view="connect"] :is(.workspace, .layout) { display: flex; }
+  .ws[data-view="connect"] .pane-body { flex: 1; height: auto; }
+}
+
+/* every route on a phone: the tabs on a row of their own under the bar, the timeline gets the playbar */
+@media (max-width: 760px) {
+  .topbar :is(.brand > span, .hud) { display: none; }
+  /* from the route's load on, so the row is there before the tabs and nothing shifts when they fill in */
+  body:is(.in-ws, .opening) .topbar { flex-wrap: wrap; row-gap: 2px; height: auto; padding: 6px 8px; }
+  body:is(.in-ws, .opening) .topbar::after { content: ""; flex-basis: 100%; order: 1; }  /* the line break */
+  body:is(.in-ws, .opening) .topbar .load-pill { flex: 1 1 0; min-width: 0; max-width: fit-content; }  /* shrinks rather than wrapping the first row */
+  body:is(.in-ws, .opening) .topbar .crumb { max-width: calc(100vw - 232px); }  /* so they fit on a 320px phone */
+  body:is(.in-ws, .opening) .topbar .grow { min-width: 0; }  /* holds the buttons at the end while the load pill comes and goes */
+  .topbar .tabs { order: 2; flex: 1; max-width: none; min-height: calc(var(--top) - 8px); margin-left: 0; }
+  /* the playbar's controls on one row, the timeline the whole width under them */
+  .playbar { flex-wrap: wrap; height: auto; padding: 4px 8px calc(4px + env(safe-area-inset-bottom)); row-gap: 0; }
+  .playbar > .pb-clock { flex: 1; min-width: 0; }
+  .playbar > .pb-track { order: 1; flex-basis: 100%; }
+  .playbar .tbtn { min-width: 40px; min-height: 40px; }
+  .playbar .play { width: 40px; height: 40px; }
+  .playbar .rate { height: 32px; }
+  .playbar .pb-clock { overflow: hidden; }
+}
+/* small phones: no keyboard help on a touchscreen */
+@media (max-width: 380px) and (pointer: coarse) { .topbar .help-btn { display: none; } }
+
+/* fingers: every control in the bars at least 32 px tall */
+@media (pointer: coarse) {
+  :root { --top: 44px; --head: 34px; }
+  .topbar :is(.brand, .crumb, .tbtn, .load-pill, .tab), .playbar :is(.tbtn, select) { min-height: 32px; min-width: 32px; }
+  .omnibox { min-height: 32px; }
+  .pane-type, .pane-btn { height: 32px; }
+  .pane-btn { width: 32px; }
+  .tab .x { align-self: stretch; align-items: center; justify-content: center; min-width: 32px; opacity: .7; }  /* no hover to reveal it */
+  @container (max-width: 860px) { .topbar .hud { display: none; } }  /* the bigger buttons leave the tabs no room */
+  .divider::before { content: ""; position: absolute; z-index: 1; inset: -8px; }  /* a 20px grip, over the panes' edges */
+}
