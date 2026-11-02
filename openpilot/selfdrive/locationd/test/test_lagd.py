@@ -4,6 +4,7 @@ import time
 import unittest
 
 from openpilot.common.test import OpenpilotTestCase
+from openpilot.common.parameterized import parameterized
 from openpilot.cereal import messaging, log
 from opendbc.car.structs import car
 from openpilot.selfdrive.locationd.lagd import LateralLagEstimator, retrieve_initial_lag, masked_normalized_cross_correlation, \
@@ -114,19 +115,19 @@ class TestLagd(OpenpilotTestCase):
     assert msg.lateralDelay.validBlocks == 0
     assert msg.lateralDelay.calPerc == 0
 
-  def test_estimator_basics(self, subtests):
-    for lag_frames in (LAGD_MIN_LAG_FRAMES, (LAGD_MIN_LAG_FRAMES + LAGD_MAX_LAG_FRAMES) // 2, LAGD_MAX_LAG_FRAMES - 2):
-      with subtests.test(msg=f"lag_frames={lag_frames}"):
-        mocked_CP = car.CarParams(steerActuatorDelay=0.5)
-        estimator = LateralLagEstimator(mocked_CP, DT, min_recovery_buffer_sec=0.0, min_yr=0.0)
-        process_messages(estimator, lag_frames, int(MIN_OKAY_WINDOW_SEC / DT) + BLOCK_NUM_NEEDED * BLOCK_SIZE)
-        msg = estimator.get_msg(True)
-        assert msg.lateralDelay.status == 'estimated'
-        assert np.allclose(msg.lateralDelay.lateralDelay, lag_frames * DT, atol=0.01)
-        assert np.allclose(msg.lateralDelay.lateralDelayEstimate, lag_frames * DT, atol=0.01)
-        assert np.allclose(msg.lateralDelay.lateralDelayEstimateStd, 0.0, atol=0.01)
-        assert msg.lateralDelay.validBlocks == BLOCK_NUM_NEEDED
-        assert msg.lateralDelay.calPerc == 100
+  @parameterized.expand([LAGD_MIN_LAG_FRAMES, (LAGD_MIN_LAG_FRAMES + LAGD_MAX_LAG_FRAMES) // 2, LAGD_MAX_LAG_FRAMES - 2],
+                        ids=lambda lag_frames: f"lag_frames_{lag_frames}")
+  def test_estimator_basics(self, lag_frames):
+    mocked_CP = car.CarParams(steerActuatorDelay=0.5)
+    estimator = LateralLagEstimator(mocked_CP, DT, min_recovery_buffer_sec=0.0, min_yr=0.0)
+    process_messages(estimator, lag_frames, int(MIN_OKAY_WINDOW_SEC / DT) + BLOCK_NUM_NEEDED * BLOCK_SIZE)
+    msg = estimator.get_msg(True)
+    assert msg.lateralDelay.status == 'estimated'
+    assert np.allclose(msg.lateralDelay.lateralDelay, lag_frames * DT, atol=0.01)
+    assert np.allclose(msg.lateralDelay.lateralDelayEstimate, lag_frames * DT, atol=0.01)
+    assert np.allclose(msg.lateralDelay.lateralDelayEstimateStd, 0.0, atol=0.01)
+    assert msg.lateralDelay.validBlocks == BLOCK_NUM_NEEDED
+    assert msg.lateralDelay.calPerc == 100
 
   def test_estimator_masking(self):
     mocked_CP, lag_frames = car.CarParams(steerActuatorDelay=0.5), random.randint(LAGD_MIN_LAG_FRAMES, LAGD_MAX_LAG_FRAMES - 1)
