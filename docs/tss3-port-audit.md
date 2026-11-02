@@ -69,6 +69,34 @@ Run 2026-10-09 with `opendbc_repo/.venv`:
 - Replayed `00000043--29caa20fbc--12` through CarInterface and compiled panda safety: all 21 recorded PCS frames were detected and forwarded after RX, with normal control restored afterward. All 1,662,572 readable incoming `CONTROL_REQUEST` frames in the retained logs passed the checksum; LogReader reported corrupted events in the corpus.
 - Toyota car/safety and CAN suites: **370 passed, 40 skipped** under unittest. MISRA, Ruff, codespell, and C lint passed. All **22 mutations** of the changed Toyota safety logic were killed.
 
+### 2026-11-01 Corolla clean-baseline stationary capture
+
+- Capture `20261101T201200-1690-35111683423` was produced by a clean checkout
+  of openpilot `80b8615c39`, opendbc `d8a50afdbe`, and upstream panda
+  `f38f504ffa`; `initData.dirty` was false. The signed Panda firmware on the
+  device matched the checkout.
+- The external kit matched Corolla EPS F181
+  `8965F1208000 / 8A3111213000`, installed payload
+  `6234bb5bd496a82fabb32c27b56b3db0f1907b5bf6482e4c19f8835153ff69fc`,
+  and received one status-zero `0x7A9` response to its four-frame `0x777`
+  probe in 68.691 ms. All four installer transmissions were accepted and none
+  were rejected.
+- The route stayed stationary and CAN-valid for 39.265 seconds, but exact
+  firmware matching returned `MOCK`. Panda therefore remained in ELM327 safety
+  and runtime signer probing never started; this capture does not test signer
+  residency past eight seconds or the Toyota safety transition.
+- The car reported engine `8A2221221000`, ABS `F152612D1700`, EPS
+  `8965F1208000 / 8A3111213000`, radar `8821F4801200`, and camera
+  `8646F210200`. The engine, ABS, and radar variants are now added to the
+  Corolla exact-match set alongside the existing EPS entry; the camera's
+  nonstandard 11-character response can remain an extra ECU
+  because exact matching succeeds without making it a fuzzy-match authority.
+- No host `0x08A` was published. The mirrored native `0x08A` carried equal
+  upper/lower OEM acceleration fields from -0.178 to -0.169 m/s². The
+  persisted `AlphaLongitudinalEnabled` parameter was `1`; it must be disabled
+  before the next stationary run so the first recognized Corolla test remains
+  in stock-longitudinal mode.
+
 ## File inventory (merge-base diffs vs commaai master, 2026-10-09)
 
 ### opendbc — 22 files, +2,258 / −57
