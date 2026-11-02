@@ -23,10 +23,10 @@ void params_sig_handler(int signal) {
 
 int fsync_dir(const std::string &path) {
   int result = -1;
-  int fd = HANDLE_EINTR(open(path.c_str(), O_RDONLY, 0755));
+  int fd = open(path.c_str(), O_RDONLY, 0755);
   if (fd >= 0) {
-    result = HANDLE_EINTR(fsync(fd));
-    HANDLE_EINTR(close(fd));
+    result = fsync(fd);
+    close(fd);
   }
   return result;
 }
@@ -77,8 +77,8 @@ std::string ensure_params_path(const std::string &prefix, const std::string &pat
 class FileLock {
 public:
   FileLock(const std::string &fn) {
-    fd_ = HANDLE_EINTR(open(fn.c_str(), O_CREAT, 0775));
-    if (fd_ < 0 || HANDLE_EINTR(flock(fd_, LOCK_EX)) < 0) {
+    fd_ = open(fn.c_str(), O_CREAT, 0775);
+    if (fd_ < 0 || flock(fd_, LOCK_EX) < 0) {
       LOGE("Failed to lock file %s, errno=%d", fn.c_str(), errno);
     }
   }
@@ -141,14 +141,14 @@ int Params::put(const char* key, const char* value, size_t value_size) {
   int result = -1;
   do {
     // Write value to temp.
-    ssize_t bytes_written = HANDLE_EINTR(write(tmp_fd, value, value_size));
+    ssize_t bytes_written = write(tmp_fd, value, value_size);
     if (bytes_written < 0 || (size_t)bytes_written != value_size) {
       result = -20;
       break;
     }
 
     // fsync to force persist the changes.
-    if ((result = HANDLE_EINTR(fsync(tmp_fd))) < 0) break;
+    if ((result = fsync(tmp_fd)) < 0) break;
 
     FileLock file_lock(params_path + "/.lock");
 

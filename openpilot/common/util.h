@@ -15,17 +15,6 @@
 #include <thread>
 #include <vector>
 
-// keep trying if x gets interrupted by a signal
-#define HANDLE_EINTR(x)                                        \
-  ({                                                           \
-    decltype(x) ret_;                                          \
-    int try_cnt = 0;                                           \
-    do {                                                       \
-      ret_ = (x);                                              \
-    } while (ret_ == -1 && errno == EINTR && try_cnt++ < 100); \
-    ret_;                                                       \
-  })
-
 #ifndef sighandler_t
 typedef void (*sighandler_t)(int sig);
 #endif
@@ -84,9 +73,6 @@ std::string read_file(const std::string& fn);
 std::map<std::string, std::string> read_files_in_dir(const std::string& path);
 int write_file(const char* path, const void* data, size_t size, int flags = O_WRONLY, mode_t mode = 0664);
 
-FILE* safe_fopen(const char* filename, const char* mode);
-size_t safe_fwrite(const void * ptr, size_t size, size_t count, FILE * stream);
-int safe_fflush(FILE *stream);
 int safe_ioctl(int fd, unsigned long request, void *argp, const char* exception_msg = nullptr);
 
 std::string readlink(const std::string& path);

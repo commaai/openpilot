@@ -117,47 +117,17 @@ std::map<std::string, std::string> read_files_in_dir(const std::string &path) {
 }
 
 int write_file(const char* path, const void* data, size_t size, int flags, mode_t mode) {
-  int fd = HANDLE_EINTR(open(path, flags, mode));
+  int fd = open(path, flags, mode);
   if (fd == -1) {
     return -1;
   }
-  ssize_t n = HANDLE_EINTR(write(fd, data, size));
+  ssize_t n = write(fd, data, size);
   close(fd);
   return (n >= 0 && (size_t)n == size) ? 0 : -1;
 }
 
-FILE* safe_fopen(const char* filename, const char* mode) {
-  FILE* fp = NULL;
-  do {
-    fp = fopen(filename, mode);
-  } while ((nullptr == fp) && (errno == EINTR));
-  return fp;
-}
-
-size_t safe_fwrite(const void* ptr, size_t size, size_t count, FILE* stream) {
-  size_t written = 0;
-  do {
-    size_t ret = ::fwrite((void*)((char *)ptr + written * size), size, count - written, stream);
-    if (ret == 0 && errno != EINTR) break;
-    written += ret;
-  } while (written != count);
-  return written;
-}
-
-int safe_fflush(FILE *stream) {
-  int ret = EOF;
-  do {
-    ret = fflush(stream);
-  } while ((EOF == ret) && (errno == EINTR));
-  return ret;
-}
-
 int safe_ioctl(int fd, unsigned long request, void *argp, const char* exception_msg) {
-  int ret;
-  do {
-    ret = ioctl(fd, request, argp);
-  } while ((ret == -1) && (errno == EINTR));
-
+  int ret = ioctl(fd, request, argp);
   if (ret == -1 && exception_msg) {
     LOGE("safe_ioctl error: %s %s(%d) (fd: %d request: %lx argp: %p)", exception_msg, strerror(errno), errno, fd, request, argp);
     throw std::runtime_error(exception_msg);
