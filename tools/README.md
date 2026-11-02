@@ -32,6 +32,35 @@ source .venv/bin/activate
 scons -u
 ```
 
+## Large files
+
+Git LFS stores large files in the Hugging Face bucket `commaai/openpilot-lfs`,
+under `sha256/<object hash>`. `op setup` installs the bucket transfer agent;
+normal Git add, checkout, pull, and push continue to use Git LFS. Existing
+commands such as `git lfs pull`, `fetch`, `checkout`, and `prune` still work.
+
+For a manual setup, clone with `GIT_LFS_SKIP_SMUDGE=1`, run `git lfs install --local`
+and `./scripts/lfs_transfer.py install`, then `git lfs pull`. The installed agent
+lives in Git's common directory so it survives branch switches and works in
+linked worktrees. Device startup and release builds also configure the agent.
+
+Downloads use plain Python over HTTP, with parallel ranges for large files.
+The agent defaults to 16 concurrent transfers and preserves an existing
+`lfs.concurrenttransfers` setting. Public downloads do not require authentication.
+
+Pushes check for existing objects over HTTP before loading upload dependencies.
+Pushing objects already in the public bucket requires neither write access nor
+the Hugging Face SDK. New objects use the Hugging Face and Xet SDKs; if unavailable,
+the agent uses `uv` on `PATH` to load its pinned dependencies separately from
+openpilot's environment. Use `hf auth login` or set `HF_TOKEN` to a token with
+write access to the bucket when uploading new objects.
+
+Set `OPENPILOT_LFS_BUCKET=owner/bucket` to use another bucket. It must already
+exist and contain the objects referenced by the branches you use. Fork objects
+must be copied to the main bucket before merging. Transfers use the bucket
+directly; the legacy LFS server is not used. Device startup only configures the
+agent; devices do not populate missing bucket objects.
+
 ## WSL on Windows
 
 [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/about) should provide a similar experience to native Linux. [WSL 2](https://docs.microsoft.com/en-us/windows/wsl/compare-versions) specifically has been reported by several users to be a seamless experience.

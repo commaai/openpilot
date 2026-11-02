@@ -88,6 +88,7 @@ function op_lfs_shim() {
 # the shim lives in the git dir so it works in every worktree and on every
 # branch, and survives the venv being rebuilt
 function op_install_lfs() {
+  "$OPENPILOT_ROOT/scripts/lfs_transfer.py" install
   local shim
   shim="$(op_lfs_shim)"
   cp "$OPENPILOT_ROOT/scripts/git-lfs" "$shim"
@@ -257,6 +258,7 @@ function op_auth() {
 }
 
 function op_activate_venv() {
+  export PATH="$HOME/.local/bin:$PATH"
   # bash 3.2 can't handle this without the 'set +e'
   set +e
   source "$OPENPILOT_ROOT/.venv/bin/activate" &> /dev/null || true
@@ -265,6 +267,7 @@ function op_activate_venv() {
   # persist venv on PATH across GitHub Actions steps
   if [ -n "$GITHUB_PATH" ]; then
     echo "$OPENPILOT_ROOT/.venv/bin" >> "$GITHUB_PATH"
+    echo "$HOME/.local/bin" >> "$GITHUB_PATH"
   fi
 }
 
