@@ -128,6 +128,33 @@ Run 2026-10-09 with `opendbc_repo/.venv`:
   authorize moving-road validation; the corrected build needs another
   stationary route.
 
+### 2026-11-02 automatic startup handoff correction
+
+- Bundle `20261102T104036-1732-77870428342` identifies the exact deployed
+  sources as openpilot `e0cf509f4d`, opendbc `53c7c0b92d`, and upstream Panda
+  `f38f504ffa`; the signed Panda firmware matched the checkout.
+- Two manual installs bound the exact Corolla EPS F181
+  `8965F1208000 / 8A3111213000`, installed payload
+  `6234bb5bd496a82fabb32c27b56b3db0f1907b5bf6482e4c19f8835153ff69fc`,
+  and received status-zero `0x7A9` signer responses in 67.696 ms and
+  74.165 ms. Each probe had four accepted and zero rejected publications.
+- The automatic path sent `10 02` only 0.253 ms after the exact positive
+  `50 03`, but native pandad immediately released Panda ownership. The warm
+  installer resumed about 9.6 ms after the marker reached its daemon and saw
+  application F181 rather than the boot endpoint. In both successful manual
+  captures the native startup loop first observed the exact
+  `7F 10 78 00 00 00 00` programming-pending response about 15 ms after
+  `10 02`; this was the missing transition proof in the automatic handoff.
+- Native pandad now retains Panda ownership after sending `10 02` and publishes
+  the existing v1 handoff marker only after receiving that exact pending
+  response on bus 0. The marker adds response frame and monotonic timing fields,
+  while retaining the kit-compatible schema and verdict. A missing or different
+  response times out without handing an unconfirmed transition to the uploader.
+- This bundle contains installer telemetry, not qlog/rlog. It therefore does
+  not revalidate route fingerprinting, Toyota safety CAN validity, continuous
+  runtime signer authority, host `0x08A`, or longitudinal fields. Another
+  stationary route remains required after the corrected automatic install.
+
 ## File inventory (merge-base diffs vs commaai master, 2026-10-09)
 
 ### opendbc — 22 files, +2,258 / −57

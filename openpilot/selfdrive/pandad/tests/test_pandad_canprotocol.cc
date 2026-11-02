@@ -102,6 +102,9 @@ void test_can_protocol() {
   CHECK(!is_tss3_exact_extended_response(std::string("\x06\x50\x03\x00\x64\x01\xf4\x00", 8)));
   CHECK(!is_tss3_exact_extended_response(std::string("\x06\x50\x02\x00\x32\x01\xf4\x00", 8)));
   CHECK(!is_tss3_exact_extended_response(std::string("\x03\x7f\x10\x22\x00\x00\x00\x00", 8)));
+  CHECK(is_tss3_programming_pending_response(std::string("\x03\x7f\x10\x78\x00\x00\x00\x00", 8)));
+  CHECK(!is_tss3_programming_pending_response(std::string("\x03\x7f\x10\x22\x00\x00\x00\x00", 8)));
+  CHECK(!is_tss3_programming_pending_response(std::string("\x02\x50\x02\x00\x00\x00\x00\x00", 8)));
 
   for (auto hw_type : {cereal::PandaState::PandaType::DOS, cereal::PandaState::PandaType::RED_PANDA}) {
     for (int can_list_size : {1, 3, 5, 10, 30, 60, 100, 200}) {

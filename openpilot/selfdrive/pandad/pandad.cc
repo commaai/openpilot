@@ -91,13 +91,13 @@ public:
         reset_wake_attempt();
         state_ = State::ARMED;
       }
-    } else if (state_ == State::CATCHING) {
+    } else if (state_ == State::CATCHING || state_ == State::PROGRAMMING_SENT) {
       if ((now - ignition_ns_) > TSS3_CATCH_TIMEOUT_NS) {
-        LOGW("TSS3 oracle startup catcher timed out without exact positive 50 03");
+        LOGW("TSS3 oracle startup catcher timed out before confirmed PROGRAMMING transition");
         state_ = State::WAIT_OFF;
         return;
       }
-      if (now >= next_extended_tx_ns_) {
+      if (state_ == State::CATCHING && now >= next_extended_tx_ns_) {
         send_extended(panda, now, TSS3_EXTENDED_PERIOD_NS);
       }
     }
@@ -120,10 +120,23 @@ public:
         const uint64_t programming_ns = nanos_since_boot();
         positive_extended_ns_ = positive_ns;
         programming_tx_ns_ = programming_ns;
-        if (write_marker()) notify_watcher();
-        state_ = State::CAUGHT;
+        state_ = State::PROGRAMMING_SENT;
         LOGW("TSS3 oracle startup catcher sent 10 02 %.3f ms after exact positive 50 03",
              (programming_ns - positive_ns) / 1e6);
+        return;
+      }
+      if (state_ == State::PROGRAMMING_SENT && frame.address == TSS3_EPS_RX && frame.src == TSS3_DIAG_BUS &&
+          is_tss3_programming_pending_response(frame.dat)) {
+        programming_response_frame_ = frame.dat;
+        programming_response_ns_ = nanos_since_boot();
+        if (write_marker()) {
+          notify_watcher();
+          state_ = State::CAUGHT;
+          LOGW("TSS3 oracle startup catcher confirmed PROGRAMMING %.3f ms after 10 02",
+               (programming_response_ns_ - programming_tx_ns_) / 1e6);
+        } else {
+          state_ = State::WAIT_OFF;
+        }
         return;
       }
     }
@@ -135,7 +148,7 @@ public:
     // enabled through ARMED/PREWARM/WAIT_SLEEP; only the always-on main bus is
     // used until the native ignition edge.
     return state_ == State::ARMED || state_ == State::PREWARM || state_ == State::WAIT_SLEEP ||
-           state_ == State::CATCHING || state_ == State::CAUGHT;
+           state_ == State::CATCHING || state_ == State::PROGRAMMING_SENT || state_ == State::CAUGHT;
   }
 
   bool caught() const {
@@ -143,7 +156,7 @@ public:
   }
 
 private:
-  enum class State { DISARMED, ARMED, PREWARM, WAIT_SLEEP, CATCHING, CAUGHT, WAIT_OFF };
+  enum class State { DISARMED, ARMED, PREWARM, WAIT_SLEEP, CATCHING, PROGRAMMING_SENT, CAUGHT, WAIT_OFF };
 
   bool tss3_auto_enabled() {
     if (!params_.getBool("Tss3OracleAutoArm")) return false;
@@ -206,6 +219,8 @@ private:
     reset_wake_attempt();
     positive_extended_ns_ = 0;
     programming_tx_ns_ = 0;
+    programming_response_ns_ = 0;
+    programming_response_frame_.clear();
     first_extended_before_power_wake_ = false;
     power_wake_complete_ns_ = 0;
     std::remove(TSS3_NATIVE_CATCH_PATH);
@@ -279,9 +294,15 @@ private:
         << "  \"positive_extended_frame_hex\": \""
         << util::hexdump(reinterpret_cast<const uint8_t *>(positive_extended_frame_.data()), positive_extended_frame_.size()) << "\",\n"
         << "  \"programming_tx_monotonic_ns\": " << programming_tx_ns_ << ",\n"
+        << "  \"programming_response_monotonic_ns\": " << programming_response_ns_ << ",\n"
+        << "  \"programming_response_frame_hex\": \""
+        << util::hexdump(reinterpret_cast<const uint8_t *>(programming_response_frame_.data()), programming_response_frame_.size()) << "\",\n"
         << "  \"first_extended_before_power_wake\": " << (first_extended_before_power_wake_ ? "true" : "false") << ",\n"
         << "  \"power_wake_complete_monotonic_ns\": " << power_wake_complete_ns_ << ",\n"
         << "  \"programming_after_50_03_ms\": " << ((programming_tx_ns_ - positive_extended_ns_) / 1e6) << ",\n"
+        << "  \"programming_response_after_10_02_ms\": " << ((programming_response_ns_ - programming_tx_ns_) / 1e6) << ",\n"
+        // Preserve the kit's v1 marker contract; the response fields above add
+        // proof that this request was accepted before ownership was released.
         << "  \"verdict\": \"programming_request_sent_after_exact_50_03\"\n"
         << "}\n";
     out.close();
@@ -323,6 +344,8 @@ private:
   uint64_t positive_extended_ns_ = 0;
   std::string positive_extended_frame_;
   uint64_t programming_tx_ns_ = 0;
+  uint64_t programming_response_ns_ = 0;
+  std::string programming_response_frame_;
   uint64_t next_extended_tx_ns_ = 0;
   bool first_extended_before_power_wake_ = false;
   uint64_t power_wake_complete_ns_ = 0;
