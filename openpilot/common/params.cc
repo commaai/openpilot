@@ -78,7 +78,14 @@ class FileLock {
 public:
   FileLock(const std::string &fn) {
     fd_ = open(fn.c_str(), O_CREAT, 0775);
-    if (fd_ < 0 || flock(fd_, LOCK_EX) < 0) {
+    int ret = -1;
+    if (fd_ >= 0) {
+      // Python's signal handlers don't set SA_RESTART, so a signal can interrupt the wait (e.g. updated)
+      do {
+        ret = flock(fd_, LOCK_EX);
+      } while (ret < 0 && errno == EINTR);
+    }
+    if (ret < 0) {
       LOGE("Failed to lock file %s, errno=%d", fn.c_str(), errno);
     }
   }
