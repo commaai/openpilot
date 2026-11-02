@@ -45,7 +45,7 @@ from openpilot.common.test import OpenpilotTestCase
 class TestWidgetLeaks(OpenpilotTestCase):
   @unittest.skip("segfaults")
   def test_dialogs_do_not_leak(self):
-    import pyray as rl
+    import raylib_nb as rl
     rl.set_config_flags(rl.ConfigFlags.FLAG_WINDOW_HIDDEN)
     from openpilot.system.ui.lib.application import gui_app
 

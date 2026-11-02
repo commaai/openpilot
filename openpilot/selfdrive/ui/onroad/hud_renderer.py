@@ -1,4 +1,4 @@
-import pyray as rl
+import raylib_nb as rl
 from dataclasses import dataclass
 from openpilot.common.constants import CV
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus

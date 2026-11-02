@@ -1,5 +1,5 @@
 import time
-import pyray as rl
+import raylib_nb as rl
 from dataclasses import dataclass
 from openpilot.cereal import messaging, log
 from openpilot.selfdrive.ui.ui_state import ui_state

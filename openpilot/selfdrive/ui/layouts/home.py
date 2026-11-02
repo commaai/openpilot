@@ -1,5 +1,5 @@
 import time
-import pyray as rl
+import raylib_nb as rl
 from enum import IntEnum
 from openpilot.common.params import Params
 from openpilot.selfdrive.ui.widgets.offroad_alerts import UpdateAlert, OffroadAlert
@@ -122,9 +122,9 @@ class HomeLayout(Widget):
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
 
-    if self.update_available and rl.check_collision_point_rec(mouse_pos, self.update_notif_rect):
+    if self.update_available and rl.check_collision_point_rec(rl.Vector2(mouse_pos.x, mouse_pos.y), self.update_notif_rect):
       self._set_state(HomeLayoutState.UPDATE)
-    elif self.alert_count > 0 and rl.check_collision_point_rec(mouse_pos, self.alert_notif_rect):
+    elif self.alert_count > 0 and rl.check_collision_point_rec(rl.Vector2(mouse_pos.x, mouse_pos.y), self.alert_notif_rect):
       self._set_state(HomeLayoutState.ALERTS)
 
   def _render_header(self):

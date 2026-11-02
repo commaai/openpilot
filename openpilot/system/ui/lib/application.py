@@ -1,12 +1,11 @@
 import atexit
-import cffi
 import math
 import os
 import queue
 import time
 import signal
 import sys
-import pyray as rl
+import raylib_nb as rl
 import threading
 import platform
 import subprocess
@@ -685,7 +684,7 @@ class GuiApplication:
         if RECORD:
           image = rl.load_image_from_texture(self._render_texture.texture)
           data_size = image.width * image.height * 4
-          data = bytes(rl.ffi.buffer(image.data, data_size))
+          data = image.to_bytes(data_size)
           self._ffmpeg_queue.put(data)  # Async write via background thread
           rl.unload_image(image)
 
@@ -706,10 +705,9 @@ class GuiApplication:
       chars = set(map(chr, range(32, 127))) | set(EXTRA_FONT_CHARS)
       chars.update(TRANSLATIONS_DIR.joinpath(f"app_{language}.po").read_text(encoding="utf-8"))
       codepoints = sorted(map(ord, chars))
-      codepoint_buffer = rl.ffi.new("int[]", codepoints)
       with as_file(FONT_DIR) as fspath:
         font = rl.load_font_ex((fspath / NOTO_FONTS[language]).as_posix(), 48,
-                               rl.ffi.cast("int *", codepoint_buffer), len(codepoints))
+                               codepoints, len(codepoints))
       rl.gen_texture_mipmaps(font.texture)
       rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_TRILINEAR)
       self._fallback_fonts[language] = font
@@ -735,9 +733,8 @@ class GuiApplication:
       with as_file(FONT_DIR) as fspath:
         unifont = font_weight_file == FontWeight.UNIFONT
         codepoints = sorted(map(ord, unifont_chars if unifont else base_chars))
-        codepoint_buffer = rl.ffi.new("int[]", codepoints)
         font = rl.load_font_ex((fspath / font_weight_file).as_posix(), 16 if unifont else 200,
-                               rl.ffi.cast("int *", codepoint_buffer), len(codepoints))
+                               codepoints, len(codepoints))
         if font_weight_file != FontWeight.UNIFONT:
           rl.gen_texture_mipmaps(font.texture)
           rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_TRILINEAR)
@@ -746,7 +743,7 @@ class GuiApplication:
       self.fallback_font()
 
   def _patch_text_functions(self):
-    # Wrap pyray text APIs to apply a global text size scale so our px sizes match Qt
+    # Wrap raylib text APIs to apply a global text size scale so our px sizes match Qt
     if not hasattr(rl, "_orig_draw_text_ex"):
       rl._orig_draw_text_ex = rl.draw_text_ex
 
@@ -771,30 +768,7 @@ class GuiApplication:
     rl.begin_scissor_mode = _begin_scissor_mode_scaled
 
   def _set_log_callback(self):
-    ffi_libc = cffi.FFI()
-    ffi_libc.cdef("""
-      int vasprintf(char **strp, const char *fmt, void *ap);
-      void free(void *ptr);
-    """)
-    libc = ffi_libc.dlopen(None)
-
-    @rl.ffi.callback("void(int, char *, void *)")
-    def trace_log_callback(log_level, text, args):
-      try:
-        text_addr = int(rl.ffi.cast("uintptr_t", text))
-        args_addr = int(rl.ffi.cast("uintptr_t", args))
-        text_libc = ffi_libc.cast("char *", text_addr)
-        args_libc = ffi_libc.cast("void *", args_addr)
-
-        out = ffi_libc.new("char **")
-        if libc.vasprintf(out, text_libc, args_libc) >= 0 and out[0] != ffi_libc.NULL:
-          text_str = ffi_libc.string(out[0]).decode("utf-8", "replace")
-          libc.free(out[0])
-        else:
-          text_str = rl.ffi.string(text).decode("utf-8", "replace")
-      except Exception as e:
-        text_str = f"[Log decode error: {e}]"
-
+    def trace_log_callback(log_level, text_str):
       if log_level == rl.TraceLogLevel.LOG_ERROR:
         cloudlog.error(f"raylib: {text_str}")
       elif log_level == rl.TraceLogLevel.LOG_WARNING:

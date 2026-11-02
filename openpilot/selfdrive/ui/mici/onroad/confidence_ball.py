@@ -1,5 +1,5 @@
 import math
-import pyray as rl
+import raylib_nb as rl
 from openpilot.selfdrive.ui.mici.onroad import SIDE_PANEL_WIDTH
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 from openpilot.system.ui.widgets import Widget

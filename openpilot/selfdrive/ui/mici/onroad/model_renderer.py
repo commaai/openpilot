@@ -1,5 +1,5 @@
 import numpy as np
-import pyray as rl
+import raylib_nb as rl
 from openpilot.cereal import log
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.selfdrive.controls.radard import RADAR_TO_CAMERA

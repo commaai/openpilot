@@ -9,7 +9,7 @@ import urllib.error
 from urllib.parse import urlparse
 from collections.abc import Callable
 
-import pyray as rl
+import raylib_nb as rl
 
 from openpilot.cereal import log
 from openpilot.common.filter_simple import BounceFilter
@@ -120,7 +120,7 @@ class StartPage(Widget):
     draw_x = base_draw_x + (self._start_bg_txt.width * (1 - scale)) / 2
     draw_y = base_draw_y + (self._start_bg_txt.height * (1 - scale)) / 2
     texture = self._start_bg_pressed_txt if self.is_pressed else self._start_bg_txt
-    rl.draw_texture_ex(texture, (draw_x, draw_y), 0, scale, rl.WHITE)
+    rl.draw_texture_ex(texture, rl.Vector2(draw_x, draw_y), 0, scale, rl.WHITE)
 
     self._title.render(rl.Rectangle(rect.x, rect.y + (draw_y - base_draw_y), rect.width, rect.height))
 

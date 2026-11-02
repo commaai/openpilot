@@ -1,4 +1,5 @@
-import pyray as rl
+from array import array
+import raylib_nb as rl
 
 from openpilot.cereal.visionipc import VisionStreamType
 from openpilot.common.hardware import COMMA_HARDWARE
@@ -78,9 +79,9 @@ class CameraView(BaseCameraView):
   def __init__(self, name: str, stream_type: VisionStreamType):
     super().__init__(name, stream_type)
     self._engaged_loc = rl.get_shader_location(self.shader, "engaged")
-    self._engaged_val = rl.ffi.new("int[1]", [1])
+    self._engaged_val = array("i", [1])
     self._enhance_driver_loc = rl.get_shader_location(self.shader, "enhance_driver")
-    self._enhance_driver_val = rl.ffi.new("int[1]", [1 if stream_type == VisionStreamType.VISION_STREAM_CABIN else 0])
+    self._enhance_driver_val = array("i", [1 if stream_type == VisionStreamType.VISION_STREAM_CABIN else 0])
 
   def _set_shader_uniforms(self) -> None:
     self._engaged_val[0] = 1 if ui_state.status != UIStatus.DISENGAGED else 0
