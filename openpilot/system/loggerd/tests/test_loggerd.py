@@ -82,7 +82,7 @@ class TestLoggerd(OpenpilotTestCase):
 
     managed_processes["loggerd"].start()
     for s in services:
-      assert pm.wait_for_readers_to_update(s, timeout=5)
+      assert pm.wait_for_readers_to_update(s, timeout=5, dt=0.001)
 
     sent_msgs = defaultdict(list)
     for i in range(random.randint(2, 10) * 100):
@@ -98,10 +98,10 @@ class TestLoggerd(OpenpilotTestCase):
       # that loggerd logged every message we sent.
       if (i + 1) % 100 == 0:
         for s in services:
-          assert pm.wait_for_readers_to_update(s, timeout=5)
+          assert pm.wait_for_readers_to_update(s, timeout=5, dt=0.001)
 
     for s in services:
-      assert pm.wait_for_readers_to_update(s, timeout=5)
+      assert pm.wait_for_readers_to_update(s, timeout=5, dt=0.001)
     managed_processes["loggerd"].stop()
 
     return sent_msgs
@@ -128,7 +128,7 @@ class TestLoggerd(OpenpilotTestCase):
     os.environ["LOGGERD_SEGMENT_LENGTH"] = str(segment_length)
     managed_processes["loggerd"].start()
     managed_processes["encoderd"].start()
-    assert pm.wait_for_readers_to_update("narrowRoadCameraState", timeout=5)
+    assert pm.wait_for_readers_to_update("narrowRoadCameraState", timeout=5, dt=0.001)
 
     fps = 20
     for n in range(1, int(num_segs * segment_length * fps) + 1):

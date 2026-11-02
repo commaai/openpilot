@@ -1,30 +1,22 @@
 #!/usr/bin/env python3
-import time
 import numpy as np
 
 from openpilot.cereal import log
 import openpilot.cereal.messaging as messaging
-from openpilot.common.realtime import Ratekeeper, DT_MDL
+from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner
 from openpilot.selfdrive.controls.radard import _LEAD_ACCEL_TAU
 
+T_IDXS = np.array(ModelConstants.T_IDXS)
+
 
 class Plant:
-  messaging_initialized = False
-
   def __init__(self, lead_relevancy=False, speed=0.0, distance_lead=2.0,
                enabled=True, only_lead2=False, only_radar=False, personality=0, force_decel=False):
     self.rate = 1. / DT_MDL
-
-    if not Plant.messaging_initialized:
-      Plant.radar = messaging.pub_sock('radarState')
-      Plant.controls_state = messaging.pub_sock('controlsState')
-      Plant.selfdrive_state = messaging.pub_sock('selfdriveState')
-      Plant.car_state = messaging.pub_sock('carState')
-      Plant.plan = messaging.sub_sock('longitudinalPlan')
-      Plant.messaging_initialized = True
+    self.frame = 0
 
     self.v_lead_prev = 0.0
 
@@ -42,10 +34,7 @@ class Plant:
     self.personality = personality
     self.force_decel = force_decel
 
-    self.rk = Ratekeeper(self.rate, print_delay_threshold=100.0)
     self.ts = 1. / self.rate
-    time.sleep(0.1)
-    self.sm = messaging.SubMaster(['longitudinalPlan'])
 
     from opendbc.car.honda.values import CAR
     from opendbc.car.honda.interface import CarInterface
@@ -54,7 +43,7 @@ class Plant:
 
   @property
   def current_time(self):
-    return float(self.rk.frame) / self.rate
+    return float(self.frame) / self.rate
 
   def step(self, v_lead=0.0, prob_lead=1.0, v_cruise=50.):
     # ******** publish a fake model going straight and fake calibration ********
@@ -101,17 +90,11 @@ class Plant:
     # Simulate model predicting slightly faster speed
     # this is to ensure lead policy is effective when model
     # does not predict slowdown
-    position = log.XYZTData.new_message()
-    position.x = [float(x) for x in (self.speed + 0.5) * np.array(ModelConstants.T_IDXS)]
-    model.modelV2.position = position
+    model.modelV2.position.x = ((self.speed + 0.5) * T_IDXS).tolist()
     model.modelV2.action.desiredAcceleration = float(self.acceleration + 0.5)
-    velocity = log.XYZTData.new_message()
-    velocity.x = [float(x) for x in (self.speed + 0.5) * np.ones_like(ModelConstants.T_IDXS)]
-    velocity.x[0] = float(self.speed) # always start at current speed
-    model.modelV2.velocity = velocity
-    acceleration = log.XYZTData.new_message()
-    acceleration.x = [float(x) for x in np.zeros_like(ModelConstants.T_IDXS)]
-    model.modelV2.acceleration = acceleration
+    # always start at current speed
+    model.modelV2.velocity.x = [float(self.speed)] + [float(self.speed + 0.5)] * (len(T_IDXS) - 1)
+    model.modelV2.acceleration.x = [0.0] * len(T_IDXS)
 
     control.controlsState.longControlState = LongCtrlState.pid if self.enabled else LongCtrlState.off
     ss.selfdriveState.personality = self.personality
@@ -157,7 +140,7 @@ class Plant:
 
 
     # ******** update prevs ********
-    self.rk.monitor_time()
+    self.frame += 1
 
     return {
       "distance": self.distance,

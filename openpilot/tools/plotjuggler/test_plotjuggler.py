@@ -15,6 +15,7 @@ from openpilot.tools.plotjuggler.juggle import DEMO_ROUTE, install
 PJ_DIR = os.path.join(BASEDIR, "openpilot/tools/plotjuggler")
 
 class TestPlotJuggler(OpenpilotTestCase):
+  SHARED_DOWNLOAD_CACHE = True  # reuse the demo route across runs; this tests PlotJuggler, not downloading
 
   @unittest.skipIf(not shutil.which('qmake'), "Qt not installed")
   def test_demo(self):

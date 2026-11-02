@@ -486,7 +486,10 @@ class TestAthenadMethods(OpenpilotTestCase):
       assert isinstance(resp[k], str), f"{k} is not a string"
       assert len(resp[k]) > 0, f"{k} has no value"
 
-  def test_jsonrpc_handler(self):
+  def test_jsonrpc_handler(self, mocker):
+    # private queues, so the shutdown wakeup below can't leak into other tests
+    for q in ('recv_queue', 'send_queue', 'log_recv_queue'):
+      mocker.patch.object(athenad, q, type(getattr(athenad, q))())
     end_event = threading.Event()
     thread = threading.Thread(target=athenad.jsonrpc_handler, args=(end_event,))
     thread.daemon = True
@@ -506,6 +509,8 @@ class TestAthenadMethods(OpenpilotTestCase):
       assert json.loads(resp) == {'result': {'success': 1}, 'id': 0, 'jsonrpc': '2.0'}
     finally:
       end_event.set()
+      # wake the handler from its blocking queue get
+      athenad.recv_queue.put_nowait(json.dumps({'result': None, 'id': 0, 'jsonrpc': '2.0'}))
       thread.join()
 
   def test_get_logs_to_send_sorted(self):
