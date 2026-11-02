@@ -135,7 +135,7 @@ class TestLoggerd(OpenpilotTestCase):
       # send video
       for stream_type, frame_spec, state in streams:
         dat = np.empty(frame_spec[2], dtype=np.uint8)
-        vipc_server.send(stream_type, dat[:].flatten().tobytes(), n, n / fps, n / fps)
+        vipc_server.send(stream_type, dat[:].flatten().tobytes(), n, int(n / fps * 1e9), int(n / fps * 1e9))
 
         camera_state = messaging.new_message(state)
         frame = getattr(camera_state, state)

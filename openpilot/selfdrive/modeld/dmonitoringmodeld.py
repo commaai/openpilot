@@ -116,9 +116,11 @@ def main():
   while not vipc_client.connect(False):
     time.sleep(0.1)
   assert vipc_client.is_connected()
+  cam_w, cam_h = vipc_client.width, vipc_client.height
+  assert cam_w is not None and cam_h is not None
   cloudlog.warning(f"connected with buffer size: {vipc_client.buffer_len}")
 
-  model = ModelState(vipc_client.width, vipc_client.height)
+  model = ModelState(cam_w, cam_h)
   cloudlog.warning("models loaded, dmonitoringmodeld starting")
 
   sm = SubMaster(["extrinsicsCalibration"])

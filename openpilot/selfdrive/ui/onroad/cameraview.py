@@ -76,7 +76,7 @@ class CameraView(Widget):
     self._clients = {stream: VisionIpcClient(name, stream, conflate=True) for stream in VisionStreamType}
     self.client = self._clients[stream_type]
     self._stream_type: VisionStreamType = stream_type
-    self.available_streams: list[VisionStreamType] = []
+    self.available_streams: set[int] = set()
 
     # Target stream for switching
     self._target_client: VisionIpcClient | None = None
@@ -342,10 +342,10 @@ class CameraView(Widget):
   def _initialize_textures(self):
     self._clear_textures()
     if not COMMA_HARDWARE:
-      self.texture_y = rl.load_texture_from_image(rl.Image(None, int(self.client.stride),
-        int(self.client.height), 1, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAYSCALE))
-      self.texture_uv = rl.load_texture_from_image(rl.Image(None, int(self.client.stride // 2),
-        int(self.client.height // 2), 1, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA))
+      stride, height = self.client.stride, self.client.height
+      assert stride is not None and height is not None
+      self.texture_y = rl.load_texture_from_image(rl.Image(None, stride, height, 1, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAYSCALE))
+      self.texture_uv = rl.load_texture_from_image(rl.Image(None, stride // 2, height // 2, 1, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA))
 
   def _clear_textures(self):
     if self.texture_y and self.texture_y.id:
