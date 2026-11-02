@@ -61,6 +61,15 @@ Running `master` and other branches directly is supported, but it's recommended 
 | `nightly`              | `nightly`              | openpilot-nightly.comma.ai             | This is the bleeding edge development branch. Do not expect this to be stable.      |
 | `nightly-dev`          | `nightly-dev`          | installer.comma.ai/commaai/nightly-dev | Same as nightly, but includes experimental development features for some cars.      |
 
+For [chestnut](https://comma.ai/shop/chestnut), use the following installer URLs:
+
+| branch                       | URL                                                        | description                                                                         |
+|------------------------------|------------------------------------------------------------|-------------------------------------------------------------------------------------|
+| `release-chestnut`           | installer.comma.ai/commaai/release-chestnut                | This is openpilot's release branch.                                                 |
+| `release-chestnut-staging`   | installer.comma.ai/commaai/release-chestnut-staging        | This is the staging branch for releases. Use it to get new releases slightly early. |
+| `nightly-chestnut`           | installer.comma.ai/commaai/nightly-chestnut                | This is the bleeding edge development branch. Do not expect this to be stable.      |
+| `nightly-chestnut-dev`       | installer.comma.ai/commaai/nightly-chestnut-dev            | Same as nightly, but includes experimental development features for some cars.      |
+
 To start developing openpilot
 ------
 
@@ -68,7 +77,7 @@ openpilot is developed by [comma](https://comma.ai/) and by users like you. We w
 
 * Join the [community Discord](https://discord.comma.ai)
 * Check out [the contributing docs](docs/CONTRIBUTING.md)
-* Check out the [openpilot tools](tools/)
+* Check out the [openpilot tools](openpilot/tools/)
 * Code documentation lives at https://docs.comma.ai
 * Information about running openpilot lives on the [community wiki](https://github.com/commaai/openpilot/wiki)
 

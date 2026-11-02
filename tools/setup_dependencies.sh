@@ -2,7 +2,7 @@
 set -e
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-ROOT="$(cd "$DIR/../" && pwd)"
+ROOT="$(git -C "$DIR" rev-parse --show-toplevel)"
 
 function retry() {
   local attempts=$1
@@ -20,40 +20,60 @@ function retry() {
 }
 
 function install_linux_deps() {
-  SUDO=""
+  SUDO=()
 
   if [[ ! $(id -u) -eq 0 ]]; then
     if [[ -z $(which sudo) ]]; then
       echo "Please install sudo or run as root"
       exit 1
     fi
-    SUDO="sudo"
+    SUDO=(sudo)
   fi
 
-  # normal stuff, this mostly for bare docker images
-  if command -v apt-get > /dev/null 2>&1; then
-    $SUDO apt-get update
-    $SUDO apt-get install -y --no-install-recommends ca-certificates build-essential curl libcurl4-openssl-dev locales git
+  local missing_linux_deps=0
+  for cmd in gcc g++ make curl curl-config git; do
+    if ! command -v "$cmd" > /dev/null 2>&1; then
+      missing_linux_deps=1
+      break
+    fi
+  done
+
+  # ------------------------------------------------
+  # dependencies should never be added to this list.
+  # these are only for inflating bare docker images
+  # to their desktop equivalents.
+  #
+  # from a real desktop OS image, we install uv
+  # then use that to install all the dependencies
+  # specified in pyproject.toml.
+  # ------------------------------------------------
+  if [[ "$missing_linux_deps" -eq 0 ]]; then
+    # the native package managers are slow, so skip if we can
+    echo "[ ] system packages already installed t=$SECONDS"
+  elif command -v apt-get > /dev/null 2>&1; then
+    "${SUDO[@]}" apt-get update
+    "${SUDO[@]}" apt-get install -y --no-install-recommends ca-certificates build-essential curl libcurl4-openssl-dev locales git xclip wl-clipboard
   elif command -v dnf > /dev/null 2>&1; then
-    $SUDO dnf install -y ca-certificates gcc gcc-c++ make curl libcurl-devel glibc-langpack-en git
+    "${SUDO[@]}" dnf install -y ca-certificates gcc gcc-c++ make curl libcurl-devel glibc-langpack-en git
   elif command -v yum > /dev/null 2>&1; then
-    $SUDO yum install -y ca-certificates gcc gcc-c++ make curl libcurl-devel glibc-langpack-en git
+    "${SUDO[@]}" yum install -y ca-certificates gcc gcc-c++ make curl libcurl-devel glibc-langpack-en git
   elif command -v pacman > /dev/null 2>&1; then
-    $SUDO pacman -Syu --noconfirm --needed base-devel ca-certificates curl git
+    "${SUDO[@]}" pacman -Syu --noconfirm --needed base-devel ca-certificates curl git
   elif command -v zypper > /dev/null 2>&1; then
-    $SUDO zypper --non-interactive refresh
-    $SUDO zypper --non-interactive install ca-certificates gcc gcc-c++ make curl libcurl-devel glibc-locale git
+    "${SUDO[@]}" zypper --non-interactive refresh
+    "${SUDO[@]}" zypper --non-interactive install ca-certificates gcc gcc-c++ make curl libcurl-devel glibc-locale git
   elif command -v apk > /dev/null 2>&1; then
-    $SUDO apk add --no-cache ca-certificates build-base curl curl-dev musl-locales git
+    "${SUDO[@]}" apk add --no-cache ca-certificates build-base curl curl-dev musl-locales git
   elif command -v xbps-install > /dev/null 2>&1; then
-    $SUDO xbps-install -Syu base-devel ca-certificates curl git libcurl-devel glibc-locales
+    "${SUDO[@]}" xbps-install -Syu base-devel ca-certificates curl git libcurl-devel glibc-locales
   else
     echo "Unsupported Linux distribution. Supported package managers: apt-get, dnf, yum, pacman, zypper, apk, xbps-install."
     exit 1
   fi
 
   if [[ -d "/etc/udev/rules.d/" ]]; then
-    $SUDO tee /etc/udev/rules.d/11-openpilot.rules > /dev/null <<-EOF
+    local udev_rules
+    udev_rules=$(cat <<-EOF
 	# Panda Jungle devices
 	SUBSYSTEM=="usb", ATTRS{idVendor}=="3801", ATTRS{idProduct}=="ddcf", MODE="0666"
 	SUBSYSTEM=="usb", ATTRS{idVendor}=="3801", ATTRS{idProduct}=="ddef", MODE="0666"
@@ -70,11 +90,17 @@ function install_linux_deps() {
 	# comma devices over ADB
 	SUBSYSTEM=="usb", ATTR{idVendor}=="04d8", ATTR{idProduct}=="1234", ENV{adb_user}="yes"
 	EOF
+    )
 
-    # delete the old ones
-    $SUDO rm -f /etc/udev/rules.d/11-panda.rules /etc/udev/rules.d/12-panda_jungle.rules /etc/udev/rules.d/50-comma-adb.rules
+    if ! cmp -s /etc/udev/rules.d/11-openpilot.rules <<< "$udev_rules" ||
+       [[ -e /etc/udev/rules.d/11-panda.rules || -e /etc/udev/rules.d/12-panda_jungle.rules || -e /etc/udev/rules.d/50-comma-adb.rules ]]; then
+      "${SUDO[@]}" tee /etc/udev/rules.d/11-openpilot.rules > /dev/null <<< "$udev_rules"
 
-    $SUDO udevadm control --reload-rules && $SUDO udevadm trigger || true
+      # delete the old ones
+      "${SUDO[@]}" rm -f /etc/udev/rules.d/11-panda.rules /etc/udev/rules.d/12-panda_jungle.rules /etc/udev/rules.d/50-comma-adb.rules
+
+      "${SUDO[@]}" udevadm control --reload-rules && "${SUDO[@]}" udevadm trigger || true
+    fi
   fi
 }
 

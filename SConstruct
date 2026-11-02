@@ -10,7 +10,7 @@ import numpy as np
 import SCons.Errors
 from SCons.Defaults import _stripixes
 
-TICI = os.path.isfile('/TICI')
+COMMA_HARDWARE = os.path.isfile('/AGNOS')
 
 SCons.Warnings.warningAsException(True)
 
@@ -20,29 +20,46 @@ SetOption('num_jobs', max(1, int(os.cpu_count()/(1 if "CI" in os.environ else 2)
 
 AddOption('--ccflags', action='store', type='string', default='', help='pass arbitrary flags over the command line')
 AddOption('--verbose', action='store_true', default=False, help='show full build commands')
-release = not os.path.exists(File('#.gitattributes').abspath) # file absent on release branch, see release_files.py
+release = not os.path.exists(File('#.gitmodules').abspath) # file absent on release branch, see release_files.py
 AddOption('--minimal',
           action='store_false',
           dest='extras',
-          default=(not TICI and not release),
+          default=(not COMMA_HARDWARE and not release),
           help='the minimum build to run openpilot. no tests, tools, etc.')
+
+submodule_python_paths = [
+  Dir("#").abspath,
+  Dir("#msgq_repo").abspath,
+  Dir("#opendbc_repo").abspath,
+  Dir("#rednose_repo").abspath,
+  Dir("#teleoprtc_repo").abspath,
+  Dir("#tinygrad_repo").abspath,
+]
+for p in reversed(submodule_python_paths):
+  if p not in sys.path:
+    sys.path.insert(0, p)
+
+if external_pythonpath := os.environ.get("PYTHONPATH"):
+  submodule_python_paths += [p for p in external_pythonpath.split(os.pathsep) if p and p not in submodule_python_paths]
 
 # Detect platform
 arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
-elif arch == "aarch64" and TICI:
-  arch = "larch64"
+elif arch == "aarch64" and COMMA_HARDWARE:
+  arch = "comma_arm64"
 assert arch in [
-  "larch64",  # linux tici arm64
-  "aarch64",  # linux pc arm64
-  "x86_64",   # linux pc x64
-  "Darwin",   # macOS arm64 (x86 not supported)
+  "comma_arm64",  # linux comma hardware (AGNOS) arm64
+  "aarch64",      # linux pc arm64
+  "x86_64",       # linux pc x64
+  "Darwin",       # macOS arm64 (x86 not supported)
 ]
 
-pkg_names = ['acados', 'bzip2', 'capnproto', 'catch2', 'eigen', 'ffmpeg', 'json11', 'libjpeg', 'libyuv', 'ncurses', 'zeromq', 'zstd']
+pkg_names = ['acados', 'capnproto', 'ffmpeg', 'json11', 'ncurses', 'zstd']
 pkgs = [importlib.import_module(name) for name in pkg_names]
 acados = pkgs[pkg_names.index('acados')]
+ffmpeg = pkgs[pkg_names.index('ffmpeg')]
+ffmpeg_libs = ['avformat', 'avcodec', 'swresample', 'avutil']
 acados_include_dirs = [
   acados.INCLUDE_DIR,
   os.path.join(acados.INCLUDE_DIR, "blasfeo", "include"),
@@ -57,7 +74,6 @@ acados_include_dirs = [
 # vendored in commaai/dependencies.
 allowed_system_libs = {
   "EGL", "GLESv2", "GL",
-  "Qt5Charts", "Qt5Core", "Qt5Gui", "Qt5Widgets",
   "dl", "drm", "gbm", "m", "pthread",
 }
 
@@ -91,7 +107,7 @@ def _libflags(target, source, env, for_signature):
 env = Environment(
   ENV={
     "PATH": os.environ['PATH'],
-    "PYTHONPATH": Dir("#").abspath,
+    "PYTHONPATH": os.pathsep.join(submodule_python_paths),
     "ACADOS_SOURCE_DIR": acados.DIR,
     "ACADOS_PYTHON_INTERFACE_PATH": acados.TEMPLATE_DIR,
     "TERA_PATH": acados.TERA_PATH
@@ -99,10 +115,11 @@ env = Environment(
   CCFLAGS=[
     "-g",
     "-fPIC",
+    "-pipe",
     "-O2",
     "-Wunused",
     "-Werror",
-    "-Wshadow" if arch in ("Darwin", "larch64") else "-Wshadow=local",
+    "-Wshadow" if arch in ("Darwin", "comma_arm64") else "-Wshadow=local",
     "-Wno-unknown-warning-option",
     "-Wno-inconsistent-missing-override",
     "-Wno-c99-designator",
@@ -112,36 +129,46 @@ env = Environment(
   CFLAGS=["-std=gnu11"],
   CXXFLAGS=["-std=c++1z"],
   CPPPATH=[
-    "#",
-    "#msgq",
+    "#openpilot",
+    "#msgq_repo",            # #include "msgq/..."
+    "#opendbc_repo",         # #include "opendbc/..."
+    "#rednose_repo",         # #include "rednose/..."
+    "#rednose_repo/rednose", # #include "logger/..." (rednose package root)
+    "#openpilot/cereal/gen/cpp",
     acados_include_dirs,
     [x.INCLUDE_DIR for x in pkgs],
+    "#",
   ],
   LIBPATH=[
-    "#common",
+    "#openpilot/common",
     "#msgq_repo",
-    "#selfdrive/pandad",
-    "#rednose/helpers",
+    "#openpilot/selfdrive/pandad",
+    "#rednose_repo/rednose/helpers",
     [x.LIB_DIR for x in pkgs],
   ],
-  RPATH=[],
+  RPATH=[ffmpeg.LIB_DIR],
   CYTHONCFILESUFFIX=".cpp",
   COMPILATIONDB_USE_ABSPATH=True,
-  REDNOSE_ROOT="#",
+  REDNOSE_ROOT="#rednose_repo",
   tools=["default", "cython", "compilation_db", "rednose_filter"],
-  toolpath=["#site_scons/site_tools", "#rednose_repo/site_scons/site_tools"],
+  toolpath=["#msgq_repo/site_scons/site_tools", "#rednose_repo/site_scons/site_tools"],
 )
-if arch != "larch64":
+# SCons' Darwin linker tool doesn't define the variables used to expand RPATH.
+if arch == "Darwin":
+  env["RPATHPREFIX"] = "-Wl,-rpath,"
+  env["RPATHSUFFIX"] = ""
+  env["_RPATH"] = "${_concat(RPATHPREFIX, RPATH, RPATHSUFFIX, __env__)}"
+if arch != "comma_arm64":
   env['_LIBFLAGS'] = _libflags
 
 # Arch-specific flags and paths
-if arch == "larch64":
+if arch == "comma_arm64":
   env["CC"] = "clang"
   env["CXX"] = "clang++"
   env.Append(LIBPATH=[
     "/usr/lib/aarch64-linux-gnu",
   ])
-  arch_flags = ["-D__TICI__", "-mcpu=cortex-a57"]
+  arch_flags = ["-D__COMMA_HARDWARE__", "-mcpu=cortex-a57"]
   env.Append(CCFLAGS=arch_flags)
   env.Append(CXXFLAGS=arch_flags)
 elif arch == "Darwin":
@@ -190,10 +217,10 @@ else:
 np_version = SCons.Script.Value(np.__version__)
 Export('envCython', 'np_version')
 
-Export('env', 'arch', 'acados')
+Export('env', 'arch', 'acados', 'ffmpeg_libs')
 
 # Setup cache dir
-cache_dir = '/data/scons_cache' if arch == "larch64" else '/tmp/scons_cache'
+cache_dir = '/data/scons_cache' if arch == "comma_arm64" else '/tmp/scons_cache'
 cache_size_limit = 4e9 if "CI" in os.environ else 2e9
 CacheDir(cache_dir)
 Clean(["."], cache_dir)
@@ -210,18 +237,15 @@ def prune_cache_dir(target=None, source=None, env=None):
 # ********** start building stuff **********
 
 # Build common module
-SConscript(['common/SConscript'])
+SConscript(['openpilot/common/SConscript'])
 Import('_common')
-common = [_common, 'json11', 'zmq']
+common = [_common, 'json11']
 Export('common')
 
 # Build messaging (cereal + msgq + socketmaster + their dependencies)
-# Enable swaglog include in submodules
-env_swaglog = env.Clone()
-env_swaglog['CXXFLAGS'].append('-DSWAGLOG="\\"common/swaglog.h\\""')
-SConscript(['msgq_repo/SConscript'], exports={'env': env_swaglog})
+SConscript(['msgq_repo/SConscript'])
 
-SConscript(['cereal/SConscript'])
+SConscript(['openpilot/cereal/SConscript'])
 
 Import('socketmaster', 'msgq')
 messaging = [socketmaster, msgq, 'capnp', 'kj',]
@@ -232,39 +256,38 @@ Export('messaging')
 SConscript(['panda/SConscript'])
 
 # Build rednose library
-SConscript(['rednose/SConscript'])
+SConscript(['rednose_repo/rednose/SConscript'])
 
 # Build system services
 SConscript([
-  'system/loggerd/SConscript',
+  'openpilot/system/loggerd/SConscript',
 ])
 
-if arch == "larch64":
-  SConscript(['system/camerad/SConscript'])
+if arch == "comma_arm64":
+  SConscript(['openpilot/system/camerad/SConscript'])
 
 # Build selfdrive
 SConscript([
-  'selfdrive/pandad/SConscript',
-  'selfdrive/controls/lib/lateral_mpc_lib/SConscript',
-  'selfdrive/controls/lib/longitudinal_mpc_lib/SConscript',
-  'selfdrive/locationd/SConscript',
-  'selfdrive/modeld/SConscript',
-  'selfdrive/ui/SConscript',
+  'openpilot/selfdrive/pandad/SConscript',
+  'openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/SConscript',
+  'openpilot/selfdrive/locationd/SConscript',
+  'openpilot/selfdrive/modeld/SConscript',
+  'openpilot/selfdrive/ui/SConscript',
 ])
 
 # Build desktop-only tools
-if GetOption('extras') and arch != "larch64":
+if GetOption('extras') and arch != "comma_arm64":
   SConscript([
-    'tools/replay/SConscript',
-    'tools/cabana/SConscript',
-    'tools/jotpluggler/SConscript',
+    'openpilot/tools/replay/SConscript',
+    'openpilot/tools/cabana/SConscript',
+    'openpilot/tools/jotpluggler/SConscript',
   ])
 
 
 env.CompilationDatabase('compile_commands.json')
 
 # progress output
-def count_scons_nodes(nodes):
+def get_scons_nodes(nodes):
   seen = set()
   stack = list(nodes)
 
@@ -273,26 +296,26 @@ def count_scons_nodes(nodes):
     if node in seen:
       continue
     seen.add(node)
-    executor = node.get_executor()
-    if executor is not None:
-      stack += executor.get_all_prerequisites() + executor.get_all_children()
+    # Only scan directories; generated sources are not ready yet.
+    stack += (node.prerequisites or []) + node.children(scan=isinstance(node, SCons.Node.FS.Dir))
 
-  return len(seen)
+  return seen
 
 progress_interval = 5
-progress_count = 0
-progress_total = max(1, count_scons_nodes(env.arg2nodes(BUILD_TARGETS or [Dir('.')], env.fs.Entry)))
+progress_nodes = get_scons_nodes(env.arg2nodes(BUILD_TARGETS or [Dir('.')], env.fs.Entry))
+progress_total = max(1, len(progress_nodes))
 
 def progress_function(node):
-  global progress_count
-  if progress_count >= progress_total:
+  if node not in progress_nodes:
     return
-  progress_count = min(progress_count + progress_interval, progress_total)
-  progress = round(100. * progress_count / progress_total, 1)
+  progress_nodes.remove(node)
+  if len(progress_nodes) % progress_interval:
+    return
+  progress = round(100. * (1 - len(progress_nodes) / progress_total), 1)
   sys.stderr.write("\rBuilding: %5.1f%%" % progress if sys.stderr.isatty() else "progress: %.1f\n" % progress)
   if progress == 100. and sys.stderr.isatty():
     sys.stderr.write("\n")
   sys.stderr.flush()
 
-Progress(progress_function, interval=progress_interval)
+Progress(progress_function)
 AddPostAction(BUILD_TARGETS or [Dir('.')], prune_cache_dir)

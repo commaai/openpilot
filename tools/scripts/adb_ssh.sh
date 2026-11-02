@@ -5,7 +5,7 @@ set -euo pipefail
 while IFS=' ' read -r name port; do
   adb forward "tcp:${port}" "tcp:${port}" > /dev/null
 done < <(python3 - <<'PY'
-from cereal.services import SERVICE_LIST
+from openpilot.cereal.services import SERVICE_LIST
 
 FNV_PRIME = 0x100000001b3
 FNV_OFFSET_BASIS = 0xcbf29ce484222325
@@ -36,7 +36,7 @@ SSH_PORT=2222
 while ss -tln | grep -q ":${SSH_PORT} "; do
   SSH_PORT=$((SSH_PORT + 1))
 done
-adb forward tcp:${SSH_PORT} tcp:22
+adb forward tcp:"${SSH_PORT}" tcp:22
 
 # SSH!
-ssh comma@localhost -p ${SSH_PORT} "$@"
+ssh comma@localhost -p "${SSH_PORT}" "$@"

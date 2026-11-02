@@ -8,9 +8,9 @@ on:
     branches:
       - 'master'
     paths:
-      - 'selfdrive/assets/**'
-      - 'selfdrive/ui/**'
-      - 'system/ui/**'
+      - 'openpilot/selfdrive/assets/**'
+      - 'openpilot/selfdrive/ui/**'
+      - 'openpilot/system/ui/**'
   workflow_dispatch:
 
 env:
@@ -25,7 +25,8 @@ env:
 
 jobs:
   preview:
-    if: github.repository == 'commaai/openpilot'
+    if: false # tmp disable due to GH API rate limiting flakiness
+    #if: github.repository == 'commaai/openpilot'
     name: preview
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -34,12 +35,12 @@ jobs:
       pull-requests: write
       actions: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: true
 
       - name: Waiting for ui generation to end
-        uses: lewagon/wait-on-check-action@v1.3.4
+        uses: lewagon/wait-on-check-action@1d57e2c51a58d812d2765e036a028b6bdb5a6154
         with:
           ref: ${{ env.SHA }}
           check-name: ${{ env.UI_JOB_NAME }}
@@ -53,7 +54,7 @@ jobs:
           echo "run_id=$(curl https://api.github.com/repos/${{ github.repository }}/commits/${{ env.SHA }}/check-runs | jq -r '.check_runs[] | select(.name == "${{ env.UI_JOB_NAME }}") | .html_url | capture("(?<number>[0-9]+)") | .number')" >> $GITHUB_OUTPUT
 
       - name: Getting proposed ui
-        uses: dawidd6/action-download-artifact@v6
+        uses: dawidd6/action-download-artifact@b6e2e70617bc3265edd6dab6c906732b2f1ae151
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           run_id: ${{ steps.get_run_id.outputs.run_id }}
@@ -62,7 +63,7 @@ jobs:
           path: ${{ github.workspace }}/pr_ui
 
       - name: Getting mici master ui
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: commaai/ci-artifacts
           ssh-key: ${{ secrets.CI_ARTIFACTS_DEPLOY_KEY }}
@@ -70,7 +71,7 @@ jobs:
           ref: openpilot_master_ui_mici_raylib
 
       - name: Getting big master ui
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: commaai/ci-artifacts
           ssh-key: ${{ secrets.CI_ARTIFACTS_DEPLOY_KEY }}
@@ -97,7 +98,7 @@ jobs:
           done
 
       - name: Setup FFmpeg
-        uses: AnimMouse/setup-ffmpeg@ae28d57dabbb148eff63170b6bf7f2b60062cbae
+        uses: AnimMouse/setup-ffmpeg@178e0b4a408f06ce40d896c3cd79f50fa6f8b0c3
 
       - name: Finding diffs
         if: github.event_name == 'pull_request_target'
@@ -115,13 +116,13 @@ jobs:
             cp "${{ github.workspace }}/master_${name}/${video}.mp4" "${{ github.workspace }}/pr_ui/${video}_master.mp4"
 
             diff_exit_code=0
-            python3 ${{ github.workspace }}/selfdrive/ui/tests/diff/diff.py \
+            python3 ${{ github.workspace }}/openpilot/selfdrive/ui/tests/diff/diff.py \
               "${{ github.workspace }}/pr_ui/${video}_master.mp4" \
               "${{ github.workspace }}/pr_ui/${video}_proposed.mp4" \
               "${diff_name}.html" --basedir "$baseurl" --no-open || diff_exit_code=$?
 
-            cp "${{ github.workspace }}/selfdrive/ui/tests/diff/report/${diff_name}.html" "${{ github.workspace }}/pr_ui/"
-            cp "${{ github.workspace }}/selfdrive/ui/tests/diff/report/${diff_name}.mp4" "${{ github.workspace }}/pr_ui/"
+            cp "${{ github.workspace }}/openpilot/selfdrive/ui/tests/diff/report/${diff_name}.html" "${{ github.workspace }}/pr_ui/"
+            cp "${{ github.workspace }}/openpilot/selfdrive/ui/tests/diff/report/${diff_name}.mp4" "${{ github.workspace }}/pr_ui/"
 
             REPORT_URL="https://commaai.github.io/ci-artifacts/${diff_name}_pr_${{ github.event.number }}.html"
             if [ $diff_exit_code -eq 0 ]; then
@@ -156,7 +157,7 @@ jobs:
           for variant in $VARIANTS; do
             IFS=':' read -r name _ _ <<< "$variant"
             diff_name="${name}_diff"
-            cp "${{ github.workspace }}/selfdrive/ui/tests/diff/report/${diff_name}.html" "${diff_name}_pr_${{ github.event.number }}.html"
+            cp "${{ github.workspace }}/openpilot/selfdrive/ui/tests/diff/report/${diff_name}.html" "${diff_name}_pr_${{ github.event.number }}.html"
             git add "${diff_name}_pr_${{ github.event.number }}.html"
           done
           git commit -m "ui diff reports for PR #${{ github.event.number }}" || echo "No changes to commit"
@@ -164,12 +165,12 @@ jobs:
 
       - name: Comment on PR
         if: github.event_name == 'pull_request_target'
-        uses: thollander/actions-comment-pull-request@v2
+        uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b
         with:
           message: |
             <!-- _(run_id_ui_preview **${{ github.run_id }}**)_ -->
             ## UI Preview
             ${{ steps.find_diff.outputs.COMMENT }}
-          comment_tag: run_id_ui_preview
-          pr_number: ${{ github.event.number }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          comment-tag: run_id_ui_preview
+          pr-number: ${{ github.event.number }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
