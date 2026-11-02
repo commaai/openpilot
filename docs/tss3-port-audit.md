@@ -97,6 +97,37 @@ Run 2026-10-09 with `opendbc_repo/.venv`:
   before the next stationary run so the first recognized Corolla test remains
   in stock-longitudinal mode.
 
+### 2026-11-01 Corolla recognized-route topology correction
+
+- Three later stationary segments fingerprinted as `TOYOTA_COROLLA_TSS3` with
+  dashcam mode disabled, stock longitudinal selected, and vehicle speed zero.
+  After Panda changed from ELM327 to Toyota safety, the Corolla's full-rate
+  vehicle stream remained on physical bus 2. The existing TSS3 configuration
+  expected control-critical state on bus 0, so its RX checks became invalid and
+  the route reported `controlsMismatch`, `canBusMissing`, `canError`, and
+  `signerUnavailable`.
+- Corolla now sets a dedicated safety flag that validates its TSS3 RX checks on
+  bus 2, and CarState reads its powertrain parser from bus 2. Camry and Crown
+  retain their bus-0 topology. Signer requests (`0x777`) and host
+  `CONTROL_REQUEST` (`0x08A`) remain outputs on bus 0; the native FRC `0x08A`
+  remains an input on bus 2.
+- The captured blind-spot frame `0x3F6` was present only during startup and
+  disappeared after the safety transition. Corolla therefore no longer sets
+  `HAS_BSM`, preventing this optional frame from invalidating otherwise healthy
+  vehicle state.
+- Replaying the captured traffic through the corrected CarInterface produced
+  1,100/1,100 CAN-valid updates over an 11-second window in segment 3 and
+  3,000/3,000 CAN-valid updates over a 30-second window in segment 5, with no
+  CAN timeout in either window. The Toyota car suite passed 102 tests with 2
+  skips; the focused TSS3 safety suites passed 56 tests with 4 skips.
+- Segments 3 and 4 each contained one four-frame runtime `0x777` request and a
+  status-zero `0x7A9` response, but CAN invalidation stopped continued probing.
+  No host `0x08A` was published. `AlphaLongitudinalEnabled` was absent and
+  `openpilotLongitudinalControl` remained false. These captures therefore do
+  not yet establish continuous signer authority beyond eight seconds or
+  authorize moving-road validation; the corrected build needs another
+  stationary route.
+
 ## File inventory (merge-base diffs vs commaai master, 2026-10-09)
 
 ### opendbc — 22 files, +2,258 / −57
