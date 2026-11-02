@@ -155,6 +155,41 @@ Run 2026-10-09 with `opendbc_repo/.venv`:
   runtime signer authority, host `0x08A`, or longitudinal fields. Another
   stationary route remains required after the corrected automatic install.
 
+### 2026-11-02 Corolla safety-transition signer topology
+
+- Bundle `20261102T161420-1668-38125473056` ran the exact clean parent
+  `ed20ddd26d`, opendbc `53c7c0b92d`, and Panda `f38f504ffa`. The included
+  installer run was the manual startup-race path, not the native automatic
+  handoff, so it does not exercise the response-gated handoff above. It did
+  install the expected payload and received a status-zero `0x7A9` response in
+  75.163 ms with four accepted and zero rejected transmissions.
+- Both routes fingerprinted exactly as `TOYOTA_COROLLA_TSS3`, remained in Park
+  at 0 m/s, selected stock longitudinal, and used Toyota safety parameter
+  `12873` (`TSS3_RX_BUS_2` included). Segment 6 had 4,625/4,625 CAN-valid
+  CarState updates; segment 7 had 5,487/5,537 valid updates, with the 50 startup
+  invalid samples occurring before the required bus-2 messages arrived. Panda's
+  Toyota RX checks remained valid. There were no `canError` or `canBusMissing`
+  events and no stable-Toyota-safety `controlsMismatch`.
+- The first runtime four-frame `0x777` probe was sent while Panda still used
+  ELM327 safety. It appeared on both bus 0 and bus 2 and received status-zero
+  `0x7A9` at 10.52 ms. At the Toyota safety transition the relay opened; later
+  bus-0 probes continued to receive Panda TX receipts but no longer appeared on
+  bus 2 and received no responses. Across the rest of segment 7 and segment 6,
+  100 complete probes were unanswered with zero Toyota-safety TX rejections.
+  This locates the failure at the signer request egress topology, not signer
+  residency: the payload was still live more than eight seconds after install
+  immediately before the relay transition.
+- Corolla now sends only signer `0x777` fragments on bus 2 and parses their
+  rejected loopback on bus 194. Signed host `0x08A` remains on bus 0 toward the
+  VMC, with its independent rejection loopback on bus 192. Panda safety permits
+  bus-2 signer fragments only when the Corolla topology flag is set and rejects
+  bus-0 signer fragments in that mode; Camry and Crown remain on bus 0.
+- No host `0x08A` was published in either stationary route. Both CarControl and
+  CarOutput acceleration stayed exactly 0.0, `openpilotLongitudinalControl` was
+  false, and `AlphaLongitudinalEnabled` was absent. Moving-road validation is
+  still not authorized until a new stationary route proves continuous bus-2
+  signer responses and host publication behavior.
+
 ## File inventory (merge-base diffs vs commaai master, 2026-10-09)
 
 ### opendbc — 22 files, +2,258 / −57
