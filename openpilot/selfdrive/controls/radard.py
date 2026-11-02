@@ -260,9 +260,7 @@ def main() -> None:
   cloudlog.info("radard got CarParams")
 
   # *** setup messaging
-  # radar errors only matter with openpilot long, so they don't invalidate radarState with stock long
-  ignore_valid = [] if CP.openpilotLongitudinalControl else ['radarTracks']
-  sm = messaging.SubMaster(['modelV2', 'carState', 'radarTracks'], ignore_valid=ignore_valid, poll='modelV2')
+  sm = messaging.SubMaster(['modelV2', 'carState', 'radarTracks'], poll='modelV2')
   pm = messaging.PubMaster(['radarState'])
 
   RD = RadarD(CP.radarDelay)
