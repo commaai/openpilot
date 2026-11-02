@@ -6,6 +6,7 @@ from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.ui.layouts.settings.common import restart_needed_callback
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.mici.layouts.settings.initial_cruise_speed import InitialCruiseSpeedButton
+from openpilot.selfdrive.ui.mici.onroad import NIGHT_TINTS
 
 PERSONALITY_TO_INT = log.LongitudinalPersonality.schema.enumerants
 
@@ -26,6 +27,8 @@ class TogglesLayoutMici(NavScroller):
                                  description="Warn when you drift across a detected lane line.\n" +
                                              "Only above 31 mph (50 km/h), with no turn signal.")
     always_on_dm_toggle = BigParamControl("always-on driver monitor", "AlwaysOnDM", description="Monitor the driver even when openpilot is not engaged.")
+    night_mode_toggle = BigMultiParamToggle("night mode", "NightModeTint", [name for name, _ in NIGHT_TINTS],
+                                            description="[experiment] Tint the driving view.")
     record_front = BigParamControl("record & upload cabin camera", "RecordFront",
                                    description_icon=gui_app.texture("icons_mici/settings/device/cameras.png", 64, 64),
                                    toggle_callback=restart_needed_callback, description="Upload cabin camera data to help improve driver monitoring.")
@@ -43,6 +46,7 @@ class TogglesLayoutMici(NavScroller):
       is_metric_toggle,
       ldw_toggle,
       always_on_dm_toggle,
+      night_mode_toggle,
       record_front,
       record_mic,
       enable_openpilot,

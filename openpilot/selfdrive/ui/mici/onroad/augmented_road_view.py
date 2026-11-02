@@ -4,7 +4,7 @@ from openpilot.cereal import log
 from opendbc.car.structs import car
 from openpilot.cereal.visionipc import VisionStreamType
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
-from openpilot.selfdrive.ui.mici.onroad import SIDE_PANEL_WIDTH
+from openpilot.selfdrive.ui.mici.onroad import SIDE_PANEL_WIDTH, NIGHT_TINTS
 from openpilot.selfdrive.ui.mici.onroad.alert_renderer import AlertRenderer
 from openpilot.selfdrive.ui.mici.onroad.driver_state import DriverStateRenderer
 from openpilot.selfdrive.ui.mici.onroad.hud_renderer import HudRenderer
@@ -274,6 +274,11 @@ class AugmentedRoadView(CameraView):
       self._confidence_ball.render(self.rect)
 
     self._bookmark_icon.render(self.rect)
+
+    if 0 < ui_state.night_mode_tint < len(NIGHT_TINTS):
+      rl.begin_blend_mode(rl.BlendMode.BLEND_MULTIPLIED)
+      rl.draw_rectangle_rec(self.rect, NIGHT_TINTS[ui_state.night_mode_tint][1])
+      rl.end_blend_mode()
 
   def close(self):
     self._navigation.close()

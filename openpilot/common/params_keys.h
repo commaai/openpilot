@@ -90,6 +90,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"NavigationEnabled", {PERSISTENT, BOOL, "0"}},
     {"NavDestination", {CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION, JSON}},
     {"NetworkMetered", {PERSISTENT, BOOL}},
+    {"NightModeTint", {PERSISTENT, INT, "0"}},
     {"ObdMultiplexingChanged", {CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION, BOOL}},
     {"ObdMultiplexingEnabled", {CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION, BOOL}},
     {"Offroad_CarUnrecognized", {CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION, JSON}},
