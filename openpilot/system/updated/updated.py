@@ -425,6 +425,9 @@ def main() -> None:
     except OSError as e:
       raise RuntimeError("couldn't get overlay lock; is another instance running?") from e
 
+    # Restore this checkout's LFS filters and hooks before Git uses them.
+    run(["git", "lfs", "install", "--local", "--force"], BASEDIR)
+
     # Check if we just performed an update
     if Path(os.path.join(STAGING_ROOT, "old_openpilot")).is_dir():
       cloudlog.event("update installed")
