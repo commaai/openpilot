@@ -22,7 +22,7 @@ echo "[-] setting up stripped branch sync T=$SECONDS"
 cd "$TARGET_DIR"
 
 # tmp branch
-git checkout --orphan tmp
+"$SOURCE_DIR/tools/lfs.py" git checkout --orphan tmp
 
 # remove everything except .git
 echo "[-] erasing old openpilot T=$SECONDS"
@@ -62,7 +62,7 @@ master commit: $GIT_HASH
 
 # should be no submodules or unexpected LFS files
 git submodule status
-if [ -z "$INCLUDE_BIG_MODEL" ] && [ -n "$(git lfs ls-files)" ]; then
+if [ -z "$INCLUDE_BIG_MODEL" ] && [ -n "$(./tools/lfs.py ls-files)" ]; then
   echo "LFS files detected!"
   exit 1
 fi
