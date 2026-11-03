@@ -1,3 +1,4 @@
+import hashlib
 import json
 import tempfile
 import unittest
@@ -5,7 +6,9 @@ from pathlib import Path
 
 from opendbc.car.toyota.values import CAR
 
-from openpilot.selfdrive.car.toyota_tss3_oracle_kit import oracle_kit_compatibility, tss3_fingerprints
+from openpilot.selfdrive.car.toyota_tss3_oracle_auto import TOOL_PATH as AUTO_TOOL_PATH
+from openpilot.selfdrive.car.toyota_tss3_oracle_kit import DEFAULT_ORACLE_TOOL, oracle_kit_compatibility, tss3_fingerprints
+from openpilot.selfdrive.ui.tss3_oracle_runner import TOOL_PATH as UI_TOOL_PATH
 
 
 class TestToyotaTss3OracleKit(unittest.TestCase):
@@ -17,6 +20,17 @@ class TestToyotaTss3OracleKit(unittest.TestCase):
     bundle.mkdir()
     (bundle / "request_signer.json").write_text(json.dumps({"target": {"name": target}}), encoding="utf-8")
     return tool
+
+  def test_default_kit_is_self_contained_in_checkout(self):
+    compatible, detail = oracle_kit_compatibility(DEFAULT_ORACLE_TOOL)
+    self.assertTrue(compatible, detail)
+    self.assertEqual(DEFAULT_ORACLE_TOOL.parent.name, "toyota_tss3_oracle")
+    payload = (DEFAULT_ORACLE_TOOL.parent / "bundle/payload.bin").read_bytes()
+    self.assertEqual(len(payload), 0x1000)
+    self.assertEqual(hashlib.sha256(payload).hexdigest(),
+                     "6234bb5bd496a82fabb32c27b56b3db0f1907b5bf6482e4c19f8835153ff69fc")
+    self.assertEqual(AUTO_TOOL_PATH, DEFAULT_ORACLE_TOOL)
+    self.assertEqual(UI_TOOL_PATH, DEFAULT_ORACLE_TOOL)
 
   def test_accepts_kit_for_any_tss3_vehicle(self):
     # The kit is a per-vehicle signed bundle; the F33 Camry kit is one choice,

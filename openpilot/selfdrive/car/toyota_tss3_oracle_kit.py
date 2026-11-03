@@ -6,6 +6,8 @@ from pathlib import Path
 
 from opendbc.car.toyota.values import CAR, ToyotaFlags
 
+DEFAULT_ORACLE_TOOL = Path(__file__).resolve().with_name("toyota_tss3_oracle") / "tss3-request-signer"
+
 
 def tss3_fingerprints() -> frozenset[str]:
   """Every Toyota platform OpenDBC currently marks as TSS3."""

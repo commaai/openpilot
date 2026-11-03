@@ -13,10 +13,10 @@ from typing import Any
 
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.utils import atomic_write
-from openpilot.selfdrive.car.toyota_tss3_oracle_kit import oracle_kit_compatibility
+from openpilot.selfdrive.car.toyota_tss3_oracle_kit import DEFAULT_ORACLE_TOOL, oracle_kit_compatibility
 from openpilot.selfdrive.car.toyota_tss3_oracle_status import OracleStatus
 
-TOOL_PATH = Path(os.getenv("TSS3_ORACLE_TOOL", "/data/tss3-oracle/tss3-request-signer"))
+TOOL_PATH = Path(os.getenv("TSS3_ORACLE_TOOL", str(DEFAULT_ORACLE_TOOL)))
 RUN_ROOT = Path(os.getenv("TSS3_ORACLE_RUN_ROOT", "/data/tss3-oracle-runs"))
 STATUS_PATH = Path(os.getenv("TSS3_ORACLE_AUTO_STATUS", "/data/tss3-oracle-auto-status.json"))
 STATUS_SCHEMA = "tss3-oracle-auto-arm-status-v1"

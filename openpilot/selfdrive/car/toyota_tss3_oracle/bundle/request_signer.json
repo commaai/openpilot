@@ -1,0 +1,152 @@
+{
+  "authenticated_payload": {
+    "path": "payload.bin",
+    "sha256": "6234bb5bd496a82fabb32c27b56b3db0f1907b5bf6482e4c19f8835153ff69fc"
+  },
+  "debug": {
+    "directory": "corolla_8965F1208000_request_signer_debug",
+    "units": {
+      "helper": {
+        "compile_command": [
+          "v850-elf-gcc",
+          "-mv850e3v5",
+          "-mno-app-regs",
+          "-ffreestanding",
+          "-fno-builtin",
+          "-Os",
+          "-g",
+          "-nostdlib",
+          "-fno-toplevel-reorder",
+          "-fno-stack-protector",
+          "-fno-asynchronous-unwind-tables",
+          "-fno-unwind-tables",
+          "-fstack-usage",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-fdebug-prefix-map=/src=.",
+          "-fdebug-prefix-map=/out=.",
+          "-Wa,-mv850e3v5,-mextension",
+          "-fno-move-loop-invariants",
+          "-include",
+          "/out/signer_config.h",
+          "-Wl,-T,/out/helper.ld,--build-id=none",
+          "/src/tsk/ram_runtime/request_signer/tss3_request_signer_helper.c",
+          "-o",
+          "/out/helper.elf"
+        ],
+        "disassembly": "helper.disasm",
+        "elf": "helper.elf",
+        "stack_reports": [
+          "helper.elf-tss3_request_signer_helper.su"
+        ]
+      },
+      "resident": {
+        "compile_command": [
+          "v850-elf-gcc",
+          "-mv850e3v5",
+          "-mno-app-regs",
+          "-ffreestanding",
+          "-fno-builtin",
+          "-Os",
+          "-g",
+          "-nostdlib",
+          "-fno-toplevel-reorder",
+          "-fno-stack-protector",
+          "-fno-asynchronous-unwind-tables",
+          "-fno-unwind-tables",
+          "-fstack-usage",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-fdebug-prefix-map=/src=.",
+          "-fdebug-prefix-map=/out=.",
+          "-Wa,-mv850e3v5,-mextension",
+          "-include",
+          "/out/signer_config.h",
+          "-Wl,-T,/out/resident.ld,--build-id=none,--defsym=_helper_entry=0xFEF07C00",
+          "/src/tsk/ram_runtime/request_signer/tss3_request_signer_resident.S",
+          "/src/tsk/ram_runtime/request_signer/tss3_request_signer_resident.c",
+          "-o",
+          "/out/resident.elf"
+        ],
+        "disassembly": "resident.disasm",
+        "elf": "resident.elf",
+        "stack_reports": [
+          "resident.elf-tss3_request_signer_resident.su"
+        ]
+      },
+      "resolver": {
+        "compile_command": [
+          "v850-elf-gcc",
+          "-mv850e3v5",
+          "-mno-app-regs",
+          "-ffreestanding",
+          "-fno-builtin",
+          "-Os",
+          "-g",
+          "-nostdlib",
+          "-fno-toplevel-reorder",
+          "-fno-stack-protector",
+          "-fno-asynchronous-unwind-tables",
+          "-fno-unwind-tables",
+          "-fstack-usage",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-fdebug-prefix-map=/src=.",
+          "-fdebug-prefix-map=/out=.",
+          "-Wa,-mv850e3v5,-mextension",
+          "-include",
+          "/out/signer_config.h",
+          "-DSTAGED_RESIDENT_BASE=4273933164",
+          "-DSTAGED_HELPER_BASE=4273933492",
+          "-DINSTALL_RESIDENT_BASE=4273994224",
+          "-DRESIDENT_SIZE=328",
+          "-DINSTALL_HELPER_BASE=4277173248",
+          "-DRESIDENT_GUARD_SIZE=48",
+          "-DHELPER_SIZE=796",
+          "-Wl,-T,/out/resolver.ld,--build-id=none",
+          "/src/tsk/ram_runtime/request_signer/tss3_request_signer_stage.S",
+          "/src/tsk/ram_runtime/request_signer/tss3_request_signer_resolver.c",
+          "-o",
+          "/out/resolver.elf"
+        ],
+        "disassembly": "resolver.disasm",
+        "elf": "resolver.elf",
+        "stack_reports": [
+          "resolver.elf-tss3_request_signer_resolver.su"
+        ]
+      }
+    }
+  },
+  "request": {
+    "bus": 0,
+    "can_id": "0x00000777",
+    "carrier": "functional-nibble4",
+    "codec": "four-frame",
+    "frame_count": 4
+  },
+  "response": {
+    "bus": 0,
+    "can_id": "0x000007A9"
+  },
+  "schema": "tss3-request-signer-build-v2",
+  "state": {
+    "base": "0xFEBFF9F0",
+    "layout": "resident-prefix-global-tail",
+    "size": 36,
+    "version": 3
+  },
+  "target": {
+    "application_f181_hex": "023839363546313230383030300000000038413331313132313330303000000000",
+    "boot_f181_hex": "022121212121212121212121212121212121212121212121212121212121212121",
+    "name": "corolla-8965F1208000"
+  },
+  "toolchain": {
+    "backend": "tools/rh850",
+    "image": "ghidra-rh850-v850-gcc:16.2.0-binutils2.46.1-gdb18.1-simfix4-bswap1-noreturn1-codegen1-unwind1",
+    "image_id": "sha256:02e2f90e2c3a7e2363cff1419ee1c12580cdcf613e00dd41da33e53b21eceb65",
+    "schema": "rh850-toolchain-v1"
+  }
+}
