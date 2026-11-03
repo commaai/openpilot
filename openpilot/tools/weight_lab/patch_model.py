@@ -16,6 +16,8 @@ import numpy as np
 import onnx
 from onnx import numpy_helper
 
+from openpilot.tools.weight_lab.slots import DEAD_R4, DEAD_R6
+
 MASTER_SHA256 = '65a08adc31d5c456219687d99b7bf5e44d61dae2d49ea67850e76105c7248cce'  # driving_supercombo.onnx, master 64f9b47b6e
 DEFAULT_BASE = '/home/batman/openpilot/openpilot/selfdrive/modeld/models/driving_supercombo.onnx'
 TRUNK_TENSOR = 'model/p_relu_7'        # 256-d plan trunk (input of final_layer.plan)
@@ -59,6 +61,19 @@ def add_traffic_output(m):
   print(f'added traffic_units output {slices["traffic_units"]} (units {TRAFFIC_UNITS}), pad now {slices["pad"]}')
 
 
+def clear_dead(inits, by_suffix):
+  """Dead units feed nothing, so circuits in them stay apart (exact on the replay data, see slots.py)."""
+  n = 0
+  for name, axis_units in (('res_layer.plan.0.weight', DEAD_R4), ('res_layer.plan.2.weight', DEAD_R6)):
+    full = by_suffix(name)
+    arr = numpy_helper.to_array(inits[full]).copy()
+    n += int(np.count_nonzero(arr[:, list(axis_units)]))
+    arr[:, list(axis_units)] = 0
+    inits[full].CopyFrom(numpy_helper.from_array(arr, full))
+  print(f'cleared {n} weights out of dead units')
+  return n
+
+
 def load_patch(path):
   z = np.load(path)
   meta = json.loads(str(z['meta']))
@@ -80,8 +95,8 @@ def main():
   inits = {t.name: t for t in m.graph.initializer}
   by_suffix = lambda s: next(n for n in inits if n.endswith(s))
 
+  total = clear_dead(inits, by_suffix)
   touched = {}
-  total = 0
   for p in args.patches:
     meta, edits = load_patch(p)
     n_patch = 0

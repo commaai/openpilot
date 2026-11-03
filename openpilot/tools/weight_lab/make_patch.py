@@ -7,18 +7,19 @@
 import argparse
 import json
 import numpy as np
-import onnx
-from onnx import numpy_helper
 
-BASE = '/home/batman/openpilot/openpilot/selfdrive/modeld/models/driving_supercombo.onnx'
+from openpilot.tools.weight_lab.lab_paths import DATA
+from openpilot.tools.weight_lab.slots import DEAD_R6, DEAD_TRUNK
+
 H = 'policy_model.temporal_hydra.'
 N_T, WIDTH = 33, 15
 N_PLAN = 990
 
 
 def weights():
-  m = onnx.load(BASE)
-  return {t.name.replace('model/p_', '').replace('model/', ''): numpy_helper.to_array(t) for t in m.graph.initializer}
+  # master weights: the model file in the working tree is already patched
+  z = np.load(f'{DATA}/head_weights.npz')
+  return {k: z[k] for k in z.files}
 
 
 def save(out, name, desc, edits):
@@ -73,7 +74,7 @@ def cut_gate(args, P):
   save(args.out, 'cut_gate', f'gated corner-cut circuit in dead trunk units {units}', edits)
 
 
-DEAD_UNITS = (11, 33, 47, 48, 51, 78, 108, 166, 227)  # never active in ~40k replayed frames, kept for circuits
+DEAD_UNITS = DEAD_TRUNK  # never active in 129k replayed frames, kept for circuits
 
 
 def lat_readout(args, P):
@@ -110,7 +111,9 @@ def soft_brake(args, P):
       add('in_w', j * 512 + np.arange(512), W_in[s])            # same first layer as the source unit
       add('in_b', [j], [b_in[s]])
       add('r0', np.arange(256) * 256 + j, np.zeros(256))        # its first layer does not feed the residual block
-      add('r2_w', j * 256 + np.arange(256), W_r2[s])            # gets the same residual input as the source unit
+      r2_row = W_r2[s].copy()
+      r2_row[list(DEAD_R6)] = 0.0                                # dead r6 units are free for other circuits
+      add('r2_w', j * 256 + np.arange(256), r2_row)             # gets the same residual input as the source unit
       add('r2_b', [j], [b_r2[s] + shift])
       add('f', np.arange(N_PLAN) * W_f.shape[1] + j, sign * col)
   names = {'in_w': 'in_layer.plan.weight', 'in_b': 'in_layer.plan.bias', 'r0': 'res_layer.plan.0.weight',

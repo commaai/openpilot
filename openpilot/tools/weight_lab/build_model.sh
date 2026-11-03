@@ -10,7 +10,9 @@ trap 'rm -f "$BASE"' EXIT
 # master's model from git LFS, not the (patched) file in the working tree
 git -C "$ROOT" show "master:$MODEL" | git -C "$ROOT" lfs smudge > "$BASE"
 PYTHON=${PYTHON:-python3}
+# No soft brake: on the road (2026-11-03) it braked at greens, stopped 3-6 m early, did not resume, and slowed for
+# speed bumps and things like intersections. Offline it adds > 0.1 m/s² of braking on 63% of open-road frames.
+# Corner-cut readout at half strength: the full fit was twitchy at highway speed (+9% y jitter at > 20 m/s).
 $PYTHON "$CODE/patch_model.py" --base "$BASE" --out "$ROOT/$MODEL" --traffic-output \
   "$CODE/patches/stop_gain_1p8.npz" \
-  "$CODE/patches/soft_brake_v1.npz" \
-  "$CODE/patches/lat_readout_wlo20.npz"
+  "$CODE/patches/lat_readout_wlo20_half.npz"
