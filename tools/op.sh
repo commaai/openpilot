@@ -81,12 +81,31 @@ function op_install_post_commit() {
   ln -sf ../../scripts/post-commit post-commit
 }
 
-function op_lfs() {
-  local helper="$OPENPILOT_ROOT/tools/lfs.py"
-  if [[ ! -f "$helper" ]]; then
-    helper="$(git -C "$OPENPILOT_ROOT" rev-parse --path-format=absolute --git-common-dir)/lfs-setup.py"
-  fi
-  (cd "$OPENPILOT_ROOT" && "$helper" "$@")
+function op_lfs_shim() {
+  echo "$(git -C "$OPENPILOT_ROOT" rev-parse --path-format=absolute --git-common-dir)/git-lfs"
+}
+
+# the shim lives in the git dir so it works in every worktree and on every
+# branch, and survives the venv being rebuilt
+function op_install_lfs() {
+  local shim
+  shim="$(op_lfs_shim)"
+  cp "$OPENPILOT_ROOT/scripts/git-lfs" "$shim"
+  chmod +x "$shim"
+  git -C "$OPENPILOT_ROOT" config --local filter.lfs.clean "$shim clean -- %f"
+  git -C "$OPENPILOT_ROOT" config --local filter.lfs.smudge "$shim smudge -- %f"
+  git -C "$OPENPILOT_ROOT" config --local filter.lfs.process "$shim filter-process"
+  git -C "$OPENPILOT_ROOT" config --local filter.lfs.required false
+  local hooks
+  hooks="$(git -C "$OPENPILOT_ROOT" rev-parse --git-path hooks)"
+  printf '#!/bin/sh\nexec "%s" pre-push "$@"\n' "$shim" > "$hooks/pre-push"
+  chmod +x "$hooks/pre-push"
+  # stock hooks from "git lfs install" exit 2 without git-lfs on PATH, and we don't use lfs locks
+  for hook in post-checkout post-commit post-merge; do
+    if grep -qs "git lfs $hook" "$hooks/$hook"; then
+      rm "$hooks/$hook"
+    fi
+  done
 }
 
 function op_check_openpilot_dir() {
@@ -110,11 +129,17 @@ function op_check_git() {
     echo -e " ↳ [${GREEN}✔${NC}] git found."
   fi
 
-  echo "Checking for LFS files..."
-  if [[ $(file -b "$OPENPILOT_ROOT/openpilot/selfdrive/modeld/models/dmonitoring_model.onnx") == "data" ]]; then
-    echo -e " ↳ [${GREEN}✔${NC}] LFS files found."
+  echo "Checking for git lfs..."
+  if cmp -s "$OPENPILOT_ROOT/scripts/git-lfs" "$(op_lfs_shim)"; then
+    echo -e " ↳ [${GREEN}✔${NC}] git lfs shim installed."
   else
-    echo -e " ↳ [${RED}✗${NC}] LFS files not found! Run './tools/lfs.py pull'"
+    echo -e " ↳ [${RED}✗${NC}] git lfs shim missing or outdated! Run 'op setup'"
+    return 1
+  fi
+  if [[ $(file -b "$OPENPILOT_ROOT/openpilot/selfdrive/modeld/models/dmonitoring_model.onnx") == "data" ]]; then
+    echo -e " ↳ [${GREEN}✔${NC}] git lfs files found."
+  else
+    echo -e " ↳ [${RED}✗${NC}] git lfs files not found! Run 'git lfs pull'"
     return 1
   fi
 
@@ -212,10 +237,12 @@ EOF
 
   op_activate_venv
 
-  echo "Pulling LFS files..."
+  op_install_lfs
+
+  echo "Pulling git lfs files..."
   st="$(date +%s)"
-  if ! retry 3 op_lfs pull; then
-    echo -e " ↳ [${RED}✗${NC}] Pulling LFS files failed!"
+  if ! retry 3 "$(op_lfs_shim)" pull; then
+    echo -e " ↳ [${RED}✗${NC}] Pulling git lfs files failed!"
     return 1
   fi
   et="$(date +%s)"
@@ -387,21 +414,19 @@ function op_switch() {
 
   op_get_openpilot_dir
   cd "$OPENPILOT_ROOT"
+  op_install_lfs
 
   git config --replace-all remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
   git submodule deinit --all --force
   git fetch "$REMOTE" "$BRANCH"
-  op_lfs git checkout -f FETCH_HEAD
-  op_lfs git checkout -B "$BRANCH" --track "$REMOTE"/"$BRANCH"
+  git checkout -f FETCH_HEAD
+  git checkout -B "$BRANCH" --track "$REMOTE"/"$BRANCH"
   git submodule deinit --all --force
-  op_lfs git reset --hard "${REMOTE}/${BRANCH}"
+  git reset --hard "${REMOTE}/${BRANCH}"
   git clean -df
   git submodule update --init --recursive
   git submodule foreach git reset --hard
   git submodule foreach git clean -df
-
-  op_activate_venv
-  op_lfs pull
 
   # remove openpilot update flag if present
   rm -f .overlay_init

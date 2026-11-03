@@ -71,10 +71,6 @@ def run(cmd: list[str], cwd: str | None = None) -> str:
   return subprocess.check_output(cmd, cwd=cwd, stderr=subprocess.STDOUT, encoding='utf8')
 
 
-def run_lfs(args: list[str], cwd: str) -> str:
-  return run([os.path.join(BASEDIR, "tools/lfs.py"), *args], cwd)
-
-
 def set_consistent_flag(consistent: bool) -> None:
   os.sync()
   consistent_file = Path(os.path.join(FINALIZED, ".overlay_consistent"))
@@ -172,11 +168,7 @@ def init_overlay() -> None:
   run(["sudo"] + mount_cmd)
   run(["sudo", "chmod", "755", os.path.join(OVERLAY_METADATA, "work")])
 
-  try:
-    git_diff = run(["git", "diff", "--submodule=diff"], OVERLAY_MERGED)
-  except subprocess.CalledProcessError:
-    cloudlog.exception("Failed to capture local changes before update")
-    git_diff = ""
+  git_diff = run(["git", "diff", "--submodule=diff"], OVERLAY_MERGED)
   params.put("GitDiff", git_diff, block=True)
   cloudlog.info(f"git diff output:\n{git_diff}")
 
@@ -201,7 +193,7 @@ def finalize_update() -> None:
   t = time.monotonic()
   try:
     run(["git", "gc"], FINALIZED)
-    run_lfs(["prune"], FINALIZED)
+    run(["git", "lfs", "prune"], FINALIZED)
     cloudlog.event("Done git cleanup", duration=time.monotonic() - t)
   except subprocess.CalledProcessError:
     cloudlog.exception(f"Failed git cleanup, took {time.monotonic() - t:.3f} s")
@@ -399,9 +391,9 @@ class Updater:
 
     cloudlog.info("git reset in progress")
     cmds = [
-      [os.path.join(BASEDIR, "tools/lfs.py"), "git", "checkout", "--force", "--no-recurse-submodules", "-B", branch, "FETCH_HEAD"],
+      ["git", "checkout", "--force", "--no-recurse-submodules", "-B", branch, "FETCH_HEAD"],
       ["git", "branch", "--set-upstream-to", f"origin/{branch}"],
-      [os.path.join(BASEDIR, "tools/lfs.py"), "git", "reset", "--hard"],
+      ["git", "reset", "--hard"],
       ["git", "clean", "-xdff"],
       ["git", "submodule", "sync"],
       ["git", "submodule", "update", "--init", "--recursive"],
@@ -409,8 +401,6 @@ class Updater:
     ]
     r = [run(cmd, OVERLAY_MERGED) for cmd in cmds]
     cloudlog.info("git reset success: %s", '\n'.join(r))
-
-    run_lfs(["pull"], OVERLAY_MERGED)
 
     # TODO: show agnos download progress
     if AGNOS:
@@ -434,6 +424,9 @@ def main() -> None:
       fcntl.flock(ov_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except OSError as e:
       raise RuntimeError("couldn't get overlay lock; is another instance running?") from e
+
+    # Restore this checkout's LFS filters and hooks before Git uses them.
+    run(["git", "lfs", "install", "--local", "--force"], BASEDIR)
 
     # Check if we just performed an update
     if Path(os.path.join(STAGING_ROOT, "old_openpilot")).is_dir():
