@@ -85,29 +85,6 @@ function op_lfs_shim() {
   echo "$(git -C "$OPENPILOT_ROOT" rev-parse --path-format=absolute --git-common-dir)/git-lfs"
 }
 
-# the shim lives in the git dir so it works in every worktree and on every
-# branch, and survives the venv being rebuilt
-function op_install_lfs() {
-  local shim
-  shim="$(op_lfs_shim)"
-  cp "$OPENPILOT_ROOT/scripts/git-lfs" "$shim"
-  chmod +x "$shim"
-  git -C "$OPENPILOT_ROOT" config --local filter.lfs.clean "$shim clean -- %f"
-  git -C "$OPENPILOT_ROOT" config --local filter.lfs.smudge "$shim smudge -- %f"
-  git -C "$OPENPILOT_ROOT" config --local filter.lfs.process "$shim filter-process"
-  git -C "$OPENPILOT_ROOT" config --local filter.lfs.required false
-  local hooks
-  hooks="$(git -C "$OPENPILOT_ROOT" rev-parse --git-path hooks)"
-  printf '#!/bin/sh\nexec "%s" pre-push "$@"\n' "$shim" > "$hooks/pre-push"
-  chmod +x "$hooks/pre-push"
-  # stock hooks from "git lfs install" exit 2 without git-lfs on PATH, and we don't use lfs locks
-  for hook in post-checkout post-commit post-merge; do
-    if grep -qs "git lfs $hook" "$hooks/$hook"; then
-      rm "$hooks/$hook"
-    fi
-  done
-}
-
 function op_check_openpilot_dir() {
   echo "Checking for openpilot directory..."
   if [[ -f "$OPENPILOT_ROOT/launch_openpilot.sh" ]]; then
@@ -237,11 +214,9 @@ EOF
 
   op_activate_venv
 
-  op_install_lfs
-
   echo "Pulling git lfs files..."
   st="$(date +%s)"
-  if ! retry 3 "$(op_lfs_shim)" pull; then
+  if ! retry 3 ./tools/lfs.sh pull; then
     echo -e " ↳ [${RED}✗${NC}] Pulling git lfs files failed!"
     return 1
   fi
@@ -412,17 +387,31 @@ function op_switch() {
   fi
   BRANCH="$1"
 
+  op_get_openpilot_dir
+  cd "$OPENPILOT_ROOT"
+
+  # check out without running the installed LFS client, the new checkout installs its own below
+  local git_nolfs=(git -c filter.lfs.process= -c filter.lfs.required=false -c core.hooksPath=/dev/null)
   git config --replace-all remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
   git submodule deinit --all --force
   git fetch "$REMOTE" "$BRANCH"
-  git checkout -f FETCH_HEAD
-  git checkout -B "$BRANCH" --track "$REMOTE"/"$BRANCH"
+  "${git_nolfs[@]}" checkout -f FETCH_HEAD
+  "${git_nolfs[@]}" checkout -B "$BRANCH" --track "$REMOTE"/"$BRANCH"
   git submodule deinit --all --force
-  git reset --hard "${REMOTE}/${BRANCH}"
+  "${git_nolfs[@]}" reset --hard "${REMOTE}/${BRANCH}"
   git clean -df
   git submodule update --init --recursive
   git submodule foreach git reset --hard
   git submodule foreach git clean -df
+
+  # like the shim, a failed pull leaves pointer files rather than failing the switch
+  if [[ -f tools/lfs.sh ]]; then
+    ./tools/lfs.sh pull || true
+  else
+    # TODO: remove this branch once switching to branches without tools/lfs.sh is no longer needed
+    op_activate_venv
+    git lfs pull || true
+  fi
 
   # remove openpilot update flag if present
   rm -f .overlay_init
