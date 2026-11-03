@@ -54,15 +54,19 @@ def get_accel_from_plan(speeds, accels, t_idxs, action_t=DT_MDL):
     a_target = 0.0
   return a_target
 
-def curv_from_psis(psi_target, psi_rate, vego, action_t):
+def curv_from_psis(psi_target, psi_rate, vego, action_t, dist_target=None):
   vego = np.clip(vego, MIN_SPEED, np.inf)
-  curv_from_psi = psi_target / (vego * action_t)
+  # the plan's own distance to the target: v_ego * t is too short when the plan speeds up, e.g. pulling away from a stop
+  dist = vego * action_t if dist_target is None else max(dist_target, MIN_SPEED * action_t)
+  curv_from_psi = psi_target / dist
   return 2*curv_from_psi - psi_rate / vego
 
-def get_curvature_from_plan(yaws, yaw_rates, t_idxs, vego, action_t):
+def get_curvature_from_plan(yaws, yaw_rates, t_idxs, vego, action_t, distances=None):
   if action_t < MIN_STABLE_DELAY:
     psi_target = (action_t / MIN_STABLE_DELAY) * np.interp(MIN_STABLE_DELAY, t_idxs, yaws)
+    dist_target = None if distances is None else (action_t / MIN_STABLE_DELAY) * np.interp(MIN_STABLE_DELAY, t_idxs, distances)
   else:
     psi_target = np.interp(action_t, t_idxs, yaws)
+    dist_target = None if distances is None else np.interp(action_t, t_idxs, distances)
   psi_rate = yaw_rates[0]
-  return curv_from_psis(psi_target, psi_rate, vego, action_t)
+  return curv_from_psis(psi_target, psi_rate, vego, action_t, dist_target)

@@ -1,0 +1,151 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Weight Lab Lat</title>
+<style>
+:root { --bg:#0f1012; --panel:#17191c; --line:#2a2d31; --fg:#e4e4e4; --mut:#8a8f96;
+        --on:#4ea1ff; --off:#ff9f43; --e1:#5ee38a; --e2:#d58cff; --tgt:#ff6b6b; --ctl:#5ee38a; }
+* { box-sizing:border-box; }
+body { background:var(--bg); color:var(--fg); font:15px/1.4 system-ui, sans-serif; margin:0; }
+header { padding:12px 16px; border-bottom:1px solid var(--line); display:flex; gap:16px; align-items:baseline; flex-wrap:wrap; }
+h1 { font-size:18px; margin:0; } .mut { color:var(--mut); } a { color:var(--mut); }
+#app { display:grid; grid-template-columns:340px 1fr; gap:0; min-height:calc(100vh - 50px); }
+#clips { border-right:1px solid var(--line); overflow:auto; max-height:calc(100vh - 50px); }
+.clip { padding:10px 14px; border-bottom:1px solid var(--line); cursor:pointer; }
+.clip:hover { background:var(--panel); } .clip.sel { background:#1f2328; border-left:3px solid var(--on); padding-left:11px; }
+.tag { font-size:11px; font-weight:600; letter-spacing:.04em; padding:1px 6px; border-radius:3px; margin-right:6px; }
+.tag.target { color:var(--tgt); border:1px solid var(--tgt); } .tag.control { color:var(--ctl); border:1px solid var(--ctl); }
+.clip .lbl { font-size:14px; margin:4px 0 2px; } .clip .meta { font-size:12px; color:var(--mut); font-family:monospace; }
+.better { color:var(--ctl); } .worse { color:var(--tgt); }
+main { padding:12px 16px; min-width:0; }
+#legend { display:flex; gap:16px; flex-wrap:wrap; font-size:14px; margin-bottom:6px; }
+#legend label { cursor:pointer; user-select:none; }
+#stage { position:relative; width:100%; max-width:1100px; background:#000; }
+#img, #ov { width:100%; display:block; } #img { filter:brightness(1.8) contrast(1.05); } #ov { position:absolute; left:0; top:0; }
+#hud { position:absolute; left:10px; top:8px; font:13px monospace; background:rgba(0,0,0,.55); padding:4px 8px; border-radius:4px; white-space:pre; }
+#controls { display:flex; gap:8px; align-items:center; margin:8px 0; flex-wrap:wrap; }
+button { background:var(--panel); color:var(--fg); border:1px solid var(--line); padding:5px 12px; font-size:14px; border-radius:4px; cursor:pointer; }
+button:hover { border-color:var(--mut); }
+#tl { display:block; width:100%; max-width:1100px; }
+@media (max-width: 800px) { #app { grid-template-columns:1fr; } #clips { max-height:260px; border-right:none; border-bottom:1px solid var(--line); } }
+</style></head><body>
+<header><h1>Weight Lab · lateral</h1><span class="mut">small model replayed on real video · paths projected like the openpilot UI</span><a href="../">long view →</a></header>
+<div id="app">
+  <div id="clips"></div>
+  <main>
+    <div id="legend"></div>
+    <div id="stage"><img id="img"><canvas id="ov"></canvas><div id="hud"></div></div>
+    <div id="controls">
+      <button id="prev">◀ 0.5 s</button><button id="play">▶ play</button><button id="next">0.5 s ▶</button>
+      <span class="mut">space play · ← → step · ↑ ↓ clip · hover timeline to scrub</span>
+    </div>
+    <canvas id="tl"></canvas>
+  </main>
+</div>
+<script>
+const COL = { online: '--on', offline: '--off' }, EDIT_COLS = ['--e1', '--e2'];
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+let IDX = null, D = null, cur = 0, timer = null, clipSel = 0, show = { online: true, offline: true, lanes: true };
+const img = document.getElementById('img'), ov = document.getElementById('ov'), tl = document.getElementById('tl');
+const cache = {};
+async function seg(key) { return cache[key] || (cache[key] = await (await fetch(`${key}.json`, { cache: 'no-store' })).json()); }
+
+function legend() {
+  const items = [['online', 'online model (logged)', css('--on')], ['offline', 'offline small model', css('--off')],
+    ...D.edits.map((k, i) => ['edit_' + k, `edited: ${k}`, css(EDIT_COLS[i % 2])]), ['lanes', 'lanes (offline, opacity = confidence)', '#fff']];
+  items.forEach(([k]) => { if (!(k in show)) show[k] = true; });
+  document.getElementById('legend').innerHTML = items.map(([k, label, c]) =>
+    `<label><input type="checkbox" data-k="${k}" ${show[k] ? 'checked' : ''}> <span style="color:${c}">━━</span> ${label}</label>`).join('');
+  document.querySelectorAll('#legend input').forEach(el => el.onchange = () => { show[el.dataset.k] = el.checked; drawFrame(); });
+}
+function poly(ctx, pts, s, color, w, dash) {
+  if (!pts || pts.length < 2) return;
+  ctx.strokeStyle = color; ctx.lineWidth = w; ctx.lineJoin = 'round'; ctx.setLineDash(dash || []); ctx.beginPath();
+  pts.forEach(([x, y], i) => i ? ctx.lineTo(x * s, y * s) : ctx.moveTo(x * s, y * s)); ctx.stroke(); ctx.setLineDash([]);
+}
+function drawFrame() {
+  const f = D.thumbs[cur], it = D.frames[f];
+  img.src = `../thumbs/${D.key}/${f}.jpg`;
+  img.onload = () => {
+    ov.width = img.clientWidth; ov.height = img.clientHeight;
+    const s = img.clientWidth / img.naturalWidth, ctx = ov.getContext('2d');
+    ctx.clearRect(0, 0, ov.width, ov.height);
+    if (!it) return;
+    if (show.lanes) it.lanes.forEach((l, i) => poly(ctx, l, s, `rgba(255,255,255,${0.15 + 0.85 * it.lane_prob[i]})`, 2.5, [8, 6]));
+    if (show.online) poly(ctx, it.online, s, css('--on'), 6);
+    if (show.offline) poly(ctx, it.offline, s, css('--off'), 4);
+    D.edits.forEach((k, i) => { if (show['edit_' + k]) poly(ctx, it['edit_' + k], s, css(EDIT_COLS[i % 2]), 4); });
+  };
+  const i = D.frame.indexOf(f), S = D.series, g = (k, p = 2) => (i >= 0 && S[k] && S[k][i] != null) ? S[k][i].toFixed(p) : '-';
+  document.getElementById('hud').textContent =
+    `t ${(f / 20 + D.num * 60).toFixed(1)} s   v ${g('v_ego', 1)} m/s   lat acc ${g('lat_acc')}   lanes ${g('lane_prob')}\n` +
+    `inside @20 m   offline ${g('inside20')}` + D.edits.map(k => `   ${k} ${g('inside20_' + k)}`).join('') + (it && it.online_big ? '   (online = big model)' : '');
+  drawTL();
+}
+function drawTL() {
+  const W = tl.clientWidth || 1000, H = 170;
+  tl.width = W * devicePixelRatio; tl.height = H * devicePixelRatio; tl.style.height = H + 'px';
+  const ctx = tl.getContext('2d'); ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+  const n = D.frame.length, S = D.series, X = i => i / (n - 1) * W;
+  const c = IDX.clips[clipSel];
+  if (c && c.key === D.key) {
+    const a = D.frame.findIndex(f => f >= c.f0), b = D.frame.findIndex(f => f >= c.f1);
+    ctx.fillStyle = c.kind === 'target' ? 'rgba(255,107,107,0.10)' : 'rgba(94,227,138,0.10)';
+    ctx.fillRect(X(Math.max(a, 0)), 20, X(b < 0 ? n - 1 : b) - X(Math.max(a, 0)), H - 28);
+  }
+  S.lane_prob.forEach((p, i) => { if (p != null && p < 0.5) { ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.fillRect(X(i), H - 8, W / n + 1, 6); } });
+  const tracks = [['lat_acc', 'lat accel m/s²', css('--fg')], ['inside20', 'inside offset @20 m (offline)', css('--off')],
+    ...D.edits.map((k, i) => ['inside20_' + k, `inside @20 m (${k})`, css(EDIT_COLS[i % 2])])];
+  const lo = -2, hi = 3, Y = v => 20 + (H - 30) * (1 - (Math.max(lo, Math.min(hi, v)) - lo) / (hi - lo));
+  ctx.strokeStyle = '#3a3d42'; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(0, Y(0)); ctx.lineTo(W, Y(0)); ctx.stroke(); ctx.setLineDash([]);
+  let lx = 6; ctx.font = '13px system-ui';
+  tracks.forEach(([k, label, col]) => {
+    ctx.strokeStyle = col; ctx.lineWidth = 1.6; ctx.beginPath(); let pen = false;
+    S[k].forEach((v, i) => { if (v == null) { pen = false; return; } pen ? ctx.lineTo(X(i), Y(v)) : ctx.moveTo(X(i), Y(v)); pen = true; }); ctx.stroke();
+    ctx.fillStyle = col; ctx.fillText('● ' + label, lx, 14); lx += ctx.measureText('● ' + label).width + 14;
+  });
+  ctx.fillStyle = css('--mut'); ctx.fillText('lanes not confident ▁', W - 150, H - 10);
+  const fi = D.frame.indexOf(D.thumbs[cur]); if (fi >= 0) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(X(fi), 18); ctx.lineTo(X(fi), H); ctx.stroke(); }
+}
+function nearestThumb(f) { return D.thumbs.reduce((b, t, i) => Math.abs(t - f) < Math.abs(D.thumbs[b] - f) ? i : b, 0); }
+tl.addEventListener('mousemove', ev => {
+  if (!D) return; const r = tl.getBoundingClientRect();
+  cur = nearestThumb(D.frame[Math.round((ev.clientX - r.left) / r.width * (D.frame.length - 1))]); drawFrame();
+});
+function step(k) { cur = Math.max(0, Math.min(D.thumbs.length - 1, cur + k)); drawFrame(); }
+function togglePlay() {
+  const b = document.getElementById('play');
+  if (timer) { clearInterval(timer); timer = null; b.textContent = '▶ play'; return; }
+  b.textContent = '❚❚ pause';
+  timer = setInterval(() => {
+    const c = IDX.clips[clipSel], end = c && c.key === D.key ? nearestThumb(c.f1) : D.thumbs.length - 1, start = c && c.key === D.key ? nearestThumb(c.f0) : 0;
+    cur = cur >= end ? start : cur + 1; drawFrame();
+  }, 250);  // 2x real time
+}
+document.getElementById('play').onclick = togglePlay;
+document.getElementById('prev').onclick = () => step(-1);
+document.getElementById('next').onclick = () => step(1);
+document.addEventListener('keydown', e => {
+  if (e.key === ' ') { e.preventDefault(); togglePlay(); }
+  else if (e.key === 'ArrowLeft') step(-1); else if (e.key === 'ArrowRight') step(1);
+  else if (e.key === 'ArrowDown') { e.preventDefault(); pick(Math.min(IDX.clips.length - 1, clipSel + 1)); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); pick(Math.max(0, clipSel - 1)); }
+});
+async function pick(i) {
+  clipSel = i; const c = IDX.clips[i];
+  document.querySelectorAll('.clip').forEach((el, j) => el.classList.toggle('sel', j === i));
+  D = await seg(c.key); D.num = c.num; legend(); cur = nearestThumb(c.f0); drawFrame();
+}
+function fmtMetrics(m) {
+  const base = m.offline; if (base == null) return 'lanes not confident in this clip';
+  return `|inside| offline ${base.toFixed(2)} m` + Object.entries(m).filter(([k]) => k !== 'offline' && k !== 'confident_frames').map(([k, v]) =>
+    v == null ? '' : ` → ${k} <span class="${v < base - 0.03 ? 'better' : v > base + 0.03 ? 'worse' : ''}">${v.toFixed(2)}</span>`).join('');
+}
+(async () => {
+  IDX = await (await fetch('index.json', { cache: 'no-store' })).json();
+  document.getElementById('clips').innerHTML = IDX.clips.map((c, i) =>
+    `<div class="clip" data-i="${i}"><span class="tag ${c.kind}">${c.kind.toUpperCase()}</span><span class="mut">${c.route.split('/')[1].slice(0, 8)} ${c.start}-${c.end} s</span>` +
+    `<div class="lbl">${c.label}</div><div class="meta">${fmtMetrics(c.metrics)}</div></div>`).join('');
+  document.querySelectorAll('.clip').forEach(el => el.onclick = () => pick(+el.dataset.i));
+  if (IDX.clips.length) pick(0);
+  window.onresize = () => D && drawFrame();
+})();
+</script></body></html>

@@ -1,0 +1,67 @@
+[
+ {
+  "date": "11-02",
+  "title": "Replay matches the device",
+  "text": "Small model replayed from video on 000005e2 seg 15: desired accel r=0.999 (MAE 0.02 m/s\u00b2), curvature r=0.999 vs logged modelV2."
+ },
+ {
+  "date": "11-02",
+  "title": "Plan head is low rank",
+  "text": "Long plan = 3 directions of the 256-d trunk (speed level, near-term accel, horizon ramp). Lat plan = 2 directions. Long and lat subspaces are near orthogonal (cos &lt; 0.07)."
+ },
+ {
+  "date": "11-02",
+  "title": "Stop-control circuit (verified on camera)",
+  "text": "Trunk units 69, 248, 201, 239 fire together at red lights and painted STOP lines (peak 2-4), weakly at greens (~1) and roundabout yields. Stopped at a red it holds ~0.35. CORRECTED: at the 000005fd/2 left-arrow green (f772) the circuit rose to 1.02 and the model crept to +0.4 in 1 s; the +1.6 launch at f800 came after the driver pressed gas (f790), so it is not evidence the model reads green."
+ },
+ {
+  "date": "11-02",
+  "title": "Circuit turns on ~35 m before the stop at any speed (3 stops, candidate)",
+  "text": "Onset 36.8 m @10.6 m/s, 35.7 m @11.8 m/s, 35.3 m @16.5 m/s. At 16.5 m/s that needs 3.9 m/s\u00b2: model braked -3.1 (000005fd/2 f418). Same light was glimpsed ~195 m out (0.9 blip) then lost while the model accelerated +1.8. Next: is the pre-ReLU signal rising earlier?"
+ },
+ {
+  "date": "11-02",
+  "title": "Rolling STOP = plan never asks for 0 (1 engaged example)",
+  "text": "Engaged at a painted STOP line (000005fd/0 f860-1020), circuit at 3.8, but plan min speed stays 1.3-2.5 m/s and v@10s re-accelerates to 13 m/s: a mean of stop and roll-through. Car bottomed at 1.9 m/s."
+ },
+ {
+  "date": "11-02",
+  "title": "Readout gain fixes the rolling STOP but makes red stops harsher",
+  "text": "Scaling the 4 units' long-plan readout (396 weights, 0.0013% of model): g=3 gives plan min speed -0.35 at the STOP line, green launch unchanged (+1.86 -> +1.84), green pass -1.01 -> -1.11, but red-light stop -3.11 -> -3.74 because onset is still late."
+ },
+ {
+  "date": "11-02",
+  "title": "Late onset is not a threshold: no signal before ~40-50 m",
+  "text": "Pre-ReLU of the 4 units sits at quiet-road level (-0.3..-0.6) until ~40-50 m from the stop line, then crosses 0 near 35 m (2 night red lights). Lowering the bias would only add false braking. Earlier onset must come from upstream (temporal feature or vision)."
+ },
+ {
+  "date": "11-02",
+  "title": "Two separate stop problems",
+  "text": "A) late + fast approach at lights and signs: circuit on only ~30-35 m out, no earlier signal in these units, so not a plan-head fix. B) at STOP lines the plan only dips to ~2 m/s (rolling), at red lights it reaches 0. A readout gain fixes B but makes A worse at reds."
+ },
+ {
+  "date": "11-02",
+  "title": "The 4 units split by phase (camera-verified)",
+  "text": "u239 alone = approaching a GREEN intersection (s1 f400, s2 f280, s7 f700, s8 f1110: 86-100% of activity), and it is the first unit to rise approaching reds (~60 m). u201 leads while braking to a red (47-60%). u69 (+u248) leads while held at a red (51-77%). STOP lines: u239 >= u201. At greens the model taps the brakes (min accel -1.0 to -1.3) via u239."
+ },
+ {
+  "date": "11-02",
+  "title": "CORRECTED: early stop signal is weak across routes",
+  "text": "The first probe (1 night route, 15 stops) looked strong: 62-77% at 50-80 m. On 9 routes / 22 stop segments, held out by route, at 1% open-road false alarms: temporal feature 24% at 50-80 m, 17% at 80-120 m; vision feature 32% / 18%. At 3% false alarms 56% / 42% but it fires at 8% of green passes. Not good enough for an earlier-braking edit."
+ },
+ {
+  "date": "11-02",
+  "title": "Lead speed: no readout fix on ID4 radar (negative)",
+  "text": "Small model on f73c01590368ee5b/00000095 (radar, held-out segs 15-19): slope of (pred-vEgo) on (vLead-vEgo) 0.84, MAE 1.13. Leads 2-5 m/s faster are read 2.9 m/s too slow. Linear probes on the head inputs do worse (MAE 1.7-2.0), so the head is not under-reading its features."
+ },
+ {
+  "date": "11-02",
+  "title": "LATER (lead): vision-only lead reads ~vEgo for a car 10 m/s slower",
+  "text": "Tesla, non-e2e ACC, driver had to disengage: dffcf1de8723a20f/000000be--f00fb3e5b5 258-272 s (full video up)."
+ },
+ {
+  "date": "11-02",
+  "title": "Every stop from speed is late and hard (23 stops, 7 routes)",
+  "text": "Circuit onset 20-47 m before the stop. From > 12 m/s that needs 2.2-3.9 m/s\u00b2 and the model brakes -2.2 to -3.1 every time. Starts cannot be scored open loop: the model \"go\" follows the video starting to move (within 0.2 s)."
+ }
+]

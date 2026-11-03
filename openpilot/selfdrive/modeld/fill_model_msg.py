@@ -170,6 +170,10 @@ def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: dict[str, 
   else:
     modelV2.confidence = ConfidenceClass.red
 
+  # traffic light units, only some models have them
+  if 'traffic_units' in net_output_data:
+    modelV2.trafficUnits = net_output_data['traffic_units'][0].tolist()
+
   # raw prediction if enabled
   if SEND_RAW_PRED:
     modelV2.rawPredictions = net_output_data['raw_pred'].tobytes()

@@ -1083,6 +1083,10 @@ struct ModelDataV2 {
   # e2e lateral planner
   action @26: Action;
 
+  # traffic light units inside the model, empty if the model does not have them
+  # order: u69, u248 (held at red), u201 (braking for red), u239 (green / intersection ahead)
+  trafficUnits @28 :List(Float32);
+
   lateralPlannerSolutionDEPRECATED @25: Deprecated.LateralPlannerSolution;
   leadsDEPRECATED @11 :List(LeadDataV2DEPRECATED);
 
@@ -1243,7 +1247,7 @@ struct LongitudinalPlan @0xe00b5b3eba12876c {
   shouldStop @37: Bool;
   allowThrottle @38: Bool;
   allowBrake @39: Bool;
-  accelBoost @40 :Float32;
+  accelBoostDEPRECATED @40 :Float32;
 
 
   solverExecutionTime @35 :Float32;

@@ -1,0 +1,122 @@
+[
+ {
+  "route": "dffcf1de8723a20f/000005fe--4670692d45",
+  "prefix": "fe",
+  "start": 118,
+  "end": 149,
+  "kind": "target",
+  "label": "High-speed curve cut, over the lines (main target)"
+ },
+ {
+  "route": "dffcf1de8723a20f/000005fd--fedfe6335d",
+  "prefix": "fd",
+  "start": 248,
+  "end": 259,
+  "kind": "target",
+  "label": "Bad left cut at mid speed, then goes wide"
+ },
+ {
+  "route": "dffcf1de8723a20f/000005f7--9a5610bb27",
+  "prefix": "f7",
+  "start": 290,
+  "end": 305,
+  "kind": "target",
+  "label": "Right off-ramp: cuts, rides the line; red light seen late"
+ },
+ {
+  "route": "f73c01590368ee5b/00000076--cbf1d60cd3",
+  "prefix": "n76",
+  "start": 285,
+  "end": 318,
+  "kind": "target",
+  "label": "nick.o ID4: turn cuts a lot, runs out of torque"
+ },
+ {
+  "route": "bbc5dcae2fef0c2a/0000022d--e117adc042",
+  "prefix": "b2d",
+  "start": 2241,
+  "end": 2255,
+  "kind": "target",
+  "label": "Cuts the turn, rides the cracked yellow line"
+ },
+ {
+  "route": "dffcf1de8723a20f/000005fe--4670692d45",
+  "prefix": "fe",
+  "start": 77,
+  "end": 97,
+  "kind": "target",
+  "label": "90\u00b0 turn too tight, would curb"
+ },
+ {
+  "route": "dffcf1de8723a20f/000005fe--4670692d45",
+  "prefix": "fe",
+  "start": 258,
+  "end": 277,
+  "kind": "target",
+  "label": "Right 90\u00b0 ends in the far left lane, does not slow"
+ },
+ {
+  "route": "dffcf1de8723a20f/000005fe--4670692d45",
+  "prefix": "fe",
+  "start": 282,
+  "end": 300,
+  "kind": "control",
+  "label": "Left mid-speed curve, no cutting (good)"
+ },
+ {
+  "route": "dffcf1de8723a20f/000005fe--4670692d45",
+  "prefix": "fe",
+  "start": 321,
+  "end": 350,
+  "kind": "control",
+  "label": "Good left 90\u00b0 through intersection from a stop"
+ },
+ {
+  "route": "dffcf1de8723a20f/000005fd--fedfe6335d",
+  "prefix": "fd",
+  "start": 260,
+  "end": 267,
+  "kind": "control",
+  "label": "Goes around cones nicely (should also slow for the road block)"
+ },
+ {
+  "route": "dffcf1de8723a20f/000000be--f00fb3e5b5",
+  "prefix": "be",
+  "start": 723,
+  "end": 745,
+  "kind": "target",
+  "label": "Daytime: cuts the turn on the right side"
+ },
+ {
+  "route": "dffcf1de8723a20f/00000039--ade4fa2321",
+  "prefix": "s39",
+  "start": 272,
+  "end": 300,
+  "kind": "target",
+  "label": "Daytime: hugs the right side of curves"
+ },
+ {
+  "route": "dffcf1de8723a20f/00000039--ade4fa2321",
+  "prefix": "s39",
+  "start": 342,
+  "end": 350,
+  "kind": "target",
+  "label": "Daytime: more right hugging / cutting"
+ },
+ {
+  "route": "dffcf1de8723a20f/00000039--ade4fa2321",
+  "prefix": "s39",
+  "start": 360,
+  "end": 369,
+  "kind": "target",
+  "label": "Daytime: really bad right cut in interchange"
+ },
+ {
+  "route": "dffcf1de8723a20f/00000039--ade4fa2321",
+  "prefix": "s39",
+  "start": 469,
+  "end": 476,
+  "kind": "target",
+  "label": "Exit lane curves right, car goes over the right line"
+ }
+]

@@ -1,0 +1,96 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Weight Lab</title>
+<style>
+:root { --bg:#111; --fg:#ddd; --mut:#888; --line:#333; --a:#4ea1ff; --b:#ff7a59; --c:#7bd389; --d:#c792ea; }
+body { background:var(--bg); color:var(--fg); font:15px system-ui, sans-serif; margin:16px; }
+h1 { font-size:18px; margin:0 0 8px; } .mut { color:var(--mut); }
+#findings div { border-left:3px solid var(--a); padding:4px 10px; margin:6px 0; }
+#wrap { display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap; }
+#thumb { width:480px; height:270px; background:#000; object-fit:contain; filter:brightness(2); }
+canvas { display:block; } #hm { width:100%; height:256px; image-rendering:pixelated; display:block; }
+#readout { font-family:monospace; white-space:pre; font-size:14px; margin-top:8px; }
+select { background:#222; color:var(--fg); border:1px solid var(--line); padding:4px; }
+</style></head><body>
+<h1>Weight Lab <span class="mut">small model, offline replay</span></h1>
+<div id="findings"></div>
+<p><select id="seg"></select> <button id="play">play</button> <span class="mut">hover a track to scrub. heatmap: 256 plan-trunk units x time, dark = firing</span></p>
+<div id="wrap">
+  <div style="flex:1; min-width:600px"><canvas id="cv"></canvas><img id="hm"></div>
+  <div><img id="thumb"><div id="readout"></div></div>
+</div>
+<script>
+const TRACKS = [
+  ['v_ego', 'speed m/s', ['v_ego','radar_v','lead_v'], ['var(--a)','var(--b)','var(--c)']],
+  ['accel', 'model accel m/s²', ['accel'], ['var(--a)']],
+  ['circuit', 'traffic-control units', ['u69','u248','u201','u239'], ['var(--a)','var(--b)','var(--c)','var(--d)']],
+  ['long', 'long modes', ['long0','long1','long2'], ['var(--a)','var(--b)','var(--c)']],
+  ['lat', 'lat modes + curvature x100', ['lat0','lat1','curv100'], ['var(--a)','var(--b)','var(--c)']],
+  ['lead', 'lead x m (model / radar)', ['lead_x','radar_x'], ['var(--a)','var(--b)']],
+];
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v.slice(4,-1)).trim();
+let D = null, hover = -1;
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+async function load(key) {
+  D = await (await fetch(`data/${key}.json`, { cache: 'no-store' })).json();
+  D.series.curv100 = D.series.curv.map(x => x == null ? null : x * 100);
+  document.getElementById('hm').src = `data/${key}_trunk.png`;
+  draw();
+}
+function draw() {
+  const W = cv.parentElement.clientWidth, TH = 120, LH = 22, H = TH * TRACKS.length;
+  cv.width = W * devicePixelRatio; cv.height = H * devicePixelRatio; cv.style.width = W + 'px'; cv.style.height = H + 'px';
+  ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0); ctx.clearRect(0, 0, W, H);
+  const n = D.frame.length;
+  TRACKS.forEach(([id, label, keys, cols], ti) => {
+    const y0 = ti * TH, py = y0 + LH, ph = TH - LH - 8, vals = keys.flatMap(k => D.series[k].filter(x => x != null));
+    let lo = Math.min(...vals), hi = Math.max(...vals); if (hi - lo < 1e-6) { hi += 1; lo -= 1; }
+    const Y = v => py + ph - (v - lo) / (hi - lo) * ph;
+    ctx.save(); ctx.beginPath(); ctx.rect(0, py - 2, W, ph + 4); ctx.clip();
+    ctx.strokeStyle = '#333'; ctx.strokeRect(0.5, py - 1.5, W - 1, ph + 3);
+    if (lo < 0 && hi > 0) { ctx.strokeStyle = '#444'; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(0, Y(0)); ctx.lineTo(W, Y(0)); ctx.stroke(); ctx.setLineDash([]); }
+    keys.forEach((k, ki) => {
+      ctx.strokeStyle = css(cols[ki]); ctx.lineWidth = 1.5; ctx.beginPath(); let pen = false;
+      D.series[k].forEach((v, i) => { if (v == null) { pen = false; return; } const x = i / (n - 1) * W; pen ? ctx.lineTo(x, Y(v)) : ctx.moveTo(x, Y(v)); pen = true; });
+      ctx.stroke();
+    });
+    ctx.restore();
+    ctx.font = '14px system-ui'; ctx.fillStyle = '#ddd'; ctx.fillText(label, 6, y0 + 16);
+    let lx = 12 + ctx.measureText(label).width;
+    ctx.font = '12px system-ui';
+    keys.forEach((k, ki) => { ctx.fillStyle = css(cols[ki]); ctx.fillText('● ' + k, lx, y0 + 16); lx += ctx.measureText('● ' + k).width + 10; });
+    ctx.fillStyle = '#888'; ctx.fillText(`${hi.toFixed(2)} / ${lo.toFixed(2)}`, W - 90, y0 + 16);
+  });
+  if (hover >= 0) { const x = hover / (n - 1) * W; ctx.strokeStyle = '#fff'; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+}
+function scrub(ev) {
+  if (!D) return;
+  const r = ev.target.getBoundingClientRect(), n = D.frame.length;
+  show(Math.max(0, Math.min(n - 1, Math.round((ev.clientX - r.left) / r.width * (n - 1)))));
+}
+let timer = null;
+document.getElementById('play').onclick = () => {
+  if (timer) { clearInterval(timer); timer = null; return; }
+  timer = setInterval(() => { if (!D) return; show(hover + 5 >= D.frame.length ? 0 : hover + 5); }, 125);  // 2x real time
+};
+function show(i) {
+  hover = i;
+  const f = D.frame[hover], th = D.thumbs.reduce((b, t) => Math.abs(t - f) < Math.abs(b - f) ? t : b, D.thumbs[0]);
+  if (th != null) document.getElementById('thumb').src = `thumbs/${D.key}/${th}.jpg`;
+  const s = D.series, fmt = (k, p = 2) => s[k][hover] == null ? '-' : s[k][hover].toFixed(p);
+  document.getElementById('readout').textContent =
+    `${D.seg}\nframe ${f}  t ${(f / 20).toFixed(1)} s\nspeed ${fmt('v_ego')}  accel ${fmt('accel')}\n` +
+    `circuit ${fmt('circuit')}  (69 ${fmt('u69')} 248 ${fmt('u248')} 201 ${fmt('u201')} 239 ${fmt('u239')})\n` +
+    `lead x ${fmt('lead_x', 1)} v ${fmt('lead_v')}  radar x ${fmt('radar_x', 1)} v ${fmt('radar_v')}`;
+  draw();
+}
+cv.addEventListener('mousemove', scrub); document.getElementById('hm').addEventListener('mousemove', scrub);
+(async () => {
+  const idx = await (await fetch('data/index.json', { cache: 'no-store' })).json();
+  document.getElementById('findings').innerHTML = idx.findings.slice().reverse().map(f => `<div><b>${f.title}</b> <span class="mut">${f.date}</span><br>${f.text}</div>`).join('');
+  const sel = document.getElementById('seg');
+  sel.innerHTML = idx.segs.map(s => `<option value="${s.key}">${s.seg} (${s.frames})</option>`).join('');
+  sel.onchange = () => load(sel.value);
+  if (idx.segs.length) load(idx.segs[0].key);
+  window.onresize = () => D && draw();
+})();
+</script></body></html>
