@@ -414,19 +414,29 @@ function op_switch() {
 
   op_get_openpilot_dir
   cd "$OPENPILOT_ROOT"
-  op_install_lfs
 
+  # Check out pointers without invoking the previous version's filters or hooks.
+  local checkout=(git -c filter.lfs.process= -c filter.lfs.clean= -c filter.lfs.smudge=
+                  -c filter.lfs.required=false -c core.hooksPath=/dev/null)
   git config --replace-all remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
   git submodule deinit --all --force
   git fetch "$REMOTE" "$BRANCH"
-  git checkout -f FETCH_HEAD
-  git checkout -B "$BRANCH" --track "$REMOTE"/"$BRANCH"
+  "${checkout[@]}" checkout -f FETCH_HEAD
+  "${checkout[@]}" checkout -B "$BRANCH" --track "$REMOTE"/"$BRANCH"
   git submodule deinit --all --force
-  git reset --hard "${REMOTE}/${BRANCH}"
+  "${checkout[@]}" reset --hard "${REMOTE}/${BRANCH}"
   git clean -df
   git submodule update --init --recursive
   git submodule foreach git reset --hard
   git submodule foreach git clean -df
+
+  op_activate_venv
+  if [[ -f lfs.py ]]; then
+    ./lfs.py pull
+  else
+    op_install_lfs
+    "$(op_lfs_shim)" pull
+  fi
 
   # remove openpilot update flag if present
   rm -f .overlay_init
