@@ -41,7 +41,10 @@ class ModelState:
     self.frame_buf_params = get_nv12_info(cam_w, cam_h)
     self.tensor_inputs = {k: Tensor(v, device=self.DEV).realize() for k,v in self.numpy_inputs.items()}
     self.calib_host = Tensor(self.numpy_inputs['calib'], device='NPY')._buffer()
-    self._blob_cache : dict[int, Tensor] = {}
+    # the frame is copied in, as modeld does: the GPU driver (MSM DRM) can't map camerad's buffers in place
+    self.frame_np = np.zeros(self.frame_buf_params[3], dtype=np.uint8)
+    self.frame_host = Tensor(self.frame_np, device='NPY')._buffer()
+    self.frame = Tensor(self.frame_np, device=self.DEV).realize()
     self.model_run = jits['run']
     self.outputs = {name: Tensor(np.zeros(shape, dtype=dtype), device=device).realize() for name, (shape, dtype, device) in jits['output_specs'].items()}
     with open(MODELS_DIR / f'dm_warp_{cam_w}x{cam_h}_tinygrad.pkl', "rb") as f:
@@ -53,13 +56,13 @@ class ModelState:
     t1 = time.perf_counter()
     self.tensor_inputs['calib']._buffer().copy_from(self.calib_host)
 
-    ptr = np.frombuffer(buf.data, dtype=np.uint8).ctypes.data
-    # There is a ringbuffer of imgs, just cache tensors pointing to all of them
-    if ptr not in self._blob_cache:
-      self._blob_cache[ptr] = Tensor.from_blob(ptr, (self.frame_buf_params[3],), dtype='uint8', device=self.DEV)
+    buf.begin_cpu_read(0, self.frame_np.size)
+    np.copyto(self.frame_np, np.frombuffer(buf.data, dtype=np.uint8, count=self.frame_np.size))
+    buf.end_cpu_access()
+    self.frame._buffer().copy_from(self.frame_host)
 
     self.warp_inputs_np['transform'][:] = transform[:]
-    self.tensor_inputs['input_img'] = self.image_warp(input_frame=self._blob_cache[ptr], M_inv=self.warp_inputs['transform'])
+    self.tensor_inputs['input_img'] = self.image_warp(input_frame=self.frame, M_inv=self.warp_inputs['transform'])
 
     self.model_run(output_buffers=self.outputs, **self.tensor_inputs)
     output = self.outputs['outputs'].numpy().astype(np.float32).reshape(-1)

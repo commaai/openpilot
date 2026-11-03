@@ -20,8 +20,9 @@ ROM_VID_PIDS = (("174c", "2464"), ("174c", "2463"))
 ROM_PRODUCT = "USB 3.2 PCIe TinyEnclosure"
 FIRMWARE_PATH = Path(__file__).with_name("firmware_wrapped.bin")
 CONFIG_DIR = "/data/chestnut_config"
-PM_PATHS = ("/sys/bus/platform/devices/a600000.ssusb", "/sys/bus/usb/devices/usb4")
-VBUS_PATH = "/sys/kernel/debug/regulator/smb2-vbus/enable"
+PM_PATHS = ("/sys/bus/platform/devices/a600000.usb", "/sys/bus/usb/devices/usb4")
+# the Type-C port only sources VBUS as a dual-role port
+VBUS_PATH = "/sys/class/typec/port0/port_type"
 IMAGE_OFFSET = 0x100
 SECTOR, PAGE = 4096, 128
 MAX_CODE_SIZE = 0x10000
@@ -392,9 +393,9 @@ def vbus_write(value):
 
 def vbus_cycle():
   if os.path.exists(VBUS_PATH):
-    vbus_write("0")
+    vbus_write("sink")
     time.sleep(2)
-    vbus_write("1")
+    vbus_write("dual")
     time.sleep(5)
 
 
@@ -403,7 +404,7 @@ def activate(expected_product):
     print("no VBUS control, firmware activates on the next chestnut power cycle", flush=True)
     return
   print("power-cycling chestnut VBUS", flush=True)
-  vbus_write("0")
+  vbus_write("sink")
   disconnected = False
   deadline = time.monotonic() + 5.0
   while time.monotonic() < deadline:
@@ -413,7 +414,7 @@ def activate(expected_product):
       break
     time.sleep(0.2)
   time.sleep(1)
-  vbus_write("1")
+  vbus_write("dual")
   if not disconnected:
     print("chestnut stayed powered, firmware activates on its next power cycle", flush=True)
     return

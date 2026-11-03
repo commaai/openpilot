@@ -10,7 +10,7 @@ from openpilot.cereal.services import SERVICE_LIST
 from openpilot.common.utils import sudo_write
 from openpilot.common.realtime import config_realtime_process, Ratekeeper
 from openpilot.common.swaglog import cloudlog
-from openpilot.common.gpio import gpiochip_get_ro_value_fd, gpioevent_data, get_irqs_for_action
+from openpilot.common.gpio import gpiochip_get_ro_value_fd, gpio_v2_line_event, get_irqs_for_action
 
 from openpilot.system.sensord.sensors.i2c_sensor import Sensor
 from openpilot.system.sensord.sensors.lsm6ds3_accel import LSM6DS3_Accel
@@ -29,13 +29,11 @@ def interrupt_loop(sensors: list[tuple[Sensor, str, bool]], event) -> None:
   # Requesting both edges as the data ready pulse from the lsm6ds sensor is
   # very short (75us) and is mostly detected as falling edge instead of rising.
   # So if it is detected as rising the following falling edge is skipped.
-  fd = gpiochip_get_ro_value_fd("sensord", 0, 84)
+  fd = gpiochip_get_ro_value_fd("sensord", 84)
 
   # Configure IRQ affinity
   for irq in get_irqs_for_action("sensord"):
     sudo_write('2\n', f"/proc/irq/{irq}/smp_affinity_list")
-
-  offset = time.time_ns() - time.monotonic_ns()
 
   poller = select.poll()
   poller.register(fd, select.POLLIN | select.POLLPRI)
@@ -48,16 +46,9 @@ def interrupt_loop(sensors: list[tuple[Sensor, str, bool]], event) -> None:
       cloudlog.error("no poll events set")
       continue
 
-    dat = os.read(fd, ctypes.sizeof(gpioevent_data)*16)
-    evd = gpioevent_data.from_buffer_copy(dat)
-
-    cur_offset = time.time_ns() - time.monotonic_ns()
-    if abs(cur_offset - offset) > 10 * 1e6:  # ms
-      cloudlog.warning(f"time jumped: {cur_offset} {offset}")
-      offset = cur_offset
-      continue
-
-    ts = evd.timestamp - cur_offset
+    dat = os.read(fd, ctypes.sizeof(gpio_v2_line_event)*16)
+    evd = gpio_v2_line_event.from_buffer_copy(dat)
+    ts = evd.timestamp  # CLOCK_MONOTONIC
     for sensor, service, interrupt in sensors:
       if interrupt:
         try:

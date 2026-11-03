@@ -27,7 +27,12 @@ void VideoEncoder::publisher_publish(int segment_num, uint32_t idx, VisionIpcBuf
   edata.setSegmentId(idx);
   edata.setFlags(flags);
   edata.setLen(dat.size());
-  edat.adoptData(msg.getOrphanage().referenceExternalData(dat));
+  // external data has to be word aligned, the payload after the codec header may not be
+  if ((uintptr_t)dat.begin() % sizeof(capnp::word) == 0) {
+    edat.adoptData(msg.getOrphanage().referenceExternalData(dat));
+  } else {
+    edat.setData(dat);
+  }
   edat.setWidth(out_width);
   edat.setHeight(out_height);
   if (flags & V4L2_BUF_FLAG_KEYFRAME) edat.setHeader(header);

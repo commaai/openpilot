@@ -155,7 +155,11 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
       }
 
       if (jpeg_encoder && (extra.frame_id % 1200 == 100)) {
+        int err = buf->begin_cpu_access(false);
+        assert(err == 0);
         jpeg_encoder->pushThumbnail(buf, extra);
+        err = buf->end_cpu_access(false);
+        assert(err == 0);
       }
     }
   }
