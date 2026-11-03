@@ -25,13 +25,15 @@ dependencies = [
   "pycapnp==2.1.0",  # 2.2 introduces a memory leak due to cyclic references
   "numpy >=2.0",
 
+  # large-file uploads
+  "hf-xet==1.7.0",
+
   # vendored native dependencies
   "comma-deps-capnproto",
   "comma-deps-acados",
   "comma-deps-ffmpeg",
   "comma-deps-zstd",
   "comma-deps-json11",
-  "comma-deps-git-lfs",
   "comma-deps-gcc-arm-none-eabi",
 
   # athena
