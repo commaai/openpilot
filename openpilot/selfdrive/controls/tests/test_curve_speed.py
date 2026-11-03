@@ -5,15 +5,16 @@ import pytest
 
 from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.controls.lib.curve_speed import (get_curve_accel, CurveSpeed, A_LAT_MAX, CURVE_ACCEL_MIN, CURVE_JERK,
-                                                          IN_CURVE_ACCEL_MIN, NO_LIMIT, RELEASE_JERK, A_LAT_SOFT, SOFT_ACCEL_MIN)
+                                                          IN_CURVE_ACCEL_MIN, NO_LIMIT, RELEASE_JERK, YAW_RATE_STD_K)
 from openpilot.selfdrive.modeld.constants import ModelConstants
 
 T = np.array(ModelConstants.T_IDXS)
 
 
-def model_msg(t, x, v, yaw_rate):
+def model_msg(t, x, v, yaw_rate, yaw_rate_std=None):
+  std = [] if yaw_rate_std is None else list(yaw_rate_std)
   return SimpleNamespace(position=SimpleNamespace(t=list(t), x=list(x)), velocity=SimpleNamespace(x=list(v)),
-                         orientationRate=SimpleNamespace(z=list(yaw_rate)))
+                         orientationRate=SimpleNamespace(z=list(yaw_rate), zStd=std))
 
 
 def plan(v, curv_of_t):
@@ -71,12 +72,20 @@ class TestCurveSpeed:
     # 2 s after the braking ends, the accel cap is up by RELEASE_JERK * 2 s, not at once
     assert a == pytest.approx(a_zero + 2.0 * RELEASE_JERK, abs=1e-6)
 
-  def test_soft_limit_slows_gently_before_the_hard_limit(self):
-    v, curv = 20.0, 0.0055  # 2.2 m/s² at 20 m/s: above the soft limit, below the hard limit
-    assert A_LAT_SOFT < v ** 2 * curv < A_LAT_MAX
-    cs = CurveSpeed(DT_MDL)
-    msg = model_msg(*plan(v, lambda t: np.where(t > 3, curv, 0.0)))
+  def test_uncertain_curve_slows_down_more(self):
+    v, curv = 20.0, 0.005  # 2.0 m/s² at 20 m/s: below the limit if the model is sure
+    t, x, vv, yaw_rate = plan(v, lambda t: np.where(t > 3, curv, 0.0))
+    sure, unsure = CurveSpeed(DT_MDL), CurveSpeed(DT_MDL)
     for _ in range(100):
-      a = cs.update(msg, v)
-    assert get_curve_accel(*plan(v, lambda t: np.where(t > 3, curv, 0.0)), v) > 0.0
-    assert SOFT_ACCEL_MIN <= a < 0.0
+      a_sure = sure.update(model_msg(t, x, vv, yaw_rate, np.full_like(t, 0.001)), v)
+      a_unsure = unsure.update(model_msg(t, x, vv, yaw_rate, np.where(t > 3, 0.05, 0.001)), v)
+    assert a_sure > 0.0
+    assert a_unsure < 0.0
+    assert YAW_RATE_STD_K > 0.0
+
+  def test_no_std_in_the_message_is_the_same_as_a_sure_model(self):
+    v = 25.0
+    t, x, vv, yaw_rate = plan(v, lambda t: np.where(t > 3, 0.02, 0.0))
+    a, b = CurveSpeed(DT_MDL), CurveSpeed(DT_MDL)
+    for _ in range(50):
+      assert a.update(model_msg(t, x, vv, yaw_rate), v) == b.update(model_msg(t, x, vv, yaw_rate, np.zeros_like(t)), v)
