@@ -412,6 +412,10 @@ function op_switch() {
   fi
   BRANCH="$1"
 
+  op_get_openpilot_dir
+  cd "$OPENPILOT_ROOT"
+  op_install_lfs
+
   git config --replace-all remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
   git submodule deinit --all --force
   git fetch "$REMOTE" "$BRANCH"
