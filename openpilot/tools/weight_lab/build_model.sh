@@ -15,6 +15,8 @@ PYTHON=${PYTHON:-python3}
 # Corner-cut readout at half strength: the full fit was twitchy at highway speed (+9% y jitter at > 20 m/s).
 # Stop gain x1.4 on u201 only: x1.8 stopped a little too hard at red lights and slowed a little at some greens.
 # No gain on u69/u248: they are on whenever the car stands still, so a gain there also holds the car at stop signs.
+# Green go: cancels braking when the light turns green while creeping (only adds accel, 0.03% of frames).
 $PYTHON "$CODE/patch_model.py" --base "$BASE" --out "$ROOT/$MODEL" --traffic-output \
   "$CODE/patches/stop_gain_u201_1p4.npz" \
-  "$CODE/patches/lat_readout_wlo20_half.npz"
+  "$CODE/patches/lat_readout_wlo20_half.npz" \
+  "$CODE/patches/green_go_v1.npz"
