@@ -37,6 +37,7 @@ class SpeedIntentConfig:
   plan_slope_bp_user: tuple[float, float] = (-0.6, -0.3)  # when the user asked for more speed
   plan_accel_veto: float = -0.8  # any planned accel below this in 0-4 s is a hard veto
   e2e_accel_veto: float = -0.4  # the model is braking now
+  allow_flip: bool = False  # when False, a model slowdown can at most be held at 0, never turned into accel
   # leads
   lead_gap_bp: tuple[float, float] = (2.0, 4.0)  # s, time gap
   lead_gap_closing_bp: tuple[float, float] = (3.0, 6.0)
@@ -62,6 +63,7 @@ class SpeedIntent:
   def __init__(self, config: SpeedIntentConfig | None = None):
     self.c = config or SpeedIntentConfig()
     self.lift = 0.0
+    self.output_lift = 0.0
     self.anchor = 0.0
     self.v_user = 0.0
     self.v_pre_lead = 0.0
@@ -116,6 +118,7 @@ class SpeedIntent:
 
     if not enabled:
       self.lift = 0.0
+      self.output_lift = 0.0
       self.v_user = 0.0
       self.v_pre_lead = 0.0
       self.prev_enabled = False
@@ -174,6 +177,10 @@ class SpeedIntent:
     self.prev_gas = gas_pressed
     self.prev_v_cruise = v_cruise
     self.prev_lead_limited = lead_limited
-    self.debug.update(lift=self.lift, target=target, f=f, hard_veto=float(hard_veto), v_goal=v_goal, v_curve=v_curve,
+    a_out = a_e2e + self.lift
+    if a_e2e < 0.0 and not c.allow_flip:
+      a_out = min(a_out, 0.0)
+    self.output_lift = a_out - a_e2e
+    self.debug.update(lift=self.output_lift, target=target, f=f, hard_veto=float(hard_veto), v_goal=v_goal, v_curve=v_curve,
                       v_headroom=v_headroom, v_user=self.v_user, anchor=self.anchor, a_track=a_track)
-    return a_e2e + self.lift
+    return a_out

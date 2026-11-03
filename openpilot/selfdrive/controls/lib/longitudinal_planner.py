@@ -151,7 +151,7 @@ class LongitudinalPlanner:
     longitudinalPlan.fcw = self.fcw
 
     longitudinalPlan.aTarget = float(self.output_a_target)
-    longitudinalPlan.accelBoost = float(self.speed_intent.lift)
+    longitudinalPlan.accelBoost = float(self.speed_intent.output_lift)
     longitudinalPlan.shouldStop = bool(self.output_should_stop)
     longitudinalPlan.allowBrake = True
 
