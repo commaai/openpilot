@@ -1,9 +1,19 @@
-import numpy as np
+from types import SimpleNamespace
 
-from openpilot.selfdrive.controls.lib.curve_speed import get_curve_accel, A_LAT_MAX, CURVE_ACCEL_MIN, IN_CURVE_ACCEL_MIN, NO_LIMIT
+import numpy as np
+import pytest
+
+from openpilot.common.realtime import DT_MDL
+from openpilot.selfdrive.controls.lib.curve_speed import (get_curve_accel, CurveSpeed, A_LAT_MAX, CURVE_ACCEL_MIN, CURVE_JERK,
+                                                          IN_CURVE_ACCEL_MIN, NO_LIMIT, RELEASE_JERK)
 from openpilot.selfdrive.modeld.constants import ModelConstants
 
 T = np.array(ModelConstants.T_IDXS)
+
+
+def model_msg(t, x, v, yaw_rate):
+  return SimpleNamespace(position=SimpleNamespace(t=list(t), x=list(x)), velocity=SimpleNamespace(x=list(v)),
+                         orientationRate=SimpleNamespace(z=list(yaw_rate)))
 
 
 def plan(v, curv_of_t):
@@ -16,9 +26,13 @@ class TestCurveSpeed:
   def test_straight_road_has_no_limit(self):
     assert get_curve_accel(*plan(30.0, lambda t: 0.0 * t), 30.0) == NO_LIMIT
 
-  def test_slow_enough_for_the_curve_has_no_limit(self):
-    curv = 0.01  # 100 m radius: 17.3 m/s at 3 m/s²
-    assert get_curve_accel(*plan(15.0, lambda t: np.where(t > 2, curv, 0.0)), 15.0) == NO_LIMIT
+  def test_below_the_curve_speed_the_limit_is_an_accel_cap(self):
+    curv = 0.01  # 100 m radius: 15.8 m/s at 2.5 m/s²
+    v_max = np.sqrt(A_LAT_MAX / curv)
+    far = get_curve_accel(*plan(10.0, lambda t: np.where(t > 2, curv, 0.0)), 10.0)
+    near = get_curve_accel(*plan(15.0, lambda t: np.where(t > 2, curv, 0.0)), 15.0)
+    assert 0.0 < near < far
+    assert near <= (v_max ** 2 - 15.0 ** 2) / (2 * 15.0 * 2.0) + 1e-6
 
   def test_brakes_for_a_sharp_curve_ahead(self):
     v, curv = 25.0, 0.02  # 50 m radius: 12.2 m/s at 3 m/s²
@@ -38,3 +52,21 @@ class TestCurveSpeed:
     t, x, vv, yaw_rate = plan(v, lambda t: 0.0 * t)
     yaw_rate[10] = 0.5  # one point with a huge yaw rate
     assert get_curve_accel(t, x, vv, yaw_rate, v) == NO_LIMIT
+
+  def test_braking_stops_quickly_but_accel_comes_back_slowly(self):
+    v = 25.0
+    cs = CurveSpeed(DT_MDL)
+    curve, straight = (model_msg(*plan(v, f)) for f in (lambda t: np.where(t > 3, 0.02, 0.0), lambda t: 0.0 * t))
+    for _ in range(100):
+      a_braking = cs.update(curve, v)
+    assert a_braking < -1.0
+    steps_to_zero, a = 0, a_braking
+    while a < 0.0:
+      a = cs.update(straight, v)
+      steps_to_zero += 1
+    assert steps_to_zero * DT_MDL <= -a_braking / CURVE_JERK + DT_MDL
+    a_zero = a
+    for _ in range(int(2.0 / DT_MDL)):
+      a = cs.update(straight, v)
+    # 2 s after the braking ends, the accel cap is up by RELEASE_JERK * 2 s, not at once
+    assert a == pytest.approx(a_zero + 2.0 * RELEASE_JERK, abs=1e-6)

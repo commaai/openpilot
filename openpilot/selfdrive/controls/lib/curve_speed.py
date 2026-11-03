@@ -1,7 +1,7 @@
 import numpy as np
 
 # slow down before a curve in the model's plan, so lateral accel stays below this, even if the model does not slow down
-A_LAT_MAX = 3.0        # m/s²
+A_LAT_MAX = 2.5        # m/s², for comfort (the ISO limit is 3)
 CURVE_T_MIN = 0.5      # s, the curve right in front of the car is too late to slow down for
 CURVE_T_MAX = 6.0      # s, how far into the plan to look
 MIN_DIST = 3.0         # m, do not divide by tiny distances
@@ -9,12 +9,14 @@ TIGHTER_RATIO = 1.2    # a curve point this much tighter than now is a curve ahe
 CURVE_ACCEL_MIN = -2.0  # m/s², hardest braking for a curve ahead
 IN_CURVE_ACCEL_MIN = -0.5  # m/s², hardest braking in a curve that does not get tighter
 CURVE_JERK = 2.0       # m/s³, how fast the braking for a curve can build up
+RELEASE_JERK = 0.5     # m/s³, how fast the limit goes back up after a curve
 NO_LIMIT = 10.0        # m/s², no curve ahead
 
 
 def get_curve_accel(t, x, v, yaw_rate, v_ego):
-  """Constant accel that brings v_ego down to the curve speed limit at each plan point, the lowest of them.
+  """Highest constant accel that keeps v_ego at or below the curve speed limit at each plan point.
 
+  It is positive below the curve speed, so the accel goes down smoothly near the limit (no on/off).
   Only a curve that gets tighter than the curve now gets the full braking. In a curve that does not get tighter
   (we are in it, or we come out of it) the braking is gentle.
   """
@@ -28,10 +30,9 @@ def get_curve_accel(t, x, v, yaw_rate, v_ego):
   need = (v_max ** 2 - v_ego ** 2) / (2 * np.maximum(x[m], MIN_DIST))
   tighter = curv > TIGHTER_RATIO * curv_all[0]
   need = np.where(tighter, np.maximum(need, CURVE_ACCEL_MIN), np.maximum(need, IN_CURVE_ACCEL_MIN))
-  need = need[v_max < v_ego]
   if len(need) == 0:
     return NO_LIMIT
-  return float(need.min())
+  return float(min(need.min(), NO_LIMIT))
 
 
 class CurveSpeed:
@@ -48,6 +49,11 @@ class CurveSpeed:
       self.a_curve = NO_LIMIT
       return self.a_curve
     a_new = get_curve_accel(p.t, p.x, model.velocity.x, model.orientationRate.z, v_ego)
-    # braking for a curve builds up with limited jerk, release is at once
-    self.a_curve = max(a_new, min(self.a_curve, 0.0) - CURVE_JERK * self.dt)
+    if a_new < self.a_curve:
+      # braking for a curve builds up with limited jerk
+      self.a_curve = max(a_new, min(self.a_curve, 0.0) - CURVE_JERK * self.dt)
+    else:
+      # after a curve, stop braking quickly, but let the accel come back slowly, so the car does not speed up at once
+      release = CURVE_JERK if self.a_curve < 0.0 else RELEASE_JERK
+      self.a_curve = min(a_new, self.a_curve + release * self.dt)
     return self.a_curve
