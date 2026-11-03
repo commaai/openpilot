@@ -36,7 +36,7 @@ class SpeedIntentConfig:
   plan_slope_bp: tuple[float, float] = (-0.45, -0.2)
   plan_slope_bp_user: tuple[float, float] = (-0.6, -0.3)  # when the user asked for more speed
   plan_accel_veto: float = -0.8  # any planned accel below this in 0-4 s is a hard veto
-  e2e_accel_veto: float = -0.4  # the model is braking now
+  e2e_accel_veto: float = -0.1  # the model is slowing now, fleet data: holding slower decels was ~1:1 good to bad
   allow_flip: bool = False  # when False, a model slowdown can at most be held at 0, never turned into accel
   # leads
   lead_gap_bp: tuple[float, float] = (2.0, 4.0)  # s, time gap
