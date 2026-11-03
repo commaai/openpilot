@@ -19,6 +19,7 @@ from openpilot.system.manager.manager import manager_cleanup
 
 SAMPLE_TIME = 2       # seconds to sample power
 MAX_WARMUP_TIME = 30  # seconds to wait for SAMPLE_TIME consecutive valid samples
+MAX_SPREAD = 0.1      # W, how far apart a window's samples may be: a process starting up can spike for a few seconds
 MICI = HARDWARE.get_device_type() == "mici"
 
 @dataclass
@@ -39,7 +40,7 @@ PROCS = [
   Proc(['camerad'], 1.0 if MICI else 1.65, atol=0.4, msgs=['narrowRoadCameraState', 'wideRoadCameraState', 'cabinCameraState']),
   Proc(['modeld'], 1.15 if MICI else 1.5, atol=0.2, msgs=['modelV2']),
   Proc(['dmonitoringmodeld'], 0.65, atol=0.35, msgs=['driverStateV2']),
-  Proc(['encoderd'], 0.23, msgs=[]),
+  Proc(['encoderd'], 0.15 if MICI else 0.23, atol=0.07 if MICI else 0.12, msgs=[]),
 ]
 
 
@@ -92,9 +93,12 @@ class TestPowerDraw(OpenpilotTestCase):
         continue
 
       msg_counts = self.tabulate_msg_counts(msgs_and_power)
-      now = np.mean([m[0] for m in msgs_and_power])
+      powers = [m[0] for m in msgs_and_power]
+      now = np.mean(powers)
 
-      if self.valid_msg_count(proc, msg_counts) and self.valid_power_draw(proc, now - prev):
+      # the window also becomes the next process's reference, so it has to be settled, not only in range
+      settled = np.ptp(powers) <= MAX_SPREAD
+      if settled and self.valid_msg_count(proc, msg_counts) and self.valid_power_draw(proc, now - prev):
         break
 
     return now, msg_counts, time.monotonic() - start_time - SAMPLE_TIME

@@ -12,10 +12,14 @@
 
 #ifdef __COMMA_HARDWARE__
 #include "system/loggerd/encoder/v4l_encoder.h"
-#define Encoder V4LEncoder
+std::unique_ptr<VideoEncoder> make_encoder(const EncoderInfo &encoder_info, int width, int height) {
+  return V4LEncoder::create(encoder_info, width, height);
+}
 #else
 #include "system/loggerd/encoder/ffmpeg_encoder.h"
-#define Encoder FfmpegEncoder
+std::unique_ptr<VideoEncoder> make_encoder(const EncoderInfo &encoder_info, int width, int height) {
+  return std::make_unique<FfmpegEncoder>(encoder_info, width, height);
+}
 #endif
 
 ExitHandler do_exit;
@@ -51,7 +55,7 @@ bool sync_encoders(EncoderdState *s, VisionStreamType cam_type, uint32_t frame_i
   }
 }
 
-void encoder_set_bitrate(std::unique_ptr<Encoder> &e) {
+void encoder_set_bitrate(std::unique_ptr<VideoEncoder> &e) {
   static Params params;
   std::string val = params.get("LivestreamEncoderBitrate");
   if (val.empty()) return;
@@ -59,7 +63,7 @@ void encoder_set_bitrate(std::unique_ptr<Encoder> &e) {
   e->set_bitrate(bitrate);
 }
 
-void encoder_request_keyframe(std::unique_ptr<Encoder> &e) {
+void encoder_request_keyframe(std::unique_ptr<VideoEncoder> &e) {
   static Params params;
   if (!params.getBool("LivestreamRequestKeyframe")) return;
   e->request_keyframe();
@@ -68,7 +72,7 @@ void encoder_request_keyframe(std::unique_ptr<Encoder> &e) {
 void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
   util::set_thread_name(cam_info.thread_name);
 
-  std::vector<std::unique_ptr<Encoder>> encoders;
+  std::vector<std::unique_ptr<VideoEncoder>> encoders;
 
   VisionIpcClient vipc_client = VisionIpcClient("camerad", cam_info.stream_type, false);
 
@@ -90,7 +94,7 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
       assert(buf_info.width > 0 && buf_info.height > 0);
 
       for (const auto &encoder_info : cam_info.encoder_infos) {
-        auto &e = encoders.emplace_back(new Encoder(encoder_info, buf_info.width, buf_info.height));
+        auto &e = encoders.emplace_back(make_encoder(encoder_info, buf_info.width, buf_info.height));
         e->encoder_open();
       }
 
@@ -155,7 +159,11 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
       }
 
       if (jpeg_encoder && (extra.frame_id % 1200 == 100)) {
+        int err = buf->begin_cpu_access(false);
+        assert(err == 0);
         jpeg_encoder->pushThumbnail(buf, extra);
+        err = buf->end_cpu_access(false);
+        assert(err == 0);
       }
     }
   }

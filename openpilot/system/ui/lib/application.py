@@ -279,6 +279,9 @@ class GuiApplication:
         rl.set_config_flags(rl.ConfigFlags.FLAG_VSYNC_HINT)
 
       rl.init_window(self._scaled_width, self._scaled_height, title)
+      # past window setup, raylib logs every file, image and texture it loads at INFO (~450 lines, 330 kB per UI start).
+      # keep the setup lines, forward only warnings and errors from here on
+      rl.set_trace_log_level(rl.TraceLogLevel.LOG_WARNING)
 
       if self._scale != 1.0:
         rl.set_mouse_scale(1 / self._scale, 1 / self._scale)
