@@ -287,8 +287,9 @@ def _run_bringup(native_catch_path: Path, native_catch: dict[str, Any], *, catch
   if success:
     _write_status(
       "complete",
-      "Automatic TSS3 oracle bringup passed.",
+      final_status["detail"],
       run_dir=str(run_dir),
+      backend_title=final_status["title"],
       trigger_timing=timing,
     )
   else:

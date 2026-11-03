@@ -190,6 +190,164 @@ Run 2026-10-09 with `opendbc_repo/.venv`:
   still not authorized until a new stationary route proves continuous bus-2
   signer responses and host publication behavior.
 
+### 2026-11-02 Corolla bus-2 signer validation
+
+- Bundle `20261102T174008-1686-55426954509` ran the exact clean parent
+  `f52a872b18`, opendbc `e59da8d8db`, and Panda `f38f504ffa`. The installed
+  Panda reported `DEV-f38f504f-DEBUG`; its signature prefix `5423f5e1fdf937be`
+  matched the rebuilt firmware file. The kit bound the exact Corolla EPS F181,
+  installed payload
+  `6234bb5bd496a82fabb32c27b56b3db0f1907b5bf6482e4c19f8835153ff69fc`,
+  and received a status-zero live-probe response in 65.439 ms with four
+  accepted and zero rejected transmissions. No persistent flash write, payload
+  upload, or ECU reset was used.
+- The newly routed bus-2 runtime path remained live under Toyota safety. One
+  run received 55 valid status-zero `0x7A9` responses in uninterrupted signer
+  sequence 1 through 55 over 54.001 seconds; 54 of those responses followed
+  the Toyota-safety transition. Its 55 four-frame `0x777` requests produced
+  all 220 accepted bus-2 receipts and no bus-194 rejection receipt. A separate
+  steady-state run continued uninterrupted sequence 56 through 82 for another
+  25.990 seconds, with all 108 fragments accepted and none rejected. This
+  closes the prior relay-egress failure and establishes signer residency well
+  beyond eight seconds.
+- Firmware matching was exact and non-fuzzy as `TOYOTA_COROLLA_TSS3`, with
+  dashcam mode disabled and Toyota safety parameter `12873`. In the startup
+  run, the first 40 CarState samples were invalid only while required frames
+  populated; the following 5,510 samples were CAN-valid. The steady-state run
+  was CAN-valid for all 2,684 samples. Panda's Toyota RX checks stayed valid,
+  and neither run reported `canError` or `canBusMissing`. The one startup
+  `signerUnavailable` event cleared on the first valid response. The lone
+  `controlsMismatch` sample occurred only when the other run deliberately left
+  Toyota safety for ELM327 installer mode; it was not present in the stable
+  Toyota interval.
+- Both runs remained in Park at 0 m/s with stock longitudinal selected.
+  CarControl and CarOutput acceleration were exactly 0.0 throughout. Every
+  logged `0x08A` was the 32-byte native FRC request or its byte-identical Panda
+  passthrough; no host-signed `0x08A` was published because controls were never
+  engaged. The single aggregate `safetyTxBlocked` increment occurred in the
+  ELM327 startup transition and reset to zero on entry to Toyota safety; there
+  were no rejected signer or host-publication loopbacks. The stationary test
+  therefore validates fingerprinting, CAN/safety health, continuous signer
+  transport, and zero longitudinal output, but an engaged stationary capture
+  is still required to validate payload-matched host `0x08A` publication before
+  moving-road validation.
+
+### 2026-11-02 Corolla engagement-attempt capture
+
+- Bundle `20261102T191831-1682-32848698684` ran the exact clean documented
+  parent `ff74fd1dff`, opendbc `e59da8d8db`, and Panda `f38f504ffa`. The Panda
+  signature prefix `5423f5e1fdf937be` again matched the rebuilt firmware. The
+  kit bound the exact Corolla EPS F181, installed the expected
+  `6234bb5bd496a82fabb32c27b56b3db0f1907b5bf6482e4c19f8835153ff69fc`
+  payload, and received a status-zero live-probe response in 66.522 ms with all
+  four transmissions accepted and none rejected.
+- Runtime fingerprinting remained exact and non-fuzzy as
+  `TOYOTA_COROLLA_TSS3`, stock longitudinal remained selected, and Toyota
+  safety parameter `12873` was active. After the 53 startup samples populated
+  the required frames, 5,486 consecutive CarState samples were CAN-valid.
+  Panda's Toyota RX checks remained valid, with no `canError`, `canBusMissing`,
+  or `controlsMismatch` event.
+- The bus-2 signer path again produced 55 uninterrupted status-zero `0x7A9`
+  responses in sequence 1 through 55 over 54.009 seconds. All 220 fragments of
+  the corresponding 55 `0x777` requests had accepted bus-2 receipts, with no
+  bus-194 rejection receipt. The single aggregate `safetyTxBlocked` increment
+  occurred during the ELM327-to-Toyota startup transition and reset to zero in
+  Toyota safety.
+- This was not the missing engaged stationary test. The vehicle shifted through
+  Park, Reverse, Neutral, and briefly Drive, reaching 1.402 m/s. The decoded
+  cruise-main state remained zero, all decoded MAIN/SET/RES/CANCEL button bits
+  remained zero, and no cruise button event was recorded. Consequently
+  SelfdriveState remained disabled, CarControl was never enabled or laterally
+  active, and `CRUISE_OPERATING_LATCH` remained zero.
+- No host `0x08A` was sent. All 2,439 native 32-byte FRC requests matched either
+  their pre-relay bus-0 copy or their post-relay Panda passthrough, and there
+  was no bus-192 host-publication rejection. CarControl and CarOutput
+  acceleration remained exactly 0.0, but host payload matching is still
+  untested. This capture requires no code change: a new test must keep the car
+  stopped in Drive with the service brake held, release the parking brake, turn
+  cruise main on, and issue the normal SET/RES engagement input while retaining
+  stock longitudinal.
+
+### 2026-11-03 Corolla repeated unengaged capture
+
+- Archive `qlog-11.zip` ran the exact clean documented parent `ab872bbab5`,
+  opendbc `e59da8d8db`, and Panda `f38f504ffa`. Its two installer captures both
+  matched Panda signature prefix `5423f5e1fdf937be`, installed the expected
+  signer payload, and received status-zero live-probe responses in 68.668 ms
+  and 74.157 ms. Each probe had four accepted and zero rejected transmissions.
+- Runtime fingerprinting was again exact and non-fuzzy as
+  `TOYOTA_COROLLA_TSS3`, with stock longitudinal and Toyota safety parameter
+  `12873`. After 75 startup samples populated the required frames, all 5,765
+  remaining CarState samples were CAN-valid. There was no `canError`,
+  `canBusMissing`, or `controlsMismatch` event, and Panda's Toyota RX checks
+  remained valid.
+- The signer returned 57 uninterrupted status-zero bus-2 `0x7A9` responses in
+  sequence 1 through 57 over 56.013 seconds. All 228 fragments of the matching
+  57 `0x777` requests had accepted bus-2 receipts and none had a bus-194
+  rejection receipt. Bus 2 reported a historical total-error count of 427 in
+  its first Panda sample, but that value never rose; receive/transmit error
+  counters, warning/passive state, and bus-off all remained zero.
+- This capture also did not engage controls and was not stationary. It reached
+  5.442 m/s while shifting from Park through Reverse to Drive. The cruise-main
+  display state remained zero, the decoded MAIN/SET/RES/CANCEL bits remained
+  unchanged at their released values, no button event was emitted, and the
+  stock `CRUISE_OPERATING_LATCH` remained zero. SelfdriveState therefore stayed
+  disabled and CarControl was never enabled or laterally active.
+- No host `0x08A` was sent or rejected. All 2,442 native FRC requests matched
+  their pre-relay physical bus-0 copy or post-relay Panda passthrough. The stock
+  request's two longitudinal fields varied together from -0.570 to 1.341 m/s²
+  while the vehicle moved, but both openpilot CarControl and CarOutput
+  acceleration remained exactly 0.0. Host-signed payload and zero-longitudinal
+  field validation therefore remain pending, and this archive supports no
+  functional code change.
+
+### 2026-11-03 native handoff and engaged-runtime captures
+
+- Bundle `20261103T123619-1667-42448363212` ran the exact clean parent
+  `8b0fbfa2ba`, opendbc `e59da8d8db`, and Panda `f38f504ffa`. Panda's device
+  and rebuilt-file signature prefixes both matched `5423f5e1fdf937be`; the
+  installed payload SHA-256 was
+  `6234bb5bd496a82fabb32c27b56b3db0f1907b5bf6482e4c19f8835153ff69fc`.
+- The native automatic catcher is now proven end to end. It observed exact
+  `50 03` 240.534 ms after ignition, sent `10 02` 0.261 ms later, received
+  exact pending `7F 10 78` 20.304 ms after that, and notified the daemon in
+  time for backend launch 0.623 ms after receipt. The warm installer then
+  received a status-zero signer response in 8.264 ms with all four request
+  fragments accepted and none rejected.
+- The backend nevertheless reported failure because Brake did not support the
+  optional `19 02 FF` DTC query. All supported control-domain observations
+  contained no explicit fault, and this Brake query has been unavailable in
+  the retained Corolla captures. The kit now treats this peer result as an
+  explicit warning, runs the independent fresh signer self-test, and fails only
+  an observed peer fault or failed signer test (kit source `f612bdc`). The
+  vehicle-side daemon also preserves that warning instead of replacing it with
+  a generic success line.
+- Both runtime routes fingerprinted exactly and non-fuzzily as
+  `TOYOTA_COROLLA_TSS3`, used Toyota safety parameter `12873`, kept Panda RX
+  checks valid, and recorded no `canError`, `canBusMissing`, or
+  `controlsMismatch`. MAIN, SET, RES, and CANCEL changed their expected decoded
+  bits. Controls engaged laterally for 1,886 samples in segment 13 and 966 in
+  segment 14; `longActive` and CarControl/CarOutput acceleration remained zero.
+- Segment 13 produced 1,909 status-zero bus-2 `0x7A9` responses and 1,869 host
+  `0x08A` publications. Segment 14 produced 1,009 such responses and 962 host
+  publications. Every host payload in both routes exactly equaled a preceding
+  28-byte `0x777` application plus that request's fresh four-byte response
+  trailer, with 2.226--27.049 ms response-to-publication latency. Panda accepted
+  all 2,831 host publications and rejected none.
+- Each route had one rejected final `0x777` fragment. In both cases the first
+  three fragments were accepted while controls were enabled, then a pedal or
+  steering override disabled controls before the final fragment's receipt.
+  Panda rejected that in-flight fragment and the transport released ownership;
+  no host publication was rejected. This is the intended disengagement safety
+  boundary, not a stable-runtime signer rejection.
+- These are not stationary validation routes: peak speeds were 13.053 and
+  11.744 m/s. With stock longitudinal selected, the host request deliberately
+  copied the FRC request's equal upper/lower longitudinal fields, so they were
+  often nonzero while stock ACC was active. Zero openpilot longitudinal output
+  is proven, but the requested stationary zero-field check is not. Zeroing the
+  copied fields in code would violate the stock-longitudinal safety contract;
+  an actually stationary engaged capture is still required for that criterion.
+
 ## File inventory (merge-base diffs vs commaai master, 2026-10-09)
 
 ### opendbc — 22 files, +2,258 / −57

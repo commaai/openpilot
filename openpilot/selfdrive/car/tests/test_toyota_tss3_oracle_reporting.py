@@ -149,6 +149,29 @@ class TestOracleLifecycleGuards(unittest.TestCase):
 
 
 class TestOracleRearmReporting(unittest.TestCase):
+  def test_automatic_completion_preserves_backend_warning(self):
+    warning = status_row(
+      title="Signer live; peer checks incomplete",
+      detail="EPS fresh signer self-test passed; unavailable peer diagnostics: brake.dtcs.",
+    )
+    native_catch = {
+      "schema": NATIVE_CATCH_SCHEMA,
+      "pandad_wrapper_pid": 123,
+      "programming_tx_monotonic_ns": 90,
+    }
+    proc = Mock(stdout=io.StringIO(json.dumps(warning) + "\n"), wait=Mock(return_value=0))
+
+    with tempfile.TemporaryDirectory() as td, \
+         patch.object(auto, "RUN_ROOT", Path(td)), \
+         patch.object(auto, "_warm_worker_ready", return_value=True), \
+         patch.object(auto.subprocess, "Popen", return_value=proc), \
+         patch.object(auto, "_write_status") as write_status:
+      self.assertTrue(auto._run_bringup(Path(td) / "catch.json", native_catch, catch_received_ns=100))
+
+    complete = next(call for call in write_status.call_args_list if call.args[0] == "complete")
+    self.assertEqual(complete.args[1], warning["detail"])
+    self.assertEqual(complete.kwargs["backend_title"], warning["title"])
+
   def test_worker_readiness_does_not_erase_previous_result(self):
     with patch.object(auto, "_stop_warm_worker"), \
          patch.object(auto, "_exit_requested", False), \
