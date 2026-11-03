@@ -442,6 +442,8 @@ struct DeviceState @0xa4d8b5af2aa492eb {
   carBatteryCapacityUwh @25 :UInt32;
   powerDrawW @40 :Float32;
   somPowerDrawW @42 :Float32;
+  voltage @53 :UInt32;  # mV, device input
+  current @54 :UInt32;  # mA, device input
 
   # device thermals
   cpuTempC @26 :List(Float32);
