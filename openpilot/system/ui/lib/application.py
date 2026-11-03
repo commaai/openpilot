@@ -21,6 +21,12 @@ from openpilot.common.hardware import HARDWARE, PC
 from openpilot.system.ui.lib.multilang import FONT_FALLBACK_LANGUAGES, TRANSLATIONS_DIR, multilang
 from openpilot.common.realtime import Ratekeeper
 
+# on comma four the GPU is reserved for the driving model
+CPU_RENDERER = HARDWARE.get_device_type() == 'mici'
+if CPU_RENDERER:
+  from openpilot.system.ui.lib import cpu_renderer
+  cpu_renderer.install()
+
 _DEFAULT_FPS = int(os.getenv("FPS", {'tizi': 20}.get(HARDWARE.get_device_type(), 60)))
 FPS_LOG_INTERVAL = 5  # Seconds between logging FPS drops
 FPS_DROP_THRESHOLD = 0.9  # FPS drop threshold for triggering a warning

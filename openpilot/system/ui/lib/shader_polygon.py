@@ -3,7 +3,7 @@ import raylib_nb as rl
 import numpy as np
 from dataclasses import dataclass
 from typing import Any, Optional, cast
-from openpilot.system.ui.lib.application import gui_app, GL_VERSION
+from openpilot.system.ui.lib.application import gui_app, GL_VERSION, CPU_RENDERER
 
 MAX_GRADIENT_COLORS = 20  # includes stops as well
 
@@ -195,6 +195,19 @@ def triangulate(pts: np.ndarray) -> list[tuple[float, float]]:
   return cast(list, np.array(tri_strip).tolist())
 
 
+def _gradient_colors(pts: np.ndarray, gradient: Gradient, origin_rect: rl.Rectangle) -> np.ndarray:
+  """FRAGMENT_SHADER's gradient evaluated at each point, y is measured from the bottom like gl_FragCoord"""
+  size = np.array([origin_rect.width, origin_rect.height])
+  start = np.array([origin_rect.x, origin_rect.y]) + np.array(gradient.start) * size
+  end = np.array([origin_rect.x, origin_rect.y]) + np.array(gradient.end) * size
+  p = np.column_stack([pts[:, 0], gui_app.height - pts[:, 1]])
+  d = start - end
+  t = np.clip((p - end) @ d / max(d @ d, 1e-6), 0.0, 1.0)
+  stops = np.clip(gradient.stops[:len(gradient.colors)], 0.0, 1.0)
+  colors = np.array([(c.r, c.g, c.b, c.a) for c in gradient.colors[:len(stops)]], dtype=np.float32)
+  return np.rint(np.column_stack([np.interp(t, stops, colors[:, i]) for i in range(4)])).astype(np.uint8)
+
+
 def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray,
                  color: Optional[rl.Color] = None, gradient: Gradient | None = None):  # noqa: UP045  # rl.Color is a function, so `rl.Color | None` fails
 
@@ -203,6 +216,19 @@ def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray,
   - Input must be [L0..Lk-1, Rk-1..R0], even count, no crossings/holes.
   """
   if len(points) < 3:
+    return
+
+  if CPU_RENDERER:
+    from openpilot.system.ui.lib.cpu_renderer import draw_triangle_strip_colors
+    # triangulate, vectorized
+    half = len(points) // 2
+    pts = np.asarray(points, dtype=np.float32)[:2 * half]
+    strip = np.empty_like(pts)
+    strip[0::2], strip[1::2] = pts[:half], pts[::-1][:half]
+    if gradient is not None:
+      draw_triangle_strip_colors(strip, _gradient_colors(strip, gradient, origin_rect))
+    else:
+      rl.draw_triangle_strip(strip, len(strip), color)
     return
 
   # Initialize shader on-demand
