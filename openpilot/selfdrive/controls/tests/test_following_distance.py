@@ -4,14 +4,12 @@ from openpilot.common.parameterized import parameterized_class
 
 from openpilot.cereal import log
 
-from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import get_safe_obstacle_distance, get_stopped_equivalence_factor, get_T_FOLLOW
+from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import get_safe_obstacle_distance, get_stopped_equivalence_factor, T_FOLLOW
 from openpilot.selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 
 
-def desired_follow_distance(v_ego, v_lead, t_follow=None):
-  if t_follow is None:
-    t_follow = get_T_FOLLOW()
-  return get_safe_obstacle_distance(v_ego, t_follow) - get_stopped_equivalence_factor(v_lead)
+def desired_follow_distance(v_ego, v_lead):
+  return get_safe_obstacle_distance(v_ego, T_FOLLOW) - get_stopped_equivalence_factor(v_lead)
 
 def run_following_distance_simulation(v_lead, t_end=100.0, personality=0):
   man = Maneuver(
@@ -38,7 +36,7 @@ class TestFollowingDistance(OpenpilotTestCase):
   def test_following_distance(self):
     v_lead = float(self.speed)
     simulation_steady_state = run_following_distance_simulation(v_lead, personality=self.personality)
-    correct_steady_state = desired_follow_distance(v_lead, v_lead, get_T_FOLLOW(self.personality))
+    correct_steady_state = desired_follow_distance(v_lead, v_lead)
     abs_err_margin = 0.5 if v_lead > 0.0 else 1.15
     self.assertAlmostEqual(simulation_steady_state, correct_steady_state,
                            delta=0.2 * correct_steady_state + abs_err_margin)
