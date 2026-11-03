@@ -128,27 +128,25 @@ void cr_rounded_rect(float x, float y, float w, float h, float r, float thicknes
     float dy = iy + 0.5f - cy;
     float outer = rbox_extent(dy, hw, hh, r, 0.5f);
     if (outer < 0) continue;
-    float solid = thickness > 0 ? -1.0f : rbox_extent(dy, hw, hh, r, -0.5f);
+    float solid = rbox_extent(dy, hw, hh, r, -0.5f);
+    float inner = thickness > 0 ? rbox_extent(dy, hw, hh, r, 0.5f - thickness) : -1.0f;
     float hole = thickness > 0 ? rbox_extent(dy, hw, hh, r, -thickness - 0.5f) : -1.0f;
+    // [s0, s1) is fully covered except for [i0, i1), of which [h0, h1) is empty. the rest is antialiased
     int x0 = MAX((int)floorf(cx - outer), T.x0), x1 = MIN((int)ceilf(cx + outer), T.x1);
-    int s0 = solid < 0 ? x1 : MAX(px0(cx - solid), x0), s1 = solid < 0 ? x1 : MIN(px0(cx + solid), x1);
-    if (s0 >= s1) s0 = x1;
-    int h0 = hole < 0 ? x1 : px0(cx - hole), h1 = hole < 0 ? x1 : px0(cx + hole);
+    int s0 = solid < 0 ? x1 : CLAMP(px0(cx - solid), x0, x1), s1 = solid < 0 ? x1 : CLAMP(px0(cx + solid), s0, x1);
+    int i0 = inner < 0 ? s1 : CLAMP(px0(cx - inner), s0, s1), i1 = inner < 0 ? s1 : CLAMP(px0(cx + inner), i0, s1);
+    int h0 = hole < 0 ? i0 : CLAMP(px0(cx - hole), i0, i1), h1 = hole < 0 ? i0 : CLAMP(px0(cx + hole), h0, i1);
     uint32_t *p = row(iy);
-    for (int ix = x0; ix < x1; ix++) {
-      if (ix == s0) {
-        span(p + s0, s1 - s0, c);
-        ix = s1 - 1;
-        continue;
+    span(p + s0, i0 - s0, c);
+    span(p + i1, s1 - i1, c);
+    const int edges[4][2] = {{x0, s0}, {i0, h0}, {h1, i1}, {s1, x1}};
+    for (int e = 0; e < 4; e++) {
+      for (int ix = edges[e][0]; ix < edges[e][1]; ix++) {
+        float d = rbox(ix + 0.5f - cx, dy, hw, hh, r);
+        float a = CLAMP(0.5f - d, 0.0f, 1.0f);
+        if (thickness > 0) a *= CLAMP(d + thickness + 0.5f, 0.0f, 1.0f);
+        if (a > 0) p[ix] = over(p[ix], mul(c, (uint32_t)(a * 255.0f + 0.5f)));
       }
-      if (ix >= h0 && ix < h1) {
-        ix = h1 - 1;
-        continue;
-      }
-      float d = rbox(ix + 0.5f - cx, dy, hw, hh, r);
-      float a = CLAMP(0.5f - d, 0.0f, 1.0f);
-      if (thickness > 0) a *= CLAMP(d + thickness + 0.5f, 0.0f, 1.0f);
-      if (a > 0) p[ix] = over(p[ix], mul(c, (uint32_t)(a * 255.0f + 0.5f)));
     }
   }
 }
@@ -348,26 +346,46 @@ void cr_blit(const uint8_t *src, int sw, int sh, int sstride, int a8, float sx, 
   }
 }
 
-// NV12 frame drawn opaque into dest rect, sampled at nearest and converted like the GPU's NV12 import (limited range BT.601).
-// luma goes through lut, chroma is scaled by gain[luma]/256. the result is reused until new_frame or the parameters change
+// NV12 frame drawn opaque into dest rect, sampled at nearest and converted like the GPU's NV12 import (limited range BT.601),
+// then mixed with its luma by saturation/256 and each channel mapped through curve, as the frame shaders do. like on the GPU,
+// channels can be outside [0, 255] until the curve, which has 1280 entries for -512 to 767
+// the result is reused until new_frame or the parameters change
 static struct {
   uint32_t *px;
   size_t cap;
   float params[4];
-  const void *ptrs[3];
-  int ints[7];
+  const void *ptrs[2];
+  int ints[8];
 } NV;
 
+// frame row pixels lo to hi, lo even. a chroma pair is shared by two luma pixels.
+// mixing with the luma is scaling the chroma, as the conversion keeps the luma. with saturation <= 256, channels are -277 to 536
+static void nv12_row(uint32_t *restrict p, const uint8_t *restrict yr, const uint8_t *restrict uvr, int lo, int hi,
+                     const uint8_t *restrict curve, int saturation) {
+  for (int x = lo; x <= hi; x += 2) {
+    int u = (uvr[x] - 128) * saturation, v = (uvr[x + 1] - 128) * saturation;
+    int dr = (409 * v) >> 16, dg = (100 * u + 208 * v) >> 16, db = (516 * u) >> 16;
+    for (int k = 0; k < 2; k++) {
+      int l = ((yr[x + k] - 16) * 298) >> 8;
+      const uint8_t *c = curve + 512 + l;
+      p[x + k] = 0xff000000 | (uint32_t)c[db] << 16 | (uint32_t)c[-dg] << 8 | c[dr];
+    }
+  }
+}
+
 void cr_nv12(const uint8_t *y_plane, const uint8_t *uv_plane, int stride, int fw, int fh, float dx, float dy, float dw, float dh,
-             int flip_x, const uint8_t *lut, const uint16_t *gain, int new_frame) {
+             int flip_x, const uint8_t *curve, int saturation, int new_frame) {
   int ix0 = MAX(px0(dx), T.x0), ix1 = MIN(px0(dx + dw), T.x1);
   int iy0 = MAX(px0(dy), T.y0), iy1 = MIN(px0(dy + dh), T.y1);
   if (ix0 >= ix1 || iy0 >= iy1) return;
   int n = ix1 - ix0;
   float params[4] = {dx, dy, dw, dh};
-  const void *ptrs[3] = {y_plane, lut, gain};
-  int ints[7] = {ix0, ix1, iy0, iy1, fw, fh, flip_x};
-  if (new_frame || memcmp(params, NV.params, sizeof(params)) || memcmp(ptrs, NV.ptrs, sizeof(ptrs)) || memcmp(ints, NV.ints, sizeof(ints))) {
+  const void *ptrs[2] = {y_plane, curve};
+  saturation = CLAMP(saturation, 0, 256);
+  int ints[8] = {ix0, ix1, iy0, iy1, fw, fh, flip_x, saturation};
+  int convert = new_frame || memcmp(params, NV.params, sizeof(params)) || memcmp(ptrs, NV.ptrs, sizeof(ptrs)) ||
+                memcmp(ints, NV.ints, sizeof(ints));
+  if (convert) {
     size_t size = (size_t)n * (iy1 - iy0);
     if (size > NV.cap) {
       free(NV.px);
@@ -378,39 +396,92 @@ void cr_nv12(const uint8_t *y_plane, const uint8_t *uv_plane, int stride, int fw
     memcpy(NV.params, params, sizeof(params));
     memcpy(NV.ptrs, ptrs, sizeof(ptrs));
     memcpy(NV.ints, ints, sizeof(ints));
-    int cols[n];
-    for (int i = 0; i < n; i++) {
-      int fx = CLAMP((int)((ix0 + i + 0.5f - dx) * fw / dw), 0, fw - 1);
-      cols[i] = flip_x ? fw - 1 - fx : fx;
-    }
-    for (int iy = iy0; iy < iy1; iy++) {
-      int fy = CLAMP((int)((iy + 0.5f - dy) * fh / dh), 0, fh - 1);
-      const uint8_t *yr = y_plane + (size_t)fy * stride, *uvr = uv_plane + (size_t)(fy / 2) * stride;
-      uint32_t *p = NV.px + (size_t)(iy - iy0) * n;
-      for (int i = 0; i < n; i++) {
-        int fx = cols[i], ys = yr[fx], l = lut[ys];
-        int u = (uvr[fx & ~1] - 128) * gain[ys], v = (uvr[fx | 1] - 128) * gain[ys];
-        int r = l + ((409 * v) >> 16), g = l - ((100 * u + 208 * v) >> 16), b = l + ((516 * u) >> 16);
-        p[i] = 0xff000000 | (uint32_t)CLAMP(b, 0, 255) << 16 | (uint32_t)CLAMP(g, 0, 255) << 8 | (uint32_t)CLAMP(r, 0, 255);
-      }
-    }
   }
-  for (int iy = iy0; iy < iy1; iy++) memcpy(row(iy) + ix0, NV.px + (size_t)(iy - iy0) * n, (size_t)n * 4);
+  int cols[n];
+  for (int i = 0; i < n && convert; i++) {
+    int fx = CLAMP((int)((ix0 + i + 0.5f - dx) * fw / dw), 0, fw - 1);
+    cols[i] = flip_x ? fw - 1 - fx : fx;
+  }
+  int lo = convert ? MIN(cols[0], cols[n - 1]) & ~1 : 0, hi = convert ? MAX(cols[0], cols[n - 1]) : 0;  // sampled frame columns
+  uint32_t src[hi + 2];  // in whole chroma pairs
+  for (int iy = iy0, prev = -1; iy < iy1; iy++) {
+    uint32_t *p = NV.px + (size_t)(iy - iy0) * n;
+    if (convert) {
+      int fy = CLAMP((int)((iy + 0.5f - dy) * fh / dh), 0, fh - 1);
+      if (fy == prev) {  // upscaled, same frame row as the last one
+        memcpy(p, p - n, (size_t)n * 4);
+      } else {
+        // converted at the frame's resolution, then scaled
+        nv12_row(src, y_plane + (size_t)fy * stride, uv_plane + (size_t)(fy / 2) * stride, lo, hi, curve, saturation);
+        for (int i = 0; i < n; i++) p[i] = src[cols[i]];
+      }
+      prev = fy;
+    }
+    memcpy(row(iy) + ix0, p, (size_t)n * 4);
+  }
 }
 
 // ***** KMS output *****
+// the display's rotator turns the landscape target into one of two portrait panel buffers, which is then flipped to
+
+#if __has_include(<linux/msm_ion.h>)
+#include <fcntl.h>
+#include <linux/ion.h>
+#include <linux/msm_ion.h>
+#include <linux/videodev2.h>
+
+struct ion_buf {
+  int fd;
+  ion_user_handle_t handle;
+  uint8_t *map;
+  size_t size;
+};
 
 static struct {
-  int fd;
+  int fd, ion, rot;
   uint32_t crtc, connector;
   struct drm_mode_modeinfo mode;
-  struct { uint32_t handle, fb, pitch; uint64_t size; uint8_t *map; } buf[2];
-  int back, crtc_set, canonical_zero;
-  const int32_t *color;  // [3 in][3 out][256] linear contributions in 1/4096, or NULL
-  const uint8_t *gamma;  // [4096]
-} D = {.fd = -1};
+  struct ion_buf target, panel[2];
+  uint32_t handle[2], fb[2];
+  int back, crtc_set;
+} D = {.fd = -1, .ion = -1, .rot = -1};
 
-int cr_display_init(int fd, int canonical_zero, const int32_t *color, const uint8_t *gamma) {
+static int ion_alloc(struct ion_buf *b, size_t size, int cached) {
+  struct ion_allocation_data alloc = {.len = size, .align = 4096, .heap_id_mask = 1 << ION_IOMMU_HEAP_ID,
+                                      .flags = cached ? ION_FLAG_CACHED : 0};
+  if (ioctl(D.ion, ION_IOC_ALLOC, &alloc)) return -errno;
+  b->handle = alloc.handle;
+  struct ion_fd_data share = {.handle = alloc.handle};
+  if (ioctl(D.ion, ION_IOC_SHARE, &share)) return -errno;
+  b->fd = share.fd;
+  b->size = size;  // set with the fd
+  b->map = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED, b->fd, 0);
+  return b->map == MAP_FAILED ? (b->map = NULL, -errno) : 0;
+}
+
+static void ion_free(struct ion_buf *b) {
+  if (b->map) munmap(b->map, b->size);
+  if (b->size) close(b->fd);
+  if (b->handle) ioctl(D.ion, ION_IOC_FREE, &(struct ion_handle_data){.handle = b->handle});
+  memset(b, 0, sizeof(*b));
+}
+
+static int rot_queue(int type, int index, const struct ion_buf *b) {
+  // the rotator takes the dmabuf fd as the user pointer
+  struct v4l2_buffer buf = {.type = type, .memory = V4L2_MEMORY_USERPTR, .index = index, .m.userptr = b->fd,
+                            .length = b->size, .bytesused = b->size};
+  return ioctl(D.rot, VIDIOC_QBUF, &buf) ? -errno : 0;
+}
+
+static int rot_wait(int type) {
+  struct v4l2_buffer buf = {.type = type, .memory = V4L2_MEMORY_USERPTR};
+  return ioctl(D.rot, VIDIOC_DQBUF, &buf) ? -errno : 0;
+}
+
+void cr_display_close(void);
+
+// open the panel and the rotator into it
+int cr_display_init(int fd, int canonical_zero) {
   uint32_t crtcs[8] = {0}, connectors[8] = {0};
   struct drm_mode_card_res res = {.crtc_id_ptr = (uintptr_t)crtcs, .connector_id_ptr = (uintptr_t)connectors,
                                   .count_crtcs = 8, .count_connectors = 8};
@@ -427,60 +498,76 @@ int cr_display_init(int fd, int canonical_zero, const int32_t *color, const uint
   if (!D.connector) return -ENODEV;
   D.fd = fd;
   D.crtc = crtcs[0];
-  D.canonical_zero = canonical_zero;
-  D.color = color;
-  D.gamma = gamma;
-  for (int i = 0; i < 2; i++) {
-    struct drm_mode_create_dumb create = {.width = D.mode.hdisplay, .height = D.mode.vdisplay, .bpp = 32};
-    if (ioctl(fd, DRM_IOCTL_MODE_CREATE_DUMB, &create)) return -errno;
-    struct drm_mode_fb_cmd2 fb = {.width = create.width, .height = create.height, .pixel_format = DRM_FORMAT_ABGR8888,
-                                  .handles = {create.handle}, .pitches = {create.pitch}};
-    struct drm_mode_map_dumb map = {.handle = create.handle};
-    if (ioctl(fd, DRM_IOCTL_MODE_ADDFB2, &fb) || ioctl(fd, DRM_IOCTL_MODE_MAP_DUMB, &map)) return -errno;
-    D.buf[i].handle = create.handle;
-    D.buf[i].fb = fb.fb_id;
-    D.buf[i].pitch = create.pitch;
-    D.buf[i].size = create.size;
-    D.buf[i].map = mmap(NULL, create.size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, map.offset);
-    if (D.buf[i].map == MAP_FAILED) return -errno;
-  }
-  return 0;
-}
-
-static inline uint32_t correct(uint32_t c) {
-  uint32_t out = c & 0xff000000;
-  for (int o = 0; o < 3; o++) {
-    int32_t lin = D.color[o * 256 + (c & 255)] + D.color[768 + o * 256 + ((c >> 8) & 255)] + D.color[1536 + o * 256 + ((c >> 16) & 255)];
-    out |= (uint32_t)D.gamma[CLAMP(lin, 0, 4095)] << (8 * o);
-  }
-  return out;
-}
-
-// rotate the landscape target onto the portrait panel and flip to it on the next vblank
-int cr_display_present(void) {
+  D.ion = open("/dev/ion", O_RDWR);
+  D.rot = open("/dev/video2", O_RDWR);  // sde_rotator, a v4l2 mem2mem device
   int pw = D.mode.hdisplay, ph = D.mode.vdisplay;
-  if (T.width != ph || T.height != pw) return -EINVAL;
-  uint8_t *dst = D.buf[D.back].map;
-  uint32_t pitch = D.buf[D.back].pitch, last = 0, last_out = D.color ? correct(0) : 0;
-  // in tiles, so the source columns stay in cache
-  for (int ty = 0; ty < ph; ty += 16) {
-    for (int tx = 0; tx < pw; tx += 16) {
-      for (int y = ty; y < MIN(ty + 16, ph); y++) {
-        uint32_t *d = (uint32_t *)(dst + (size_t)y * pitch);
-        int sx = D.canonical_zero ? ph - 1 - y : y;
-        for (int x = tx; x < MIN(tx + 16, pw); x++) {
-          uint32_t c = row(D.canonical_zero ? x : pw - 1 - x)[sx];
-          if (D.color && c != last) {
-            last = c;
-            last_out = correct(c);
-          }
-          d[x] = D.color ? last_out : c;
-        }
-      }
-    }
+  struct v4l2_control rotate = {.id = V4L2_CID_ROTATE, .value = canonical_zero ? 270 : 90};
+  // the v4l2 and DRM fourccs are the same
+  struct v4l2_format in = {.type = V4L2_BUF_TYPE_VIDEO_OUTPUT, .fmt.pix = {.width = ph, .height = pw, .pixelformat = DRM_FORMAT_ABGR8888}};
+  struct v4l2_format out = {.type = V4L2_BUF_TYPE_VIDEO_CAPTURE, .fmt.pix = {.width = pw, .height = ph, .pixelformat = DRM_FORMAT_ABGR8888}};
+  struct v4l2_requestbuffers reqs[2] = {{.count = 1, .type = V4L2_BUF_TYPE_VIDEO_OUTPUT, .memory = V4L2_MEMORY_USERPTR},
+                                        {.count = 2, .type = V4L2_BUF_TYPE_VIDEO_CAPTURE, .memory = V4L2_MEMORY_USERPTR}};
+  int ret = D.ion < 0 || D.rot < 0 || ioctl(D.rot, VIDIOC_S_CTRL, &rotate) || ioctl(D.rot, VIDIOC_S_FMT, &in) ||
+            ioctl(D.rot, VIDIOC_S_FMT, &out) ? -errno : 0;
+  if (!ret && in.fmt.pix.bytesperline != (uint32_t)ph * 4) ret = -EINVAL;
+  // the target is read back while drawing, so it's cached and cleaned before each rotation
+  if (!ret) ret = ion_alloc(&D.target, in.fmt.pix.sizeimage, 1);
+  for (int i = 0; i < 2 && !ret; i++) {
+    ret = ion_alloc(&D.panel[i], out.fmt.pix.sizeimage, 0);
+    struct drm_prime_handle prime = {.fd = D.panel[i].fd};
+    if (!ret && ioctl(fd, DRM_IOCTL_PRIME_FD_TO_HANDLE, &prime)) ret = -errno;
+    D.handle[i] = prime.handle;
+    struct drm_mode_fb_cmd2 fb = {.width = pw, .height = ph, .pixel_format = DRM_FORMAT_ABGR8888, .handles = {prime.handle},
+                                  .pitches = {out.fmt.pix.bytesperline}};
+    if (!ret && ioctl(fd, DRM_IOCTL_MODE_ADDFB2, &fb)) ret = -errno;
+    D.fb[i] = fb.fb_id;
   }
+  for (int i = 0; i < 2 && !ret; i++) {
+    if (ioctl(D.rot, VIDIOC_REQBUFS, &reqs[i]) || ioctl(D.rot, VIDIOC_STREAMON, &reqs[i].type)) ret = -errno;
+  }
+  if (ret) cr_display_close();
+  return ret;
+}
+
+// the buffer to draw into, if a width x height target is the panel's size
+uint8_t *cr_display_target(int width, int height) {
+  return width == D.mode.vdisplay && height == D.mode.hdisplay ? D.target.map : NULL;
+}
+
+// set a property of the display's CRTC to a blob of size bytes, or clear it when data is NULL
+int cr_display_blob(const char *name, const void *data, uint32_t size) {
+  uint32_t ids[128];
+  uint64_t values[128];
+  struct drm_mode_obj_get_properties props = {.props_ptr = (uintptr_t)ids, .prop_values_ptr = (uintptr_t)values, .count_props = 128,
+                                              .obj_id = D.crtc, .obj_type = DRM_MODE_OBJECT_CRTC};
+  if (ioctl(D.fd, DRM_IOCTL_MODE_OBJ_GETPROPERTIES, &props)) return -errno;
+  for (uint32_t i = 0; i < MIN(props.count_props, 128); i++) {
+    struct drm_mode_get_property prop = {.prop_id = ids[i]};
+    if (ioctl(D.fd, DRM_IOCTL_MODE_GETPROPERTY, &prop) || strcmp(prop.name, name)) continue;
+    struct drm_mode_create_blob blob = {.data = (uintptr_t)data, .length = size};
+    if (data && ioctl(D.fd, DRM_IOCTL_MODE_CREATEPROPBLOB, &blob)) return -errno;
+    struct drm_mode_obj_set_property set = {.value = data ? blob.blob_id : 0, .prop_id = ids[i], .obj_id = D.crtc,
+                                            .obj_type = DRM_MODE_OBJECT_CRTC};
+    int ret = ioctl(D.fd, DRM_IOCTL_MODE_OBJ_SETPROPERTY, &set) ? -errno : 0;
+    if (data) ioctl(D.fd, DRM_IOCTL_MODE_DESTROYPROPBLOB, &(struct drm_mode_destroy_blob){.blob_id = blob.blob_id});
+    return ret;
+  }
+  return -ENOENT;
+}
+
+// show the target on the panel at the next vblank
+int cr_display_present(void) {
+  if (T.pixels != D.target.map) return -EINVAL;
+  struct ion_flush_data flush = {.handle = D.target.handle, .vaddr = D.target.map, .length = D.target.size};
+  struct ion_custom_data clean = {.cmd = ION_IOC_CLEAN_CACHES, .arg = (uintptr_t)&flush};
+  if (ioctl(D.ion, ION_IOC_CUSTOM, &clean)) return -errno;
+  int ret = rot_queue(V4L2_BUF_TYPE_VIDEO_OUTPUT, 0, &D.target);
+  if (!ret) ret = rot_queue(V4L2_BUF_TYPE_VIDEO_CAPTURE, D.back, &D.panel[D.back]);
+  if (!ret) ret = rot_wait(V4L2_BUF_TYPE_VIDEO_CAPTURE);
+  if (!ret) ret = rot_wait(V4L2_BUF_TYPE_VIDEO_OUTPUT);
+  if (ret) return ret;
   // like raylib: flip, or set the CRTC again if another DRM client disabled it, then wait for the vblank
-  uint32_t fb = D.buf[D.back].fb;
+  uint32_t fb = D.fb[D.back];
   struct drm_mode_crtc_page_flip flip = {.crtc_id = D.crtc, .fb_id = fb};
   if (!D.crtc_set || ioctl(D.fd, DRM_IOCTL_MODE_PAGE_FLIP, &flip)) {
     struct drm_mode_crtc set = {.crtc_id = D.crtc, .fb_id = fb, .set_connectors_ptr = (uintptr_t)&D.connector,
@@ -495,12 +582,21 @@ int cr_display_present(void) {
 }
 
 void cr_display_close(void) {
+  if (D.rot >= 0) close(D.rot);
   for (int i = 0; i < 2; i++) {
-    if (D.buf[i].map && D.buf[i].map != MAP_FAILED) munmap(D.buf[i].map, D.buf[i].size);
-    if (D.buf[i].fb) ioctl(D.fd, DRM_IOCTL_MODE_RMFB, &D.buf[i].fb);
-    struct drm_mode_destroy_dumb destroy = {.handle = D.buf[i].handle};
-    if (D.buf[i].handle) ioctl(D.fd, DRM_IOCTL_MODE_DESTROY_DUMB, &destroy);
+    if (D.fb[i]) ioctl(D.fd, DRM_IOCTL_MODE_RMFB, &D.fb[i]);
+    if (D.handle[i]) ioctl(D.fd, DRM_IOCTL_GEM_CLOSE, &(struct drm_gem_close){.handle = D.handle[i]});
+    ion_free(&D.panel[i]);
   }
+  ion_free(&D.target);
+  if (D.ion >= 0) close(D.ion);
   memset(&D, 0, sizeof(D));
-  D.fd = -1;
+  D.fd = D.ion = D.rot = -1;
 }
+#else
+int cr_display_init(int fd, int canonical_zero) { return -ENODEV; }
+uint8_t *cr_display_target(int width, int height) { return NULL; }
+int cr_display_blob(const char *name, const void *data, uint32_t size) { return -ENODEV; }
+int cr_display_present(void) { return -ENODEV; }
+void cr_display_close(void) {}
+#endif

@@ -67,17 +67,14 @@ else:
     """
 
 
-def shader_lut(curve, saturation: float = 1.0) -> tuple[np.ndarray, np.ndarray]:
-  """luma lut and chroma gain (in 1/256) that approximate a frame shader applying curve to each channel after scaling
-  saturation, as the curve's slope at that luma scales the chroma"""
-  x = np.clip((np.arange(256) - 16) / 219, 0, 1)
-  h = 1 / 512
-  xs = np.clip(x, h, 1 - h)
-  gain = saturation * (curve(xs + h) - curve(xs - h)) / (2 * h)
-  return np.round(curve(x) * 255).astype(np.uint8), np.round(gain * 256).astype(np.uint16)
+def shader_curve(curve) -> np.ndarray:
+  """a frame shader's per channel curve as a lut for channel values -512 to 767, the GPU doesn't clamp them before the shader"""
+  with np.errstate(invalid="ignore"):
+    out = np.nan_to_num(curve((np.arange(1280) - 512) / 255), nan=0.0)
+  return np.round(np.clip(out, 0, 1) * 255).astype(np.uint8)
 
 
-CPU_COLOR = shader_lut(lambda c: c ** (1 / 1.28))
+CPU_COLOR = (shader_curve(lambda c: c ** (1 / 1.28)), 1.0)
 
 
 class CameraView(Widget):
@@ -302,8 +299,8 @@ class CameraView(Widget):
   def _set_shader_uniforms(self) -> None:
     pass
 
-  def _cpu_color(self) -> tuple[np.ndarray, np.ndarray]:
-    """FRAGMENT_SHADER for the CPU renderer, see shader_lut"""
+  def _cpu_color(self) -> tuple[np.ndarray, float]:
+    """FRAGMENT_SHADER for the CPU renderer: its per channel curve and saturation"""
     return CPU_COLOR
 
   def _ensure_connection(self) -> bool:

@@ -21,6 +21,7 @@ SOM_ID = Path("/sys/devices/platform/vendor/vendor:gpio-som-id/som_id")
 COLOR_CAL = ("/data/misc/display/color_cal/color_cal", "/sys/devices/platform/soc/894000.i2c/i2c-2/2-0017/color_cal",
              "/persist/comma/color_cal")
 TOUCH_DEVICE = "/dev/input/event2"
+DSPP_COLOR = ("SDE_DSPP_IGC_V3", "SDE_DSPP_PCC_V4", "SDE_DSPP_GC_V1")
 TEXT_LINE_SPACING = 2  # raylib's default
 
 F, I, U32, P = ctypes.c_float, ctypes.c_int, ctypes.c_uint32, ctypes.c_void_p
@@ -40,10 +41,12 @@ for name, args in {
   "cr_rect": [F, F, F, F, U32, U32, U32, U32], "cr_rounded_rect": [F, F, F, F, F, F, U32],
   "cr_ring": [F, F, F, F, F, F, U32, U32], "cr_triangles": [P, I, P, I, I],
   "cr_blit": [P, I, I, I, I, F, F, F, F, F, F, F, F, F, F, F, U32, I],
-  "cr_nv12": [P, P, I, I, I, F, F, F, F, I, P, P, I],
-  "cr_display_init": [I, I, P, P], "cr_display_present": [], "cr_display_close": [],
+  "cr_nv12": [P, P, I, I, I, F, F, F, F, I, P, I, I],
+  "cr_display_init": [I, I], "cr_display_target": [I, I], "cr_display_blob": [ctypes.c_char_p, P, U32],
+  "cr_display_present": [], "cr_display_close": [],
 }.items():
   getattr(_lib, name).argtypes = args
+_lib.cr_display_target.restype = ctypes.POINTER(ctypes.c_uint8)
 
 # raylib's own font loading, exported by the raylib_nb extension
 _raylib = ctypes.CDLL(_backend.native.__file__)
@@ -118,8 +121,8 @@ class _Renderer:
     self.transform_stack: list[tuple[float, float, float, float]] = []
     self.display = False
     self.drm_sock: socket.socket | None = None
-    self.color_tables = None
     self.last_frame = self.frame_time = 0.0
+    self.target_frame_time = 0.0
     # touch, as raylib's comma platform
     self.touch_fd = -1
     self.canonical_zero = False
@@ -152,17 +155,25 @@ class _Renderer:
       self.drm_sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
       self.drm_sock.connect("/tmp/drmfd.sock")  # magic hands out DRM master while this stays open
       fd = socket.recv_fds(self.drm_sock, 1, 1)[1][0]
-    color, gamma = self.color_tables = self._color_correction()
-    ret = _lib.cr_display_init(fd, self.canonical_zero, color.ctypes.data if color is not None else None,
-                               gamma.ctypes.data if gamma is not None else None)
+    ret = _lib.cr_display_init(fd, self.canonical_zero)
     if ret != 0:
       raise RuntimeError(f"failed to init display: {os.strerror(-ret)}")
     self.display = True
+    # drawn straight into the buffer the display's rotator reads
+    if not (target := _lib.cr_display_target(width, height)):
+      raise RuntimeError(f"{width}x{height} window doesn't fit the display")
+    self.fb = np.ctypeslib.as_array(target, (height, width, 4))
+    _lib.cr_target(_ptr(self.fb), width, height, width * 4)
+    for name, blob in self._color_correction().items():
+      if (ret := _lib.cr_display_blob(name.encode(), blob, len(blob or b""))) != 0:
+        cloudlog.warning(f"cpu renderer: failed to set {name}: {os.strerror(-ret)}")
     self.touch_fd = os.open(TOUCH_DEVICE, os.O_RDONLY | os.O_NONBLOCK)
 
-  def _color_correction(self):
+  def _color_correction(self) -> dict[str, bytes | None]:
+    """raylib's color correction shader as the display's own degamma, matrix and gamma blocks"""
+    off = dict.fromkeys(DSPP_COLOR)
     if self.canonical_zero:
-      return None, None
+      return off
     for path in COLOR_CAL:
       try:
         gamma, *rest = struct.unpack("<13e", Path(path).read_bytes()[:26])
@@ -170,16 +181,26 @@ class _Renderer:
       except (OSError, struct.error):
         pass
     else:
-      return None, None
+      return off
     ccm, gains = np.array(rest[:9]).reshape(3, 3), np.array(rest[9:])
-    linear = (np.arange(256) / 255) ** 2.2
-    # [in][out][value], in 1/4096
-    color = np.round(linear[None, None, :] * (ccm / gains[:, None])[:, :, None] * 4095).astype(np.int32)
-    out = np.round((np.arange(4096) / 4095) ** (1 / gamma / 2.2) * 255).clip(0, 255).astype(np.uint8)
-    return np.ascontiguousarray(color), out
+    # 256 entry 12 bit degamma and 1024 entry 10 bit gamma luts per channel, and a matrix in 1/32768 with a plane per output channel
+    igc = np.round((np.arange(256) / 255) ** 2.2 * 4095).astype("<u4")
+    gc = np.round((np.arange(1024) / 1023) ** (1 / gamma / 2.2) * 1023).astype("<u4")
+    pcc = np.zeros((3, 8), "<i4")  # c, r, g, b, rg, gb, rb, rgb
+    pcc[:, 1:4] = np.round((ccm / gains[:, None]).T * 32768)
+    # structs of msm_drm_pp.h, flags first and padded to 8 bytes
+    return {
+      "SDE_DSPP_IGC_V3": bytes(8) + np.tile(igc, 3).tobytes() + bytes(8),
+      "SDE_DSPP_PCC_V4": bytes(8) + pcc.tobytes() + bytes(40),
+      "SDE_DSPP_GC_V1": bytes(8) + np.tile(gc[0::2] | gc[1::2] << 16, 3).tobytes(),
+    }
 
   def close_window(self):
     if self.display:
+      for name in DSPP_COLOR:
+        _lib.cr_display_blob(name.encode(), None, 0)
+      self.fb = self.fb.copy()  # the display's buffer goes away
+      _lib.cr_target(_ptr(self.fb), self.fb.shape[1], self.fb.shape[0], self.fb.shape[1] * 4)
       _lib.cr_display_close()
       self.display = False
     if self.drm_sock is not None:
@@ -198,6 +219,9 @@ class _Renderer:
       ret = _lib.cr_display_present()
       if ret != 0:
         cloudlog.warning(f"cpu renderer: failed to present: {os.strerror(-ret)}")
+    # like raylib, sleep out the rest of the frame
+    if (wait := self.last_frame + self.target_frame_time - time.monotonic()) > 0:
+      time.sleep(wait)
 
   # ***** input *****
 
@@ -279,6 +303,17 @@ class _Renderer:
       return
     nx, ny = -d[1] / length * thick / 2, d[0] / length * thick / 2
     self.triangles([(x0 - nx, y0 - ny), (x0 + nx, y0 + ny), (x1 - nx, y1 - ny), (x1 + nx, y1 + ny)], [_pack(color)], 1)
+
+  def spline(self, points, count: int, thick: float, color):
+    """raylib's DrawSplineLinear: a quad along each segment"""
+    p = np.array([(v.x, v.y) for v in points[:count]], dtype=np.float64).reshape(-1, 2)
+    if len(p) < 2:
+      return
+    d = p[1:] - p[:-1]
+    length = np.hypot(d[:, 0], d[:, 1])
+    r = np.column_stack([-d[:, 1], d[:, 0]]) * np.divide(thick / 2, length, out=np.zeros_like(length), where=length > 0)[:, None]
+    a0, a1, b0, b1 = p[:-1] - r, p[:-1] + r, p[1:] - r, p[1:] + r
+    self.triangles(np.stack([a0, a1, b0, a1, b0, b1], axis=1).reshape(-1, 2), [_pack(color)], 0)
 
   def blit(self, pixels: np.ndarray, a8: bool, src, dst, origin, rotation: float, tint, bilinear: bool):
     sx, sy, tx, ty = self.transform
@@ -403,12 +438,12 @@ class _Renderer:
 _r = _Renderer()
 
 
-def draw_nv12(frame, dst, flip_x: bool, lut: np.ndarray, gain: np.ndarray, new_frame: bool):
-  """draw a VisionIPC frame with its luma mapped through lut and chroma scaled by gain[luma] / 256, in place of a frame shader"""
+def draw_nv12(frame, dst, flip_x: bool, curve: np.ndarray, saturation: float, new_frame: bool):
+  """draw a VisionIPC frame mixed with its luma by saturation and each channel mapped through curve, in place of a frame shader"""
   data = np.frombuffer(frame.data, np.uint8)
   x, y, w, h = _r.rect(dst.x, dst.y, dst.width, dst.height)
   _lib.cr_nv12(_ptr(data), _ptr(data) + frame.uv_offset, frame.stride, frame.width, frame.height,
-               x, y, w, h, flip_x, _ptr(lut), _ptr(gain), new_frame)
+               x, y, w, h, flip_x, _ptr(curve), round(saturation * 256), new_frame)
 
 
 def draw_triangle_strip_colors(points: np.ndarray, colors: np.ndarray):
@@ -426,7 +461,7 @@ def install():
     "get_monitor_width": lambda monitor: _r.fb.shape[1],
     "get_monitor_height": lambda monitor: _r.fb.shape[0],
     "set_config_flags": noop,
-    "set_target_fps": noop,
+    "set_target_fps": lambda fps: setattr(_r, "target_frame_time", 1 / fps if fps > 0 else 0.0),
     "begin_drawing": _r.begin_drawing,
     "end_drawing": _r.end_drawing,
     "get_time": time.monotonic,
@@ -470,8 +505,7 @@ def install():
     "draw_ring": lambda center, r0, r1, a0, a1, segments, c: _r.ring(center.x, center.y, min(r0, r1), max(r0, r1), a0, a1, c, c),
     "draw_line": lambda x0, y0, x1, y1, c: _r.line(x0 + 0.5, y0 + 0.5, x1 + 0.5, y1 + 0.5, 1, c),
     "draw_line_ex": lambda start, end, thick, c: _r.line(start.x, start.y, end.x, end.y, thick, c),
-    "draw_spline_linear": lambda points, count, thick, c: [_r.line(a.x, a.y, b.x, b.y, thick, c)
-                                                           for a, b in zip(points[:count - 1], points[1:count], strict=True)],
+    "draw_spline_linear": _r.spline,
     "draw_triangle_fan": lambda points, count, c: _r.triangles(points[:count], [_pack(c)], 2),
     "draw_triangle_strip": lambda points, count, c: _r.triangles(points[:count], [_pack(c)], 1),
 
