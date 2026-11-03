@@ -45,7 +45,7 @@ jobs:
       with:
         timeout_minutes: 2
         max_attempts: 3
-        command: git lfs pull
+        command: ./lfs.py pull
     - name: Build devel
       timeout-minutes: 1
       run: TARGET_DIR=$STRIPPED_DIR tools/release/build_stripped.sh
