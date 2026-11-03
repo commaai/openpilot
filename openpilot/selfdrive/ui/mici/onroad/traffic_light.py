@@ -6,11 +6,17 @@ from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets import Widget
 
-# limits on modelV2.trafficUnits, which is [u69, u248, u201, u239]
-HOLD_MIN_SUM = 0.3
-BRAKING_MIN_SUM = 1.0
-GREEN_MIN = 0.2
+# limits on modelV2.trafficUnits, which is [u69, u248, u201, u239], smoothed.
+# u69/u248 are on whenever the car stands still, at a red light or not. So red while stopped only shows
+# if the car braked for a light or a stop just before (tuned on 59 camera-checked stops, 111 segments).
+UNITS_RC = 0.25          # s
+BRAKING_MIN = 0.8        # u201, while moving
+HOLD_MEMORY = 4.0        # s, from the last braking to the stop
+GREEN_MIN = 0.5          # u239, while moving
 GREEN_MAX_OTHERS_RATIO = 0.5  # the other units together must stay below this part of u239
+MOVING_SPEED = 1.0       # m/s
+STOPPED_SPEED = 0.3      # m/s
+MODEL_DT = 0.05
 
 BODY_WIDTH = 34
 BODY_HEIGHT = 88
@@ -31,21 +37,28 @@ class TrafficLightState(IntEnum):
   HOLD = 3
 
 
-def classify_traffic_units(units: Sequence[float]) -> TrafficLightState:
-  # an empty list means the model does not have the units
-  if len(units) != 4:
-    return TrafficLightState.NONE
+class TrafficLightClassifier:
+  def __init__(self):
+    self._units = [FirstOrderFilter(0.0, UNITS_RC, MODEL_DT) for _ in range(4)]
+    self._since_braking = float('inf')
 
-  u69, u248, u201, u239 = units
-  hold = u69 + u248
-  total = hold + u201 + u239
-  if hold >= max(u201, u239) and total > HOLD_MIN_SUM:
-    return TrafficLightState.HOLD
-  if u201 >= max(hold, u239) and total > BRAKING_MIN_SUM:
-    return TrafficLightState.BRAKING
-  if u239 > GREEN_MIN and hold + u201 < GREEN_MAX_OTHERS_RATIO * u239:
-    return TrafficLightState.GREEN
-  return TrafficLightState.NONE
+  def update(self, units: Sequence[float], v_ego: float) -> TrafficLightState:
+    # an empty list means the model does not have the units
+    if len(units) != 4:
+      return TrafficLightState.NONE
+
+    u69, u248, u201, u239 = (f.update(u) for f, u in zip(self._units, units, strict=True))
+    self._since_braking += MODEL_DT
+    if v_ego > MOVING_SPEED and u201 > BRAKING_MIN and u201 >= u239:
+      self._since_braking = 0.0
+      return TrafficLightState.BRAKING
+    if v_ego < STOPPED_SPEED and self._since_braking < HOLD_MEMORY:
+      # stay red while the car is held
+      self._since_braking = 0.0
+      return TrafficLightState.HOLD
+    if v_ego > MOVING_SPEED and u239 > GREEN_MIN and u69 + u248 + u201 < GREEN_MAX_OTHERS_RATIO * u239:
+      return TrafficLightState.GREEN
+    return TrafficLightState.NONE
 
 
 def _with_alpha(color: rl.Color, alpha: float) -> rl.Color:
@@ -56,7 +69,9 @@ class TrafficLight(Widget):
   def __init__(self):
     super().__init__()
     self._alpha_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
+    self._classifier = TrafficLightClassifier()
     self._state = TrafficLightState.NONE
+    self._shown = TrafficLightState.NONE
     self._should_draw = False
 
   def set_should_draw(self, should_draw: bool):
@@ -64,11 +79,13 @@ class TrafficLight(Widget):
 
   def _update_state(self):
     super()._update_state()
-    state = classify_traffic_units(ui_state.sm['modelV2'].trafficUnits)
+    # the units come at the model rate, not the UI rate
+    if ui_state.sm.updated['modelV2']:
+      self._shown = self._classifier.update(ui_state.sm['modelV2'].trafficUnits, ui_state.sm['carState'].vEgo)
     # keep the last color while the icon fades out
-    if state != TrafficLightState.NONE:
-      self._state = state
-    self._alpha_filter.update(float(self._should_draw and state != TrafficLightState.NONE))
+    if self._shown != TrafficLightState.NONE:
+      self._state = self._shown
+    self._alpha_filter.update(float(self._should_draw and self._shown != TrafficLightState.NONE))
 
   def _render(self, rect: rl.Rectangle):
     alpha = self._alpha_filter.x
