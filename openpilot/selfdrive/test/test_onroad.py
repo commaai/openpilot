@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import contextlib
 import math
 import json
 import os
@@ -38,6 +39,7 @@ CPU usage budget
 """
 
 TEST_DURATION = 25
+DRIVE_DURATION = 60 * 60
 LOG_OFFSET = 8
 
 MAX_TOTAL_CPU = 350.  # total for all 8 cores
@@ -448,6 +450,7 @@ class TestOnroad(OpenpilotTestCase):
     assert passed
 
   @release_only
+  @unittest.skipIf(HARDWARE.get_device_type() == "mici", "mici has no startup alert")
   def test_startup(self):
     startup_alert = self.ts['selfdriveState']['alertText1'][0]
     expected = EVENTS[log.OnroadEvent.EventName.startup][ET.PERMANENT].alert_text_1
@@ -468,25 +471,30 @@ class TestOnroad(OpenpilotTestCase):
 
 CHESTNUT_VBUS = "/sys/kernel/debug/regulator/smb2-vbus/enable"
 
+@contextlib.contextmanager
+def chestnut_models(services):
+  assert chestnut_present() and chestnut_compiled()
+  Params().put("CarParams", get_demo_car_params().to_bytes(), block=True)
+  sm = messaging.SubMaster(services)
+  pm = messaging.PubMaster(['deviceState'])
+  device_state = messaging.new_message('deviceState')
+  device_state.deviceState.deviceType = HARDWARE.get_device_type()
+  device_state_bytes = device_state.to_bytes()
+  with processes_context(['camerad', 'calibrationd', 'modeld', 'dmonitoringmodeld']) as procs:
+    with Timeout(60, "camera models didn't start"):
+      while not all(sm.seen.values()) or not sm.valid['modelV2']:
+        pm.send('deviceState', device_state_bytes)
+        sm.update(1000)
+    yield sm, procs
+
 @unittest.skipUnless(HARDWARE.get_device_type() == "mici", "requires MICI")
 class TestChestnutOnroad(OpenpilotTestCase):
   COMMA_HARDWARE_TEST = True
 
   @mock_messages(['deviceMotion'])
   def test_big_model(self, subtests):
-    assert chestnut_present() and chestnut_compiled()
-    Params().put("CarParams", get_demo_car_params().to_bytes(), block=True)
     services = ['narrowRoadCameraState', 'wideRoadCameraState', 'cabinCameraState', 'modelV2', 'driverStateV2']
-    sm = messaging.SubMaster(services)
-    pm = messaging.PubMaster(['deviceState'])
-    device_state = messaging.new_message('deviceState')
-    device_state.deviceState.deviceType = HARDWARE.get_device_type()
-    device_state_bytes = device_state.to_bytes()
-    with processes_context(['camerad', 'calibrationd', 'modeld', 'dmonitoringmodeld']):
-      with Timeout(60, "camera models didn't start"):
-        while not all(sm.seen.values()) or not sm.valid['modelV2']:
-          pm.send('deviceState', device_state_bytes)
-          sm.update(1000)
+    with chestnut_models(services) as (sm, _):
       # test big model and camera timings
       with log_collector(services) as (logs, _):
         time.sleep(TEST_DURATION)
@@ -525,6 +533,25 @@ class TestChestnutOnroad(OpenpilotTestCase):
     assert Params().get("ChestnutActive") is False
     expected = 3 * SERVICE_LIST['modelV2'].frequency
     assert np.isclose(len(small_model_logs), expected, rtol=0.05, atol=2), f"small model: expected {expected}, got {len(small_model_logs)}"
+
+
+@unittest.skipUnless(HARDWARE.get_device_type() == "mici", "requires MICI")
+class TestChestnutDrive(OpenpilotTestCase):
+  COMMA_HARDWARE_TEST = True
+
+  @mock_messages(['deviceMotion'])
+  def test_big_model_drive(self):
+    with chestnut_models(['modelV2']) as (sm, procs):
+      start = last = time.monotonic()
+      while (now := time.monotonic()) - start < DRIVE_DURATION:
+        sm.update(1000)
+        if sm.updated['modelV2']:
+          assert sm['modelV2'].big, f"chestnut fell back to the small model after {(now - start) / 60:.1f} minutes"
+          last = now
+        elif now - last > 1:
+          time.sleep(30)  # a crashed process only exits once apport has its core dump
+          exited = {p.name: p.proc.exitcode for p in procs if p.proc.exitcode is not None}
+          raise AssertionError(f"no modelV2 after {(now - start) / 60:.1f} minutes, exited: {exited}")
 
 
 if __name__ == "__main__":
