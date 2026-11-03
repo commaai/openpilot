@@ -10,9 +10,9 @@ from openpilot.system.ui.widgets import Widget
 # u69/u248 are on whenever the car stands still, at a red light or not. So red while stopped only shows
 # if the car braked for a light or a stop just before (tuned on 59 camera-checked stops, 111 segments).
 UNITS_RC = 0.25          # s
-BRAKING_MIN = 0.8        # u201, while moving
+BRAKING_MIN = 0.5        # u201, while moving
 HOLD_MEMORY = 4.0        # s, from the last braking to the stop
-GREEN_MIN = 0.5          # u239, while moving
+GREEN_MIN = 0.3          # u239, while moving
 GREEN_MAX_OTHERS_RATIO = 0.5  # the other units together must stay below this part of u239
 MOVING_SPEED = 1.0       # m/s
 STOPPED_SPEED = 0.3      # m/s

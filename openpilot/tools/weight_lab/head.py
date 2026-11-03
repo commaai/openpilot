@@ -15,7 +15,7 @@ from openpilot.tools.weight_lab.lab_paths import CODE, DATA
 from openpilot.tools.weight_lab.slots import H, DEAD_R4, DEAD_R6
 
 BASE_PREFIXES = ('fe', 'fd', 'f7', 'id4', 'n76', 'n77', 'b2d', 'be', 's39', 's606', 's608')
-SHIPPED = [f'{CODE}/patches/{p}' for p in ('stop_gain_u201_1p4.npz', 'lat_readout_wlo20_half.npz', 'green_go_v1.npz')]  # same list as build_model.sh
+SHIPPED = [f'{CODE}/patches/{p}' for p in ('stop_gain_u201_1p7.npz', 'lat_readout_wlo20_half.npz', 'green_go_v1.npz', 'narrow_v1.npz')]  # same list as build_model.sh
 NAMES = ('in_layer.plan.weight', 'in_layer.plan.bias', 'res_layer.plan.0.weight', 'res_layer.plan.0.bias',
          'res_layer.plan.2.weight', 'res_layer.plan.2.bias', 'final_layer.plan.weight', 'final_layer.plan.bias',
          'scale_layer.plan.scale')

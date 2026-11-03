@@ -5,7 +5,7 @@ import pytest
 
 from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.controls.lib.curve_speed import (get_curve_accel, CurveSpeed, A_LAT_MAX, CURVE_ACCEL_MIN, CURVE_JERK,
-                                                          IN_CURVE_ACCEL_MIN, NO_LIMIT, RELEASE_JERK)
+                                                          IN_CURVE_ACCEL_MIN, NO_LIMIT, RELEASE_JERK, A_LAT_SOFT, SOFT_ACCEL_MIN)
 from openpilot.selfdrive.modeld.constants import ModelConstants
 
 T = np.array(ModelConstants.T_IDXS)
@@ -70,3 +70,13 @@ class TestCurveSpeed:
       a = cs.update(straight, v)
     # 2 s after the braking ends, the accel cap is up by RELEASE_JERK * 2 s, not at once
     assert a == pytest.approx(a_zero + 2.0 * RELEASE_JERK, abs=1e-6)
+
+  def test_soft_limit_slows_gently_before_the_hard_limit(self):
+    v, curv = 20.0, 0.0055  # 2.2 m/s² at 20 m/s: above the soft limit, below the hard limit
+    assert A_LAT_SOFT < v ** 2 * curv < A_LAT_MAX
+    cs = CurveSpeed(DT_MDL)
+    msg = model_msg(*plan(v, lambda t: np.where(t > 3, curv, 0.0)))
+    for _ in range(100):
+      a = cs.update(msg, v)
+    assert get_curve_accel(*plan(v, lambda t: np.where(t > 3, curv, 0.0)), v) > 0.0
+    assert SOFT_ACCEL_MIN <= a < 0.0

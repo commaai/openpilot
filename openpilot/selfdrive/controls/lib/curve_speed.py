@@ -12,33 +12,44 @@ CURVE_JERK = 2.0       # m/s³, how fast the braking for a curve can build up
 RELEASE_JERK = 0.5     # m/s³, how fast the limit goes back up after a curve
 NO_LIMIT = 10.0        # m/s², no curve ahead
 
+# The model often sees how sharp a curve is only late (at night). A second, soft limit starts a gentle slow down
+# before the curve gets near A_LAT_MAX, so the car is already slower when the model sees the real curve.
+A_LAT_SOFT = 1.8       # m/s²
+SOFT_ACCEL_MIN = -0.6  # m/s², most braking for the soft limit
 
-def get_curve_accel(t, x, v, yaw_rate, v_ego):
+
+def curve_points(t, v, yaw_rate):
+  """Curvature at each plan point, and the mask of the points to slow down for."""
+  t, v, yaw_rate = (np.asarray(a, dtype=float) for a in (t, v, yaw_rate))
+  curv = np.abs(yaw_rate) / np.maximum(v, 1.0)
+  # one plan point is not enough: the curve must also be at the next or previous point
+  curv = np.minimum(curv, np.maximum(np.r_[curv[1:], 0.0], np.r_[0.0, curv[:-1]]))
+  return curv, (t >= CURVE_T_MIN) & (t <= CURVE_T_MAX)
+
+
+def get_curve_accel(t, x, v, yaw_rate, v_ego, a_lat_max=A_LAT_MAX):
   """Highest constant accel that keeps v_ego at or below the curve speed limit at each plan point.
 
   It is positive below the curve speed, so the accel goes down smoothly near the limit (no on/off).
   Only a curve that gets tighter than the curve now gets the full braking. In a curve that does not get tighter
   (we are in it, or we come out of it) the braking is gentle.
   """
-  t, x, v, yaw_rate = (np.asarray(a, dtype=float) for a in (t, x, v, yaw_rate))
-  curv_all = np.abs(yaw_rate) / np.maximum(v, 1.0)
-  # one plan point is not enough: the curve must also be at the next or previous point
-  curv_all = np.minimum(curv_all, np.maximum(np.r_[curv_all[1:], 0.0], np.r_[0.0, curv_all[:-1]]))
-  m = (t >= CURVE_T_MIN) & (t <= CURVE_T_MAX)
+  curv_all, m = curve_points(t, v, yaw_rate)
+  x = np.asarray(x, dtype=float)
   curv = curv_all[m]
-  v_max = np.sqrt(A_LAT_MAX / np.maximum(curv, 1e-4))
+  if len(curv) == 0:
+    return NO_LIMIT
+  v_max = np.sqrt(a_lat_max / np.maximum(curv, 1e-4))
   need = (v_max ** 2 - v_ego ** 2) / (2 * np.maximum(x[m], MIN_DIST))
   tighter = curv > TIGHTER_RATIO * curv_all[0]
   need = np.where(tighter, np.maximum(need, CURVE_ACCEL_MIN), np.maximum(need, IN_CURVE_ACCEL_MIN))
-  if len(need) == 0:
-    return NO_LIMIT
   return float(min(need.min(), NO_LIMIT))
 
 
 class CurveSpeed:
   def __init__(self, dt):
     self.dt = dt
-    self.a_curve = NO_LIMIT
+    self.reset()
 
   def reset(self):
     self.a_curve = NO_LIMIT
@@ -46,9 +57,14 @@ class CurveSpeed:
   def update(self, model, v_ego):
     p = model.position
     if len(p.t) == 0 or len(model.velocity.x) != len(p.t) or len(model.orientationRate.z) != len(p.t):
-      self.a_curve = NO_LIMIT
+      self.reset()
       return self.a_curve
-    a_new = get_curve_accel(p.t, p.x, model.velocity.x, model.orientationRate.z, v_ego)
+
+    plan = (p.t, p.x, model.velocity.x, model.orientationRate.z, v_ego)
+    a_hard = get_curve_accel(*plan, A_LAT_MAX)
+    a_soft = max(get_curve_accel(*plan, A_LAT_SOFT), SOFT_ACCEL_MIN)
+    a_new = min(a_hard, a_soft)
+
     if a_new < self.a_curve:
       # braking for a curve builds up with limited jerk
       self.a_curve = max(a_new, min(self.a_curve, 0.0) - CURVE_JERK * self.dt)
