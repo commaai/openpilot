@@ -9,7 +9,7 @@ from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.widgets.ssh_key import SshKeyFetcher
 from openpilot.selfdrive.ui.mici.layouts.settings.tss3_oracle import Tss3OracleBringupPage
 from openpilot.selfdrive.ui.tss3_oracle_runner import tool_available
-from openpilot.selfdrive.car.toyota_tss3_oracle_kit import tss3_fingerprints
+from openpilot.selfdrive.car.toyota_tss3_oracle_kit import oracle_ui_state
 
 
 class AlphaLongConfirmPage(NavScroller):
@@ -184,15 +184,17 @@ class DeveloperLayoutMici(NavScroller):
       self._lat_maneuver_toggle.set_enabled(False)
       self._alpha_long_toggle.set_visible(False)
 
-    tss3 = ui_state.CP is not None and ui_state.CP.carFingerprint in tss3_fingerprints()
-    oracle_visible = not ui_state.is_release and tss3
-    self._tss3_oracle_auto_toggle.set_visible(oracle_visible)
+    fingerprint = ui_state.CP.carFingerprint if ui_state.CP is not None else None
+    oracle_visible, tss3, oracle_label = oracle_ui_state(
+      fingerprint, is_release=ui_state.is_release, tool_available=tool_available(),
+    )
+    self._tss3_oracle_auto_toggle.set_visible(not ui_state.is_release and tss3)
     self._tss3_oracle_auto_toggle.set_enabled(
       lambda: ui_state.is_offroad() and not ui_state.engaged and tool_available()
     )
     self._tss3_oracle_button.set_visible(oracle_visible)
-    self._tss3_oracle_button.set_enabled(lambda: ui_state.is_offroad() and not ui_state.engaged)
-    self._tss3_oracle_button.set_value("ARM" if tool_available() else "KIT MISSING")
+    self._tss3_oracle_button.set_enabled(lambda: tss3 and ui_state.is_offroad() and not ui_state.engaged)
+    self._tss3_oracle_button.set_value(oracle_label)
 
     # Refresh toggles from params to mirror external changes
     for key, item in self._refresh_toggles:

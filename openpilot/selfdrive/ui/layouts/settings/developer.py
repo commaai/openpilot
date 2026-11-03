@@ -8,7 +8,7 @@ from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.multilang import tr, tr_noop
 from openpilot.system.ui.widgets import DialogResult
-from openpilot.selfdrive.car.toyota_tss3_oracle_kit import tss3_fingerprints
+from openpilot.selfdrive.car.toyota_tss3_oracle_kit import oracle_ui_state
 from openpilot.selfdrive.ui.layouts.settings.tss3_oracle import Tss3OracleBringupDialog
 from openpilot.selfdrive.ui.tss3_oracle_runner import tool_available
 
@@ -102,7 +102,11 @@ class DeveloperLayout(Widget):
 
     self._tss3_oracle_button = button_item(
       lambda: tr("TSS3 Oracle Bringup"),
-      lambda: tr("ARM") if tool_available() else tr("KIT MISSING"),
+      lambda: tr(oracle_ui_state(
+        ui_state.CP.carFingerprint if ui_state.CP is not None else None,
+        is_release=self._is_release,
+        tool_available=tool_available(),
+      )[2]),
       description=lambda: tr(DESCRIPTIONS["tss3_oracle_manual"]),
       callback=self._on_tss3_oracle_bringup,
       enabled=lambda: ui_state.is_offroad() and not ui_state.engaged,
@@ -165,10 +169,13 @@ class DeveloperLayout(Widget):
       self._long_maneuver_toggle.action_item.set_enabled(False)
       self._lat_maneuver_toggle.action_item.set_enabled(False)
       self._alpha_long_toggle.set_visible(False)
-    tss3 = ui_state.CP is not None and ui_state.CP.carFingerprint in tss3_fingerprints()
-    oracle_visible = not self._is_release and tss3
-    self._tss3_oracle_auto_toggle.set_visible(oracle_visible)
+    fingerprint = ui_state.CP.carFingerprint if ui_state.CP is not None else None
+    oracle_visible, tss3, _ = oracle_ui_state(
+      fingerprint, is_release=self._is_release, tool_available=tool_available(),
+    )
+    self._tss3_oracle_auto_toggle.set_visible(not self._is_release and tss3)
     self._tss3_oracle_button.set_visible(oracle_visible)
+    self._tss3_oracle_button.action_item.set_enabled(lambda: tss3 and ui_state.is_offroad() and not ui_state.engaged)
 
 
     # TODO: make a param control list item so we don't need to manage internal state as much here

@@ -7,7 +7,7 @@ from pathlib import Path
 from opendbc.car.toyota.values import CAR
 
 from openpilot.selfdrive.car.toyota_tss3_oracle_auto import TOOL_PATH as AUTO_TOOL_PATH
-from openpilot.selfdrive.car.toyota_tss3_oracle_kit import DEFAULT_ORACLE_TOOL, oracle_kit_compatibility, tss3_fingerprints
+from openpilot.selfdrive.car.toyota_tss3_oracle_kit import DEFAULT_ORACLE_TOOL, oracle_kit_compatibility, oracle_ui_state, tss3_fingerprints
 from openpilot.selfdrive.ui.tss3_oracle_runner import TOOL_PATH as UI_TOOL_PATH
 
 
@@ -73,6 +73,21 @@ class TestToyotaTss3OracleKit(unittest.TestCase):
     fingerprints = tss3_fingerprints()
     self.assertIn(CAR.TOYOTA_CAMRY_TSS3, fingerprints)
     self.assertNotIn(CAR.TOYOTA_COROLLA_TSS2, fingerprints)
+
+  def test_ui_keeps_harness_diagnostic_visible_without_enabling_bringup(self):
+    self.assertEqual(oracle_ui_state("MOCK", is_release=False, tool_available=True),
+                     (True, False, "CHECK HARNESS"))
+    self.assertEqual(oracle_ui_state("MOCK", is_release=False, tool_available=False),
+                     (False, False, "CHECK HARNESS"))
+
+  def test_ui_only_arms_for_live_tss3_fingerprint(self):
+    fingerprint = next(iter(tss3_fingerprints()))
+    self.assertEqual(oracle_ui_state(fingerprint, is_release=False, tool_available=True),
+                     (True, True, "ARM"))
+    self.assertEqual(oracle_ui_state(fingerprint, is_release=False, tool_available=False),
+                     (True, True, "KIT MISSING"))
+    self.assertEqual(oracle_ui_state(fingerprint, is_release=True, tool_available=True),
+                     (False, True, "ARM"))
 
 
 if __name__ == "__main__":

@@ -14,6 +14,19 @@ def tss3_fingerprints() -> frozenset[str]:
   return frozenset(platform.value for platform in CAR if platform.config.flags & ToyotaFlags.TSS3)
 
 
+def oracle_ui_state(car_fingerprint: str | None, *, is_release: bool, tool_available: bool) -> tuple[bool, bool, str]:
+  """Return visibility, vehicle eligibility, and the manual bringup label.
+
+  A bundled development kit remains visible as a disabled diagnostic when a
+  harness fault makes fingerprinting fall back to MOCK. Never make the action
+  eligible until the live CarParams identifies a TSS3 platform.
+  """
+  tss3 = car_fingerprint in tss3_fingerprints()
+  visible = not is_release and (tss3 or tool_available)
+  label = "ARM" if tss3 and tool_available else "KIT MISSING" if tss3 else "CHECK HARNESS"
+  return visible, tss3, label
+
+
 def oracle_kit_compatibility(tool_path: Path) -> tuple[bool, str]:
   """The kit is a per-vehicle signed bundle, so accept any structurally valid
   kit; the vehicle it targets is the operator's choice, not a fixed platform."""
