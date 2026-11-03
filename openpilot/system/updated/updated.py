@@ -197,7 +197,7 @@ def finalize_update() -> None:
   t = time.monotonic()
   try:
     run(["git", "gc"], FINALIZED)
-    lfs_script = os.path.join(FINALIZED, "lfs.py")
+    lfs_script = os.path.join(FINALIZED, "tools/lfs.sh")
     run([lfs_script, "prune"] if os.path.isfile(lfs_script) else ["git", "lfs", "prune"], FINALIZED)
     cloudlog.event("Done git cleanup", duration=time.monotonic() - t)
   except subprocess.CalledProcessError:
@@ -410,7 +410,7 @@ class Updater:
     r = [run(cmd, OVERLAY_MERGED) for cmd in cmds]
     cloudlog.info("git reset success: %s", '\n'.join(r))
 
-    lfs_script = os.path.join(OVERLAY_MERGED, "lfs.py")
+    lfs_script = os.path.join(OVERLAY_MERGED, "tools/lfs.sh")
     if os.path.isfile(lfs_script):
       run([lfs_script, "pull"], OVERLAY_MERGED)
     else:
