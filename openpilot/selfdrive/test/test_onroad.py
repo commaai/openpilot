@@ -27,6 +27,7 @@ from openpilot.common.hardware.hw import Paths
 from openpilot.common.mock import mock_messages
 from opendbc.car.car_helpers import get_demo_car_params
 from openpilot.selfdrive.modeld.helpers import chestnut_present, chestnut_compiled
+from openpilot.system.hardware.chestnut.flash import vbus_setting
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.log_time_series import msgs_to_time_series
 
@@ -466,8 +467,6 @@ class TestOnroad(OpenpilotTestCase):
            f"Not engageable for whole segment:\n- selfdriveState.engageable: {Counter(eng)}\n- No entry events: {no_entries}"
 
 
-CHESTNUT_VBUS = "/sys/kernel/debug/regulator/smb2-vbus/enable"
-
 @unittest.skipUnless(HARDWARE.get_device_type() == "mici", "requires MICI")
 class TestChestnutOnroad(OpenpilotTestCase):
   COMMA_HARDWARE_TEST = True
@@ -493,12 +492,14 @@ class TestChestnutOnroad(OpenpilotTestCase):
 
       # test small model fallback by cutting VBUS which simulates usb disconnect
       try:
-        sudo_write("0", CHESTNUT_VBUS)
+        path, value = vbus_setting(False)
+        sudo_write(value, path)
         with Timeout(10, "modeld didn't fall back to the small model"):
           while sm['modelV2'].big:
             sm.update(1000)
       finally:
-        sudo_write("1", CHESTNUT_VBUS)
+        path, value = vbus_setting(True)
+        sudo_write(value, path)
 
       # test small model keeps running
       with log_collector(['modelV2']) as (small_model_logs, _):

@@ -1,14 +1,19 @@
 import os
 from pathlib import Path
 
+from openpilot.common.kernel import upstream_kernel
+
 CHESTNUT_FW_VERSION = "8516b768"
 CHESTNUT_USB_IDS = ((0xADD1, 0x0001), (0x3801, 0x0001))
 CHESTNUT_ROM_USB_IDS = ((0x174C, 0x2464), (0x174C, 0x2463))
 CHESTNUT_USB_PRODUCT = f"custom {CHESTNUT_FW_VERSION}-CLEAN"
 USB_DEVICES_PATH = Path("/sys/bus/usb/devices")
 TYPEC_CC_ORIENTATION_PATH = Path("/sys/class/power_supply/usb/typec_cc_orientation")
+TYPEC_PORT_ORIENTATION_PATH = Path("/sys/class/typec/port0/orientation")  # upstream kernel
 UDC_PATH = Path("/sys/class/udc")
-PRIMARY_USB_CONTROLLER = "a600000.ssusb"
+# the DWC3 cores, named *.ssusb by the downstream kernel
+USB_CONTROLLERS = ("a600000.ssusb", "a800000.ssusb", "a600000.usb", "a800000.usb")
+PRIMARY_USB_CONTROLLERS = ("a600000.ssusb", "a600000.usb")
 
 
 def is_chestnut_usb_id(vendor_id: int, product_id: int, include_bootloader: bool = False) -> bool:
@@ -37,8 +42,15 @@ def read_int(path: Path, base: int = 10) -> int:
     return 0
 
 
+def typec_orientation() -> int:
+  """0 when nothing is connected, 1 or 2 for the CC line the cable is on"""
+  if upstream_kernel():
+    return {"normal": 1, "reverse": 2}.get(read(TYPEC_PORT_ORIENTATION_PATH) or "", 0)
+  return read_int(TYPEC_CC_ORIENTATION_PATH)
+
+
 def cable_connected() -> bool:
-  return read_int(TYPEC_CC_ORIENTATION_PATH) != 0
+  return typec_orientation() != 0
 
 
 def usb_host_connected() -> bool:
@@ -60,14 +72,14 @@ def usb_devices() -> list[Path]:
 
 def controller(device: Path) -> Path | None:
   try:
-    return next((parent for parent in device.resolve().parents if parent.name.endswith(".ssusb")), None)
+    return next((parent for parent in device.resolve().parents if parent.name in USB_CONTROLLERS), None)
   except OSError:
     return None
 
 
 def get_usb_state() -> list[dict]:
   devices = []
-  typec_orientation = read_int(TYPEC_CC_ORIENTATION_PATH)
+  orientation = typec_orientation()
   for device in usb_devices():
     vendor_id = read_int(device / "idVendor", 16)
     product_id = read_int(device / "idProduct", 16)
@@ -81,7 +93,7 @@ def get_usb_state() -> list[dict]:
       "manufacturer": read(device / "manufacturer") or "",
       "product": read(device / "product") or "",
       "linkErrorCount": read_int(ctrl / "portli", 0) & 0xFFFF if ctrl is not None else 0,
-      "usb3Lane": {1: "a", 2: "b"}.get(typec_orientation, "unknown") if ctrl is not None and ctrl.name == PRIMARY_USB_CONTROLLER else "unknown",
+      "usb3Lane": {1: "a", 2: "b"}.get(orientation, "unknown") if ctrl is not None and ctrl.name in PRIMARY_USB_CONTROLLERS else "unknown",
     })
   return devices
 

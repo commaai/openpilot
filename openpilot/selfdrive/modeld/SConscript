@@ -25,7 +25,8 @@ tinygrad_files = ["#"+x for x in glob.glob(env.Dir("#tinygrad_repo").relpath + "
 camera_configs = [(c.width, c.height) for c in (_ar_ox_fisheye, _os_fisheye)]
 
 if arch == 'comma_arm64':
-  tg_flags = 'DEV=QCOM IMAGE=1 FLOAT16=1 NOLOCALS=1 JIT_BATCH_SIZE=0 OPENPILOT_HACKS=1'
+  # only the Qualcomm compiler (libllvm-qcom), the IR3 fallback changes the models' outputs
+  tg_flags = 'DEV=QCOM:CL IMAGE=1 FLOAT16=1 NOLOCALS=1 JIT_BATCH_SIZE=0 OPENPILOT_HACKS=1'
 else:
   # JIT=2 disables graph batching, which produces incorrect outputs after buffers change.
   # Use Apple's clang for the CPU helper runtime without requiring libLLVM.

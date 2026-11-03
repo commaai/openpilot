@@ -17,3 +17,5 @@
   path = tinygrad_repo
   url = https://github.com/tinygrad/tinygrad.git
   branch = master
+  # the build applies tinygrad_repo.patch, see SConstruct
+  ignore = dirty

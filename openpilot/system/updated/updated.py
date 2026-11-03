@@ -396,8 +396,10 @@ class Updater:
       ["git", "reset", "--hard"],
       ["git", "clean", "-xdff"],
       ["git", "submodule", "sync"],
-      ["git", "submodule", "update", "--init", "--recursive"],
+      # --force and the clean: the build patches tinygrad_repo, see SConstruct
+      ["git", "submodule", "update", "--init", "--recursive", "--force"],
       ["git", "submodule", "foreach", "--recursive", "git", "reset", "--hard"],
+      ["git", "submodule", "foreach", "--recursive", "git", "clean", "-xdff"],
     ]
     r = [run(cmd, OVERLAY_MERGED) for cmd in cmds]
     cloudlog.info("git reset success: %s", '\n'.join(r))

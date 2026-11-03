@@ -1,4 +1,5 @@
 import configparser
+import glob
 import json
 import os
 import socket
@@ -15,6 +16,7 @@ from openpilot.common.esim.base import LPABase
 from openpilot.common.hardware.base import HardwareBase, ThermalConfig, ThermalZone
 from openpilot.common.hardware.comma.pins import GPIO
 from openpilot.common.hardware.comma.amplifier import Amplifier
+from openpilot.common.kernel import upstream_kernel
 
 MODEM_STATE_PATH = "/dev/shm/modem"
 
@@ -28,8 +30,24 @@ def affine_irq(val, action):
     print(f"No IRQs found for '{action}'")
     return
 
+  # power save takes the big cores offline; their IRQs stay where the kernel moved them until the cores come back
+  # and the IRQs are affined again. the upstream kernel rejects an affinity with no online CPU
+  online = Path(f"/sys/devices/system/cpu/cpu{val}/online")
+  if online.exists() and online.read_text().strip() == "0":
+    return
+
   for i in irqs:
     sudo_write(str(val), f"/proc/irq/{i}/smp_affinity_list")
+
+_hwmon: dict[str, tuple[Path | None, float]] = {}
+def hwmon(name: str) -> Path | None:
+  """the hwmon device with this name, hwmon numbering depends on probe order. None until its driver has probed, or on
+  devices without it (the comma four has no INA231): the scan costs ~3 ms, so a miss is only scanned again after 10 s"""
+  path, scanned = _hwmon.get(name, (None, -10.))
+  if path is None and time.monotonic() - scanned >= 10.:
+    path = next((Path(p).parent for p in sorted(glob.glob("/sys/class/hwmon/hwmon*/name")) if Path(p).read_text().strip() == name), None)
+    _hwmon[name] = (path, time.monotonic())
+  return path
 
 @lru_cache
 def get_device_type():
@@ -58,6 +76,66 @@ def get_default_route_iface():
     routes = [(int(route[6]), route[0]) for line in f.readlines()[1:] if (route := line.split())[1] == "00000000" and int(route[3], 16) & 0x1]
   return min(routes)[1] if routes else None
 
+# the upstream kernel's IR LED, a leds-qcom-flash torch. it drives brightness b at b / LED_FULL of the DT's
+# led-max-microamp, whatever max_brightness says
+IR_TORCH = "/sys/class/leds/ir:torch"
+IR_TORCH_MAX_MA = 300
+LED_FULL = 255
+
+def ir_torch_brightness(percent: int) -> int:
+  """The ir:torch brightness that drives the IR LED with the current the downstream kernel drives for this percentage.
+  Downstream, openpilot writes 0..300 mA to led:torch_2 and qpnp-flash-v2 rounds that to its 12.5 mA steps.
+  Upstream, brightness b is floor(b * 300 / LED_FULL) mA, which leds-qcom-flash floors to its 5 mA steps."""
+  ma = min(max(int(percent), 0), 100) * 300 // 100
+  if ma == 0:
+    return 0
+  ua = max((ma * 1000 + 6250) // 12500, 1) * 12500
+  return min(-(-ua * LED_FULL // (IR_TORCH_MAX_MA * 1000)), LED_FULL)
+
+class MainlineThermalZone(ThermalZone):
+  """a zone in the upstream kernel's DT. a missing one (a wrong name, or a sensor that didn't probe) reads 0 like on the
+  downstream kernel, and is logged once"""
+  missing_logged = False
+
+  def read(self) -> float:
+    temp = super().read()
+    if self.zone_number < 0 and not self.missing_logged:
+      from openpilot.common.swaglog import cloudlog
+      cloudlog.error(f"no thermal zone named {self.name}")
+      self.missing_logged = True
+    return temp
+
+def drm_fdinfo(pid: int) -> list[str]:
+  """the fdinfo files of a process's DRM fds. the msm driver is one device for display and GPU, and the UI renders
+  through its card0 fd, others through the render node"""
+  ret = []
+  try:
+    fds = os.listdir(f"/proc/{pid}/fd")
+  except OSError:
+    return ret
+  for fd in fds:
+    try:
+      if os.readlink(f"/proc/{pid}/fd/{fd}").startswith("/dev/dri/"):
+        ret.append(f"/proc/{pid}/fdinfo/{fd}")
+    except OSError:
+      pass
+  return ret
+
+def drm_engine_busy(fdinfo: str) -> dict[str, int]:
+  """{drm-client-id: GPU busy ns} of a DRM fd, or {} if it's gone"""
+  try:
+    with open(fdinfo) as f:
+      info = dict(line.split(":", 1) for line in f.read().splitlines() if ":" in line)
+    return {info["drm-client-id"].strip(): int(info["drm-engine-gpu"].split()[0])}
+  except (OSError, KeyError, ValueError, IndexError):
+    return {}
+
+def gpu_usage_percent(last: int, last_busy: dict[str, int], now: int, busy: dict[str, int]) -> float:
+  """the GPU load between two samples of the clients' busy ns, counting a new client from its next sample"""
+  if now <= last:
+    return 0.
+  return min(100., 100. * sum(b - last_busy.get(c, b) for c, b in busy.items()) / (now - last))
+
 class HardwareComma(HardwareBase):
   """
     This platform covers the Snapdragon 845-based comma devices:
@@ -68,6 +146,13 @@ class HardwareComma(HardwareBase):
     We strictly use only the device codenames in this codebase for
     consistency, though all user-facing UI should use the product names.
   """
+
+  def __init__(self):
+    super().__init__()
+    # GPU load on the upstream kernel: {pid: (when its fds were listed, its DRM fdinfo paths)} and the last
+    # (time, {client: busy ns})
+    self._drm_fdinfo: dict[int, tuple[int | None, list[str]]] = {}
+    self._gpu_busy: tuple[int, dict[str, int]] = (time.monotonic_ns(), {})
 
   @cached_property
   def amplifier(self):
@@ -101,15 +186,20 @@ class HardwareComma(HardwareBase):
     return self.get_cmdline()['androidboot.serialno']
 
   def get_voltage(self):
-    with open("/sys/class/hwmon/hwmon1/in1_input") as f:
+    with open(f"{hwmon('ina231')}/in1_input") as f:
       return int(f.read())
 
   def get_current(self):
-    with open("/sys/class/hwmon/hwmon1/curr1_input") as f:
+    with open(f"{hwmon('ina231')}/curr1_input") as f:
       return int(f.read())
 
   def set_ir_power(self, percent: int):
     if self.get_device_type() == "tizi":
+      return
+
+    if upstream_kernel():
+      with open(f"{IR_TORCH}/brightness", "w") as f:
+        f.write(f"{ir_torch_brightness(percent)}\n")
       return
 
     value = int((percent / 100) * 300)
@@ -248,17 +338,34 @@ class HardwareComma(HardwareBase):
     return self.get_modem_state().get('temperatures', [])
 
   def get_current_power_draw(self):
-    return (self.read_param_file("/sys/class/hwmon/hwmon1/power1_input", int) / 1e6)
+    return (self.read_param_file(f"{hwmon('ina231')}/power1_input", int) / 1e6)
 
   def get_som_power_draw(self):
+    if upstream_kernel():
+      # in mV and mA
+      som = hwmon("som_power")
+      return self.read_param_file(f"{som}/in1_input", int) * self.read_param_file(f"{som}/curr1_input", int) / 1e6
     return (self.read_param_file("/sys/class/power_supply/bms/voltage_now", int) * self.read_param_file("/sys/class/power_supply/bms/current_now", int) / 1e12)
 
   def shutdown(self):
     subprocess.run("sudo poweroff", shell=True)
 
   def get_thermal_config(self):
+    mici = self.get_device_type() == "mici"
+    if upstream_kernel():
+      # the DT's zone names, the board's have upstream's -thermal suffix too
+      Zone = MainlineThermalZone
+      return ThermalConfig(cpu=[Zone(f"cpu{i}-thermal") for i in range(8)],
+                           gpu=[Zone("gpu-top-thermal"), Zone("gpu-bottom-thermal")],
+                           dsp=Zone("q6-hvx-thermal"),
+                           memory=Zone("mem-thermal"),
+                           pmic=[Zone("pm8998-thermal")],
+                           intake=Zone("intake-thermal") if mici else None,
+                           exhaust=Zone("exhaust-thermal") if mici else None,
+                           gnss=Zone("gnss-thermal") if mici else None,
+                           bottomSoc=Zone("bottom-soc-thermal") if mici else None)
     intake, exhaust, gnss, bottomSoc = None, None, None, None
-    if self.get_device_type() == "mici":
+    if mici:
       gnss = ThermalZone("gnss")
       intake = ThermalZone("intake")
       exhaust = ThermalZone("exhaust")
@@ -274,30 +381,34 @@ class HardwareComma(HardwareBase):
                          gnss=gnss,
                          bottomSoc=bottomSoc)
 
+  @cached_property
+  def _backlight(self):
+    return "/sys/class/backlight/ae94000.dsi.0" if upstream_kernel() else "/sys/class/backlight/panel0-backlight"
+
   def set_display_power(self, on):
     try:
-      with open("/sys/class/backlight/panel0-backlight/bl_power", "w") as f:
+      with open(f"{self._backlight}/bl_power", "w") as f:
         f.write("0" if on else "4")
     except Exception:
       pass
 
   def set_screen_brightness(self, percentage):
     try:
-      with open("/sys/class/backlight/panel0-backlight/max_brightness") as f:
+      with open(f"{self._backlight}/max_brightness") as f:
         max_brightness = float(f.read().strip())
 
       val = int(percentage * (max_brightness / 100.))
-      with open("/sys/class/backlight/panel0-backlight/brightness", "w") as f:
+      with open(f"{self._backlight}/brightness", "w") as f:
         f.write(str(val))
     except Exception:
       pass
 
   def get_screen_brightness(self):
     try:
-      with open("/sys/class/backlight/panel0-backlight/max_brightness") as f:
+      with open(f"{self._backlight}/max_brightness") as f:
         max_brightness = float(f.read().strip())
 
-      with open("/sys/class/backlight/panel0-backlight/brightness") as f:
+      with open(f"{self._backlight}/brightness") as f:
         return int(float(f.read()) / (max_brightness / 100.))
     except Exception:
       return 0
@@ -328,20 +439,44 @@ class HardwareComma(HardwareBase):
     # *** IRQ config ***
 
     # GPU, modeld core
-    affine_irq(7, "kgsl-3d0")
+    affine_irq(7, "gpu-irq" if upstream_kernel() else "kgsl-3d0")
 
     # camerad core
     camera_irqs = ("a5", "cci", "cpas_camnoc", "cpas-cdm", "csid", "ife", "csid-lite", "ife-lite")
     for n in camera_irqs:
       affine_irq(6, n)
 
-  def get_gpu_usage_percent(self):
+  def get_gpu_usage_percent(self, pids=()):
+    if upstream_kernel():
+      return self._drm_gpu_usage_percent(pids)
     try:
       with open('/sys/class/kgsl/kgsl-3d0/gpubusy') as f:
         used, total = f.read().strip().split()
       return 100.0 * int(used) / int(total)
     except Exception:
       return 0
+
+  def _drm_gpu_usage_percent(self, pids):
+    # the GPU busy time of the given DRM clients, https://docs.kernel.org/gpu/drm-usage-stats.html
+    now = time.monotonic_ns()
+    busy = {}
+    # listing a process's fds costs ~10 ms, so they're listed again every 10 s, for new DRM fds, or as soon as one of
+    # them isn't a DRM fd any more (closed, or its number reused). dup'd fds are one client
+    fdinfo = {}
+    for pid in pids:
+      listed, paths = self._drm_fdinfo.get(pid, (None, []))
+      if listed is None or now - listed > 10e9:
+        listed, paths = now, drm_fdinfo(pid)
+      for path in paths:
+        client = drm_engine_busy(path)
+        if not client:
+          listed = None
+        busy.update(client)
+      fdinfo[pid] = (listed, paths)
+    self._drm_fdinfo = fdinfo
+    last, last_busy = self._gpu_busy
+    self._gpu_busy = (now, busy)
+    return gpu_usage_percent(last, last_busy, now, busy)
 
   def initialize_hardware(self):
     if self.amplifier is not None:
@@ -359,6 +494,35 @@ class HardwareComma(HardwareBase):
     # mask off big cluster from default affinity
     sudo_write("f", "/proc/irq/default_smp_affinity")
 
+    if upstream_kernel():
+      self._initialize_mainline()
+    else:
+      self._initialize_downstream()
+
+    # pandad core
+    affine_irq(3, "880000.spi" if upstream_kernel() else "spi_geni")  # SPI
+    try:
+      pid = subprocess.check_output(["pgrep", "-f", "spi0"], encoding='utf8').strip()
+      subprocess.call(["sudo", "chrt", "-f", "-p", "1", pid])
+      subprocess.call(["sudo", "taskset", "-pc", "3", pid])
+    except subprocess.CalledProcessError as e:
+      print(str(e))
+
+  def _initialize_mainline(self):
+    # move these off the default core
+    affine_irq(1, "venus")  # encoders
+    for i2c in ("890000.i2c", "894000.i2c", "a88000.i2c"):  # sensors, touch, amplifier
+      affine_irq(1, i2c)
+    # touch. the display IRQ is chained in the MDSS, so it can't be moved
+    affine_irq(5, "ft3168" if self.get_device_type() == "mici" else "s6sy761_irq")
+
+    # *** GPU config ***
+    # 675 MHz like KGSL's pwrlevel 1. The GPU still runtime-suspends when idle, so offroad and after
+    # openpilot exits it powers off and drops its DDR vote; onroad modeld and the UI keep it awake
+    sudo_write("675000000", "/sys/class/devfreq/5000000.gpu/max_freq")
+    sudo_write("675000000", "/sys/class/devfreq/5000000.gpu/min_freq")
+
+  def _initialize_downstream(self):
     # move these off the default core
     affine_irq(1, "msm_vidc")  # encoders
     affine_irq(1, "i2c_geni")  # sensors
@@ -385,15 +549,6 @@ class HardwareComma(HardwareBase):
     sudo_write("N", "/sys/kernel/debug/msm_vidc/clock_scaling")
     sudo_write("Y", "/sys/kernel/debug/msm_vidc/disable_thermal_mitigation")
 
-    # pandad core
-    affine_irq(3, "spi_geni")         # SPI
-    try:
-      pid = subprocess.check_output(["pgrep", "-f", "spi0"], encoding='utf8').strip()
-      subprocess.call(["sudo", "chrt", "-f", "-p", "1", pid])
-      subprocess.call(["sudo", "taskset", "-pc", "3", pid])
-    except subprocess.CalledProcessError as e:
-      print(str(e))
-
   def get_modem_data_usage(self):
     ms = self.get_modem_state()
     return ms.get('tx_bytes', -1), ms.get('rx_bytes', -1)
@@ -419,11 +574,13 @@ class HardwareComma(HardwareBase):
     gpio_set(GPIO.STM_BOOT0, False)
 
   def booted(self):
-    # this normally boots within 8s, but on rare occasions takes 30+s
-    encoder_state = sudo_read("/sys/kernel/debug/msm_vidc/core0/info")
-    if "Core state: 0" in encoder_state and (time.monotonic() < 60*2):
-      return False
-    return True
+    # the encoder normally boots within 8s, but on rare occasions takes 30+s
+    if upstream_kernel():
+      # Venus registers its video nodes once its firmware has booted
+      encoder_booted = any(Path(p).read_text().strip() == "qcom-venus-encoder" for p in glob.glob("/sys/class/video4linux/*/name"))
+    else:
+      encoder_booted = "Core state: 0" not in sudo_read("/sys/kernel/debug/msm_vidc/core0/info")
+    return encoder_booted or time.monotonic() >= 60*2
 
 if __name__ == "__main__":
   t = HardwareComma()
