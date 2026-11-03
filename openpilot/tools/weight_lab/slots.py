@@ -29,7 +29,7 @@ SOFT_BRAKE_UNITS = (51, 78, 108, 166)  # trunk units used by the shipped soft br
 
 _R4_FREE = [j for j in DEAD_R4 if j not in DEAD_TRUNK]  # layer-1 slots whose trunk unit is live: need a skip cancel
 OWNERS = ('lead', 'stop', 'cut', 'fork')
-OWN = {name: dict(r4=_R4_FREE[i::4], r6=list(DEAD_R6[i::4])) for i, name in enumerate(OWNERS)}
+OWN = {name: {'r4': _R4_FREE[i::4], 'r6': list(DEAD_R6[i::4])} for i, name in enumerate(OWNERS)}
 OWN['lead']['trunk'] = [227]
 OWN['stop']['trunk'] = [47]
 OWN['cut']['trunk'] = [11, 33]

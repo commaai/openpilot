@@ -63,7 +63,7 @@ def forward(P, x):
   trunk = np.maximum(pre, 0)
   s = P['scale_layer.plan.scale'][:495]
   mu = (trunk @ P['final_layer.plan.weight'][:495].T + P['final_layer.plan.bias'][:495]) * s
-  return dict(r4=r4, r6=r6, trunk_pre=pre, trunk=trunk, plan=mu.reshape(-1, 33, 15))
+  return {'r4': r4, 'r6': r6, 'trunk_pre': pre, 'trunk': trunk, 'plan': mu.reshape(-1, 33, 15)}
 
 
 _MASTER = None
