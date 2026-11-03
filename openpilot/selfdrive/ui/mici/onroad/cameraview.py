@@ -5,7 +5,7 @@ import raylib_nb as rl
 
 from openpilot.cereal.visionipc import VisionStreamType
 from openpilot.common.hardware import COMMA_HARDWARE
-from openpilot.selfdrive.ui.onroad.cameraview import CameraView as BaseCameraView, VERSION, shader_lut
+from openpilot.selfdrive.ui.onroad.cameraview import CameraView as BaseCameraView, VERSION, shader_curve
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 
 # Choose fragment shader based on platform capabilities
@@ -76,14 +76,14 @@ else:
 
 
 @cache
-def cpu_color(engaged: bool, enhance_driver: bool) -> tuple[np.ndarray, np.ndarray]:
+def cpu_color(engaged: bool, enhance_driver: bool) -> tuple[np.ndarray, float]:
   def curve(c):
     c = np.clip((c - 0.5) * 1.2 + 0.5, 0, 1) ** (1 / 1.28) if engaged else c * 0.85
     if enhance_driver:
       c = np.clip((c + 0.15 - 0.5) * 0.88 + 0.5, 0, 1)
       c = (c * c * (3 - 2 * c)) ** 0.8
     return c
-  return shader_lut(curve, 0.2 if engaged else 1.0)
+  return shader_curve(curve), 0.2 if engaged else 1.0
 
 
 class CameraView(BaseCameraView):
@@ -101,5 +101,5 @@ class CameraView(BaseCameraView):
     rl.set_shader_value(self.shader, self._engaged_loc, self._engaged_val, rl.ShaderUniformDataType.SHADER_UNIFORM_INT)
     rl.set_shader_value(self.shader, self._enhance_driver_loc, self._enhance_driver_val, rl.ShaderUniformDataType.SHADER_UNIFORM_INT)
 
-  def _cpu_color(self) -> tuple[np.ndarray, np.ndarray]:
+  def _cpu_color(self) -> tuple[np.ndarray, float]:
     return cpu_color(ui_state.status != UIStatus.DISENGAGED, self._enhance_driver_val[0] == 1)

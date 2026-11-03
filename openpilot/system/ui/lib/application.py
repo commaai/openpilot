@@ -21,8 +21,8 @@ from openpilot.common.hardware import HARDWARE, PC
 from openpilot.system.ui.lib.multilang import FONT_FALLBACK_LANGUAGES, TRANSLATIONS_DIR, multilang
 from openpilot.common.realtime import Ratekeeper
 
-# on comma four the GPU is reserved for the driving model
-CPU_RENDERER = HARDWARE.get_device_type() == 'mici'
+# the GPU is reserved for the driving model
+CPU_RENDERER = HARDWARE.get_device_type() in ('mici', 'tizi')
 if CPU_RENDERER:
   from openpilot.system.ui.lib import cpu_renderer
   cpu_renderer.install()
