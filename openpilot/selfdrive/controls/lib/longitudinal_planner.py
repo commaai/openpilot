@@ -7,7 +7,7 @@ from openpilot.common.constants import CV
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.modeld.constants import ModelConstants
-from openpilot.selfdrive.controls.lib.accel_boost import AccelBoost
+from openpilot.selfdrive.controls.lib.speed_intent import SpeedIntent
 from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc, LongitudinalPlanSource
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import T_IDXS as T_IDXS_MPC
@@ -35,7 +35,7 @@ class LongitudinalPlanner:
     self.mpc = LongitudinalMpc(dt=dt)
     self.fcw = False
     self.dt = dt
-    self.accel_boost = AccelBoost()
+    self.speed_intent = SpeedIntent()
 
     self.v_desired_filter = FirstOrderFilter(init_v, 2.0, self.dt)
     self.a_cruise = init_a
@@ -101,7 +101,8 @@ class LongitudinalPlanner:
     self.a_cruise = get_cruise_accel(v_cruise, v_ego, self.a_cruise, self.output_a_target, self.dt)
     cruise_should_stop = should_stop(v_ego, self.a_cruise)
 
-    output_a_target_e2e = self.accel_boost.update(sm, output_a_target_e2e, output_a_target_mpc, self.a_cruise)
+    output_a_target_e2e = self.update_speed_intent(sm, reset_state, v_cruise, output_a_target_e2e, output_should_stop_e2e,
+                                                   output_a_target_mpc)
 
     candidates = [(output_a_target_mpc, self.mpc.source, output_should_stop_mpc),
                   (self.a_cruise, LongitudinalPlanSource.cruise, cruise_should_stop),
@@ -112,6 +113,24 @@ class LongitudinalPlanner:
     self.output_a_target = np.clip(output_a_target, ACCEL_MIN, ACCEL_MAX)
 
     self.v_desired_filter.x = self.v_desired_filter.x + self.dt * (self.output_a_target + a_prev) / 2.0
+
+  def update_speed_intent(self, sm, reset_state, v_cruise, a_e2e, e2e_should_stop, a_mpc):
+    md = sm['modelV2']
+    if len(md.velocity.x) != ModelConstants.IDX_N or len(md.orientationRate.z) != ModelConstants.IDX_N:
+      return a_e2e
+
+    cs = sm['carState']
+    lead = sm['radarState'].leadOne
+    model_leads = md.leadsV3
+    dp = md.meta.disengagePredictions
+    brake_prob = max(dp.brakePressProbs[1], dp.brakeDisengageProbs[0]) if len(dp.brakePressProbs) > 1 and len(dp.brakeDisengageProbs) else 0.0
+    return self.speed_intent.update(
+      self.dt, sm['selfdriveState'].enabled and not reset_state, cs.gasPressed, cs.standstill, cs.vEgo, v_cruise,
+      sm['selfdriveState'].personality, cs.leftBlinker or cs.rightBlinker,
+      a_e2e, e2e_should_stop, a_mpc, self.a_cruise, lead.present, lead.dRel, lead.vLead,
+      ModelConstants.T_IDXS, md.velocity.x, ModelConstants.T_IDXS, md.acceleration.x, ModelConstants.T_IDXS, md.position.x,
+      ModelConstants.T_IDXS, md.orientationRate.z, md.meta.desireState, md.meta.desirePrediction, brake_prob,
+      model_leads[0].prob if len(model_leads) else 0.0, model_leads[0].x[0] if len(model_leads) else 1e3)
 
   def publish(self, sm, pm):
     plan_send = messaging.new_message('longitudinalPlan')
@@ -132,7 +151,7 @@ class LongitudinalPlanner:
     longitudinalPlan.fcw = self.fcw
 
     longitudinalPlan.aTarget = float(self.output_a_target)
-    longitudinalPlan.accelBoost = float(self.accel_boost.total_boost)
+    longitudinalPlan.accelBoost = float(self.speed_intent.lift)
     longitudinalPlan.shouldStop = bool(self.output_should_stop)
     longitudinalPlan.allowBrake = True
 
