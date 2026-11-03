@@ -20,10 +20,12 @@ J_CRUISE_BP = [0., 10.0, 25., 40.]
 A_CRUISE_MIN = -0.5
 CONTROL_N_T_IDX = ModelConstants.T_IDXS[:CONTROL_N]
 
-ACCEL_GAIN = 1.2
-LIFT_PER_SPEED = 0.012  # m/s^2 of lift per m/s of speed
+ACCEL_BOOST = 0.2
+LIFT_GAIN = 0.3  # max lift 0.15 m/s^2
+LIFT_MIN_PROB = 0.5
 LIFT_RC = 0.3
 PROB_IDX = 2  # gas and brake press probabilities 4s ahead
+CURVE_A_LAT_MAX = 2.0  # m/s^2 of lateral accel where the accel gain and lift are gone
 
 
 def get_cruise_accel(v_cruise, v_ego, a_cruise_prev, a_target_prev, dt):
@@ -34,19 +36,20 @@ def get_cruise_accel(v_cruise, v_ego, a_cruise_prev, a_target_prev, dt):
   return target_accel
 
 
-def get_personality_accel(personality, a_e2e, v_ego, p_gas, p_brake, lift_filter):
+def get_personality_accel(personality, a_e2e, v_ego, p_gas, p_brake, lift_filter, curvature):
+  curve_scale = max(1.0 - abs(curvature) * v_ego**2 / CURVE_A_LAT_MAX, 0.0)
   lift_target = 0.0
   if personality == log.LongitudinalPersonality.aggressive and a_e2e >= 0.0 and len(p_gas) > PROB_IDX and len(p_brake) > PROB_IDX:
     # The model predicting a gas press and no brake press means it isn't slowing for anything
-    lift_target = LIFT_PER_SPEED * max(v_ego, 0.0) * p_gas[PROB_IDX] * (1.0 - p_brake[PROB_IDX])
+    lift_target = curve_scale * LIFT_GAIN * max(p_gas[PROB_IDX] * (1.0 - p_brake[PROB_IDX]) - LIFT_MIN_PROB, 0.0)
   lift = lift_filter.update(lift_target)
 
   if personality == log.LongitudinalPersonality.relaxed:
     gain = 1.0
   elif a_e2e > 0.0:  # gas
-    gain = ACCEL_GAIN
+    gain = 1.0 + ACCEL_BOOST * curve_scale
   else:  # brake
-    gain = np.interp(v_ego, [5.0, 10.0], [1.0, ACCEL_GAIN])  # m/s, fade the braking gain out so stops don't end early
+    gain = np.interp(v_ego, [5.0, 10.0], [1.0, 1.0 + ACCEL_BOOST])  # m/s, fade the braking gain out so stops don't end early
   return gain * a_e2e + lift
 
 
@@ -119,7 +122,7 @@ class LongitudinalPlanner:
     output_should_stop_mpc = should_stop(v_ego, output_a_target_mpc)
     predictions = sm['modelV2'].meta.disengagePredictions
     output_a_target_e2e = get_personality_accel(sm['selfdriveState'].personality, sm['modelV2'].action.desiredAcceleration, v_ego,
-                                                predictions.gasPressProbs, predictions.brakePressProbs, self.lift_filter)
+                                                predictions.gasPressProbs, predictions.brakePressProbs, self.lift_filter, sm['controlsState'].curvature)
     output_should_stop_e2e = sm['modelV2'].action.shouldStop
 
     self.a_cruise = get_cruise_accel(v_cruise, v_ego, self.a_cruise, self.output_a_target, self.dt)
