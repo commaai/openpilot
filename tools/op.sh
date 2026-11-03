@@ -405,10 +405,11 @@ function op_switch() {
   git submodule foreach git clean -df
 
   # like the shim, a failed pull leaves pointer files rather than failing the switch
-  op_activate_venv
   if [[ -f tools/lfs.sh ]]; then
     ./tools/lfs.sh pull || true
   else
+    # TODO: remove this branch once switching to branches without tools/lfs.sh is no longer needed
+    op_activate_venv
     git lfs pull || true
   fi
 
