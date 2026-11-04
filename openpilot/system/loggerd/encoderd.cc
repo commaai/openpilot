@@ -74,8 +74,6 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
 
   std::unique_ptr<JpegEncoder> jpeg_encoder;
 
-  // livestream consumers request their own keyframe and don't need the cameras in sync,
-  // so start encoding immediately instead of waiting for subscribers and the other cameras
   const bool live = std::all_of(cam_info.encoder_infos.begin(), cam_info.encoder_infos.end(), [](auto &e) { return e.is_live; });
 
   int cur_seg = 0;
@@ -122,8 +120,9 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
 
       // creating our publishers kicked out any subscriber that was already connected (loggerd), and they lose
       // everything we send until they reconnect, like the first keyframe. so wait for them, but not forever
-      if (!subscribed) {
-        subscribed = live || std::all_of(encoders.begin(), encoders.end(), [](auto &e) { return e->subscribed(); }) || ++frames_waited > MAIN_FPS * 2;
+      // livestream consumers request their own keyframe and don't need the cameras in sync.
+      if (!live && !subscribed) {
+        subscribed = std::all_of(encoders.begin(), encoders.end(), [](auto &e) { return e->subscribed(); }) || ++frames_waited > MAIN_FPS * 2;
         if (!subscribed) continue;
       }
 
