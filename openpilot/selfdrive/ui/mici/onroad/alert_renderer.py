@@ -144,10 +144,8 @@ class AlertRenderer(Widget):
       return None
 
     # Return current alert
-    ret = Alert(text1=ss.alertText1, text2=ss.alertText2, size=ss.alertSize.raw, status=ss.alertStatus.raw,
-                visual_alert=ss.alertHudVisual, alert_type=ss.alertType)
-    self._prev_alert = ret
-    return ret
+    return Alert(text1=ss.alertText1, text2=ss.alertText2, size=ss.alertSize.raw, status=ss.alertStatus.raw,
+                 visual_alert=ss.alertHudVisual, alert_type=ss.alertType)
 
   def will_render(self) -> tuple[Alert | None, bool]:
     alert = self.get_alert(ui_state.sm)
@@ -230,6 +228,8 @@ class AlertRenderer(Widget):
       else:
         self._prev_alert = None
         return False
+    else:
+      self._prev_alert = alert
 
     self._draw_background(alert)
 
