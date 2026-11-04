@@ -145,6 +145,7 @@ class DeveloperLayoutMici(NavScroller):
 
   def _update_toggles(self):
     ui_state.update_params()
+    self._joystick_toggle.set_enabled(ui_state.is_offroad())
 
     # CP gating
     if ui_state.CP is not None:

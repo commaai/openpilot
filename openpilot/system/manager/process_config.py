@@ -8,6 +8,7 @@ from openpilot.common.hardware import PC, COMMA_HARDWARE
 from openpilot.system.manager.process import PythonProcess, NativeProcess, DaemonProcess
 
 WEBCAM = os.getenv("USE_WEBCAM") is not None
+_joystick_mode = False
 
 def driverview(started: bool, params: Params, CP: car.CarParams) -> bool:
   return started or params.get_bool("IsDriverViewEnabled")
@@ -32,10 +33,14 @@ def ublox(started: bool, params: Params, CP: car.CarParams) -> bool:
   return started and use_ublox
 
 def joystick(started: bool, params: Params, CP: car.CarParams) -> bool:
-  return started and params.get_bool("JoystickDebugMode")
+  # Only read the param offroad, so toggling it onroad can't swap controlsd for joystickd mid-drive
+  global _joystick_mode
+  if not started:
+    _joystick_mode = params.get_bool("JoystickDebugMode")
+  return started and _joystick_mode
 
 def not_joystick(started: bool, params: Params, CP: car.CarParams) -> bool:
-  return started and not params.get_bool("JoystickDebugMode")
+  return started and not joystick(started, params, CP)
 
 def long_maneuver(started: bool, params: Params, CP: car.CarParams) -> bool:
   return started and params.get_bool("LongitudinalManeuverMode")
