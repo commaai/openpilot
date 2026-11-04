@@ -66,13 +66,14 @@ class Route:
   # TODO: refactor this, it's super repetitive
   def _get_segments_remote(self):
     api = CommaApi(get_token())
-    route_files = api.get('v1/route/' + self.name.canonical_name + '/files')
+    # The API still expects the legacy route identifier in this path parameter.
+    route_files = api.get('v1/route/' + self.name.canonical_name.replace('/', '|') + '/files')
     self.files = list(chain.from_iterable(route_files.values()))
 
     segments = {}
     for url in self.files:
       _, dongle_id, time_str, segment_num, fn = urlparse(url).path.rsplit('/', maxsplit=4)
-      segment_name = f'{dongle_id}|{time_str}--{segment_num}'
+      segment_name = f'{dongle_id}/{time_str}--{segment_num}'
       if segments.get(segment_name):
         segments[segment_name] = Segment(
           segment_name,
@@ -98,6 +99,8 @@ class Route:
 
   def _get_segments_local(self, data_dir):
     files = os.listdir(data_dir)
+    if self.name.dongle_id in files and os.path.isdir(os.path.join(data_dir, self.name.dongle_id)):
+      files.extend(f"{self.name.dongle_id}/{entry}" for entry in os.listdir(os.path.join(data_dir, self.name.dongle_id)))
     segment_files = defaultdict(list)
 
     for f in files:
@@ -108,14 +111,14 @@ class Route:
       if explorer_match:
         segment_name = explorer_match.group('segment_name')
         fn = explorer_match.group('file_name')
-        if segment_name.replace('_', '|').startswith(self.name.canonical_name):
+        if segment_name.replace('_', '/').replace('|', '/').startswith(self.name.canonical_name):
           segment_files[segment_name].append((fullpath, fn))
       elif op_match and os.path.isdir(fullpath):
         segment_name = op_match.group('segment_name')
-        if segment_name.startswith(self.name.canonical_name):
+        if segment_name.replace('|', '/').startswith(self.name.canonical_name):
           for seg_f in os.listdir(fullpath):
             segment_files[segment_name].append((os.path.join(fullpath, seg_f), seg_f))
-      elif f == self.name.canonical_name:
+      elif f.replace('|', '/') == self.name.canonical_name:
         for seg_num in os.listdir(fullpath):
           if not seg_num.isdigit():
             continue
@@ -212,7 +215,7 @@ class RouteName:
 
     assert len(self._dongle_id) == 16, self._name_str
     assert len(self._time_str) == 20, self._name_str
-    self._canonical_name = f"{self._dongle_id}|{self._time_str}"
+    self._canonical_name = f"{self._dongle_id}/{self._time_str}"
 
   @property
   def canonical_name(self) -> str: return self._canonical_name
@@ -237,18 +240,19 @@ class SegmentName:
   # TODO: add constructor that takes dongle_id, time_str, segment_num and then create instances
   # of this class instead of manually constructing a segment name (use canonical_name prop instead)
   def __init__(self, name_str: str, allow_route_name=False):
-    data_dir_path_separator_index = name_str.rsplit("|", 1)[0].rfind("/")
-    use_data_dir = (data_dir_path_separator_index != -1) and ("|" in name_str)
-    self._name_str = name_str[data_dir_path_separator_index + 1:] if use_data_dir else name_str
-    self._data_dir = name_str[:data_dir_path_separator_index] if use_data_dir else None
+    match = re.search(RE.ROUTE_NAME, name_str)
+    assert match is not None, name_str
+    self._name_str = name_str[match.start():]
+    self._data_dir = name_str[:match.start()].rstrip("/") or ("/" if match.start() else None)
 
-    seg_num_delim = "--" if self._name_str.count("--") == 2 else "/"
-    name_parts = self._name_str.rsplit(seg_num_delim, 1)
-    if allow_route_name and len(name_parts) == 1:
-      name_parts.append("-1")  # no segment number
-    self._route_name = RouteName(name_parts[0])
-    self._num = int(name_parts[1])
-    self._canonical_name = f"{self._route_name._dongle_id}|{self._route_name._time_str}--{self._num}"
+    self._route_name = RouteName(match.group("route_name").replace("_", "/"))
+    suffix = name_str[match.end():]
+    if not suffix and allow_route_name:
+      self._num = -1
+    else:
+      assert suffix.startswith(("--", "/")), name_str
+      self._num = int(suffix[2:] if suffix.startswith("--") else suffix[1:])
+    self._canonical_name = f"{self._route_name._dongle_id}/{self._route_name._time_str}--{self._num}"
 
   @property
   def canonical_name(self) -> str: return self._canonical_name
@@ -285,13 +289,13 @@ class SegmentName:
   def from_file_name(file_name):
     # ??????/xxxxxxxxxxxxxxxx|1111-11-11-11--11-11-11/1/rlog.bz2
     dongle_id, route_name, segment_num = file_name.replace('|', '/').split('/')[-4:-1]
-    return SegmentName(dongle_id + "|" + route_name + "--" + segment_num)
+    return SegmentName(dongle_id + "/" + route_name + "--" + segment_num)
 
   @staticmethod
   def from_device_key(dongle_id, key):
     # 2018-05-07--18-56-13--5/rlog.bz2
     segment_name = key.split('/')[0]
-    return SegmentName(dongle_id + "|" + segment_name)
+    return SegmentName(dongle_id + "/" + segment_name)
 
   @staticmethod
   def from_file_key(key):
@@ -303,13 +307,14 @@ class SegmentName:
   def from_azure_prefix(prefix):
     # xxxxxxxx/1111-11-11-11--11-11-11/0
     dongle_id, route_name, segment_num = prefix.split("/")
-    return SegmentName(dongle_id + "|" + route_name + "--" + segment_num)
+    return SegmentName(dongle_id + "/" + route_name + "--" + segment_num)
 
 
 @cache
 def get_max_seg_number_cached(sr: 'SegmentRange') -> int:
   try:
     api = CommaApi(get_token())
+    # Keep legacy formatting confined to the API boundary.
     max_seg_number = api.get("/v1/route/" + sr.route_name.replace("/", "|"))["maxqlog"]
     assert isinstance(max_seg_number, int)
     return max_seg_number
@@ -325,7 +330,7 @@ class SegmentRange:
 
   @property
   def route_name(self) -> str:
-    return self.m.group("route_name")
+    return f"{self.dongle_id}/{self.log_id}"
 
   @property
   def dongle_id(self) -> str:

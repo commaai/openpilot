@@ -1,7 +1,7 @@
 ## CTF
 Welcome to the first part of the comma CTF!
 
-* all the flags are contained in this route: `0c7f0c7f0c7f0c7f|2021-10-13--13-00-00`
+* all the flags are contained in this route: `0c7f0c7f0c7f0c7f/2021-10-13--13-00-00`
 * there's 2 flags in each segment, with roughly increasing difficulty
 * everything you'll need to find the flags is in the openpilot repo
   * grep is also your friend
@@ -13,7 +13,7 @@ getting started
 ```bash
 # start the route replay
 cd openpilot/tools/replay
-./replay '0c7f0c7f0c7f0c7f|2021-10-13--13-00-00' --dcam --ecam
+./replay '0c7f0c7f0c7f0c7f/2021-10-13--13-00-00' --dcam --ecam
 
 # start the UI in another terminal
 openpilot/selfdrive/ui/ui

@@ -21,7 +21,7 @@ RouteIdentifier Route::parseRoute(const std::string &str) {
   if (std::regex_match(str, match, pattern)) {
     identifier.dongle_id = match[2].str();
     identifier.timestamp = match[3].str();
-    identifier.str = identifier.dongle_id + "|" + identifier.timestamp;
+    identifier.str = identifier.dongle_id + "/" + identifier.timestamp;
 
     const auto separator = match[5].str();
     const auto range_str = match[6].str();

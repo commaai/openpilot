@@ -289,7 +289,7 @@ struct RouteIdentifier {
   }
 
   std::string onebox() const {
-    return empty() ? std::string() : dongle_id + "|" + log_id;
+    return empty() ? std::string() : dongle_id + "/" + log_id;
   }
 
   std::string display_slice() const {
