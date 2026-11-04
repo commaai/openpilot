@@ -257,7 +257,7 @@ class SelfdriveD:
       if not self.startup_cruise_checked:
         self.startup_cruise_checked = True
         if CS.cruiseState.enabled and not self.events.contains(ET.ENABLE) and not REPLAY:
-          self.events.add(EventName.startupCruiseCancel)
+          self.events.add(EventName.startupCruiseCanceled)
 
     # Create events for temperature, disk space, and memory
     if self.sm['deviceState'].thermalStatus >= ThermalStatus.overheated:

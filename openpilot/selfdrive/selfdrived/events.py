@@ -675,7 +675,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.USER_DISABLE: EngagementAlert(AudibleAlert.disengage),
   },
 
-  EventName.startupCruiseCancel: {
+  EventName.startupCruiseCanceled: {
     ET.PERMANENT: Alert(
       "Cruise Canceled",
       "Cruise was on at startup",
