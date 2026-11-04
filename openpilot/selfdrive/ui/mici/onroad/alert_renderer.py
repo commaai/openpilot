@@ -110,6 +110,11 @@ class AlertRenderer(Widget):
     self._last_icon_side: IconSide | None = None
 
     self._load_icons()
+    ui_state.add_offroad_transition_callback(self._offroad_transition)
+
+  def _offroad_transition(self):
+    # Don't fade out an alert from the previous onroad session
+    self._prev_alert = None
 
   def _load_icons(self):
     self._txt_turn_signal_left = gui_app.texture('icons_mici/onroad/turn_signal_left.png', 104, 96)
@@ -122,8 +127,8 @@ class AlertRenderer(Widget):
     ss = sm['selfdriveState']
 
     # Check if selfdriveState messages have stopped arriving
+    recv_frame = sm.recv_frame['selfdriveState']
     if not sm.updated['selfdriveState']:
-      recv_frame = sm.recv_frame['selfdriveState']
       time_since_onroad = time.monotonic() - ui_state.started_time
 
       # 1. Never received selfdriveState since going onroad
@@ -141,6 +146,10 @@ class AlertRenderer(Widget):
 
     # No alert if size is none
     if ss.alertSize == 0:
+      return None
+
+    # Don't get old alert
+    if recv_frame < ui_state.started_frame:
       return None
 
     # Return current alert
