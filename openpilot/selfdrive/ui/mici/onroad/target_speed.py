@@ -324,7 +324,7 @@ class TargetSpeed(Widget):
     max_curvature = 0.0
     for yaw_rate, speed in zip(model.orientationRate.z, model.velocity.x, strict=False):
       max_curvature = max(max_curvature, abs(yaw_rate) / max(speed, 1.0))
-    if max_speed ** 2 * max_curvature > CURVE_LAT_ACCEL:
+    if max_speed ** 2 * max_curvature > CURVE_LAT_ACCEL or plan_source == LongitudinalPlanSource.curve:
       return Reason.CURVE
 
     if target_speed < v_ego - SLOWING_MARGIN:
