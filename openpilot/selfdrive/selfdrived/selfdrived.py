@@ -257,7 +257,7 @@ class SelfdriveD:
       # Check one time, on the first frame with valid CAN.
       if not self.startup_cruise_checked:
         self.startup_cruise_checked = True
-        if CS.cruiseState.enabled and self.state_machine.state == State.disabled and not self.events.contains(ET.ENABLE):
+        if CS.cruiseState.enabled and not self.enabled and not self.events.contains(ET.ENABLE) and not REPLAY:
           self.events.add(EventName.cruiseCanceledOnStartup)
 
     # Create events for temperature, disk space, and memory
