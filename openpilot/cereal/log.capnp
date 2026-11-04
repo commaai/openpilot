@@ -59,7 +59,6 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     controlsMismatch @22;
     pcmEnable @23;
     pcmDisable @24;
-    cruiseCanceledOnStartup @105;
     radarFault @25;
     radarTempUnavailable @93;
     brakeHold @26;
@@ -101,6 +100,7 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     startupNoControl @62;
     startupNoSecOcKey @63;
     startupMaster @64;
+    startupCruiseCancel @105;
     fcw @65;
     steerSaturated @66;
     belowEngageSpeed @67;
