@@ -675,8 +675,6 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.USER_DISABLE: EngagementAlert(AudibleAlert.disengage),
   },
 
-  # Cruise was on when openpilot started, so openpilot cancels it. This alert has text and sound,
-  # because only one alert shows at a time and a sound-only alert hides the startup alert.
   EventName.cruiseCanceledOnStartup: {
     ET.PERMANENT: Alert(
       "Cruise Canceled",

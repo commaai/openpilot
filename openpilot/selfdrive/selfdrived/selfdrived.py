@@ -253,8 +253,7 @@ class SelfdriveD:
         (CS.regenBraking and (not self.CS_prev.regenBraking or not CS.standstill)):
         self.events.add(EventName.pedalPressed)
 
-      # If cruise is already on when openpilot starts, we missed the rising edge and controlsd cancels it.
-      # Check one time, on the first frame with valid CAN.
+      # Alert when cruise was already on at startup, since controlsd will cancel it
       if not self.startup_cruise_checked:
         self.startup_cruise_checked = True
         if CS.cruiseState.enabled and not self.enabled and not self.events.contains(ET.ENABLE) and not REPLAY:
