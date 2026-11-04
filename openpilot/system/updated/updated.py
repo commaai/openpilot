@@ -245,6 +245,8 @@ class Updater:
       ("tizi", "release3-staging"): "release-tizi-staging",
       ("mici", "release3"): "release-mici",
       ("mici", "release3-staging"): "release-mici-staging",
+      ("tizi", "release-chestnut"): "nightly-chestnut",
+      ("mici", "release-chestnut"): "nightly-chestnut",
     }.get((HARDWARE.get_device_type(), b), b)
     return b
 
