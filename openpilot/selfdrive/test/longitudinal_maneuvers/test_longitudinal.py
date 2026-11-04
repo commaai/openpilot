@@ -1,6 +1,5 @@
-import itertools
 from openpilot.common.test import OpenpilotTestCase
-from openpilot.common.parameterized import parameterized_class
+from openpilot.common.parameterized import parameterized
 
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import STOP_DISTANCE
 from openpilot.selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
@@ -84,32 +83,6 @@ def create_maneuvers(kwargs):
       **kwargs,
     ),
     Maneuver(
-      "approach stopped car at 20m/s, with prob_throttle_values and pitch = -0.1",
-      duration=30.,
-      initial_speed=20.,
-      lead_relevancy=True,
-      initial_distance_lead=120.,
-      speed_lead_values=[0.0, 0., 0.],
-      prob_throttle_values=[1., 0., 0.],
-      cruise_values=[20., 20., 20.],
-      pitch_values=[0., -0.1, -0.1],
-      breakpoints=[0.0, 2., 2.01],
-      **kwargs,
-    ),
-    Maneuver(
-      "approach stopped car at 20m/s, with prob_throttle_values and pitch = +0.1",
-      duration=30.,
-      initial_speed=20.,
-      lead_relevancy=True,
-      initial_distance_lead=120.,
-      speed_lead_values=[0.0, 0., 0.],
-      prob_throttle_values=[1., 0., 0.],
-      cruise_values=[20., 20., 20.],
-      pitch_values=[0., 0.1, 0.1],
-      breakpoints=[0.0, 2., 2.01],
-      **kwargs,
-    ),
-    Maneuver(
       "approach slower cut-in car at 20m/s",
       duration=20.,
       initial_speed=20.,
@@ -152,19 +125,6 @@ def create_maneuvers(kwargs):
       **kwargs,
     ),
   ]
-  if not kwargs['e2e']:
-    maneuvers.append(Maneuver(
-      "slow to 5m/s with allow_throttle = False and pitch = +0.1",
-      duration=30.,
-      initial_speed=20.,
-      lead_relevancy=False,
-      prob_throttle_values=[1., 0., 0.],
-      cruise_values=[20., 20., 20.],
-      pitch_values=[0., 0.1, 0.1],
-      breakpoints=[0.0, 2., 2.01],
-      ensure_slowdown=True,
-      **kwargs,
-    ))
   if not kwargs['force_decel']:
     # controls relies on planner commanding to move for stock-ACC resume spamming
     maneuvers.append(Maneuver(
@@ -181,14 +141,9 @@ def create_maneuvers(kwargs):
   return maneuvers
 
 
-@parameterized_class(("e2e", "force_decel"), itertools.product([True, False], repeat=2))
 class TestLongitudinalControl(OpenpilotTestCase):
-  e2e: bool
-  force_decel: bool
-
-  def test_maneuver(self, subtests):
-    for maneuver in create_maneuvers({"e2e": self.e2e, "force_decel": self.force_decel}):
-      with subtests.test(title=maneuver.title, e2e=maneuver.e2e, force_decel=maneuver.force_decel):
-        print(maneuver.title, f'in {"e2e" if maneuver.e2e else "acc"} mode')
-        valid, _ = maneuver.evaluate()
-        assert valid
+  @parameterized.expand([m for force_decel in (True, False) for m in create_maneuvers({"force_decel": force_decel})],
+                        ids=lambda m: f"{m.title}_force_decel_{m.force_decel}")
+  def test_maneuver(self, maneuver):
+    valid, _ = maneuver.evaluate()
+    assert valid

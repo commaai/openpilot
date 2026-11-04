@@ -23,7 +23,7 @@ ALERT_MAX_TIME = 8 # seconds before critical alerts switch to the max sound
 SELFDRIVE_STATE_TIMEOUT = 5 # 5 seconds
 FILTER_DT = 1. / (micd.SAMPLE_RATE / micd.FFT_SAMPLES)
 
-AMBIENT_DB = 26 # DB where MIN_VOLUME is applied
+AMBIENT_DB = 22 # DB where MIN_VOLUME is applied
 DB_SCALE = 30 # AMBIENT_DB + DB_SCALE is where MAX_VOLUME is applied
 
 VOLUME_BASE = 20

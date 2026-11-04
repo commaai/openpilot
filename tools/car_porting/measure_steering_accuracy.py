@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import os
 import time
 import argparse
 import signal
@@ -115,7 +114,6 @@ if __name__ == "__main__":
 
   parser = argparse.ArgumentParser(description='Steering accuracy measurement tool')
   parser.add_argument('--route', help="route name")
-  parser.add_argument('--addr', default='127.0.0.1', help="IP address for optional ZMQ listener, default to msgq")
   parser.add_argument('--group', default='all', help="speed group to display, [crawl|slow|medium|fast|veryfast|germany|all], default to all")
   args = parser.parse_args()
 
@@ -140,12 +138,8 @@ if __name__ == "__main__":
         tool.update(sm)
 
   else:
-    if args.addr != "127.0.0.1":
-      os.environ["ZMQ"] = "1"
-      messaging.reset_context()
-
-    carControl = messaging.sub_sock('carControl', addr=args.addr, conflate=True)
-    sm = messaging.SubMaster(['carState', 'carControl', 'carOutput', 'controlsState', 'modelV2'], addr=args.addr)
+    carControl = messaging.sub_sock('carControl', conflate=True)
+    sm = messaging.SubMaster(['carState', 'carControl', 'carOutput', 'controlsState', 'modelV2'])
     time.sleep(1)  # Make sure all submaster data is available before going further
 
     print("waiting for messages...")

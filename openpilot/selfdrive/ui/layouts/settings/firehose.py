@@ -1,4 +1,4 @@
-import pyray as rl
+import raylib_nb as rl
 
 from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
 from openpilot.system.ui.lib.multilang import tr, tr_noop
@@ -11,7 +11,7 @@ TITLE = tr_noop("Firehose Mode")
 DESCRIPTION = tr_noop(
   "openpilot learns to drive by watching humans, like you, drive.\n\n"
   + "Firehose Mode allows you to maximize your training data uploads to improve "
-  + "openpilot's driving models. More data means bigger models, which means better Experimental Mode."
+  + "openpilot's driving models. More data means bigger models, which means better driving."
 )
 INSTRUCTIONS = tr_noop(
   "For maximum effectiveness, bring your device inside and connect to a good USB-C adapter and Wi-Fi weekly.\n\n"

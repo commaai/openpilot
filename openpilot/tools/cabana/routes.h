@@ -21,7 +21,7 @@ struct RouteInfo {
 using DevicesCallback = std::function<void(std::vector<DeviceInfo> devices, bool success, int error_code)>;
 using RoutesCallback = std::function<void(std::vector<RouteInfo> routes, bool success, int error_code)>;
 
-// Parse a PyDownloader JSON response into (success, error_code).
+// Parse a PyTools JSON response into (success, error_code).
 std::pair<bool, int> checkApiResponse(const std::string &result);
 
 int64_t nowUnixMs();

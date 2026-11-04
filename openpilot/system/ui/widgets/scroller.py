@@ -1,4 +1,4 @@
-import pyray as rl
+import raylib_nb as rl
 import numpy as np
 from collections.abc import Callable, Sequence
 
@@ -129,10 +129,6 @@ class _Scroller(Widget):
       self._scrolling_to = scroll_offset, block_interrupt, block_widget_interaction
     else:
       self.scroll_panel.set_offset(scroll_offset)
-
-  @property
-  def is_auto_scrolling(self) -> bool:
-    return self._scrolling_to[0] is not None
 
   @property
   def items(self) -> list[Widget]:

@@ -1,15 +1,15 @@
 import logging
 import os
+import socket
 import time
-import warnings
 from pathlib import Path
 from logging.handlers import BaseRotatingHandler
-
-import zmq
 
 from openpilot.common.logging_extra import SwagLogger, SwagFormatter, SwagLogFileFormatter
 from openpilot.common.hardware.hw import Paths
 
+
+SWAGLOG_MAX_SIZE = 4*1024*1024
 
 def get_file_handler():
   Path(Paths.swaglog_root()).mkdir(parents=True, exist_ok=True)
@@ -69,8 +69,6 @@ class UnixDomainSocketHandler(logging.Handler):
     logging.Handler.__init__(self)
     self.setFormatter(formatter)
     self.pid = None
-
-    self.zctx = None
     self.sock = None
 
   def __del__(self):
@@ -79,29 +77,24 @@ class UnixDomainSocketHandler(logging.Handler):
   def close(self):
     if self.sock is not None:
       self.sock.close()
-    if self.zctx is not None:
-      self.zctx.term()
+      self.sock = None
 
   def connect(self):
-    self.zctx = zmq.Context()
-    self.sock = self.zctx.socket(zmq.PUSH)
-    self.sock.setsockopt(zmq.LINGER, 10)
-    self.sock.connect(Paths.swaglog_ipc())
+    self.close()
+    self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+    self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, SWAGLOG_MAX_SIZE)
+    self.sock.setblocking(False)
     self.pid = os.getpid()
 
   def emit(self, record):
     if os.getpid() != self.pid:
-      # TODO suppresses warning about forking proc with zmq socket, fix root cause
-      warnings.filterwarnings("ignore", category=ResourceWarning, message="unclosed.*<zmq.*>")
       self.connect()
 
     msg = self.format(record).rstrip('\n')
-    # print("SEND".format(repr(msg)))
     try:
-      s = chr(record.levelno)+msg
-      self.sock.send(s.encode('utf8'), zmq.NOBLOCK)
-    except zmq.error.Again:
-      # drop :/
+      self.sock.sendto((chr(record.levelno)+msg).encode('utf8'), Paths.swaglog_ipc())
+    except OSError:
+      # logmessaged is busy, not running, or the message is too big. drop :/
       pass
 
 

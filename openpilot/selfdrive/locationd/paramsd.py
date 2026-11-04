@@ -36,12 +36,11 @@ class VehicleParamsLearner:
     self.P_initial = P_initial if P_initial is not None else CarKalman.P_initial
 
     self.kf.set_globals(
-      mass=CP.mass,
-      rotational_inertia=CP.rotationalInertia,
+      rotational_inertia=CP.rotationalInertiaPerMass,
       center_to_front=CP.centerToFront,
       center_to_rear=CP.wheelbase - CP.centerToFront,
-      stiffness_front=CP.tireStiffnessFront,
-      stiffness_rear=CP.tireStiffnessRear
+      stiffness_front=CP.tireStiffnessFrontPerMass,
+      stiffness_rear=CP.tireStiffnessRearPerMass
     )
 
     self.min_sr, self.max_sr = 0.5 * CP.steerRatio, 2.0 * CP.steerRatio

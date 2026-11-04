@@ -7,7 +7,8 @@ from openpilot.common.test import OpenpilotTestCase
 from openpilot.cereal import messaging, log
 from teleoprtc.tracks import VIDEO_CLOCK_RATE
 
-from openpilot.system.webrtc.webrtcd import CerealOutgoingMessageProxy, CerealIncomingMessageProxy, ServerState, handle_get_stream
+from openpilot.system.webrtc.device.messaging import CerealOutgoingMessageProxy, CerealIncomingMessageProxy
+from openpilot.system.webrtc.webrtcd import ServerState, handle_get_stream
 from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
 
 
@@ -39,6 +40,23 @@ class TestStreamSession(OpenpilotTestCase):
     proxy.update()
 
     channel.send.assert_called_once_with(expected_json)
+
+  def test_outgoing_proxy_raw(self, mocker):
+    pm = messaging.PubMaster(["customReservedRawData0"])
+    proxy = CerealOutgoingMessageProxy(["customReservedRawData0"], raw=True)
+    channel = mocker.Mock()
+    channel.is_open.return_value = True
+    channel.max_message_size.return_value = 1024
+    proxy.add_channel(channel)
+
+    small = messaging.new_message(None, customReservedRawData0=b"test").to_bytes()
+    big = messaging.new_message(None, customReservedRawData0=bytes(2048)).to_bytes()
+    pm.send("customReservedRawData0", small)
+    pm.send("customReservedRawData0", big)
+    proxy.update()
+
+    # raw capnp bytes are passed through, messages bigger than the channel's max are dropped
+    channel.send.assert_called_once_with(small)
 
   def test_incoming_proxy(self, mocker):
     tested_msgs = [

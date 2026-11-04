@@ -2,8 +2,6 @@
 import argparse
 from collections import Counter
 from concurrent.futures import as_completed, ProcessPoolExecutor
-from itertools import batched
-import math
 import os
 from pathlib import Path
 import sys
@@ -19,6 +17,8 @@ IGNORED = (
   ROOT / "openpilot/tools/sim",
 )
 FAILURES = {"failed", "error", "xpassed"}
+CLASS_FIXTURES = ("setUpClass", "tearDownClass", "setup_class", "teardown_class")
+BASE_MODULES = ("unittest.case", "openpilot.common.test")
 STATUS_MARKS = {
   "passed": (".", 32),
   "skipped": ("s", 33),
@@ -177,24 +177,24 @@ def collect(targets, keyword):
   return list({test.id(): test for test in tests}.values()), errors
 
 
-def make_batches(tests, workers):
-  fixture_groups = {}
-  parallel = []
+def has_class_fixture(cls):
+  return any(name in vars(base) for base in cls.__mro__ if base.__module__ not in BASE_MODULES for name in CLASS_FIXTURES)
+
+
+def make_batches(tests):
+  # tests sharing module/class fixtures stay together, everything else is dispatched one at a time
+  groups = {}
   for test in tests:
     cls = type(test)
     module = sys.modules[cls.__module__]
     if hasattr(module, "setUpModule") or hasattr(module, "tearDownModule"):
       key = cls.__module__
-    elif "setUpClass" in cls.__dict__ or "tearDownClass" in cls.__dict__:
+    elif has_class_fixture(cls):
       key = f"{cls.__module__}.{cls.__qualname__}"
     else:
-      parallel.append(test.id())
-      continue
-    fixture_groups.setdefault(key, []).append(test.id())
-  size = max(1, math.ceil(len(tests) / (workers * 4)))
-  batches = list(fixture_groups.values())
-  batches.extend(list(batch) for batch in batched(parallel, size))
-  return sorted(batches, key=len, reverse=True)
+      key = test.id()
+    groups.setdefault(key, []).append(test.id())
+  return sorted(groups.values(), key=len, reverse=True)
 
 
 def run_batch(test_ids, capture_output):
@@ -273,7 +273,7 @@ def main():
   warnings.simplefilter(args.warnings)
   started = time.monotonic()
   tests, errors = collect(args.targets, args.k)
-  batches = make_batches(tests, args.jobs)
+  batches = make_batches(tests)
   workers = min(args.jobs, len(batches))
   summary = f"collected {len(tests)} test{'s' if len(tests) != 1 else ''} in {time.monotonic() - started:.2f}s "
   summary += f"• {workers} worker{'s' if workers != 1 else ''}"

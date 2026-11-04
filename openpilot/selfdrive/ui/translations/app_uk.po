@@ -113,10 +113,6 @@ msgstr "ЗМІНИТИ"
 msgid "CHECK"
 msgstr "ПЕРЕВІРИТИ"
 
-#: openpilot/selfdrive/ui/widgets/exp_mode_button.py
-msgid "CHILL MODE ON"
-msgstr "СПОКІЙНИЙ РЕЖИМ"
-
 #: openpilot/selfdrive/ui/layouts/sidebar.py
 #: openpilot/system/ui/widgets/network.py
 msgid "CONNECT"
@@ -209,10 +205,6 @@ msgstr "ID ключа"
 msgid "Download"
 msgstr "Завантажити"
 
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Driving Personality"
-msgstr "Стиль водіння"
-
 #: openpilot/system/ui/widgets/network.py
 msgid "EDIT"
 msgstr "РЕДАГ."
@@ -225,12 +217,7 @@ msgstr "ПОМИЛКА"
 msgid "ETH"
 msgstr "ETH"
 
-#: openpilot/selfdrive/ui/widgets/exp_mode_button.py
-msgid "EXPERIMENTAL MODE ON"
-msgstr "ЕКСПЕРИМЕНТ. РЕЖИМ"
-
 #: openpilot/selfdrive/ui/layouts/settings/developer.py
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Enable"
 msgstr "Увімкнути"
 
@@ -262,10 +249,6 @@ msgstr "Увімкнути моніторинг водія, навіть кол�
 msgid "Enable openpilot"
 msgstr "Увімкнути openpilot"
 
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode."
-msgstr "Увімкніть перемикач поздовжнього керування openpilot (альфа), щоб увімкнути експериментальний режим."
-
 #: openpilot/system/ui/widgets/network.py
 msgid "Enter APN"
 msgstr "Введіть APN"
@@ -290,14 +273,6 @@ msgstr "Введіть ваш логін GitHub"
 msgid "Error"
 msgstr "Помилка"
 
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Experimental Mode"
-msgstr "Експериментальний режим"
-
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Experimental mode is currently unavailable on this car since the car's stock ACC is used for longitudinal control."
-msgstr "Експериментальний режим наразі недоступний для цього автомобіля, оскільки для поздовжнього керування використовується штатний адаптивний круїз-контроль (ACC)."
-
 #: openpilot/system/ui/widgets/network.py
 msgid "FORGETTING..."
 msgstr "ЗАБУВАЮ..."
@@ -314,6 +289,10 @@ msgstr "Злива"
 #: openpilot/selfdrive/ui/widgets/setup.py
 msgid "Firehose Mode"
 msgstr "Режим зливи"
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Following Distance"
+msgstr ""
 
 #: openpilot/system/ui/widgets/network.py
 msgid "Forget"
@@ -346,6 +325,10 @@ msgstr "ВСТАНОВ."
 #: openpilot/system/ui/widgets/network.py
 msgid "IP Address"
 msgstr "IP-адреса"
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Initial Max Speed"
+msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/software.py
 msgid "Install Update"
@@ -721,6 +704,7 @@ msgstr "завершую..."
 msgid "for \"{}\""
 msgstr "для \"{}\""
 
+#: openpilot/selfdrive/ui/layouts/settings/initial_cruise_speed.py
 #: openpilot/selfdrive/ui/onroad/hud_renderer.py
 msgid "km/h"
 msgstr "км/год"
@@ -737,6 +721,7 @@ msgstr "вліво"
 msgid "metered"
 msgstr "обмеж."
 
+#: openpilot/selfdrive/ui/layouts/settings/initial_cruise_speed.py
 #: openpilot/selfdrive/ui/onroad/hud_renderer.py
 msgid "mph"
 msgstr "миль/год"
@@ -756,10 +741,6 @@ msgstr "Поздовжнє керування openpilot (Альфа)"
 #: openpilot/selfdrive/ui/onroad/alert_renderer.py
 msgid "openpilot Unavailable"
 msgstr "openpilot Недоступний"
-
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "openpilot longitudinal control may come in a future update."
-msgstr "Поздовжнє керування openpilot може з'явитися в майбутньому оновленні."
 
 #: openpilot/selfdrive/ui/layouts/settings/device.py
 msgid "openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down."

@@ -4,7 +4,7 @@ from functools import wraps
 from collections import OrderedDict
 
 import numpy as np
-import pyray as rl
+import raylib_nb as rl
 from opendbc.car import ACCELERATION_DUE_TO_GRAVITY
 from openpilot.selfdrive.ui.mici.onroad import blend_colors
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
@@ -14,7 +14,7 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.common.filter_simple import FirstOrderFilter
 
 # TODO: arc_bar_pts doesn't consider rounded end caps part of the angle span
-TORQUE_ANGLE_SPAN = 12.7
+TORQUE_ANGLE_SPAN = 12.7  # degrees on the default 476 px camera view; narrower views beside the navigation panel scale down
 
 DEBUG = False
 
@@ -148,20 +148,12 @@ DEFAULT_MAX_LAT_ACCEL = 3.0  # m/s^2
 
 
 class TorqueBar(Widget):
-  def __init__(self, demo: bool = False):
+  def __init__(self):
     super().__init__()
-    self._demo = demo
     self._torque_filter = FirstOrderFilter(0, 0.1, 1 / gui_app.target_fps)
     self._torque_line_alpha_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
-  def update_filter(self, value: float):
-    """Update the torque filter value (for demo mode)."""
-    self._torque_filter.update(value)
-
   def _update_state(self):
-    if self._demo:
-      return
-
     # torque line
     if ui_state.sm['controlsState'].lateralControlState.which() in ('angleState', 'curvatureState'):
       controls_state = ui_state.sm['controlsState']
@@ -193,20 +185,17 @@ class TorqueBar(Widget):
     torque_line_height = np.interp(abs(self._torque_filter.x), [0.5, 1], [14, 56])
 
     # animate alpha and angle span
-    if not self._demo:
-      self._torque_line_alpha_filter.update(ui_state.status != UIStatus.DISENGAGED)
-    else:
-      self._torque_line_alpha_filter.update(1.0)
+    self._torque_line_alpha_filter.update(ui_state.status != UIStatus.DISENGAGED)
 
     torque_line_bg_alpha = np.interp(abs(self._torque_filter.x), [0.5, 1.0], [0.25, 0.5])
     torque_line_bg_color = rl.Color(255, 255, 255, int(255 * torque_line_bg_alpha * self._torque_line_alpha_filter.x))
-    if ui_state.status != UIStatus.ENGAGED and not self._demo:
+    if ui_state.status != UIStatus.ENGAGED:
       torque_line_bg_color = rl.Color(255, 255, 255, int(255 * 0.15 * self._torque_line_alpha_filter.x))
 
     # draw curved line polygon torque bar
     torque_line_radius = 1200
     top_angle = -90
-    torque_bg_angle_span = self._torque_line_alpha_filter.x * TORQUE_ANGLE_SPAN
+    torque_bg_angle_span = self._torque_line_alpha_filter.x * TORQUE_ANGLE_SPAN * rect.width / 476
     torque_start_angle = top_angle - torque_bg_angle_span / 2
     torque_end_angle = top_angle + torque_bg_angle_span / 2
     # centerline radius & center (you already have these values)
@@ -244,7 +233,7 @@ class TorqueBar(Widget):
       max(0, abs(self._torque_filter.x) - 0.75) * 4,
     )
 
-    if ui_state.status != UIStatus.ENGAGED and not self._demo:
+    if ui_state.status != UIStatus.ENGAGED:
       start_color = end_color = rl.Color(255, 255, 255, int(255 * 0.35 * self._torque_line_alpha_filter.x))
 
     gradient = Gradient(

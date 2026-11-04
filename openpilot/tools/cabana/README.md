@@ -22,7 +22,7 @@ Options:
   --panda                   read can messages from panda
   --panda-serial <serial>   read can messages from panda with given serial
   --socketcan <device>      read can messages from given SocketCAN device
-  --zmq <ip-address>        read can messages from zmq at the specified ip-address
+  --remote <ip-address>     read can messages from a device at the specified ip-address
   --data_dir <dir>          local directory with routes
   --no-vipc                 do not output video
   --no-cache                turn off the local route file cache
@@ -58,17 +58,17 @@ cabana "5beb9b58bd12b691/0000010a--a51155e496" --cabin --wide-road
 
 ### Streaming CAN Messages from a comma Device
 
-[SSH into your device](https://github.com/commaai/openpilot/wiki/SSH) and start the bridge with the following command:
+[SSH into your device](https://github.com/commaai/openpilot/wiki/SSH) and start webrtcd with the following command:
 
 ```shell
 cd /data/openpilot
-./openpilot/cereal/messaging/bridge &
+./openpilot/system/webrtc/webrtcd.py --host 0.0.0.0 &
 ```
 
 Then Run Cabana with the device's IP address:
 
 ```shell
-cabana --zmq <ipaddress>
+cabana --remote <ipaddress>
 ```
 
 Replace &lt;ipaddress&gt; with your comma device's IP address.

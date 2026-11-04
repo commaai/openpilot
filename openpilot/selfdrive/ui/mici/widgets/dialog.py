@@ -1,7 +1,7 @@
 import abc
 import math
 import re
-import pyray as rl
+import raylib_nb as rl
 from typing import Union
 from collections.abc import Callable
 from openpilot.system.ui.widgets.nav_widget import NavWidget
@@ -140,7 +140,8 @@ class BigInputDialog(BigDialogBase):
       return
 
     last_mouse_event = gui_app.last_mouse_event
-    if last_mouse_event.left_down and rl.check_collision_point_rec(last_mouse_event.pos, self._top_right_button_rect) and self._backspace_img_alpha.x > 1:
+    mouse_pos = rl.Vector2(last_mouse_event.pos.x, last_mouse_event.pos.y)
+    if last_mouse_event.left_down and rl.check_collision_point_rec(mouse_pos, self._top_right_button_rect) and self._backspace_img_alpha.x > 1:
       if self._backspace_held_time is None:
         self._backspace_held_time = rl.get_time()
 
@@ -183,7 +184,7 @@ class BigInputDialog(BigDialogBase):
     # draw gradient on left side to indicate more text
     if text_size.x > text_field_rect.width:
       rl.draw_rectangle_gradient_ex(rl.Rectangle(text_field_rect.x, text_field_rect.y, 80, text_field_rect.height),
-                                    rl.BLACK, rl.BLANK, rl.BLANK, rl.BLACK)
+                                    rl.BLACK, rl.BLACK, rl.BLANK, rl.BLANK)
 
     # draw cursor
     blink_alpha = (math.sin(rl.get_time() * 6) + 1) / 2
@@ -238,9 +239,9 @@ class BigInputDialog(BigDialogBase):
       return
 
     # handle backspace icon click
-    if rl.check_collision_point_rec(mouse_pos, self._top_right_button_rect) and self._backspace_img_alpha.x > 254:
+    if rl.check_collision_point_rec(rl.Vector2(mouse_pos.x, mouse_pos.y), self._top_right_button_rect) and self._backspace_img_alpha.x > 254:
       self._keyboard.backspace()
-    elif rl.check_collision_point_rec(mouse_pos, self._top_left_button_rect) and self._enter_img_alpha.x > 254:
+    elif rl.check_collision_point_rec(rl.Vector2(mouse_pos.x, mouse_pos.y), self._top_left_button_rect) and self._enter_img_alpha.x > 254:
       # handle enter icon click
       self._confirm_callback()
 

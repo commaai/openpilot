@@ -5,6 +5,7 @@ import time
 import unittest
 import numpy as np
 from dataclasses import dataclass
+from openpilot.common.hardware import HARDWARE
 from openpilot.common.test import OpenpilotTestCase
 from openpilot.common.utils import tabulate
 
@@ -13,12 +14,12 @@ from openpilot.cereal.services import SERVICE_LIST
 from opendbc.car.car_helpers import get_demo_car_params
 from openpilot.common.mock import mock_messages
 from openpilot.common.params import Params
-from openpilot.common.hardware.comma.power_monitor import get_power
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.system.manager.manager import manager_cleanup
 
 SAMPLE_TIME = 2       # seconds to sample power
 MAX_WARMUP_TIME = 30  # seconds to wait for SAMPLE_TIME consecutive valid samples
+MICI = HARDWARE.get_device_type() == "mici"
 
 @dataclass
 class Proc:
@@ -33,9 +34,10 @@ class Proc:
     return '+'.join(self.procs)
 
 
+# how much each adds to the DUT's power, which the UP measures on its OBD-C port
 PROCS = [
-  Proc(['camerad'], 1.65, atol=0.4, msgs=['narrowRoadCameraState', 'wideRoadCameraState', 'cabinCameraState']),
-  Proc(['modeld'], 1.5, atol=0.2, msgs=['modelV2']),
+  Proc(['camerad'], 1.0 if MICI else 1.65, atol=0.4, msgs=['narrowRoadCameraState', 'wideRoadCameraState', 'cabinCameraState']),
+  Proc(['modeld'], 1.15 if MICI else 1.5, atol=0.2, msgs=['modelV2']),
   Proc(['dmonitoringmodeld'], 0.65, atol=0.35, msgs=['driverStateV2']),
   Proc(['encoderd'], 0.23, msgs=[]),
 ]
@@ -46,6 +48,8 @@ class TestPowerDraw(OpenpilotTestCase):
 
   def setup_method(self):
     Params().put("CarParams", get_demo_car_params().to_bytes(), block=True)
+    from ultimate_provisioning import UP  # only on a DUT, from its UP's up run or up ssh
+    self.up = UP.remote()
 
   def teardown_method(self):
     manager_cleanup()
@@ -78,7 +82,7 @@ class TestPowerDraw(OpenpilotTestCase):
     start_time = time.monotonic()
 
     while (time.monotonic() - start_time) < MAX_WARMUP_TIME:
-      power = get_power(1)
+      power = self.up.get_power(1)
       iteration_msg_counts = {}
       for msg,sock in socks.items():
         iteration_msg_counts[msg] = len(messaging.drain_sock_raw(sock))
@@ -97,7 +101,7 @@ class TestPowerDraw(OpenpilotTestCase):
 
   @mock_messages(['deviceMotion'])
   def test_camera_procs(self, subtests):
-    baseline = get_power()
+    baseline = self.up.get_power()
 
     prev = baseline
     used = {}

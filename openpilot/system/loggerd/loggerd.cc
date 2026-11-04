@@ -228,8 +228,7 @@ void loggerd_thread() {
   std::unordered_map<SubSocket*, ServiceState> service_state;
   std::unordered_map<SubSocket*, struct RemoteEncoder> remote_encoders;
 
-  std::unique_ptr<Context> ctx(Context::create());
-  std::unique_ptr<Poller> poller(Poller::create());
+  auto poller = std::make_unique<Poller>();
 
   // subscribe to all socks
   for (const auto& [_, it] : services) {
@@ -239,7 +238,7 @@ void loggerd_thread() {
     if (it.should_log || (encoder && !livestream_encoder) || record_audio) {
       LOGD("logging %s", it.name.c_str());
 
-      SubSocket * sock = SubSocket::create(ctx.get(), it.name, "127.0.0.1", false, true, it.queue_size);
+      SubSocket * sock = SubSocket::create(it.name, false, it.queue_size);
       assert(sock != NULL);
       poller->registerSocket(sock);
       service_state[sock] = {

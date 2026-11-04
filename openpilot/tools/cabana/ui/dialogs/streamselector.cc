@@ -187,11 +187,11 @@ std::unique_ptr<AbstractStream> OpenPandaWidget::open() {
 }
 
 void OpenDeviceWidget::draw() {
-  ImGui::RadioButton("MSGQ", &mode_, 0);
-  ImGui::RadioButton("ZMQ", &mode_, 1);
+  ImGui::RadioButton("Local", &mode_, 0);
+  ImGui::RadioButton("Remote", &mode_, 1);
   // the radio buttons are the label column, the ip address is the field column
   const float label_width = ImGui::GetFrameHeight() + ImGui::GetStyle().ItemInnerSpacing.x +
-                            std::max(ImGui::CalcTextSize("MSGQ").x, ImGui::CalcTextSize("ZMQ").x) +
+                            std::max(ImGui::CalcTextSize("Local").x, ImGui::CalcTextSize("Remote").x) +
                             ImGui::GetStyle().ItemInnerSpacing.x;
   ImGui::SameLine(label_width);
   ImGui::BeginDisabled(mode_ != 1);

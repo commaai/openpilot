@@ -120,10 +120,7 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     steerTimeLimit @83;
     vehicleSensorsInvalid @84;
     locationdTemporaryError @85;
-    locationdPermanentError @86;
     paramsdTemporaryError @87;
-    paramsdPermanentError @88;
-    actuatorsApiUnavailable @89;
     espActive @90;
     personalityChanged @91;
     aeb @92;
@@ -139,6 +136,9 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     usbErrorDEPRECATED @78;
     audioFeedbackDEPRECATED @97;
     bigModelReadyDEPRECATED @101;
+    locationdPermanentErrorDEPRECATED @86;
+    paramsdPermanentErrorDEPRECATED @88;
+    actuatorsApiUnavailableDEPRECATED @89;
   }
 }
 
@@ -167,12 +167,7 @@ struct InitData {
   gitSrcCommit @23 :Text;
   gitSrcCommitDate @24 :Text;
 
-  androidProperties @16 :Map(Text, Text);
-
-  pandaInfo @8 :PandaInfo;
-
   dirty @9 :Bool;
-  passive @12 :Bool;
   params @17 :Map(Text, Data);
 
   commands @19 :Map(Text, Data);
@@ -190,6 +185,17 @@ struct InitData {
     mici @7;  # comma four
   }
 
+  deprecated :group {
+    gctx @1 :Text;
+    androidBuildInfo @5 :Deprecated.AndroidBuildInfo;
+    androidSensors @6 :List(Deprecated.AndroidSensor);
+    chffrAndroidExtra @7 :ChffrAndroidExtra;
+    pandaInfo @8 :PandaInfo;
+    passive @12 :Bool;
+    iosBuildInfo @14 :Deprecated.IosBuildInfo;
+    androidProperties @16 :Map(Text, Text);
+  }
+
   struct PandaInfo {
     hasPanda @0 :Bool;
     dongleId @1 :Text;
@@ -199,14 +205,6 @@ struct InitData {
 
   struct ChffrAndroidExtra {
     allCameraCharacteristics @0 :Map(Text, Text);
-  }
-
-  deprecated :group {
-    gctx @1 :Text;
-    androidBuildInfo @5 :Deprecated.AndroidBuildInfo;
-    androidSensors @6 :List(Deprecated.AndroidSensor);
-    chffrAndroidExtra @7 :ChffrAndroidExtra;
-    iosBuildInfo @14 :Deprecated.IosBuildInfo;
   }
 }
 
@@ -573,6 +571,9 @@ struct PandaState @0xa7649e2575e4591e {
   controlsAllowedRESERVED1 @38 :Bool;
   controlsAllowedRESERVED2 @39 :Bool;
 
+  nmiReset @40 :Bool;
+  hardfaultReset @41 :Bool;
+
   enum FaultStatus {
     none @0;
     faultTemp @1;
@@ -589,25 +590,28 @@ struct PandaState @0xa7649e2575e4591e {
     interruptRateGmlanDEPRECATED @6;
     interruptRateInterrupts @7;
     interruptRateSpiDma @8;
-    interruptRateSpiCs @9;
-    interruptRateUart1 @10;
-    interruptRateUart2 @11;
-    interruptRateUart3 @12;
-    interruptRateUart5 @13;
-    interruptRateUartDma @14;
+    selfTestCpu @9;
+    selfTestRam @10;
+    selfTestFlash @11;
+    ecc @12;
+    outputReadback @13;
+    dma @14;
     interruptRateUsb @15;
-    interruptRateTim1 @16;
-    interruptRateTim3 @17;
+    clock @16;
+    interruptMissing @17;
     registerDivergent @18;
     interruptRateKlineInit @19;
     interruptRateClockSource @20;
     interruptRateTick @21;
     interruptRateExti @22;
     interruptRateSpi @23;
-    interruptRateUart7 @24;
+    adc @24;
     sirenMalfunction @25;
     heartbeatLoopWatchdog @26;
-    # Update max fault type in boardd when adding faults
+    interruptRateSoundDma @27;
+    mpu @28;
+    timer @29;
+    # Update max fault type in pandad when adding faults
   }
 
   enum PandaType @0x8a58adf93e5b3751 {
@@ -821,7 +825,6 @@ struct SelfdriveState {
   alertHudVisual @12 :Car.CarControl.HUDControl.VisualAlert;
 
   # configurable driving settings
-  experimentalMode @10 :Bool;
   personality @11 :LongitudinalPersonality;
 
   enum AudibleAlert {
@@ -865,6 +868,7 @@ struct SelfdriveState {
 
   deprecated :group {
     alertSound @8 :Car.CarControl.HUDControl.AudibleAlert;
+    experimentalMode @10 :Bool;
   }
 }
 
@@ -1239,6 +1243,7 @@ struct LongitudinalPlan @0xe00b5b3eba12876c {
   shouldStop @37: Bool;
   allowThrottle @38: Bool;
   allowBrake @39: Bool;
+  accelBoost @40 :Float32;
 
 
   solverExecutionTime @35 :Float32;
@@ -2708,8 +2713,8 @@ struct Event {
     driverMonitoringStateDEPRECATED @71 :DriverMonitoringStateDEPRECATED;
     gpsNMEADEPRECATED @3 :GPSNMEAData;
     uploaderStateDEPRECATED @79 :UploaderState;
-    navInstructionDEPRECATED @82 :NavInstruction;
-    navRouteDEPRECATED @83 :NavRoute;
+    navInstruction @82 :NavInstruction;
+    navRoute @83 :NavRoute;
     navThumbnailDEPRECATED @84 :Thumbnail;
     gnssMeasurementsDEPRECATED @91 :GnssMeasurements;
     mapRenderStateDEPRECATED @105: MapRenderState;

@@ -1,15 +1,13 @@
-import fcntl
 import numpy as np
-import os
-import tempfile
 from collections import defaultdict
+from functools import cache
 from enum import Enum
 
 from openpilot.common.test import OpenpilotTestCase
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.selfdrive.locationd.lagd import masked_symmetric_moving_average
 from openpilot.selfdrive.test.process_replay.migration import migrate_all
-from openpilot.selfdrive.test.process_replay.process_replay import replay_process_with_name
+from openpilot.selfdrive.test.process_replay.process_replay import get_process_config, replay_process_with_name
 
 # TODO find a new segment to test
 TEST_ROUTE = "4019fff6e54cf1c7|00000123--4bc0d95ef6/5"
@@ -68,7 +66,15 @@ def modify_logs_midway(logs, which, count, fn):
   return sorted(non_which + which, key=lambda x: x.logMonoTime)
 
 
-def run_scenarios(scenario, logs):
+@cache
+def get_logs():
+  # only keep what locationd consumes, plus carParams for replay setup and deviceMotion for comparison
+  services = set(get_process_config('locationd').pubs) | {'carParams', 'deviceMotion'}
+  return [m for m in migrate_all(LogReader(TEST_ROUTE)) if m.which() in services]
+
+
+def run_scenarios(scenario):
+  logs = get_logs()
   if scenario == Scenario.BASE:
     pass
 
@@ -106,23 +112,7 @@ class TestLocationdScenarios(OpenpilotTestCase):
     - locationd kalman filter should never go unstable (we care mostly about yaw_rate, roll, gpsOK, inputsOK, sensorsOK)
     - faulty values should be ignored, with appropriate flags set
   """
-
-  @classmethod
-  def setup_class(cls):
-    # xdist can initialize this class in several workers at once. URLFile's
-    # cache writes are atomic, but cache misses are not locked, so every worker
-    # otherwise downloads the same route concurrently.
-    lock_path = os.path.join(tempfile.gettempdir(), "openpilot-locationd-scenarios.lock")
-    ready_path = f"{lock_path}.ready"
-    logs = None
-    with open(lock_path, "w") as lock:
-      fcntl.flock(lock, fcntl.LOCK_EX)
-      if not os.path.exists(ready_path):
-        logs = list(LogReader(TEST_ROUTE))
-        open(ready_path, "w").close()
-    if logs is None:
-      logs = list(LogReader(TEST_ROUTE))
-    cls.logs = migrate_all(logs)
+  SHARED_DOWNLOAD_CACHE = True  # reuse the route across tests and runs
 
   def test_base(self):
     """
@@ -131,7 +121,7 @@ class TestLocationdScenarios(OpenpilotTestCase):
       - yaw_rate: unchanged
       - roll: unchanged
     """
-    orig_data, replayed_data = run_scenarios(Scenario.BASE, self.logs)
+    orig_data, replayed_data = run_scenarios(Scenario.BASE)
     assert np.allclose(orig_data['yaw_rate'], replayed_data['yaw_rate'], atol=np.radians(0.35))
     assert np.allclose(orig_data['roll'], replayed_data['roll'], atol=np.radians(0.35))
 
@@ -143,7 +133,7 @@ class TestLocationdScenarios(OpenpilotTestCase):
       - roll: 0
       - sensorsOK: False
     """
-    _, replayed_data = run_scenarios(Scenario.GYRO_OFF, self.logs)
+    _, replayed_data = run_scenarios(Scenario.GYRO_OFF)
     assert np.allclose(replayed_data['yaw_rate'], 0.0)
     assert np.allclose(replayed_data['roll'], 0.0)
     assert np.all(replayed_data['sensors_flag'] == 0.0)
@@ -156,7 +146,7 @@ class TestLocationdScenarios(OpenpilotTestCase):
       - roll: unchanged
       - inputsOK: False for some time after the spike, True for the rest
     """
-    orig_data, replayed_data = run_scenarios(Scenario.GYRO_SPIKE_MIDWAY, self.logs)
+    orig_data, replayed_data = run_scenarios(Scenario.GYRO_SPIKE_MIDWAY)
     assert np.allclose(orig_data['yaw_rate'], replayed_data['yaw_rate'], atol=np.radians(0.35))
     assert np.allclose(orig_data['roll'], replayed_data['roll'], atol=np.radians(0.35))
     assert np.all(replayed_data['inputs_flag'] == orig_data['inputs_flag'])
@@ -167,7 +157,7 @@ class TestLocationdScenarios(OpenpilotTestCase):
     Test: consistent timing spikes for N gyroscope messages in the middle of the segment
     Expected Result: inputsOK becomes False after N of bad measurements
     """
-    orig_data, replayed_data = run_scenarios(Scenario.GYRO_CONSISTENT_SPIKES, self.logs)
+    orig_data, replayed_data = run_scenarios(Scenario.GYRO_CONSISTENT_SPIKES)
     assert np.diff(replayed_data['inputs_flag'])[501] == -1.0
     assert np.diff(replayed_data['inputs_flag'])[708] == 1.0
 
@@ -179,7 +169,7 @@ class TestLocationdScenarios(OpenpilotTestCase):
       - roll: 0
       - sensorsOK: False
     """
-    _, replayed_data = run_scenarios(Scenario.ACCEL_OFF, self.logs)
+    _, replayed_data = run_scenarios(Scenario.ACCEL_OFF)
     assert np.allclose(replayed_data['yaw_rate'], 0.0)
     assert np.allclose(replayed_data['roll'], 0.0)
     assert np.all(replayed_data['sensors_flag'] == 0.0)
@@ -190,7 +180,7 @@ class TestLocationdScenarios(OpenpilotTestCase):
     Test: an accelerometer spike in the middle of the segment
     Expected Result: Right now, the kalman filter is not robust to small spikes like it is to gyroscope spikes.
     """
-    orig_data, replayed_data = run_scenarios(Scenario.ACCEL_SPIKE_MIDWAY, self.logs)
+    orig_data, replayed_data = run_scenarios(Scenario.ACCEL_SPIKE_MIDWAY)
     assert np.allclose(orig_data['yaw_rate'], replayed_data['yaw_rate'], atol=np.radians(0.35))
     assert np.allclose(orig_data['roll'], replayed_data['roll'], atol=np.radians(0.35))
 
@@ -199,7 +189,7 @@ class TestLocationdScenarios(OpenpilotTestCase):
     Test: timing of 150ms off for the single accelerometer message in the middle of the segment
     Expected Result: the message is ignored, and inputsOK is False for that time
     """
-    orig_data, replayed_data = run_scenarios(Scenario.SENSOR_TIMING_SPIKE_MIDWAY, self.logs)
+    orig_data, replayed_data = run_scenarios(Scenario.SENSOR_TIMING_SPIKE_MIDWAY)
     assert np.all(replayed_data['inputs_flag'] == orig_data['inputs_flag'])
     assert np.all(replayed_data['sensors_flag'] == orig_data['sensors_flag'])
 
@@ -208,6 +198,6 @@ class TestLocationdScenarios(OpenpilotTestCase):
     Test: consistent timing spikes for N accelerometer messages in the middle of the segment
     Expected Result: inputsOK becomes False after N of bad measurements
     """
-    orig_data, replayed_data = run_scenarios(Scenario.SENSOR_TIMING_CONSISTENT_SPIKES, self.logs)
+    orig_data, replayed_data = run_scenarios(Scenario.SENSOR_TIMING_CONSISTENT_SPIKES)
     assert np.diff(replayed_data['inputs_flag'])[501] == -1.0
     assert np.diff(replayed_data['inputs_flag'])[707] == 1.0

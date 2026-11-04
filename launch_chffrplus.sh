@@ -56,6 +56,8 @@ function launch {
           mv "$DIR" /data/safe_staging/old_openpilot
           mv "${STAGING_ROOT}/finalized" "$DIR"
           cd "$DIR"
+          # releases before the openpilot/ move can't swap AGNOS on newer AGNOS, use ours
+          [ ! -L system/hardware/tici/agnos.json ] && /data/safe_staging/old_openpilot/openpilot/common/hardware/comma/agnos.py --verify system/hardware/tici/agnos.json && sudo reboot
 
           echo "Restarting launch script ${LAUNCHER_LOCATION}"
           unset AGNOS_VERSION

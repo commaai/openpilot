@@ -1,7 +1,7 @@
 import time
 from enum import StrEnum
 from typing import NamedTuple
-import pyray as rl
+import raylib_nb as rl
 import random
 import string
 from dataclasses import dataclass

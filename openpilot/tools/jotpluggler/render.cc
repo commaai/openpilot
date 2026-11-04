@@ -68,6 +68,18 @@ void render_layout(AppSession *session, UiState *state, bool show_camera_feed) {
   if (!ImGui::GetIO().WantTextInput && ImGui::IsKeyPressed(ImGuiKey_Space, false)) {
     state->playback_playing = !state->playback_playing;
   }
+  // GLFW/ImGui mouse button 4 is the conventional mouse Back button.
+  if (ImGui::IsMouseClicked(3) && !state->plot_view_history.empty()) {
+    const PlotView view = state->plot_view_history.back();
+    state->plot_view_history.pop_back();
+    state->x_view_min = view.range.left;
+    state->x_view_max = view.range.right;
+    state->restore_plot_view = view;
+    state->follow_latest = false;
+    state->playback_playing = false;
+    state->suppress_range_side_effects = true;
+    state->last_plot_view_id = 0;
+  }
   advance_playback(state, *session);
   CameraFeedView *sidebar_camera = session->pane_camera_feeds[static_cast<size_t>(sidebar_preview_camera_view(*session))].get();
   if (show_camera_feed && sidebar_camera != nullptr && state->has_tracker_time) {
@@ -83,7 +95,7 @@ void render_layout(AppSession *session, UiState *state, bool show_camera_feed) {
   draw_sidebar(session, ui, state, show_camera_feed);
   draw_workspace(session, ui, state);
   draw_sidebar_resizer(ui, state);
-  if (!state->custom_series.selected && !state->logs.selected) {
+  if (!state->custom_series.selected && !state->logs.selected && !state->init_data_selected) {
     draw_pane_windows(session, state);
   }
   draw_status_bar(*session, ui, state);

@@ -1,5 +1,5 @@
 import math
-import pyray as rl
+import raylib_nb as rl
 from dataclasses import dataclass
 from openpilot.common.constants import CV
 from openpilot.selfdrive.ui.mici.onroad.torque_bar import TorqueBar
@@ -60,7 +60,7 @@ class TurnIntent(Widget):
       dest_rect = rl.Rectangle(self._rect.x + self._rect.width / 2, self._rect.y + self._rect.height / 2,
                                turn_intent_texture.width, turn_intent_texture.height)
 
-      origin = (turn_intent_texture.width / 2, self._rect.height / 2)
+      origin = rl.Vector2(turn_intent_texture.width / 2, self._rect.height / 2)
       color = rl.Color(255, 255, 255, int(255 * self._turn_intent_alpha_filter.x))
       rl.draw_texture_pro(turn_intent_texture, src_rect, dest_rect, origin, self._turn_intent_rotation_filter.x, color)
 
@@ -154,13 +154,9 @@ class HudRenderer(Widget):
       self.speed = 0.0
       return
 
-    controls_state = sm['controlsState']
     car_state = sm['carState']
 
-    v_cruise_cluster = car_state.vCruiseCluster
-    set_speed = (
-      controls_state.deprecated.vCruise if v_cruise_cluster == 0.0 else v_cruise_cluster
-    )
+    set_speed = car_state.vCruiseCluster
     engaged = sm['selfdriveState'].enabled
     if (set_speed != self.set_speed and engaged) or (engaged and not self._engaged):
       self._set_speed_changed_time = rl.get_time()
@@ -190,9 +186,6 @@ class HudRenderer(Widget):
     self._draw_steering_wheel(rect)
 
   def _draw_model_source(self, rect: rl.Rectangle) -> None:
-    if ui_state.sm.recv_frame['selfdriveState'] < ui_state.started_frame:
-      return
-
     loading = ui_state.chestnut_state == ChestnutState.LOADING
     if loading:
       icon = self._txt_chestnut
@@ -247,7 +240,7 @@ class HudRenderer(Widget):
 
     src_rect = rl.Rectangle(0, 0, wheel_txt.width, wheel_txt.height)
     dest_rect = rl.Rectangle(pos_x, pos_y, wheel_txt.width, wheel_txt.height)
-    origin = (wheel_txt.width / 2, wheel_txt.height / 2)
+    origin = rl.Vector2(wheel_txt.width / 2, wheel_txt.height / 2)
 
     # color and draw
     color = rl.Color(255, 255, 255, int(self._wheel_alpha_filter.x))

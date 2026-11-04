@@ -7,7 +7,7 @@
 ### On the device
 SSH into the device and run following in separate terminals:
 
-`cd /data/openpilot && ./openpilot/cereal/messaging/bridge`
+`cd /data/openpilot && ./openpilot/system/webrtc/webrtcd.py --host 0.0.0.0`
 
 `cd /data/openpilot/system/loggerd && ./encoderd`
 
@@ -19,7 +19,7 @@ Alternatively paste this as a single command:
 ```
 (
   cd /data/openpilot
-  ./openpilot/cereal/messaging/bridge &
+  ./openpilot/system/webrtc/webrtcd.py --host 0.0.0.0 &
 
   cd /data/openpilot/system/camerad/
   ./camerad &
@@ -33,9 +33,11 @@ Alternatively paste this as a single command:
 Ctrl+C will stop all three processes.
 
 ### On the PC
-Decode the stream with `compressed_vipc.py`:
+Bridge the video streams from the device, then decode them with `compressed_vipc.py`:
 
-```cd ~/openpilot/tools/camerastream && ./compressed_vipc.py <ip>```
+```~/openpilot/openpilot/system/webrtc/bridge.py <ip> narrowRoadEncodeData,wideRoadEncodeData,cabinEncodeData```
+
+```cd ~/openpilot/openpilot/tools/camerastream && ./compressed_vipc.py```
 
 To actually display the stream, run `watch3` in separate terminal:
 
@@ -44,12 +46,9 @@ To actually display the stream, run `watch3` in separate terminal:
 ## compressed_vipc.py usage
 ```
 $ python3 compressed_vipc.py -h
-usage: compressed_vipc.py [-h] [--cams CAMS] [--server SERVER] [--silent] addr
+usage: compressed_vipc.py [-h] [--cams CAMS] [--server SERVER] [--silent]
 
 Decode video streams and broadcast on VisionIPC
-
-positional arguments:
-  addr             Address of comma three
 
 options:
   -h, --help       show this help message and exit
@@ -61,6 +60,6 @@ options:
 
 ## Example:
 ```
-cd ~/openpilot/tools/camerastream && ./compressed_vipc.py comma-ffffffff --cams 0
+cd ~/openpilot/tools/camerastream && ./compressed_vipc.py --cams 0
 cd ~/openpilot/selfdrive/ui/ && ./watch3.py
 ```

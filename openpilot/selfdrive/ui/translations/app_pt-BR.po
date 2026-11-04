@@ -113,10 +113,6 @@ msgstr "ALTERAR"
 msgid "CHECK"
 msgstr "VERIFICAR"
 
-#: openpilot/selfdrive/ui/widgets/exp_mode_button.py
-msgid "CHILL MODE ON"
-msgstr "MODO CHILL ATIVO"
-
 #: openpilot/selfdrive/ui/layouts/sidebar.py
 #: openpilot/system/ui/widgets/network.py
 msgid "CONNECT"
@@ -209,10 +205,6 @@ msgstr "ID do Dongle"
 msgid "Download"
 msgstr "Baixar"
 
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Driving Personality"
-msgstr "Personalidade"
-
 #: openpilot/system/ui/widgets/network.py
 msgid "EDIT"
 msgstr "EDITAR"
@@ -225,12 +217,7 @@ msgstr "ERRO"
 msgid "ETH"
 msgstr "ETH"
 
-#: openpilot/selfdrive/ui/widgets/exp_mode_button.py
-msgid "EXPERIMENTAL MODE ON"
-msgstr "MODO EXPERIMENTAL ATIVO"
-
 #: openpilot/selfdrive/ui/layouts/settings/developer.py
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Enable"
 msgstr "Ativar"
 
@@ -262,10 +249,6 @@ msgstr "Ativar monitoramento do motorista mesmo quando o openpilot não está en
 msgid "Enable openpilot"
 msgstr "Ativar openpilot"
 
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode."
-msgstr "Ative a opção de controle longitudinal do openpilot (alpha) para permitir o Modo Experimental."
-
 #: openpilot/system/ui/widgets/network.py
 msgid "Enter APN"
 msgstr "Digite APN"
@@ -290,14 +273,6 @@ msgstr "Digite seu nome de usuário do GitHub"
 msgid "Error"
 msgstr "Erro"
 
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Experimental Mode"
-msgstr "Modo Experimental"
-
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Experimental mode is currently unavailable on this car since the car's stock ACC is used for longitudinal control."
-msgstr "O Modo Experimental está indisponível neste carro pois o ACC original do carro é usado para controle longitudinal."
-
 #: openpilot/system/ui/widgets/network.py
 msgid "FORGETTING..."
 msgstr "ESQUECENDO..."
@@ -314,6 +289,10 @@ msgstr "Fluxo contínuo"
 #: openpilot/selfdrive/ui/widgets/setup.py
 msgid "Firehose Mode"
 msgstr "Modo Firehose"
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Following Distance"
+msgstr ""
 
 #: openpilot/system/ui/widgets/network.py
 msgid "Forget"
@@ -346,6 +325,10 @@ msgstr "INSTALAR"
 #: openpilot/system/ui/widgets/network.py
 msgid "IP Address"
 msgstr "Endereço IP"
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Initial Max Speed"
+msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/software.py
 msgid "Install Update"
@@ -721,6 +704,7 @@ msgstr "finalizando atualização..."
 msgid "for \"{}\""
 msgstr "para \"{}\""
 
+#: openpilot/selfdrive/ui/layouts/settings/initial_cruise_speed.py
 #: openpilot/selfdrive/ui/onroad/hud_renderer.py
 msgid "km/h"
 msgstr "km/h"
@@ -737,6 +721,7 @@ msgstr "à esquerda"
 msgid "metered"
 msgstr "limitados"
 
+#: openpilot/selfdrive/ui/layouts/settings/initial_cruise_speed.py
 #: openpilot/selfdrive/ui/onroad/hud_renderer.py
 msgid "mph"
 msgstr "mph"
@@ -756,10 +741,6 @@ msgstr "Controle Longitudinal do openpilot (Alpha)"
 #: openpilot/selfdrive/ui/onroad/alert_renderer.py
 msgid "openpilot Unavailable"
 msgstr "openpilot Indisponível"
-
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "openpilot longitudinal control may come in a future update."
-msgstr "o controle longitudinal do openpilot pode vir em uma atualização futura."
 
 #: openpilot/selfdrive/ui/layouts/settings/device.py
 msgid "openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down."

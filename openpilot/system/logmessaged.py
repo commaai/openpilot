@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-import zmq
+import os
+import socket
 from typing import NoReturn
 
 import openpilot.cereal.messaging as messaging
 from openpilot.common.logging_extra import SwagLogFileFormatter
 from openpilot.common.hardware.hw import Paths
-from openpilot.common.swaglog import get_file_handler
+from openpilot.common.swaglog import SWAGLOG_MAX_SIZE, cloudlog, get_file_handler
 
 
 def main() -> NoReturn:
@@ -13,9 +14,19 @@ def main() -> NoReturn:
   log_handler.setFormatter(SwagLogFileFormatter(None))
   log_level = 20  # logging.INFO
 
-  ctx = zmq.Context.instance()
-  sock = ctx.socket(zmq.PULL)
-  sock.bind(Paths.swaglog_ipc())
+  path = Paths.swaglog_ipc()
+  if os.path.exists(path):
+    os.unlink(path)
+  sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+  sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, SWAGLOG_MAX_SIZE)
+  sock.bind(path)
+  buf = bytearray(SWAGLOG_MAX_SIZE)
+
+  # senders' SO_SNDBUF caps the log size, and the kernel may clamp it (net.core.wmem_max on Linux)
+  sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, SWAGLOG_MAX_SIZE)
+  max_size = sock.getsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF)
+  if max_size < 256*1024:
+    cloudlog.warning(f"logs bigger than {max_size} bytes will be dropped")
 
   # and we publish them
   log_message_sock = messaging.pub_sock('logMessage')
@@ -23,9 +34,11 @@ def main() -> NoReturn:
 
   try:
     while True:
-      dat = b''.join(sock.recv_multipart())
-      level = dat[0]
-      record = dat[1:].decode("utf-8")
+      n = sock.recv_into(buf)
+      if n == 0:
+        continue
+      level = buf[0]
+      record = buf[1:n].decode("utf-8")
       if level >= log_level:
         log_handler.emit(record)
 
@@ -43,7 +56,6 @@ def main() -> NoReturn:
         error_log_message_sock.send(msg.to_bytes())
   finally:
     sock.close()
-    ctx.term()
 
     # can hit this if interrupted during a rollover
     try:

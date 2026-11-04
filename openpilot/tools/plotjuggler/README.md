@@ -51,9 +51,9 @@ Example using segment range:
 
 Explore live data from your car! Follow these steps to stream from your comma device to your laptop:
 - Enable wifi tethering on your comma device
-- [SSH into your device](https://github.com/commaai/openpilot/wiki/SSH) and run `cd /data/openpilot && ./openpilot/cereal/messaging/bridge`
-- On your laptop, connect to the device's wifi hotspot
-- Start PlotJuggler with `ZMQ=1 ./juggle.py --stream`, find the `Cereal Subscriber` plugin in the dropdown under Streaming, and click `Start`.
+- [SSH into your device](https://github.com/commaai/openpilot/wiki/SSH) and run `cd /data/openpilot && ./openpilot/system/webrtc/webrtcd.py --host 0.0.0.0`
+- On your laptop, connect to the device's wifi hotspot and run `openpilot/system/webrtc/bridge.py <device ip>`
+- Start PlotJuggler with `./juggle.py --stream`, find the `Cereal Subscriber` plugin in the dropdown under Streaming, and click `Start`.
 
 If streaming to PlotJuggler from a replay on your PC, simply run: `./juggle.py --stream` and start the cereal subscriber.
 

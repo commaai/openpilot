@@ -114,7 +114,7 @@ std::string normalize_stream_address(std::string address) {
 const char *stream_source_kind_label(StreamSourceKind kind) {
   static constexpr const char *kLabels[] = {
     "Local (MSGQ)",
-    "Remote (ZMQ)",
+    "Remote",
   };
   const size_t index = static_cast<size_t>(kind);
   return index < std::size(kLabels) ? kLabels[index] : kLabels[0];
@@ -183,5 +183,16 @@ std::string route_google_maps_url(const GpsTrace &trace) {
       }
     }
     if (url.size() <= 1900 || n == 0) return url;
+  }
+}
+
+void merge_text_labels(RouteSeries *incoming, const EnumInfo &labels, EnumInfo *destination) {
+  std::vector<double> remap;
+  remap.reserve(labels.names.size());
+  for (const std::string &text : labels.names) {
+    remap.push_back(destination->text_value(text));
+  }
+  for (double &value : incoming->values) {
+    value = remap.at(static_cast<size_t>(value));
   }
 }

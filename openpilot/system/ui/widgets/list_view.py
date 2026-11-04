@@ -1,13 +1,14 @@
 import math
 import os
-import pyray as rl
+import raylib_nb as rl
 from collections.abc import Callable
 from abc import ABC
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, TextAlignment, TextAlignmentVertical
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.button import Button, ButtonStyle
+from openpilot.system.ui.widgets.button import (Button, ButtonStyle, BUTTON_TEXT_COLOR, BUTTON_DISABLED_TEXT_COLORS, BUTTON_BACKGROUND_COLORS,
+                                                BUTTON_PRESSED_BACKGROUND_COLORS, BUTTON_DISABLED_BACKGROUND_COLORS)
 from openpilot.system.ui.widgets.toggle import Toggle, WIDTH as TOGGLE_WIDTH, HEIGHT as TOGGLE_HEIGHT
 from openpilot.system.ui.widgets.label import gui_label
 from openpilot.system.ui.widgets.html_render import HtmlRenderer, ElementType
@@ -222,9 +223,6 @@ class MultipleButtonAction(ItemAction):
     if 0 <= index < len(self.buttons):
       self.selected_button = index
 
-  def get_selected_button(self) -> int:
-    return self.selected_button
-
   def _render(self, rect: rl.Rectangle):
     spacing = RIGHT_ITEM_PADDING
     button_y = rect.y + (rect.height - BUTTON_HEIGHT) / 2
@@ -235,19 +233,19 @@ class MultipleButtonAction(ItemAction):
 
       # Check button state
       mouse_pos = rl.get_mouse_position()
-      is_pressed = rl.check_collision_point_rec(mouse_pos, button_rect) and self.enabled and self.is_pressed
+      is_pressed = rl.check_collision_point_rec(rl.Vector2(mouse_pos.x, mouse_pos.y), button_rect) and self.enabled and self.is_pressed
       is_selected = i == self.selected_button
 
       # Button colors
       if is_selected:
         bg_color = rl.Color(51, 171, 76, 255)  # Green
       elif is_pressed:
-        bg_color = rl.Color(74, 74, 74, 255)  # Dark gray
+        bg_color = BUTTON_PRESSED_BACKGROUND_COLORS[ButtonStyle.PILL]
       else:
-        bg_color = rl.Color(57, 57, 57, 255)  # Gray
+        bg_color = BUTTON_BACKGROUND_COLORS[ButtonStyle.PILL]
 
       if not self.enabled:
-        bg_color = rl.Color(bg_color.r, bg_color.g, bg_color.b, 150)  # Dim
+        bg_color = rl.Color(bg_color.r, bg_color.g, bg_color.b, BUTTON_DISABLED_BACKGROUND_COLORS[ButtonStyle.PILL].a)
 
       # Draw button
       rl.draw_rectangle_rounded(button_rect, 1.0, 20, bg_color)
@@ -257,7 +255,7 @@ class MultipleButtonAction(ItemAction):
       text_size = measure_text_cached(self._font, text, 40)
       text_x = button_x + (self.button_width - text_size.x) / 2
       text_y = button_y + (BUTTON_HEIGHT - text_size.y) / 2
-      text_color = rl.Color(228, 228, 228, 255) if self.enabled else rl.Color(150, 150, 150, 255)
+      text_color = BUTTON_TEXT_COLOR[ButtonStyle.PILL] if self.enabled else BUTTON_DISABLED_TEXT_COLORS[ButtonStyle.PILL]
       rl.draw_text_ex(self._font, text, rl.Vector2(text_x, text_y), 40, 0, text_color)
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
@@ -266,7 +264,7 @@ class MultipleButtonAction(ItemAction):
     for i, _ in enumerate(self.buttons):
       button_x = self._rect.x + i * (self.button_width + spacing)
       button_rect = rl.Rectangle(button_x, button_y, self.button_width, BUTTON_HEIGHT)
-      if rl.check_collision_point_rec(mouse_pos, button_rect):
+      if rl.check_collision_point_rec(rl.Vector2(mouse_pos.x, mouse_pos.y), button_rect):
         self.selected_button = i
         if self.callback:
           self.callback(i)
@@ -318,7 +316,7 @@ class ListItem(Widget):
     # Check not in action rect
     if self.action_item:
       action_rect = self.get_right_item_rect(self._rect)
-      if rl.check_collision_point_rec(mouse_pos, action_rect):
+      if rl.check_collision_point_rec(rl.Vector2(mouse_pos.x, mouse_pos.y), action_rect):
         # Click was on right item, don't toggle description
         return
 
@@ -436,10 +434,6 @@ class ListItem(Widget):
 
 
 # Factory functions
-def simple_item(title: str | Callable[[], str], callback: Callable | None = None) -> ListItem:
-  return ListItem(title=title, callback=callback)
-
-
 def toggle_item(title: str | Callable[[], str], description: str | Callable[[], str] | None = None, initial_state: bool = False,
                 callback: Callable | None = None, icon: str = "", enabled: bool | Callable[[], bool] = True) -> ListItem:
   action = ToggleAction(initial_state=initial_state, enabled=enabled, callback=callback)

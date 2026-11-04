@@ -49,19 +49,14 @@ def setup_source_scenario(mocker, is_internal=False):
 
 
 class TestLogReader(OpenpilotTestCase):
-  @classmethod
-  def setUpClass(cls):
-    super().setUpClass()
-    cls.tmpdir = tempfile.TemporaryDirectory()
-    cls.qlog_path = os.path.join(cls.tmpdir.name, "qlog")
-    cls.rlog_path = os.path.join(cls.tmpdir.name, "rlog")
-    cls._write_test_log(cls.qlog_path, 10, include_car_params=True)
-    cls._write_test_log(cls.rlog_path, 100)
-
-  @classmethod
-  def tearDownClass(cls):
-    cls.tmpdir.cleanup()
-    super().tearDownClass()
+  def setUp(self):
+    super().setUp()
+    tmpdir = tempfile.TemporaryDirectory()
+    self.addCleanup(tmpdir.cleanup)
+    self.qlog_path = os.path.join(tmpdir.name, "qlog")
+    self.rlog_path = os.path.join(tmpdir.name, "rlog")
+    self._write_test_log(self.qlog_path, 10, include_car_params=True)
+    self._write_test_log(self.rlog_path, 100)
 
   @staticmethod
   def _write_test_log(path, count, include_car_params=False):

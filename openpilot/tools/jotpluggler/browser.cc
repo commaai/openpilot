@@ -310,8 +310,9 @@ std::string format_display_value(double display_value,
     const int idx = static_cast<int>(std::llround(display_value));
     if (idx >= 0 && std::abs(display_value - static_cast<double>(idx)) < 0.01
         && static_cast<size_t>(idx) < enum_info->names.size()
-        && !enum_info->names[static_cast<size_t>(idx)].empty()) {
-      return enum_info->names[static_cast<size_t>(idx)];
+        && (enum_info->is_text || !enum_info->names[static_cast<size_t>(idx)].empty())) {
+      const std::string &name = enum_info->names[static_cast<size_t>(idx)];
+      return name.empty() ? "(empty)" : name;
     }
   }
   char buf[64] = {};
@@ -414,6 +415,18 @@ void draw_browser_node(AppSession *session,
                                ImVec2(1.0f, 0.0f));
       ImGui::PopStyleColor();
       app_pop_mono_font();
+    }
+
+    if (hovered) {
+      auto it = session->route_data.enum_info.find(node.full_path);
+      if (it != session->route_data.enum_info.end() && it->second.is_text) {
+        ImGui::BeginTooltip();
+        ImGui::TextUnformatted(node.full_path.c_str());
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+        ImGui::TextWrapped("%s", value_text.c_str());
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
+      }
     }
 
     if (clicked) {

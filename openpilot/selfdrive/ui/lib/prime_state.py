@@ -68,6 +68,7 @@ class PrimeState:
       response = api_get(f"v1.1/devices/{dongle_id}", timeout=self.API_TIMEOUT, access_token=identity_token, session=self._session)
       if response.status_code == 200:
         data = response.json()
+        set_offroad_alert("Offroad_UploadsIgnored", bool(data.get("ignore_uploads")))
 
         is_paired = data.get("is_paired", False)
         prime_type = data.get("prime_type", 0)

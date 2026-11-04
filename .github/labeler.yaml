@@ -1,6 +1,6 @@
 CI / testing:
   - changed-files:
-    - any-glob-to-all-files: "{.github/**,**/test_*,**/test/**,Jenkinsfile}"
+    - any-glob-to-all-files: "{.github/**,**/test_*,**/test/**}"
 
 car:
   - changed-files:

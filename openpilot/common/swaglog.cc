@@ -5,12 +5,13 @@
 #include "common/swaglog.h"
 
 #include <cassert>
-#include <limits>
 #include <mutex>
 #include <string>
 
-#include <zmq.h>
 #include <stdarg.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
 #include "json11/json11.hpp"
 #include "common/version.h"
 #include "common/hardware/hw.h"
@@ -18,13 +19,11 @@
 class SwaglogState {
 public:
   SwaglogState() {
-    zctx = zmq_ctx_new();
-    sock = zmq_socket(zctx, ZMQ_PUSH);
-
-    // Timeout on shutdown for messages to be received by the logging process
-    int timeout = 100;
-    zmq_setsockopt(sock, ZMQ_LINGER, &timeout, sizeof(timeout));
-    zmq_connect(sock, Path::swaglog_ipc().c_str());
+    sock = socket(AF_UNIX, SOCK_DGRAM, 0);
+    int sndbuf = SWAGLOG_MAX_SIZE;
+    setsockopt(sock, SOL_SOCKET, SO_SNDBUF, &sndbuf, sizeof(sndbuf));
+    addr.sun_family = AF_UNIX;
+    strncpy(addr.sun_path, Path::swaglog_ipc().c_str(), sizeof(addr.sun_path) - 1);
 
     // workaround for https://github.com/dropbox/json11/issues/38
     setlocale(LC_NUMERIC, "C");
@@ -62,8 +61,7 @@ public:
   }
 
   ~SwaglogState() {
-    zmq_close(sock);
-    zmq_ctx_destroy(zctx);
+    close(sock);
   }
 
   void log(int levelnum, const char* filename, int lineno, const char* func, const char* msg, const std::string& log_s) {
@@ -71,21 +69,18 @@ public:
     if (levelnum >= print_level) {
       printf("%s: %s\n", filename, msg);
     }
-    zmq_send(sock, log_s.data(), log_s.length(), ZMQ_NOBLOCK);
+    // drop if logmessaged is busy, not running, or the message is too big
+    sendto(sock, log_s.data(), log_s.length(), MSG_DONTWAIT, (struct sockaddr*)&addr, sizeof(addr));
   }
 
   std::mutex lock;
-  void* zctx = nullptr;
-  void* sock = nullptr;
+  int sock = -1;
+  struct sockaddr_un addr = {};
   int print_level;
   json11::Json::object ctx_j;
 };
 
-bool LOG_TIMESTAMPS = getenv("LOG_TIMESTAMPS");
-uint32_t NO_FRAME_ID = std::numeric_limits<uint32_t>::max();
-
-static void cloudlog_common(int levelnum, const char* filename, int lineno, const char* func,
-                            char* msg_buf, const json11::Json::object &msg_j={}) {
+static void cloudlog_common(int levelnum, const char* filename, int lineno, const char* func, char* msg_buf) {
   static SwaglogState s;
 
   json11::Json::object log_j = json11::Json::object {
@@ -94,13 +89,9 @@ static void cloudlog_common(int levelnum, const char* filename, int lineno, cons
     {"filename", filename},
     {"lineno", lineno},
     {"funcname", func},
-    {"created", seconds_since_epoch()}
+    {"created", seconds_since_epoch()},
+    {"msg", msg_buf},
   };
-  if (msg_j.empty()) {
-    log_j["msg"] = msg_buf;
-  } else {
-    log_j["msg"] = msg_j;
-  }
 
   std::string log_s;
   log_s += (char)levelnum;
@@ -119,37 +110,4 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
   va_end(args);
   if (ret <= 0 || !msg_buf) return;
   cloudlog_common(levelnum, filename, lineno, func, msg_buf);
-}
-
-void cloudlog_t_common(int levelnum, const char* filename, int lineno, const char* func,
-                       uint32_t frame_id, const char* fmt, va_list args) {
-  if (!LOG_TIMESTAMPS) return;
-  char* msg_buf = nullptr;
-  int ret = vasprintf(&msg_buf, fmt, args);
-  if (ret <= 0 || !msg_buf) return;
-  json11::Json::object tspt_j = json11::Json::object{
-    {"event", msg_buf},
-    {"time", std::to_string(nanos_since_boot())}
-  };
-  if (frame_id < NO_FRAME_ID) {
-    tspt_j["frame_id"] = std::to_string(frame_id);
-  }
-  tspt_j = json11::Json::object{{"timestamp", tspt_j}};
-  cloudlog_common(levelnum, filename, lineno, func, msg_buf, tspt_j);
-}
-
-
-void cloudlog_te(int levelnum, const char* filename, int lineno, const char* func,
-                 const char* fmt, ...) {
-  va_list args;
-  va_start(args, fmt);
-  cloudlog_t_common(levelnum, filename, lineno, func, NO_FRAME_ID, fmt, args);
-  va_end(args);
-}
-void cloudlog_te(int levelnum, const char* filename, int lineno, const char* func,
-                 uint32_t frame_id, const char* fmt, ...) {
-  va_list args;
-  va_start(args, fmt);
-  cloudlog_t_common(levelnum, filename, lineno, func, frame_id, fmt, args);
-  va_end(args);
 }

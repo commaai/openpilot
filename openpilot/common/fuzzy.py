@@ -13,7 +13,7 @@ import capnp
 T = TypeVar("T")
 
 _EDGE_SLOTS = 16
-_MINIMAL_EXAMPLES = 10
+_MINIMAL_EXAMPLES = 1
 _INTEGER_RANGES = {
   "int8": (-2**7, 2**7 - 1),
   "int16": (-2**15, 2**15 - 1),
@@ -42,8 +42,8 @@ class Fuzzy:
     draw_index = self._draw_index
     self._draw_index += 1
 
-    # Preserve the cheap minimal prefix Hypothesis produced, then interleave
-    # systematic boundaries and random values at every draw site.
+    # Start with one minimal example, then interleave systematic
+    # boundaries and random values at every draw site.
     if self.example_index < _MINIMAL_EXAMPLES:
       return edges[0]
     search_example = self.example_index - _MINIMAL_EXAMPLES

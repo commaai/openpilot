@@ -6,7 +6,7 @@
 
 #include "json11/json11.hpp"
 #include "common/hardware/hw.h"
-#include "tools/replay/py_downloader.h"
+#include "tools/replay/py_tools.h"
 #include "tools/replay/replay.h"
 #include "tools/replay/util.h"
 
@@ -104,7 +104,7 @@ bool Route::loadFromAutoSource() {
 }
 
 bool Route::loadFromServer() {
-  std::string result = PyDownloader::getRouteFiles(route_.str);
+  std::string result = PyTools::getRouteFiles(route_.str);
   if (result.empty()) {
     err_ = RouteLoadError::NetworkError;
     rWarning("Failed to fetch route files from server");

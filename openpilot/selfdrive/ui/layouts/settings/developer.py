@@ -22,7 +22,7 @@ DESCRIPTIONS = {
   'alpha_longitudinal': tr_noop(
     "<b>WARNING: openpilot longitudinal control is in alpha for this car and may disable Automatic Emergency Braking (AEB).</b><br><br>" +
     "On this car, openpilot defaults to the car's built-in ACC instead of openpilot's longitudinal control. " +
-    "Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha. " +
+    "Enable this to switch to openpilot longitudinal control. " +
     "Changing this setting will restart openpilot if the car is powered on."
   ),
 }
@@ -177,7 +177,6 @@ class DeveloperLayout(Widget):
 
   def _on_lat_maneuver_mode(self, state: bool):
     self._params.put_bool("LateralManeuverMode", state, block=True)
-    self._params.put_bool("ExperimentalMode", False, block=True)
     self._params.put_bool("JoystickDebugMode", False, block=True)
     self._joystick_toggle.action_item.set_state(False)
     self._params.put_bool("LongitudinalManeuverMode", False, block=True)

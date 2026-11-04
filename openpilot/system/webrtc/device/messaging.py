@@ -9,10 +9,14 @@ from openpilot.cereal import messaging
 
 
 class CerealOutgoingMessageProxy:
-  def __init__(self, services: list[str], enabled: bool = True):
+  def __init__(self, services: list[str], enabled: bool = True, raw: bool = False):
     self.logger = logging.getLogger("webrtcd")
     self.services = list(services)
-    self.sm = messaging.SubMaster(self.services)
+    self.raw = raw
+    if raw:
+      self.socks = [messaging.sub_sock(s) for s in self.services]
+    else:
+      self.sm = messaging.SubMaster(self.services)
     self.channels = []
     self._enabled = enabled
 
@@ -34,7 +38,18 @@ class CerealOutgoingMessageProxy:
 
     return msg_dict
 
+  def update_raw(self):
+    for sock in self.socks:
+      for dat in messaging.drain_sock_raw(sock):
+        for channel in self.channels:
+          if channel.is_open() and len(dat) <= channel.max_message_size():
+            channel.send(dat)
+
   def update(self):
+    if self.raw:
+      self.update_raw()
+      return
+
     # this is blocking in async context...
     self.sm.update(0)
     for service, updated in self.sm.updated.items():

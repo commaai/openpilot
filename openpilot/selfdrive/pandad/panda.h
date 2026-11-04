@@ -64,7 +64,6 @@ public:
   void set_safety_model(cereal::CarParams::SafetyModel safety_model, uint16_t safety_param=0U);
   void set_alternative_experience(uint16_t alternative_experience);
   std::string serial_read(int port_number = 0);
-  void set_uart_baud(int uart, int rate);
   void set_fan_speed(uint16_t fan_speed);
   uint16_t get_fan_speed();
   void set_ir_pwr(uint16_t ir_pwr);
@@ -73,14 +72,9 @@ public:
   void set_loopback(bool loopback);
   std::optional<std::vector<uint8_t>> get_firmware_version();
   bool up_to_date();
-  std::optional<std::string> get_serial();
   void set_power_saving(bool power_saving);
-  void enable_deepsleep();
   void send_heartbeat(bool engaged);
-  void set_can_speed_kbps(uint16_t bus, uint16_t speed);
   void set_can_fd_auto(uint16_t bus, bool enabled);
-  void set_data_speed_kbps(uint16_t bus, uint16_t speed);
-  void set_canfd_non_iso(uint16_t bus, bool non_iso);
   void can_send(const capnp::List<cereal::CanData>::Reader &can_data_list);
   bool can_receive(std::vector<can_frame>& out_vec);
   void can_reset_communications();

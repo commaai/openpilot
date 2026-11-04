@@ -15,12 +15,12 @@ from urllib.parse import urlparse, parse_qs
 from typing import Any
 
 from openpilot.system.webrtc.device.bitrate import LivestreamBitrateController
-from openpilot.system.webrtc.device.bridge import CerealIncomingMessageProxy, CerealOutgoingMessageProxy, DynamicPubMaster
+from openpilot.system.webrtc.device.messaging import CerealIncomingMessageProxy, CerealOutgoingMessageProxy, DynamicPubMaster
 from openpilot.system.webrtc.helpers import StreamRequestBody
 from openpilot.system.webrtc.schema import generate_field
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
-from openpilot.cereal import log
+from openpilot.cereal import messaging, log
 
 SESSION_TIMEOUT_SECONDS = 300
 
@@ -66,13 +66,14 @@ class StreamSession:
     self.bitrate_controller = LivestreamBitrateController(self.stream.get_receiver_report_stats, self.params, self.video_enabled)
 
     # start proxies
+    self.raw = body.raw
     self.incoming_bridge: CerealIncomingMessageProxy | None = None
     self.incoming_bridge_services = body.bridge_services_in
     self.outgoing_bridge: CerealOutgoingMessageProxy | None = None
     if len(body.bridge_services_in) > 0:
       self.incoming_bridge = CerealIncomingMessageProxy(self.shared_pub_master)
     if len(body.bridge_services_out) > 0:
-      self.outgoing_bridge = CerealOutgoingMessageProxy(body.bridge_services_out, self.video_enabled)
+      self.outgoing_bridge = CerealOutgoingMessageProxy(body.bridge_services_out, self.video_enabled, self.raw)
 
     # async tasks helpers
     self.run_task: asyncio.Task | None = None
@@ -83,8 +84,8 @@ class StreamSession:
     # logger
     self.logger = logging.getLogger("webrtcd")
     cloudlog.warning(
-      "New stream session (%s), video cameras %s, video enabled %s, incoming services %s, outgoing services %s",
-      self.identifier, [t.id for t in self.video_tracks], body.enabled, body.bridge_services_in, body.bridge_services_out,
+      "New stream session (%s), video cameras %s, video enabled %s, incoming services %s, outgoing services %s, raw %s",
+      self.identifier, [t.id for t in self.video_tracks], body.enabled, body.bridge_services_in, body.bridge_services_out, body.raw,
     )
 
   def start(self):
@@ -103,6 +104,12 @@ class StreamSession:
 
   def message_handler(self, message: bytes):
     try:
+      if self.raw and isinstance(message, bytes):
+        service = messaging.log_from_bytes(message).which()
+        if service in self.incoming_bridge_services:
+          self.shared_pub_master.send(service, message)
+        return
+
       payload = json.loads(message) if isinstance(message, (bytes, str)) else None
       if isinstance(payload, dict):
         msg_type = payload.get("type")
@@ -176,7 +183,7 @@ class StreamSession:
 
       with cloudlog.ctx(session_id=self.identifier):
         cloudlog.warning("webrtcd.session.connected")
-      if self.is_body:
+      if self.is_body or self.raw:
         await self.run_body_session()
       else:
         await self.run_normal_session()

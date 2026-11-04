@@ -16,6 +16,10 @@ class CV:
   DEG_TO_RAD = np.pi / 180.
   RAD_TO_DEG = 1. / DEG_TO_RAD
 
+  # Length
+  METER_TO_FOOT = 3.28084
+  METER_TO_MILE = 1. / 1609.344
+
   # Mass
   LB_TO_KG = 0.453592
 

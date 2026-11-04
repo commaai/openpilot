@@ -3,6 +3,7 @@
 import math
 import json
 import os
+import re
 import shutil
 import subprocess
 import time
@@ -11,7 +12,7 @@ import numpy as np
 from collections import Counter, defaultdict
 from pathlib import Path
 from openpilot.common.test import OpenpilotTestCase
-from openpilot.common.utils import tabulate
+from openpilot.common.utils import sudo_write, tabulate
 
 from openpilot.cereal import log
 import openpilot.cereal.messaging as messaging
@@ -73,7 +74,8 @@ PROCS = {
   "openpilot.system.loggerd.deleter": 1.0,
   "./pandad": 40.0,
   "openpilot.system.qcomgpsd.qcomgpsd": 1.0,
-  "openpilot.common.hardware.comma.modem": 10.0,
+  "openpilot.system.ubloxd.ubloxd": 2.0,
+  "openpilot.system.ubloxd.pigeond": 5.0,
 }
 
 TIMINGS = {
@@ -121,6 +123,9 @@ class TestOnroad(OpenpilotTestCase):
       segs = filter(lambda x: os.path.exists(os.path.join(x, "rlog.zst")), Path(Paths.log_root()).iterdir())
       segs = sorted(segs, key=lambda x: x.stat().st_mtime)
       cls.lr = list(LogReader(os.path.join(segs[-1], "rlog.zst")))
+      cls.msgs = defaultdict(list)
+      for m in cls.lr:
+        cls.msgs[m.which()].append(m)
       cls.ts = msgs_to_time_series(cls.lr)
       return
 
@@ -161,19 +166,16 @@ class TestOnroad(OpenpilotTestCase):
           proc.kill()
 
     cls.lr = list(LogReader(os.path.join(str(segs[0]), "rlog.zst")))
-    st = time.monotonic()
+    cls.msgs = defaultdict(list)
+    for m in cls.lr:
+      cls.msgs[m.which()].append(m)
     cls.ts = msgs_to_time_series(cls.lr)
-    print("msgs to time series", time.monotonic() - st)
     log_path = segs[0]
 
     cls.log_sizes = {}
     for f in log_path.iterdir():
       assert f.is_file()
       cls.log_sizes[f] = f.stat().st_size / 1e6
-
-    cls.msgs = defaultdict(list)
-    for m in cls.lr:
-      cls.msgs[m.which()].append(m)
 
   def test_service_frequencies(self, subtests):
     for s, msgs in self.msgs.items():
@@ -247,11 +249,15 @@ class TestOnroad(OpenpilotTestCase):
           n = list(x.cmdline)[0]
           plogs_by_proc[n].append(x)
 
+    # only the procs that run on this device, e.g. the GPS daemon and uploader vary
+    all_procs = {p.name for p in self.msgs['managerState'][0].managerState.processes if p.shouldBeRunning}
+    procs = {k: v for k, v in PROCS.items() if re.split(r'[./]', k)[-1] in all_procs}
+
     cpu_ok = True
     dt = (self.msgs['procLog'][-1].logMonoTime - self.msgs['procLog'][0].logMonoTime) / 1e9
     header = ['process', 'usage', 'expected', 'max allowed', 'test result']
     rows = []
-    for proc_name, expected in PROCS.items():
+    for proc_name, expected in procs.items():
 
       error = ""
       usage = 0.
@@ -273,13 +279,12 @@ class TestOnroad(OpenpilotTestCase):
     print(tabulate(rows, header, tablefmt="simple_grid", stralign="center", numalign="center", floatfmt=".2f"))
 
     # Ensure there's no missing procs
-    all_procs = {p.name for p in self.msgs['managerState'][0].managerState.processes if p.shouldBeRunning}
     for p in all_procs:
       with subtests.test(proc=p):
         assert any(p in pp for pp in PROCS.keys()), f"Expected CPU usage missing for {p}"
 
     # total CPU check
-    procs_tot = sum([(max(x) if isinstance(x, tuple) else x) for x in PROCS.values()])
+    procs_tot = sum([(max(x) if isinstance(x, tuple) else x) for x in procs.values()])
     with subtests.test(name="total CPU"):
       assert procs_tot < MAX_TOTAL_CPU, "Total CPU budget exceeded"
     print("------------------------------------------------")
@@ -461,12 +466,14 @@ class TestOnroad(OpenpilotTestCase):
            f"Not engageable for whole segment:\n- selfdriveState.engageable: {Counter(eng)}\n- No entry events: {no_entries}"
 
 
+CHESTNUT_VBUS = "/sys/kernel/debug/regulator/smb2-vbus/enable"
+
 @unittest.skipUnless(HARDWARE.get_device_type() == "mici", "requires MICI")
 class TestChestnutOnroad(OpenpilotTestCase):
   COMMA_HARDWARE_TEST = True
 
   @mock_messages(['deviceMotion'])
-  def test_camera_models(self, subtests):
+  def test_big_model(self, subtests):
     assert chestnut_present() and chestnut_compiled()
     Params().put("CarParams", get_demo_car_params().to_bytes(), block=True)
     services = ['narrowRoadCameraState', 'wideRoadCameraState', 'cabinCameraState', 'modelV2', 'driverStateV2']
@@ -480,8 +487,26 @@ class TestChestnutOnroad(OpenpilotTestCase):
         while not all(sm.seen.values()) or not sm.valid['modelV2']:
           pm.send('deviceState', device_state_bytes)
           sm.update(1000)
+      # test big model and camera timings
       with log_collector(services) as (logs, _):
         time.sleep(TEST_DURATION)
+
+      # test small model fallback by cutting VBUS which simulates usb disconnect
+      try:
+        sudo_write("0", CHESTNUT_VBUS)
+        with Timeout(10, "modeld didn't fall back to the small model"):
+          while sm['modelV2'].big:
+            sm.update(1000)
+      finally:
+        sudo_write("1", CHESTNUT_VBUS)
+
+      # test small model keeps running
+      with log_collector(['modelV2']) as (small_model_logs, _):
+        time.sleep(3)
+
+      with Timeout(10, "chestnut did not enumerate"):
+        while not chestnut_present():
+          time.sleep(0.5)
 
     msgs = {s: [m for m in logs if m.which() == s] for s in services}
     for service, messages in msgs.items():
@@ -495,8 +520,11 @@ class TestChestnutOnroad(OpenpilotTestCase):
     camera_frames = {m.narrowRoadCameraState.frameId for m in msgs['narrowRoadCameraState']}
     model_frames = {m.modelV2.frameId for m in msgs['modelV2']}
     assert len(camera_frames & model_frames) >= TEST_DURATION * SERVICE_LIST['modelV2'].frequency * 0.9
-    assert all(m.modelV2.big for m in msgs['modelV2']), "Chestnut fell back to the small model"
+    assert all(m.modelV2.big for m in msgs['modelV2']), "chestnut fell back to the small model"
     assert all(np.isfinite(m.modelV2.position.x).all() for m in msgs['modelV2'])
+    assert Params().get("ChestnutActive") is False
+    expected = 3 * SERVICE_LIST['modelV2'].frequency
+    assert np.isclose(len(small_model_logs), expected, rtol=0.05, atol=2), f"small model: expected {expected}, got {len(small_model_logs)}"
 
 
 if __name__ == "__main__":

@@ -1,12 +1,13 @@
 import os
 from pathlib import Path
 
-CHESTNUT_FW_VERSION = "ed4e39b7"
+CHESTNUT_FW_VERSION = "8516b768"
 CHESTNUT_USB_IDS = ((0xADD1, 0x0001), (0x3801, 0x0001))
 CHESTNUT_ROM_USB_IDS = ((0x174C, 0x2464), (0x174C, 0x2463))
 CHESTNUT_USB_PRODUCT = f"custom {CHESTNUT_FW_VERSION}-CLEAN"
 USB_DEVICES_PATH = Path("/sys/bus/usb/devices")
 TYPEC_CC_ORIENTATION_PATH = Path("/sys/class/power_supply/usb/typec_cc_orientation")
+UDC_PATH = Path("/sys/class/udc")
 PRIMARY_USB_CONTROLLER = "a600000.ssusb"
 
 
@@ -38,6 +39,15 @@ def read_int(path: Path, base: int = 10) -> int:
 
 def cable_connected() -> bool:
   return read_int(TYPEC_CC_ORIENTATION_PATH) != 0
+
+
+def usb_host_connected() -> bool:
+  """Whether a USB host, e.g. a PC with adb or the UP in CI, is on the USB-C port, also while it has suspended this device.
+  A chestnut is a USB device, so then it isn't on that port."""
+  try:
+    return any(read(p) not in (None, "not attached") for p in UDC_PATH.glob("*/state"))
+  except OSError:
+    return False
 
 
 def usb_devices() -> list[Path]:

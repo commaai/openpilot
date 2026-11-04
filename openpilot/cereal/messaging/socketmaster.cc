@@ -1,7 +1,6 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string>
-#include <mutex>
 
 #include "openpilot/cereal/services.h"
 #include "openpilot/cereal/messaging/messaging.h"
@@ -14,21 +13,6 @@ static inline bool inList(const std::vector<const char *> &list, const char *val
   }
   return false;
 }
-
-class MessageContext {
-public:
-  MessageContext() : ctx_(nullptr) {}
-  ~MessageContext() { delete ctx_; }
-  inline Context *context() {
-    std::call_once(init_flag, [=]() { ctx_ = Context::create(); });
-    return ctx_;
-  }
-private:
-  Context *ctx_;
-  std::once_flag init_flag;
-};
-
-MessageContext message_context;
 
 struct SubMaster::SubMessage {
   std::string name;
@@ -44,13 +28,13 @@ struct SubMaster::SubMessage {
 };
 
 SubMaster::SubMaster(const std::vector<const char *> &service_list, const std::vector<const char *> &poll,
-                     const char *address, const std::vector<const char *> &ignore_alive) {
-  poller_ = Poller::create();
+                     const std::vector<const char *> &ignore_alive) {
+  poller_ = new Poller();
   for (auto name : service_list) {
     assert(services.count(std::string(name)) > 0);
 
     service serv = services.at(std::string(name));
-    SubSocket *socket = SubSocket::create(message_context.context(), name, address ? address : "127.0.0.1", true, true, serv.queue_size);
+    SubSocket *socket = SubSocket::create(name, true, serv.queue_size);
     assert(socket != 0);
     bool is_polled = inList(poll, name) || poll.empty();
     if (is_polled) poller_->registerSocket(socket);
@@ -188,7 +172,7 @@ PubMaster::PubMaster(const std::vector<const char *> &service_list) {
   for (auto name : service_list) {
     assert(services.count(name) > 0);
     service serv = services.at(std::string(name));
-    PubSocket *socket = PubSocket::create(message_context.context(), name, true, serv.queue_size);
+    PubSocket *socket = PubSocket::create(name, serv.queue_size);
     assert(socket);
     sockets_[name] = socket;
   }

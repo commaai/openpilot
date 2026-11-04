@@ -7,7 +7,6 @@
 #include "tools/cabana/settings.h"
 
 ReplayStream::ReplayStream() {
-  unsetenv("ZMQ");
   setenv("COMMA_CACHE", "/tmp/comma_download_cache", 1);
 
   op_prefix = std::make_unique<OpenpilotPrefix>();
