@@ -14,7 +14,8 @@ blacklist = [
 
   "matlab.*.md",
 
-  # release scripts configure LFS for the big driving model and warps
+  # release scripts configure LFS for the big driving model and warps. Releases ship no .lfsconfig,
+  # so updaters using stock Git LFS fail rather than install pointers.
   ".lfsconfig",
   ".gitattributes",
   ".git$",
@@ -22,7 +23,7 @@ blacklist = [
 ]
 
 # gets you through the blacklist
-whitelist: list[str] = [r"^\.lfsconfig$"] if os.getenv("INCLUDE_BIG_MODEL") else []
+whitelist: list[str] = []
 
 if __name__ == "__main__":
   tracked_files = subprocess.check_output(["git", "ls-files", "-z", "--recurse-submodules"], cwd=ROOT).split(b"\0")
