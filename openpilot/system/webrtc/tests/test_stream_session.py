@@ -5,8 +5,10 @@ import time
 import capnp
 from openpilot.common.test import OpenpilotTestCase
 from openpilot.cereal import messaging, log
+from openpilot.common.params import Params
 from teleoprtc.tracks import VIDEO_CLOCK_RATE
 
+from openpilot.system.webrtc.device.params import ParamsProxy
 from openpilot.system.webrtc.device.messaging import CerealOutgoingMessageProxy, CerealIncomingMessageProxy
 from openpilot.system.webrtc.webrtcd import ServerState, handle_get_stream
 from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
@@ -103,3 +105,16 @@ class TestStreamSession(OpenpilotTestCase):
     response = self.loop.run_until_complete(handle_get_stream(ServerState(), b"{}", "text/plain"))
 
     assert response == (415, b'{"error": "unsupported media type"}', "application/json; charset=utf-8")
+
+  def test_params_proxy(self):
+    params = Params()
+    params.put_bool("IsMetric", True, block=True)
+    params.put("DongleId", "abc123", block=True)
+    params.put("AccessToken", "secret", block=True)
+    params.remove("GitBranch")
+
+    response = json.loads(ParamsProxy(params).handle_request({"keys": ["IsMetric", "DongleId", "GitBranch", "AccessToken", "NotARealParam"]}))
+
+    assert response["type"] == "paramsResponse"
+    assert response["data"]["params"] == {"IsMetric": True, "DongleId": "abc123", "GitBranch": None}
+    assert response["data"]["errors"] == {"AccessToken": "blocked", "NotARealParam": "unknown key"}
