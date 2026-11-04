@@ -93,9 +93,10 @@ class Controls:
     model_v2 = self.sm['modelV2']
 
     CC = car.CarControl.new_message()
-    if self.sm.all_checks(['selfdriveState']):
+    # Do not use a stale selfdriveState if selfdrived stops. Same check as pandad
+    if self.sm.all_alive(['selfdriveState']):
       CC.enabled = self.sm['selfdriveState'].enabled
-  
+
       # Check which actuators can be enabled
       standstill = abs(CS.vEgo) <= max(self.CP.minSteerSpeed, 0.3) or CS.standstill
       CC.latActive = self.sm['selfdriveState'].active and not CS.steerFaultTemporary and not CS.steerFaultPermanent and \
