@@ -7,7 +7,6 @@ import sys
 HERE = os.path.abspath(os.path.dirname(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "../.."))
 
-# TODO: Exclude .lfsconfig once updates using stock Git LFS are no longer supported.
 blacklist = [
   ".git/",
   ".venv/",
@@ -16,10 +15,14 @@ blacklist = [
   "matlab.*.md",
 
   # release scripts configure LFS for the big driving model and warps
+  ".lfsconfig",
   ".gitattributes",
   ".git$",
   ".gitmodules",
 ]
+
+# gets you through the blacklist
+whitelist: list[str] = [r"^\.lfsconfig$"] if os.getenv("INCLUDE_BIG_MODEL") else []
 
 if __name__ == "__main__":
   tracked_files = subprocess.check_output(["git", "ls-files", "-z", "--recurse-submodules"], cwd=ROOT).split(b"\0")
@@ -31,7 +34,8 @@ if __name__ == "__main__":
     if not os.getenv("INCLUDE_BIG_MODEL") and rf.startswith("openpilot/selfdrive/modeld/models/big_"):
       continue
     blacklisted = any(re.search(p, rf) for p in blacklist)
-    if blacklisted:
+    whitelisted = any(re.search(p, rf) for p in whitelist)
+    if blacklisted and not whitelisted:
       continue
 
     sys.stdout.buffer.write(tracked_file + b"\0")
