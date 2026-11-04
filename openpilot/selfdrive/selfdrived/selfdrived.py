@@ -143,9 +143,9 @@ class SelfdriveD:
     elif self.CP.secOcRequired and not self.CP.secOcKeyAvailable:
       self.startup_event = EventName.startupNoSecOcKey
 
+    set_offroad_alert("Offroad_CarUnrecognized", not car_recognized)
     if not car_recognized and openpilot_enabled:
       self.events.add(EventName.carUnrecognized, static=True)
-      set_offroad_alert("Offroad_CarUnrecognized", True)
     elif self.CP.passive:
       self.events.add(EventName.dashcamMode, static=True)
 
