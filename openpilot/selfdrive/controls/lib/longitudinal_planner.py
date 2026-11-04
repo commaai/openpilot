@@ -106,8 +106,8 @@ class LongitudinalPlanner:
 
     output_a_target_e2e = self.accel_boost.update(sm, output_a_target_e2e, output_a_target_mpc, self.a_cruise)
 
-    # slow down for a sharp curve in the model's plan, also when the model does not slow down
-    a_curve = self.curve_speed.update(sm['modelV2'], v_ego)
+    # help the model slow down for a sharp curve in its own plan
+    a_curve = self.curve_speed.update(sm['modelV2'], sm['vehicleParameters'].roll, output_a_target_e2e)
 
     candidates = [(output_a_target_mpc, self.mpc.source, output_should_stop_mpc),
                   (self.a_cruise, LongitudinalPlanSource.cruise, cruise_should_stop),
