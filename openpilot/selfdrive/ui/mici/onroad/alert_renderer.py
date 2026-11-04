@@ -122,8 +122,8 @@ class AlertRenderer(Widget):
     ss = sm['selfdriveState']
 
     # Check if selfdriveState messages have stopped arriving
+    recv_frame = sm.recv_frame['selfdriveState']
     if not sm.updated['selfdriveState']:
-      recv_frame = sm.recv_frame['selfdriveState']
       time_since_onroad = time.monotonic() - ui_state.started_time
 
       # 1. Never received selfdriveState since going onroad
@@ -138,6 +138,11 @@ class AlertRenderer(Widget):
           if ss.enabled and (ss_missing - SELFDRIVE_STATE_TIMEOUT) < SELFDRIVE_UNRESPONSIVE_TIMEOUT:
             return ALERT_CRITICAL_TIMEOUT
           return ALERT_CRITICAL_REBOOT
+
+    # Don't show an alert from the previous onroad session
+    if recv_frame < ui_state.started_frame:
+      self._prev_alert = None
+      return None
 
     # No alert if size is none
     if ss.alertSize == 0:
