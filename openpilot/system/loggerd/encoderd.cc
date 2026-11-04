@@ -74,6 +74,8 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
 
   std::unique_ptr<JpegEncoder> jpeg_encoder;
 
+  const bool live = std::all_of(cam_info.encoder_infos.begin(), cam_info.encoder_infos.end(), [](auto &e) { return e.is_live; });
+
   int cur_seg = 0;
   while (!do_exit) {
     if (!vipc_client.connect(false)) {
@@ -118,12 +120,12 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
 
       // creating our publishers kicked out any subscriber that was already connected (loggerd), and they lose
       // everything we send until they reconnect, like the first keyframe. so wait for them, but not forever
-      if (!subscribed) {
+      if (!live && !subscribed) {
         subscribed = std::all_of(encoders.begin(), encoders.end(), [](auto &e) { return e->subscribed(); }) || ++frames_waited > MAIN_FPS * 2;
         if (!subscribed) continue;
       }
 
-      if (!sync_encoders(s, cam_info.stream_type, extra.frame_id)) {
+      if (!live && !sync_encoders(s, cam_info.stream_type, extra.frame_id)) {
         continue;
       }
       if (do_exit) break;
