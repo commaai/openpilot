@@ -7,6 +7,9 @@ CONTROL_N = 17
 # This is a turn radius smaller than most cars can achieve
 MAX_CURVATURE = 0.2
 MIN_STABLE_DELAY = 0.3
+# use the plan's own distance only while pulling away; above this the car does not speed up as fast as the plan,
+# and the plan distance gives too little steer in roundabouts
+PLAN_DIST_SPEED_BP = [2.0, 4.0]
 
 # EU guidelines
 MAX_LATERAL_JERK = 5.0  # m/s^3
@@ -54,15 +57,22 @@ def get_accel_from_plan(speeds, accels, t_idxs, action_t=DT_MDL):
     a_target = 0.0
   return a_target
 
-def curv_from_psis(psi_target, psi_rate, vego, action_t):
+def curv_from_psis(psi_target, psi_rate, vego, action_t, dist_target=None):
+  plan_dist_weight = 0.0 if dist_target is None else float(np.interp(vego, PLAN_DIST_SPEED_BP, [1.0, 0.0]))
   vego = np.clip(vego, MIN_SPEED, np.inf)
-  curv_from_psi = psi_target / (vego * action_t)
+  dist = vego * action_t
+  if plan_dist_weight > 0.0:
+    # the plan's own distance to the target: v_ego * t is too short when the plan speeds up, e.g. pulling away from a stop
+    dist = plan_dist_weight * max(dist_target, MIN_SPEED * action_t) + (1.0 - plan_dist_weight) * dist
+  curv_from_psi = psi_target / dist
   return 2*curv_from_psi - psi_rate / vego
 
-def get_curvature_from_plan(yaws, yaw_rates, t_idxs, vego, action_t):
+def get_curvature_from_plan(yaws, yaw_rates, t_idxs, vego, action_t, distances=None):
   if action_t < MIN_STABLE_DELAY:
     psi_target = (action_t / MIN_STABLE_DELAY) * np.interp(MIN_STABLE_DELAY, t_idxs, yaws)
+    dist_target = None if distances is None else (action_t / MIN_STABLE_DELAY) * np.interp(MIN_STABLE_DELAY, t_idxs, distances)
   else:
     psi_target = np.interp(action_t, t_idxs, yaws)
+    dist_target = None if distances is None else np.interp(action_t, t_idxs, distances)
   psi_rate = yaw_rates[0]
-  return curv_from_psis(psi_target, psi_rate, vego, action_t)
+  return curv_from_psis(psi_target, psi_rate, vego, action_t, dist_target)

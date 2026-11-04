@@ -62,7 +62,8 @@ def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.
                                                 plan[:,Plan.ORIENTATION_RATE][:,2],
                                                 ModelConstants.T_IDXS,
                                                 v_ego,
-                                                lat_action_t)
+                                                lat_action_t,
+                                                distances=plan[:,Plan.POSITION][:,0])
   else:
     desired_accel = model_output['action'][0,1]
     desired_curvature = model_output['action'][0,0] / (max(2.5, v_ego))**2
