@@ -9,11 +9,11 @@ from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.controls.lib.accel_boost import AccelBoost
 from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
-from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc, LongitudinalPlanSource
+from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc, LongitudinalPlanSource, get_T_FOLLOW
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import T_IDXS as T_IDXS_MPC
 from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N, get_accel_from_plan, should_stop
 from openpilot.selfdrive.controls.lib.curve_speed import CurveSpeed
-from openpilot.selfdrive.controls.lib.launch_accel import get_launch_accel
+from openpilot.selfdrive.controls.lib.launch_accel import get_launch_accel, get_pull_away_accel
 from openpilot.selfdrive.car.cruise import V_CRUISE_MAX, V_CRUISE_UNSET
 from openpilot.common.swaglog import cloudlog
 
@@ -102,6 +102,8 @@ class LongitudinalPlanner:
     model = sm['modelV2']
     output_a_target_e2e = get_launch_accel(model.action.desiredAcceleration, v_ego, model.velocity.t, model.velocity.x,
                                            sm['radarState'].leadOne)
+    output_a_target_e2e = get_pull_away_accel(output_a_target_e2e, v_ego, sm['radarState'].leadOne,
+                                              get_T_FOLLOW(sm['selfdriveState'].personality))
     output_should_stop_e2e = model.action.shouldStop
 
     self.a_cruise = get_cruise_accel(v_cruise, v_ego, self.a_cruise, self.output_a_target, self.dt)
