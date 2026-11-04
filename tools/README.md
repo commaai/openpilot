@@ -2,11 +2,11 @@
 
 ## System Requirements
 
-openpilot is developed and tested on **Ubuntu 24.04**, which is the primary development target aside from the [supported embedded hardware](https://github.com/commaai/openpilot#running-on-a-dedicated-device-in-a-car).
+openpilot supports Linux alongside the [supported embedded hardware](https://github.com/commaai/openpilot#running-on-a-dedicated-device-in-a-car).
 
-Most of openpilot should work natively on macOS. On Windows you can use WSL for a nearly native Ubuntu experience. Running natively on any other system is not currently recommended and will likely require modifications.
+Most of openpilot should work natively on macOS. On Windows, you can use WSL for a nearly native Linux experience.
 
-## Native setup on Ubuntu 24.04 and macOS
+## Native setup on Linux and macOS
 
 Follow these instructions for a fully managed setup experience. If you'd like to manage the dependencies yourself, just read the setup scripts in this directory.
 
@@ -29,21 +29,29 @@ source .venv/bin/activate
 
 **4. Build openpilot**
 ``` bash
-scons -u -j$(nproc)
+scons -u
 ```
 
 ## WSL on Windows
 
-[Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/about) should provide a similar experience to native Ubuntu. [WSL 2](https://docs.microsoft.com/en-us/windows/wsl/compare-versions) specifically has been reported by several users to be a seamless experience.
+[Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/about) should provide a similar experience to native Linux. [WSL 2](https://docs.microsoft.com/en-us/windows/wsl/compare-versions) specifically has been reported by several users to be a seamless experience.
 
-Follow [these instructions](https://docs.microsoft.com/en-us/windows/wsl/install) to setup the WSL and install the `Ubuntu-24.04` distribution. Once your Ubuntu WSL environment is setup, follow the Linux setup instructions to finish setting up your environment. See [these instructions](https://learn.microsoft.com/en-us/windows/wsl/tutorials/gui-apps) for running GUI apps.
+Follow [these instructions](https://docs.microsoft.com/en-us/windows/wsl/install) to set up WSL. We recommend installing the `Ubuntu-24.04` distribution. Once your WSL environment is set up, follow the Linux setup instructions to finish setting up your environment. See [these instructions](https://learn.microsoft.com/en-us/windows/wsl/tutorials/gui-apps) for running GUI apps.
 
-**NOTE**: If you are running WSL and any GUIs are failing (segfaulting or other strange issues) even after following the steps above, you may need to enable software rendering with `LIBGL_ALWAYS_SOFTWARE=1`, e.g. `LIBGL_ALWAYS_SOFTWARE=1 selfdrive/ui/ui`.
+**NOTE**: If you are running WSL 2 and experiencing performance issues with the UI or simulator, you may need to explicitly enable hardware acceleration by setting `GALLIUM_DRIVER=d3d12` before commands. Add `export GALLIUM_DRIVER=d3d12` to your `~/.bashrc` file to make it automatic for future sessions.
 
 ## CTF
 Learn about the openpilot ecosystem and tools by playing our [CTF](/tools/CTF.md).
 
 ## Directory Structure
+
+```
+├── car_porting/        # Tools for porting new cars
+├── release/            # Scripts for building openpilot releases
+└── scripts/            # Miscellaneous scripts
+```
+
+Development tools such as cabana, plotjuggler, and replay live in [openpilot/tools/](/openpilot/tools/):
 
 ```
 ├── cabana/             # View and plot CAN messages from drives or in realtime
@@ -52,8 +60,5 @@ Learn about the openpilot ecosystem and tools by playing our [CTF](/tools/CTF.md
 ├── lib/                # Libraries to support the tools and reading openpilot logs
 ├── plotjuggler/        # A tool to plot openpilot logs
 ├── replay/             # Replay drives and mock openpilot services
-├── scripts/            # Miscellaneous scripts
-├── serial/             # Tools for using the comma serial
-├── sim/                # Run openpilot in a simulator
-└── webcam/             # Run openpilot on a PC with webcams
+└── sim/                # Run openpilot in a simulator
 ```

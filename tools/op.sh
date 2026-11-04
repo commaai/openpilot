@@ -14,29 +14,29 @@ UNDERLINE='\033[4m'
 BOLD='\033[1m'
 NC='\033[0m'
 
-SHELL_NAME="$(basename ${SHELL})"
-RC_FILE="${HOME}/.$(basename ${SHELL})rc"
-if [ "$(uname)" == "Darwin" ] && [ $SHELL == "/bin/bash" ]; then
+SHELL_NAME="$(basename "${SHELL}")"
+RC_FILE="${HOME}/.$(basename "${SHELL}")rc"
+if [ "$(uname)" == "Darwin" ] && [ "$SHELL" == "/bin/bash" ]; then
   RC_FILE="$HOME/.bash_profile"
 fi
-function op_install() {
-  echo "Installing op system-wide..."
-  CMD="\nalias op='"$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )/op.sh" \"\$@\"'\n"
-  grep "alias op=" "$RC_FILE" &> /dev/null || printf "$CMD" >> $RC_FILE
-  echo -e " ↳ [${GREEN}✔${NC}] op installed successfully. Open a new shell to use it."
-}
 
-function loge() {
-  if [[ -f "$LOG_FILE" ]]; then
-    # error type
-    echo "$1" >> $LOG_FILE
-    # error log
-    echo "$2" >> $LOG_FILE
-  fi
+function retry() {
+  local attempts=$1
+  shift
+  for i in $(seq 1 "$attempts"); do
+    if "$@"; then
+      return 0
+    fi
+    if [ "$i" -lt "$attempts" ]; then
+      echo "  Attempt $i/$attempts failed, retrying in 5s..."
+      sleep 5
+    fi
+  done
+  return 1
 }
 
 function op_run_command() {
-  CMD="$@"
+  CMD="$*"
 
   echo -e "${BOLD}Running command →${NC} $CMD │"
   for ((i=0; i<$((19 + ${#CMD})); i++)); do
@@ -45,7 +45,7 @@ function op_run_command() {
   echo -e "┘\n"
 
   if [[ -z "$DRY" ]]; then
-    eval "$CMD"
+    "$@"
   fi
 }
 
@@ -62,7 +62,8 @@ function op_get_openpilot_dir() {
   done
 
   # Fallback to hardcoded directories if not found
-  for dir in "$HOME/openpilot" "/data/openpilot"; do
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
+  for dir in "$(readlink -f "$SCRIPT_DIR/../..")" "$HOME/openpilot" "/data/openpilot"; do
     if [[ -f "$dir/launch_openpilot.sh" ]]; then
       OPENPILOT_ROOT="$dir"
       return 0
@@ -72,12 +73,16 @@ function op_get_openpilot_dir() {
 
 function op_install_post_commit() {
   op_get_openpilot_dir
-  if [[ ! -d $OPENPILOT_ROOT/.git/hooks/post-commit.d ]]; then
-    mkdir $OPENPILOT_ROOT/.git/hooks/post-commit.d
-    mv $OPENPILOT_ROOT/.git/hooks/post-commit $OPENPILOT_ROOT/.git/hooks/post-commit.d 2>/dev/null || true
+  if [[ ! -d "$OPENPILOT_ROOT/.git/hooks/post-commit.d" ]]; then
+    mkdir "$OPENPILOT_ROOT/.git/hooks/post-commit.d"
+    mv "$OPENPILOT_ROOT/.git/hooks/post-commit" "$OPENPILOT_ROOT/.git/hooks/post-commit.d" 2>/dev/null || true
   fi
-  cd $OPENPILOT_ROOT/.git/hooks
+  cd "$OPENPILOT_ROOT/.git/hooks"
   ln -sf ../../scripts/post-commit post-commit
+}
+
+function op_lfs_shim() {
+  echo "$(git -C "$OPENPILOT_ROOT" rev-parse --path-format=absolute --git-common-dir)/git-lfs"
 }
 
 function op_check_openpilot_dir() {
@@ -86,7 +91,6 @@ function op_check_openpilot_dir() {
     echo -e " ↳ [${GREEN}✔${NC}] openpilot found."
     return 0
   fi
-
   echo -e " ↳ [${RED}✗${NC}] openpilot directory not found! Make sure that you are"
   echo "       inside the openpilot directory or specify one with the"
   echo "       --dir option!"
@@ -102,8 +106,14 @@ function op_check_git() {
     echo -e " ↳ [${GREEN}✔${NC}] git found."
   fi
 
-  echo "Checking for git lfs files..."
-  if [[ $(file -b $OPENPILOT_ROOT/selfdrive/modeld/models/dmonitoring_model.onnx) == "data" ]]; then
+  echo "Checking for git lfs..."
+  if cmp -s "$OPENPILOT_ROOT/scripts/git-lfs" "$(op_lfs_shim)"; then
+    echo -e " ↳ [${GREEN}✔${NC}] git lfs shim installed."
+  else
+    echo -e " ↳ [${RED}✗${NC}] git lfs shim missing or outdated! Run 'op setup'"
+    return 1
+  fi
+  if [[ $(file -b "$OPENPILOT_ROOT/openpilot/selfdrive/modeld/models/dmonitoring_model.onnx") == "data" ]]; then
     echo -e " ↳ [${GREEN}✔${NC}] git lfs files found."
   else
     echo -e " ↳ [${RED}✗${NC}] git lfs files not found! Run 'git lfs pull'"
@@ -112,7 +122,7 @@ function op_check_git() {
 
   echo "Checking for git submodules..."
   for name in $(git config --file .gitmodules --get-regexp path | awk '{ print $2 }' | tr '\n' ' '); do
-    if [[ -z $(ls $OPENPILOT_ROOT/$name) ]]; then
+    if [[ -z $(ls "$OPENPILOT_ROOT/$name") ]]; then
       echo -e " ↳ [${RED}✗${NC}] git submodule $name not found! Run 'git submodule update --init --recursive'"
       return 1
     fi
@@ -123,63 +133,21 @@ function op_check_git() {
 function op_check_os() {
   echo "Checking for compatible os version..."
   if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-
-    if [ -f "/etc/os-release" ]; then
-      source /etc/os-release
-      case "$VERSION_CODENAME" in
-        "jammy" | "kinetic" | "noble" | "focal")
-          echo -e " ↳ [${GREEN}✔${NC}] Ubuntu $VERSION_CODENAME detected."
-          ;;
-        * )
-          echo -e " ↳ [${RED}✗${NC}] Incompatible Ubuntu version $VERSION_CODENAME detected!"
-          loge "ERROR_INCOMPATIBLE_UBUNTU" "$VERSION_CODENAME"
-          return 1
-          ;;
-      esac
-    else
-      echo -e " ↳ [${RED}✗${NC}] No /etc/os-release on your system. Make sure you're running on Ubuntu, or similar!"
-      loge "ERROR_UNKNOWN_UBUNTU"
-      return 1
-    fi
-
+    echo -e " ↳ [${GREEN}✔${NC}] Linux detected."
   elif [[ "$OSTYPE" == "darwin"* ]]; then
     echo -e " ↳ [${GREEN}✔${NC}] macOS detected."
   else
     echo -e " ↳ [${RED}✗${NC}] OS type $OSTYPE not supported!"
-    loge "ERROR_UNKNOWN_OS" "$OSTYPE"
     return 1
-  fi
-}
-
-function op_check_python() {
-  echo "Checking for compatible python version..."
-  REQUIRED_PYTHON_VERSION=$(grep "requires-python" $OPENPILOT_ROOT/pyproject.toml)
-  INSTALLED_PYTHON_VERSION=$(python3 --version 2> /dev/null || true)
-
-  if [[ -z $INSTALLED_PYTHON_VERSION ]]; then
-    echo -e " ↳ [${RED}✗${NC}] python3 not found on your system. You need python version satisfying $(echo $REQUIRED_PYTHON_VERSION | cut -d '=' -f2-) to continue!"
-    loge "ERROR_PYTHON_NOT_FOUND"
-    return 1
-  else
-    LB=$(echo $REQUIRED_PYTHON_VERSION | tr -d -c '[0-9,]' | cut -d ',' -f1)
-    UB=$(echo $REQUIRED_PYTHON_VERSION | tr -d -c '[0-9,]' | cut -d ',' -f2)
-    VERSION=$(echo $INSTALLED_PYTHON_VERSION | grep -o '[0-9]\+\.[0-9]\+' | tr -d -c '[0-9]')
-    if [[ $VERSION -ge LB && $VERSION -lt UB ]]; then
-      echo -e " ↳ [${GREEN}✔${NC}] $INSTALLED_PYTHON_VERSION detected."
-    else
-      echo -e " ↳ [${RED}✗${NC}] You need a python version satisfying $(echo $REQUIRED_PYTHON_VERSION | cut -d '=' -f2-) to continue!"
-      loge "ERROR_PYTHON_VERSION" "$INSTALLED_PYTHON_VERSION"
-      return 1
-    fi
   fi
 }
 
 function op_check_venv() {
   echo "Checking for venv..."
-  if [[ -f $OPENPILOT_ROOT/.venv/bin/activate ]]; then
+  if [[ -f "$OPENPILOT_ROOT/.venv/bin/activate" ]]; then
     echo -e " ↳ [${GREEN}✔${NC}] venv detected."
   else
-    echo -e " ↳ [${RED}✗${NC}] Can't activate venv in $OPENPILOT_ROOT. Assuming global env!"
+    echo -e " ↳ [${RED}✗${NC}] Can't activate venv in '$OPENPILOT_ROOT'. Assuming global env!"
   fi
 }
 
@@ -189,7 +157,7 @@ function op_before_cmd() {
   fi
 
   op_get_openpilot_dir
-  cd $OPENPILOT_ROOT
+  cd "$OPENPILOT_ROOT"
 
   result="$((op_check_openpilot_dir ) 2>&1)" || (echo -e "$result" && return 1)
   result="${result}\n$(( op_check_git ) 2>&1)" || (echo -e "$result" && return 1)
@@ -197,8 +165,6 @@ function op_before_cmd() {
   result="${result}\n$(( op_check_venv ) 2>&1)" || (echo -e "$result" && return 1)
 
   op_activate_venv
-
-  result="${result}\n$(( op_check_python ) 2>&1)" || (echo -e "$result" && return 1)
 
   if [[ -z $VERBOSE ]]; then
     echo -e "${BOLD}Checking system →${NC} [${GREEN}✔${NC}]"
@@ -208,42 +174,50 @@ function op_before_cmd() {
 }
 
 function op_setup() {
+  echo "Installing op system-wide..."
+  OP_SH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )/op.sh"
+  CMD=$(cat <<EOF
+alias op='$OP_SH "\$@"'
+_op_completions() { [ "\$COMP_CWORD" -eq 1 ] && COMPREPLY=(\$(compgen -W "\$(awk '/shift 1; op_/{print \$1}' $OP_SH)" -- "\${COMP_WORDS[1]}")); }
+[ -n "\$BASH_VERSION" ] && complete -F _op_completions -o default op
+EOF
+)
+  grep -q "alias op=" "$RC_FILE" 2>/dev/null || printf '\n%s\n' "$CMD" >> "$RC_FILE"
+  echo -e " ↳ [${GREEN}✔${NC}] op installed successfully. Open a new shell to use it."
+
   op_get_openpilot_dir
-  cd $OPENPILOT_ROOT
+  cd "$OPENPILOT_ROOT"
 
   op_check_openpilot_dir
   op_check_os
 
-  echo "Installing dependencies..."
-  st="$(date +%s)"
-  if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    SETUP_SCRIPT="tools/ubuntu_setup.sh"
-  elif [[ "$OSTYPE" == "darwin"* ]]; then
-    SETUP_SCRIPT="tools/mac_setup.sh"
-  fi
-  if ! $OPENPILOT_ROOT/$SETUP_SCRIPT; then
-    echo -e " ↳ [${RED}✗${NC}] Dependencies installation failed!"
-    loge "ERROR_DEPENDENCIES_INSTALLATION"
-    return 1
-  fi
-  et="$(date +%s)"
-  echo -e " ↳ [${GREEN}✔${NC}] Dependencies installed successfully in $((et - st)) seconds."
-
+  # Submodules must be present before uv sync: pyproject path sources
+  # (pandacan, opendbc, msgq, ...) live in the submodule checkouts.
   echo "Getting git submodules..."
   st="$(date +%s)"
-  if ! git submodule update --jobs 4 --init --recursive; then
+  if ! retry 3 git submodule update --jobs 4 --init --recursive; then
     echo -e " ↳ [${RED}✗${NC}] Getting git submodules failed!"
-    loge "ERROR_GIT_SUBMODULES"
     return 1
   fi
   et="$(date +%s)"
   echo -e " ↳ [${GREEN}✔${NC}] Submodules installed successfully in $((et - st)) seconds."
 
+  echo "Installing dependencies..."
+  st="$(date +%s)"
+  SETUP_SCRIPT="tools/setup_dependencies.sh"
+  if ! "$OPENPILOT_ROOT/$SETUP_SCRIPT"; then
+    echo -e " ↳ [${RED}✗${NC}] Dependencies installation failed!"
+    return 1
+  fi
+  et="$(date +%s)"
+  echo -e " ↳ [${GREEN}✔${NC}] Dependencies installed successfully in $((et - st)) seconds."
+
+  op_activate_venv
+
   echo "Pulling git lfs files..."
   st="$(date +%s)"
-  if ! git lfs pull; then
+  if ! retry 3 ./tools/lfs.sh pull; then
     echo -e " ↳ [${RED}✗${NC}] Pulling git lfs files failed!"
-    loge "ERROR_GIT_LFS"
     return 1
   fi
   et="$(date +%s)"
@@ -254,42 +228,60 @@ function op_setup() {
 
 function op_auth() {
   op_before_cmd
-  op_run_command tools/lib/auth.py "$@"
+  op_run_command openpilot/tools/lib/auth.py "$@"
 }
 
 function op_activate_venv() {
   # bash 3.2 can't handle this without the 'set +e'
   set +e
-  source $OPENPILOT_ROOT/.venv/bin/activate &> /dev/null || true
+  source "$OPENPILOT_ROOT/.venv/bin/activate" &> /dev/null || true
   set -e
+
+  # persist venv on PATH across GitHub Actions steps
+  if [ -n "$GITHUB_PATH" ]; then
+    echo "$OPENPILOT_ROOT/.venv/bin" >> "$GITHUB_PATH"
+  fi
 }
 
 function op_venv() {
   op_before_cmd
 
-  if [[ ! -f $OPENPILOT_ROOT/.venv/bin/activate ]]; then
-    echo -e "No venv found in $OPENPILOT_ROOT"
+  if [[ ! -f "$OPENPILOT_ROOT/.venv/bin/activate" ]]; then
+    echo -e "No venv found in '$OPENPILOT_ROOT'"
     return 1
   fi
 
   case $SHELL_NAME in
     "zsh")
       ZSHRC_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t 'tmp_zsh')
-      echo "source $RC_FILE; source $OPENPILOT_ROOT/.venv/bin/activate" >> $ZSHRC_DIR/.zshrc
+      echo "source \"$RC_FILE\"; source \"$OPENPILOT_ROOT/.venv/bin/activate\"" >> "$ZSHRC_DIR/.zshrc"
       ZDOTDIR=$ZSHRC_DIR zsh ;;
     *)
-      bash --rcfile <(echo "source $RC_FILE; source $OPENPILOT_ROOT/.venv/bin/activate") ;;
+      bash --rcfile <(echo "source \"$RC_FILE\"; source \"$OPENPILOT_ROOT/.venv/bin/activate\"") ;;
   esac
 }
 
 function op_adb() {
   op_before_cmd
-  op_run_command tools/scripts/adb_ssh.sh
+  op_run_command tools/scripts/adb_ssh.sh "$@"
 }
 
 function op_ssh() {
   op_before_cmd
   op_run_command tools/scripts/ssh.py "$@"
+}
+
+function op_script() {
+  op_before_cmd
+
+  case $1 in
+    som-debug )  op_run_command panda/scripts/som_debug.sh "${@:2}" ;;
+    * )
+      echo -e "Unknown script '$1'. Available scripts:"
+      echo -e "  ${BOLD}som-debug${NC}    SOM serial debug console via panda"
+      return 1
+      ;;
+  esac
 }
 
 function op_check() {
@@ -300,7 +292,7 @@ function op_check() {
 
 function op_esim() {
   op_before_cmd
-  op_run_command system/hardware/esim.py "$@"
+  op_run_command openpilot/common/esim/esim.py "$@"
 }
 
 function op_build() {
@@ -309,47 +301,77 @@ function op_build() {
   cd "$CDIR"
   if [[ -f "/AGNOS" ]]; then
     # needed on AGNOS to not run out of memory
-    op_run_command system/manager/build.py
+    op_run_command openpilot/system/manager/build.py
   else
-    # scons is fine on PC
-    op_run_command scons $@
+    op_run_command scons -u "$@"
   fi
 }
 
 function op_juggle() {
   op_before_cmd
-  op_run_command tools/plotjuggler/juggle.py $@
+  op_run_command openpilot/tools/plotjuggler/juggle.py "$@"
 }
 
 function op_lint() {
   op_before_cmd
-  op_run_command scripts/lint/lint.sh $@
+  op_run_command scripts/lint/lint.sh "$@"
 }
 
 function op_test() {
   op_before_cmd
-  op_run_command pytest $@
+  op_run_command tools/test_runner.py "$@"
 }
 
 function op_replay() {
   op_before_cmd
-  op_run_command tools/replay/replay $@
+  op_run_command openpilot/tools/replay/replay "$@"
 }
 
 function op_cabana() {
   op_before_cmd
-  op_run_command tools/cabana/cabana $@
+  op_run_command openpilot/tools/cabana/cabana "$@"
 }
 
 function op_sim() {
   op_before_cmd
-  op_run_command exec tools/sim/run_bridge.py &
-  op_run_command exec tools/sim/launch_openpilot.sh
+  op_run_command exec openpilot/tools/sim/run_bridge.py &
+  op_run_command exec openpilot/tools/sim/launch_openpilot.sh
 }
 
 function op_clip() {
   op_before_cmd
-  op_run_command tools/clip/run.py $@
+  op_run_command openpilot/tools/clip/run.py "$@"
+}
+
+function op_docs() {
+  op_before_cmd
+  op_run_command python docs/serve.py "$@"
+}
+
+function op_check_agnos_update() {
+  if [[ ! -f "/AGNOS" ]]; then
+    return 0
+  fi
+
+  local choice current_version target_version
+  current_version="$(< /VERSION)"
+  target_version="$(unset AGNOS_VERSION; source "$OPENPILOT_ROOT/launch_env.sh"; echo "$AGNOS_VERSION")"
+
+  if [[ "$current_version" == "$target_version" ]]; then
+    return 0
+  fi
+
+  echo -e "${BOLD}AGNOS update available:${NC} $current_version → $target_version"
+  if read -r -p "Install it now? [y/N] " choice && [[ "$choice" =~ ^[Yy]$ ]]; then
+    op_run_command "$OPENPILOT_ROOT/openpilot/common/hardware/comma/agnos.py" --swap \
+      "$OPENPILOT_ROOT/openpilot/common/hardware/comma/agnos.json"
+
+    if read -r -p "Reboot now to apply the update? [y/N] " choice && [[ "$choice" =~ ^[Yy]$ ]]; then
+      op_run_command sudo reboot
+    else
+      echo "Reboot before starting openpilot to apply the AGNOS update."
+    fi
+  fi
 }
 
 function op_switch() {
@@ -365,28 +387,50 @@ function op_switch() {
   fi
   BRANCH="$1"
 
+  op_get_openpilot_dir
+  cd "$OPENPILOT_ROOT"
+
+  # check out without running the installed LFS client, the new checkout installs its own below
+  local git_nolfs=(git -c filter.lfs.process= -c filter.lfs.required=false -c core.hooksPath=/dev/null)
   git config --replace-all remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
+  git submodule deinit --all --force
   git fetch "$REMOTE" "$BRANCH"
-  git checkout -f FETCH_HEAD
-  git checkout -B "$BRANCH" --track "$REMOTE"/"$BRANCH"
-  git reset --hard "${REMOTE}/${BRANCH}"
+  "${git_nolfs[@]}" checkout -f FETCH_HEAD
+  "${git_nolfs[@]}" checkout -B "$BRANCH" --track "$REMOTE"/"$BRANCH"
+  git submodule deinit --all --force
+  "${git_nolfs[@]}" reset --hard "${REMOTE}/${BRANCH}"
   git clean -df
   git submodule update --init --recursive
   git submodule foreach git reset --hard
   git submodule foreach git clean -df
+
+  # like the shim, a failed pull leaves pointer files rather than failing the switch
+  if [[ -f tools/lfs.sh ]]; then
+    ./tools/lfs.sh pull || true
+  else
+    # TODO: remove this branch once switching to branches without tools/lfs.sh is no longer needed
+    op_activate_venv
+    git lfs pull || true
+  fi
+
+  # remove openpilot update flag if present
+  rm -f .overlay_init
+
+  op_check_agnos_update
 }
 
 function op_start() {
   if [[ -f "/AGNOS" ]]; then
     op_before_cmd
-    op_run_command sudo systemctl restart comma $@
+    op_check_agnos_update
+    op_run_command sudo systemctl restart comma "$@"
   fi
 }
 
 function op_stop() {
   if [[ -f "/AGNOS" ]]; then
     op_before_cmd
-    op_run_command sudo systemctl stop comma $@
+    op_run_command sudo systemctl stop comma "$@"
   fi
 }
 
@@ -402,12 +446,11 @@ function op_default() {
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands [System]:${NC}"
   echo -e "  ${BOLD}auth${NC}         Authenticate yourself for API use"
-  echo -e "  ${BOLD}check${NC}        Check the development environment (git, os, python) to start using openpilot"
+  echo -e "  ${BOLD}check${NC}        Check the development environment (git, os) to start using openpilot"
   echo -e "  ${BOLD}esim${NC}         Manage eSIM profiles on your comma device"
   echo -e "  ${BOLD}venv${NC}         Activate the python virtual environment"
-  echo -e "  ${BOLD}setup${NC}        Install openpilot dependencies"
+  echo -e "  ${BOLD}setup${NC}        Install the 'op' tool and openpilot dependencies"
   echo -e "  ${BOLD}build${NC}        Run the openpilot build system in the current working directory"
-  echo -e "  ${BOLD}install${NC}      Install the 'op' tool system wide"
   echo -e "  ${BOLD}switch${NC}       Switch to a different git branch with a clean slate (nukes any changes)"
   echo -e "  ${BOLD}start${NC}        Starts (or restarts) openpilot"
   echo -e "  ${BOLD}stop${NC}         Stops openpilot"
@@ -417,14 +460,18 @@ function op_default() {
   echo -e "  ${BOLD}replay${NC}       Run Replay"
   echo -e "  ${BOLD}cabana${NC}       Run Cabana"
   echo -e "  ${BOLD}clip${NC}         Run clip (linux only)"
+  echo -e "  ${BOLD}docs${NC}         Build or serve the openpilot documentation"
   echo -e "  ${BOLD}adb${NC}          Run adb shell"
   echo -e "  ${BOLD}ssh${NC}          comma prime SSH helper"
+  echo ""
+  echo -e "${BOLD}${UNDERLINE}Commands [Scripts]:${NC}"
+  echo -e "  ${BOLD}script${NC}       Run a script (e.g. op script som-debug)"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands [Testing]:${NC}"
   echo -e "  ${BOLD}sim${NC}          Run openpilot in a simulator"
   echo -e "  ${BOLD}lint${NC}         Run the linter"
   echo -e "  ${BOLD}post-commit${NC}  Install the linter as a post-commit hook"
-  echo -e "  ${BOLD}test${NC}         Run all unit tests from pytest"
+  echo -e "  ${BOLD}test${NC}         Run all unit tests"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Options:${NC}"
   echo -e "  ${BOLD}-d, --dir${NC}"
@@ -453,7 +500,6 @@ function _op() {
     -d | --dir )       shift 1; OPENPILOT_ROOT="$1"; shift 1 ;;
     --dry )            shift 1; DRY="1" ;;
     -n | --no-verify ) shift 1; NO_VERIFY="1" ;;
-    -l | --log )       shift 1; LOG_FILE="$1" ; shift 1 ;;
   esac
 
   # parse Commands
@@ -470,8 +516,8 @@ function _op() {
     test )          shift 1; op_test "$@" ;;
     replay )        shift 1; op_replay "$@" ;;
     clip )          shift 1; op_clip "$@" ;;
+    docs )          shift 1; op_docs "$@" ;;
     sim )           shift 1; op_sim "$@" ;;
-    install )       shift 1; op_install "$@" ;;
     switch )        shift 1; op_switch "$@" ;;
     start )         shift 1; op_start "$@" ;;
     stop )          shift 1; op_stop "$@" ;;
@@ -479,8 +525,9 @@ function _op() {
     post-commit )   shift 1; op_install_post_commit "$@" ;;
     adb )           shift 1; op_adb "$@" ;;
     ssh )           shift 1; op_ssh "$@" ;;
+    script )        shift 1; op_script "$@" ;;
     * ) op_default "$@" ;;
   esac
 }
 
-_op $@
+_op "$@"

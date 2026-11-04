@@ -1,0 +1,183 @@
+from openpilot.cereal import log
+from openpilot.common.params import Params, UnknownKeyName
+from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.list_view import ListItem, multiple_button_item, toggle_item
+from openpilot.system.ui.widgets.scroller_tici import Scroller
+from openpilot.system.ui.lib.multilang import tr, tr_noop
+from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.selfdrive.ui.layouts.settings.initial_cruise_speed import InitialCruiseSpeedControl
+
+PERSONALITY_TO_INT = log.LongitudinalPersonality.schema.enumerants
+
+# Description constants
+DESCRIPTIONS = {
+  "OpenpilotEnabledToggle": tr_noop(
+    "Use the openpilot system for adaptive cruise control and lane keep driver assistance. " +
+    "Your attention is required at all times to use this feature."
+  ),
+  "DisengageOnAccelerator": tr_noop("When enabled, pressing the accelerator pedal will disengage openpilot."),
+  "LongitudinalPersonality": tr_noop(
+    "Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. " +
+    "In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these settings with " +
+    "your steering wheel distance button."
+  ),
+  "IsLdwEnabled": tr_noop(
+    "Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line " +
+    "without a turn signal activated while driving over 31 mph (50 km/h)."
+  ),
+  "AlwaysOnDM": tr_noop("Enable driver monitoring even when openpilot is not engaged."),
+  'RecordFront': tr_noop("Upload data from the cabin camera and help improve the driver monitoring algorithm."),
+  "IsMetric": tr_noop("Display speed in km/h instead of mph."),
+  "RecordAudio": tr_noop("Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect."),
+}
+
+
+class TogglesLayout(Widget):
+  def __init__(self):
+    super().__init__()
+    self._params = Params()
+
+    # param, title, desc, icon, needs_restart
+    self._toggle_defs = {
+      "OpenpilotEnabledToggle": (
+        lambda: tr("Enable openpilot"),
+        DESCRIPTIONS["OpenpilotEnabledToggle"],
+        "chffr_wheel.png",
+        True,
+      ),
+      "DisengageOnAccelerator": (
+        lambda: tr("Disengage on Accelerator Pedal"),
+        DESCRIPTIONS["DisengageOnAccelerator"],
+        "disengage_on_accelerator.png",
+        False,
+      ),
+      "IsLdwEnabled": (
+        lambda: tr("Enable Lane Departure Warnings"),
+        DESCRIPTIONS["IsLdwEnabled"],
+        "warning.png",
+        False,
+      ),
+      "AlwaysOnDM": (
+        lambda: tr("Always-On Driver Monitoring"),
+        DESCRIPTIONS["AlwaysOnDM"],
+        "monitoring.png",
+        False,
+      ),
+      "RecordFront": (
+        lambda: tr("Record and Upload Cabin Camera"),
+        DESCRIPTIONS["RecordFront"],
+        "monitoring.png",
+        True,
+      ),
+      "RecordAudio": (
+        lambda: tr("Record and Upload Microphone Audio"),
+        DESCRIPTIONS["RecordAudio"],
+        "microphone.png",
+        True,
+      ),
+      "IsMetric": (
+        lambda: tr("Use Metric System"),
+        DESCRIPTIONS["IsMetric"],
+        "metric.png",
+        False,
+      ),
+    }
+
+    self._long_personality_setting = multiple_button_item(
+      lambda: tr("Following Distance"),
+      lambda: tr(DESCRIPTIONS["LongitudinalPersonality"]),
+      buttons=[lambda: tr("Aggressive"), lambda: tr("Standard"), lambda: tr("Relaxed")],
+      button_width=255,
+      callback=self._set_longitudinal_personality,
+      selected_index=self._params.get("LongitudinalPersonality", return_default=True),
+      icon="speed_limit.png"
+    )
+
+    self._toggles = {}
+    self._initial_cruise_speed = ListItem(
+      title=lambda: tr("Initial Max Speed"),
+      description=lambda: tr("Max speed when engaging openpilot. If you are already driving faster, your current speed is used. " +
+                             "Resume restores the previous max speed. Changes apply the next time you engage."),
+      action_item=InitialCruiseSpeedControl(),
+      icon="speed_limit.png",
+    )
+    self._initial_cruise_speed.set_visible(lambda: ui_state.CP is not None and ui_state.has_longitudinal_control and not ui_state.CP.pcmCruise)
+    self._locked_toggles = set()
+    for param, (title, desc, icon, needs_restart) in self._toggle_defs.items():
+      toggle = toggle_item(
+        title,
+        desc,
+        self._params.get_bool(param),
+        callback=lambda state, p=param: self._toggle_callback(state, p),
+        icon=icon,
+      )
+
+      try:
+        locked = self._params.get_bool(param + "Lock")
+      except UnknownKeyName:
+        locked = False
+      toggle.action_item.set_enabled(not locked)
+
+      # Make description callable for live translation
+      additional_desc = ""
+      if needs_restart and not locked:
+        additional_desc = tr("Changing this setting will restart openpilot if the car is powered on.")
+      toggle.set_description(lambda og_desc=toggle.description, add_desc=additional_desc: tr(og_desc) + (" " + tr(add_desc) if add_desc else ""))
+
+      # track for engaged state updates
+      if locked:
+        self._locked_toggles.add(param)
+
+      self._toggles[param] = toggle
+
+      # insert longitudinal personality after NDOG toggle
+      if param == "DisengageOnAccelerator":
+        self._toggles["LongitudinalPersonality"] = self._long_personality_setting
+        self._toggles["InitialCruiseSpeedKph"] = self._initial_cruise_speed
+
+    self._scroller = Scroller(list(self._toggles.values()), line_separator=True, spacing=0)
+
+    ui_state.add_engaged_transition_callback(self._update_toggles)
+
+  def _update_state(self):
+    if ui_state.sm.updated["selfdriveState"]:
+      personality = PERSONALITY_TO_INT[ui_state.sm["selfdriveState"].personality]
+      if personality != ui_state.personality and ui_state.started:
+        self._long_personality_setting.action_item.set_selected_button(personality)
+      ui_state.personality = personality
+
+  def show_event(self):
+    super().show_event()
+    self._scroller.show_event()
+    self._update_toggles()
+
+  def _update_toggles(self):
+    ui_state.update_params()
+    self._initial_cruise_speed.action_item.refresh()
+
+    if ui_state.CP is not None:
+      self._long_personality_setting.action_item.set_enabled(ui_state.has_longitudinal_control)
+
+    # TODO: make a param control list item so we don't need to manage internal state as much here
+    # refresh toggles from params to mirror external changes
+    for param in self._toggle_defs:
+      self._toggles[param].action_item.set_state(self._params.get_bool(param))
+
+    # these toggles need restart, block while engaged
+    for toggle_def in self._toggle_defs:
+      if self._toggle_defs[toggle_def][3] and toggle_def not in self._locked_toggles:
+        self._toggles[toggle_def].action_item.set_enabled(not ui_state.engaged)
+
+  def _render(self, rect):
+    self._scroller.render(rect)
+
+  def _toggle_callback(self, state: bool, param: str):
+    self._params.put_bool(param, state, block=True)
+    if param == "IsMetric":
+      self._update_toggles()
+
+    if self._toggle_defs[param][3]:
+      self._params.put_bool("OnroadCycleRequested", True, block=True)
+
+  def _set_longitudinal_personality(self, button_index: int):
+    self._params.put("LongitudinalPersonality", button_index, block=True)
