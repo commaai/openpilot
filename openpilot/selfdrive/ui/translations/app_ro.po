@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Language: ro\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : (n==0 || (n%100 > 0 && n%100 < 20)) ? 1 : 2);\n"
 
 #: openpilot/selfdrive/ui/layouts/settings/device.py
 msgid " Steering torque response calibration is complete."
@@ -113,10 +113,6 @@ msgstr "SCHIMBĂ"
 msgid "CHECK"
 msgstr "VERIFICĂ"
 
-#: openpilot/selfdrive/ui/widgets/exp_mode_button.py
-msgid "CHILL MODE ON"
-msgstr "MODUL RELAXAT ACTIVAT"
-
 #: openpilot/selfdrive/ui/layouts/sidebar.py
 #: openpilot/system/ui/widgets/network.py
 msgid "CONNECT"
@@ -209,10 +205,6 @@ msgstr "ID dongle"
 msgid "Download"
 msgstr "Descarcă"
 
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Driving Personality"
-msgstr "Stil de condus"
-
 #: openpilot/system/ui/widgets/network.py
 msgid "EDIT"
 msgstr "EDITEAZĂ"
@@ -224,10 +216,6 @@ msgstr "EROARE"
 #: openpilot/selfdrive/ui/layouts/sidebar.py
 msgid "ETH"
 msgstr "ETH"
-
-#: openpilot/selfdrive/ui/widgets/exp_mode_button.py
-msgid "EXPERIMENTAL MODE ON"
-msgstr "MODUL EXPERIMENTAL ACTIVAT"
 
 #: openpilot/selfdrive/ui/layouts/settings/developer.py
 msgid "Enable"
@@ -261,10 +249,6 @@ msgstr "Activează monitorizarea șoferului chiar și când openpilot nu este ac
 msgid "Enable openpilot"
 msgstr "Activează openpilot"
 
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode."
-msgstr "Activează opțiunea de control longitudinal openpilot (alfa) pentru a permite modul experimental."
-
 #: openpilot/system/ui/widgets/network.py
 msgid "Enter APN"
 msgstr "Introdu APN-ul"
@@ -289,14 +273,6 @@ msgstr "Introdu numele de utilizator GitHub"
 msgid "Error"
 msgstr "Eroare"
 
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Experimental Mode"
-msgstr "Mod experimental"
-
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Experimental mode is currently unavailable on this car since the car's stock ACC is used for longitudinal control."
-msgstr "Modul experimental nu este disponibil momentan pentru această mașină, deoarece controlul longitudinal folosește ACC-ul original al mașinii."
-
 #: openpilot/system/ui/widgets/network.py
 msgid "FORGETTING..."
 msgstr "SE UITĂ..."
@@ -313,6 +289,10 @@ msgstr "Firehose"
 #: openpilot/selfdrive/ui/widgets/setup.py
 msgid "Firehose Mode"
 msgstr "Mod Firehose"
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Following Distance"
+msgstr "Distanța de urmărire"
 
 #: openpilot/system/ui/widgets/network.py
 msgid "Forget"
@@ -345,6 +325,10 @@ msgstr "INSTALEAZĂ"
 #: openpilot/system/ui/widgets/network.py
 msgid "IP Address"
 msgstr "Adresă IP"
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Initial Max Speed"
+msgstr "Viteza maximă inițială"
 
 #: openpilot/selfdrive/ui/layouts/settings/software.py
 msgid "Install Update"
@@ -720,6 +704,7 @@ msgstr "se finalizează actualizarea..."
 msgid "for \"{}\""
 msgstr "pentru „{}”"
 
+#: openpilot/selfdrive/ui/layouts/settings/initial_cruise_speed.py
 #: openpilot/selfdrive/ui/onroad/hud_renderer.py
 msgid "km/h"
 msgstr "km/h"
@@ -736,6 +721,7 @@ msgstr "stânga"
 msgid "metered"
 msgstr "contorizată"
 
+#: openpilot/selfdrive/ui/layouts/settings/initial_cruise_speed.py
 #: openpilot/selfdrive/ui/onroad/hud_renderer.py
 msgid "mph"
 msgstr "mph"
@@ -755,10 +741,6 @@ msgstr "Control longitudinal openpilot (alfa)"
 #: openpilot/selfdrive/ui/onroad/alert_renderer.py
 msgid "openpilot Unavailable"
 msgstr "openpilot nu este disponibil"
-
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "openpilot longitudinal control may come in a future update."
-msgstr "Controlul longitudinal openpilot poate fi disponibil într-o actualizare viitoare."
 
 #: openpilot/selfdrive/ui/layouts/settings/device.py
 msgid "openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down."
@@ -793,24 +775,28 @@ msgid "{} ALERT"
 msgid_plural "{} ALERTS"
 msgstr[0] "{} ALERTĂ"
 msgstr[1] "{} ALERTE"
+msgstr[2] "{} DE ALERTE"
 
 #: openpilot/selfdrive/ui/layouts/settings/software.py
 msgid "{} day ago"
 msgid_plural "{} days ago"
 msgstr[0] "acum {} zi"
 msgstr[1] "acum {} zile"
+msgstr[2] "acum {} de zile"
 
 #: openpilot/selfdrive/ui/layouts/settings/software.py
 msgid "{} hour ago"
 msgid_plural "{} hours ago"
 msgstr[0] "acum {} oră"
 msgstr[1] "acum {} ore"
+msgstr[2] "acum {} de ore"
 
 #: openpilot/selfdrive/ui/layouts/settings/software.py
 msgid "{} minute ago"
 msgid_plural "{} minutes ago"
 msgstr[0] "acum {} minut"
 msgstr[1] "acum {} minute"
+msgstr[2] "acum {} de minute"
 
 #: openpilot/selfdrive/ui/widgets/prime.py
 msgid "✓ SUBSCRIBED"

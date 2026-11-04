@@ -286,6 +286,7 @@ PLURAL_FORMS: dict[str, str] = {
   'es': 'nplurals=2; plural=(n != 1);',
   'pt-BR': 'nplurals=2; plural=(n > 1);',
   'tr': 'nplurals=2; plural=(n != 1);',
+  'ro': 'nplurals=3; plural=(n==1 ? 0 : (n==0 || (n%100 > 0 && n%100 < 20)) ? 1 : 2);',
   'uk': 'nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : 2);',
   'th': 'nplurals=1; plural=0;',
   'zh-CHT': 'nplurals=1; plural=0;',
