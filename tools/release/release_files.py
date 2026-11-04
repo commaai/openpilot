@@ -14,8 +14,7 @@ blacklist = [
 
   "matlab.*.md",
 
-  # release scripts configure LFS for the big driving model and warps. Releases ship no .lfsconfig,
-  # so updaters using stock Git LFS fail rather than install pointers.
+  # release scripts configure LFS for the big driving model and warps.
   ".lfsconfig",
   ".gitattributes",
   ".git$",
