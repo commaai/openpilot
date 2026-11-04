@@ -135,16 +135,22 @@ class SelfdriveD:
     self.startup_event = EventName.startup if build_metadata.openpilot.comma_remote and build_metadata.tested_channel else EventName.startupMaster
     if HARDWARE.get_device_type() == 'mici':
       self.startup_event = None
-    if not car_recognized:
+    # if the user turned openpilot off, show that as the reason for dashcam mode
+    openpilot_enabled_toggle = self.params.get_bool("OpenpilotEnabledToggle")
+    if not openpilot_enabled_toggle:
+      self.startup_event = EventName.startupNoControl
+    elif not car_recognized:
       self.startup_event = EventName.startupNoCar
-    elif car_recognized and self.CP.passive:
+    elif self.CP.passive:
       self.startup_event = EventName.startupNoControl
     elif self.CP.secOcRequired and not self.CP.secOcKeyAvailable:
       self.startup_event = EventName.startupNoSecOcKey
 
     if not car_recognized:
-      self.events.add(EventName.carUnrecognized, static=True)
       set_offroad_alert("Offroad_CarUnrecognized", True)
+
+    if not car_recognized and openpilot_enabled_toggle:
+      self.events.add(EventName.carUnrecognized, static=True)
     elif self.CP.passive:
       self.events.add(EventName.dashcamMode, static=True)
 
