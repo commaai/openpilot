@@ -3,341 +3,249 @@ import subprocess
 import sys
 import sysconfig
 import platform
+import shlex
+import importlib
 import numpy as np
 
 import SCons.Errors
+from SCons.Defaults import _stripixes
+
+COMMA_HARDWARE = os.path.isfile('/AGNOS')
 
 SCons.Warnings.warningAsException(True)
 
-# pending upstream fix - https://github.com/SCons/scons/issues/4461
-#SetOption('warn', 'all')
-
-TICI = os.path.isfile('/TICI')
-AGNOS = TICI
-
 Decider('MD5-timestamp')
 
-SetOption('num_jobs', int(os.cpu_count()/2))
+SetOption('num_jobs', max(1, int(os.cpu_count()/(1 if "CI" in os.environ else 2))))
 
-AddOption('--kaitai',
-          action='store_true',
-          help='Regenerate kaitai struct parsers')
-
-AddOption('--asan',
-          action='store_true',
-          help='turn on ASAN')
-
-AddOption('--ubsan',
-          action='store_true',
-          help='turn on UBSan')
-
-AddOption('--coverage',
-          action='store_true',
-          help='build with test coverage options')
-
-AddOption('--clazy',
-          action='store_true',
-          help='build with clazy')
-
-AddOption('--compile_db',
-          action='store_true',
-          help='build clang compilation database')
-
-AddOption('--ccflags',
-          action='store',
-          type='string',
-          default='',
-          help='pass arbitrary flags over the command line')
-
-AddOption('--external-sconscript',
-          action='store',
-          metavar='FILE',
-          dest='external_sconscript',
-          help='add an external SConscript to the build')
-
-AddOption('--pc-thneed',
-          action='store_true',
-          dest='pc_thneed',
-          help='use thneed on pc')
-
-AddOption('--mutation',
-          action='store_true',
-          help='generate mutation-ready code')
-
+AddOption('--ccflags', action='store', type='string', default='', help='pass arbitrary flags over the command line')
+AddOption('--verbose', action='store_true', default=False, help='show full build commands')
+release = not os.path.exists(File('#.gitmodules').abspath) # file absent on release branch, see release_files.py
 AddOption('--minimal',
           action='store_false',
           dest='extras',
-          default=os.path.exists(File('#.lfsconfig').abspath), # minimal by default on release branch (where there's no LFS)
+          default=(not COMMA_HARDWARE and not release),
           help='the minimum build to run openpilot. no tests, tools, etc.')
 
-## Architecture name breakdown (arch)
-## - larch64: linux tici aarch64
-## - aarch64: linux pc aarch64
-## - x86_64:  linux pc x64
-## - Darwin:  mac x64 or arm64
-real_arch = arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
+submodule_python_paths = [
+  Dir("#").abspath,
+  Dir("#msgq_repo").abspath,
+  Dir("#opendbc_repo").abspath,
+  Dir("#rednose_repo").abspath,
+  Dir("#teleoprtc_repo").abspath,
+  Dir("#tinygrad_repo").abspath,
+]
+for p in reversed(submodule_python_paths):
+  if p not in sys.path:
+    sys.path.insert(0, p)
+
+if external_pythonpath := os.environ.get("PYTHONPATH"):
+  submodule_python_paths += [p for p in external_pythonpath.split(os.pathsep) if p and p not in submodule_python_paths]
+
+# Detect platform
+arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
-  brew_prefix = subprocess.check_output(['brew', '--prefix'], encoding='utf8').strip()
-elif arch == "aarch64" and AGNOS:
-  arch = "larch64"
-assert arch in ["larch64", "aarch64", "x86_64", "Darwin"]
+elif arch == "aarch64" and COMMA_HARDWARE:
+  arch = "comma_arm64"
+assert arch in [
+  "comma_arm64",  # linux comma hardware (AGNOS) arm64
+  "aarch64",      # linux pc arm64
+  "x86_64",       # linux pc x64
+  "Darwin",       # macOS arm64 (x86 not supported)
+]
 
-lenv = {
-  "PATH": os.environ['PATH'],
-  "LD_LIBRARY_PATH": [Dir(f"#third_party/acados/{arch}/lib").abspath],
-  "PYTHONPATH": Dir("#").abspath + ':' + Dir(f"#third_party/acados").abspath,
+pkg_names = ['acados', 'capnproto', 'ffmpeg', 'json11', 'ncurses', 'zstd']
+pkgs = [importlib.import_module(name) for name in pkg_names]
+acados = pkgs[pkg_names.index('acados')]
+ffmpeg = pkgs[pkg_names.index('ffmpeg')]
+ffmpeg_libs = ['avformat', 'avcodec', 'swresample', 'avutil']
+acados_include_dirs = [
+  acados.INCLUDE_DIR,
+  os.path.join(acados.INCLUDE_DIR, "blasfeo", "include"),
+  os.path.join(acados.INCLUDE_DIR, "hpipm", "include"),
+]
 
-  "ACADOS_SOURCE_DIR": Dir("#third_party/acados").abspath,
-  "ACADOS_PYTHON_INTERFACE_PATH": Dir("#third_party/acados/acados_template").abspath,
-  "TERA_PATH": Dir("#").abspath + f"/third_party/acados/{arch}/t_renderer"
+
+# ***** enforce a whitelist of system libraries *****
+# this prevents silently relying on a 3rd party package,
+# e.g. apt-installed libusb. all libraries should either
+# be distributed with all Linux distros and macOS, or
+# vendored in commaai/dependencies.
+allowed_system_libs = {
+  "EGL", "GLESv2", "GL",
+  "dl", "drm", "gbm", "m", "pthread",
 }
 
-rpath = lenv["LD_LIBRARY_PATH"].copy()
+def _resolve_lib(env, name):
+  for d in env.Flatten(env.get('LIBPATH', [])):
+    p = Dir(str(d)).abspath
+    for ext in ('.a', '.so', '.dylib'):
+      f = File(os.path.join(p, f'lib{name}{ext}'))
+      if f.exists() or f.has_builder():
+        return name
+  if name in allowed_system_libs:
+    return name
+  raise SCons.Errors.UserError(f"Unexpected non-vendored library '{name}'")
 
-if arch == "larch64":
-  cpppath = [
-    "#third_party/opencl/include",
-  ]
-
-  libpath = [
-    "/usr/local/lib",
-    "/system/vendor/lib64",
-    f"#third_party/acados/{arch}/lib",
-  ]
-
-  libpath += [
-    "#third_party/libyuv/larch64/lib",
-    "/usr/lib/aarch64-linux-gnu"
-  ]
-  cflags = ["-DQCOM2", "-mcpu=cortex-a57"]
-  cxxflags = ["-DQCOM2", "-mcpu=cortex-a57"]
-  rpath += ["/usr/local/lib"]
-else:
-  cflags = []
-  cxxflags = []
-  cpppath = []
-  rpath += []
-
-  # MacOS
-  if arch == "Darwin":
-    libpath = [
-      f"#third_party/libyuv/{arch}/lib",
-      f"#third_party/acados/{arch}/lib",
-      f"{brew_prefix}/lib",
-      f"{brew_prefix}/opt/openssl@3.0/lib",
-      "/System/Library/Frameworks/OpenGL.framework/Libraries",
-    ]
-
-    cflags += ["-DGL_SILENCE_DEPRECATION"]
-    cxxflags += ["-DGL_SILENCE_DEPRECATION"]
-    cpppath += [
-      f"{brew_prefix}/include",
-      f"{brew_prefix}/opt/openssl@3.0/include",
-    ]
-    lenv["DYLD_LIBRARY_PATH"] = lenv["LD_LIBRARY_PATH"]
-  # Linux
-  else:
-    libpath = [
-      f"#third_party/acados/{arch}/lib",
-      f"#third_party/libyuv/{arch}/lib",
-      "/usr/lib",
-      "/usr/local/lib",
-    ]
-
-if GetOption('asan'):
-  ccflags = ["-fsanitize=address", "-fno-omit-frame-pointer"]
-  ldflags = ["-fsanitize=address"]
-elif GetOption('ubsan'):
-  ccflags = ["-fsanitize=undefined"]
-  ldflags = ["-fsanitize=undefined"]
-else:
-  ccflags = []
-  ldflags = []
-
-# no --as-needed on mac linker
-if arch != "Darwin":
-  ldflags += ["-Wl,--as-needed", "-Wl,--no-undefined"]
-
-ccflags_option = GetOption('ccflags')
-if ccflags_option:
-  ccflags += ccflags_option.split(' ')
+def _libflags(target, source, env, for_signature):
+  libs = []
+  lp = env.subst('$LIBLITERALPREFIX')
+  for lib in env.Flatten(env.get('LIBS', [])):
+    if isinstance(lib, str):
+      if os.sep in lib or lib.startswith('#'):
+        libs.append(File(lib))
+      elif lib.startswith('-') or (lp and lib.startswith(lp)):
+        libs.append(lib)
+      else:
+        libs.append(_resolve_lib(env, lib))
+    else:
+      libs.append(lib)
+  return _stripixes(env['LIBLINKPREFIX'], libs, env['LIBLINKSUFFIX'],
+                    env['LIBPREFIXES'], env['LIBSUFFIXES'], env, env['LIBLITERALPREFIX'])
 
 env = Environment(
-  ENV=lenv,
+  ENV={
+    "PATH": os.environ['PATH'],
+    "PYTHONPATH": os.pathsep.join(submodule_python_paths),
+    "ACADOS_SOURCE_DIR": acados.DIR,
+    "ACADOS_PYTHON_INTERFACE_PATH": acados.TEMPLATE_DIR,
+    "TERA_PATH": acados.TERA_PATH
+  },
   CCFLAGS=[
     "-g",
     "-fPIC",
+    "-pipe",
     "-O2",
     "-Wunused",
     "-Werror",
-    "-Wshadow",
+    "-Wshadow" if arch in ("Darwin", "comma_arm64") else "-Wshadow=local",
     "-Wno-unknown-warning-option",
     "-Wno-inconsistent-missing-override",
     "-Wno-c99-designator",
     "-Wno-reorder-init-list",
     "-Wno-vla-cxx-extension",
-  ] + cflags + ccflags,
-
-  CPPPATH=cpppath + [
+  ],
+  CFLAGS=["-std=gnu11"],
+  CXXFLAGS=["-std=c++1z"],
+  CPPPATH=[
+    "#openpilot",
+    "#msgq_repo",            # #include "msgq/..."
+    "#opendbc_repo",         # #include "opendbc/..."
+    "#rednose_repo",         # #include "rednose/..."
+    "#rednose_repo/rednose", # #include "logger/..." (rednose package root)
+    "#openpilot/cereal/gen/cpp",
+    acados_include_dirs,
+    [x.INCLUDE_DIR for x in pkgs],
     "#",
-    "#third_party/acados/include",
-    "#third_party/acados/include/blasfeo/include",
-    "#third_party/acados/include/hpipm/include",
-    "#third_party/catch2/include",
-    "#third_party/libyuv/include",
-    "#third_party/json11",
-    "#third_party/linux/include",
-    "#third_party",
-    "#msgq",
   ],
-
-  CC='clang',
-  CXX='clang++',
-  LINKFLAGS=ldflags,
-
-  RPATH=rpath,
-
-  CFLAGS=["-std=gnu11"] + cflags,
-  CXXFLAGS=["-std=c++1z"] + cxxflags,
-  LIBPATH=libpath + [
+  LIBPATH=[
+    "#openpilot/common",
     "#msgq_repo",
-    "#third_party",
-    "#selfdrive/pandad",
-    "#common",
-    "#rednose/helpers",
+    "#openpilot/selfdrive/pandad",
+    "#rednose_repo/rednose/helpers",
+    [x.LIB_DIR for x in pkgs],
   ],
+  RPATH=[ffmpeg.LIB_DIR],
   CYTHONCFILESUFFIX=".cpp",
   COMPILATIONDB_USE_ABSPATH=True,
-  REDNOSE_ROOT="#",
+  REDNOSE_ROOT="#rednose_repo",
   tools=["default", "cython", "compilation_db", "rednose_filter"],
-  toolpath=["#site_scons/site_tools", "#rednose_repo/site_scons/site_tools"],
+  toolpath=["#rednose_repo/site_scons/site_tools"],
 )
-
+# SCons' Darwin linker tool doesn't define the variables used to expand RPATH.
 if arch == "Darwin":
-  # RPATH is not supported on macOS, instead use the linker flags
-  darwin_rpath_link_flags = [f"-Wl,-rpath,{path}" for path in env["RPATH"]]
-  env["LINKFLAGS"] += darwin_rpath_link_flags
+  env["RPATHPREFIX"] = "-Wl,-rpath,"
+  env["RPATHSUFFIX"] = ""
+  env["_RPATH"] = "${_concat(RPATHPREFIX, RPATH, RPATHSUFFIX, __env__)}"
+if arch != "comma_arm64":
+  env['_LIBFLAGS'] = _libflags
 
-if GetOption('compile_db'):
-  env.CompilationDatabase('compile_commands.json')
+# Arch-specific flags and paths
+if arch == "comma_arm64":
+  env["CC"] = "clang"
+  env["CXX"] = "clang++"
+  env.Append(LIBPATH=[
+    "/usr/lib/aarch64-linux-gnu",
+  ])
+  arch_flags = ["-D__COMMA_HARDWARE__", "-mcpu=cortex-a57"]
+  env.Append(CCFLAGS=arch_flags)
+  env.Append(CXXFLAGS=arch_flags)
+elif arch == "Darwin":
+  env.Append(LIBPATH=[
+    "/System/Library/Frameworks/OpenGL.framework/Libraries",
+  ])
+  env.Append(CCFLAGS=["-DGL_SILENCE_DEPRECATION"])
+  env.Append(CXXFLAGS=["-DGL_SILENCE_DEPRECATION"])
 
-# Setup cache dir
-cache_dir = '/data/scons_cache' if AGNOS else '/tmp/scons_cache'
-CacheDir(cache_dir)
-Clean(["."], cache_dir)
+_extra_cc = shlex.split(GetOption('ccflags') or '')
+if _extra_cc:
+  env.Append(CCFLAGS=_extra_cc)
 
-node_interval = 5
-node_count = 0
-def progress_function(node):
-  global node_count
-  node_count += node_interval
-  sys.stderr.write("progress: %d\n" % node_count)
+# no --as-needed on mac linker
+if arch != "Darwin":
+  env.Append(LINKFLAGS=["-Wl,--as-needed", "-Wl,--no-undefined"])
 
-if os.environ.get('SCONS_PROGRESS'):
-  Progress(progress_function, interval=node_interval)
+# Shorter build output: show brief descriptions instead of full commands.
+# Full command lines are still printed on failure by scons.
+if not GetOption('verbose'):
+  for action, short in (
+    ("CC",     "CC"),
+    ("CXX",    "CXX"),
+    ("LINK",   "LINK"),
+    ("SHCC",   "CC"),
+    ("SHCXX",  "CXX"),
+    ("SHLINK", "LINK"),
+    ("AR",     "AR"),
+    ("RANLIB", "RANLIB"),
+    ("AS",     "AS"),
+  ):
+    env[f"{action}COMSTR"] = f"  [{short}] $TARGET"
 
-# Cython build environment
-py_include = sysconfig.get_paths()['include']
+# ********** Cython build environment **********
 envCython = env.Clone()
-envCython["CPPPATH"] += [py_include, np.get_include()]
-envCython["CCFLAGS"] += ["-Wno-#warnings", "-Wno-shadow", "-Wno-deprecated-declarations"]
+envCython["CPPPATH"] += [sysconfig.get_paths()['include'], np.get_include()]
+envCython["CCFLAGS"] += ["-Wno-#warnings", "-Wno-cpp", "-Wno-shadow", "-Wno-deprecated-declarations"]
 envCython["CCFLAGS"].remove("-Werror")
 
 envCython["LIBS"] = []
 if arch == "Darwin":
-  envCython["LINKFLAGS"] = ["-bundle", "-undefined", "dynamic_lookup"] + darwin_rpath_link_flags
+  envCython["LINKFLAGS"] = env["LINKFLAGS"] + ["-bundle", "-undefined", "dynamic_lookup"]
 else:
   envCython["LINKFLAGS"] = ["-pthread", "-shared"]
 
 np_version = SCons.Script.Value(np.__version__)
 Export('envCython', 'np_version')
 
-# Qt build environment
-qt_env = env.Clone()
-qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "DBus", "Xml"]
+Export('env', 'arch', 'acados', 'ffmpeg_libs')
 
-qt_libs = []
-if arch == "Darwin":
-  qt_env['QTDIR'] = f"{brew_prefix}/opt/qt@5"
-  qt_dirs = [
-    os.path.join(qt_env['QTDIR'], "include"),
-  ]
-  qt_dirs += [f"{qt_env['QTDIR']}/include/Qt{m}" for m in qt_modules]
-  qt_env["LINKFLAGS"] += ["-F" + os.path.join(qt_env['QTDIR'], "lib")]
-  qt_env["FRAMEWORKS"] += [f"Qt{m}" for m in qt_modules] + ["OpenGL"]
-  qt_env.AppendENVPath('PATH', os.path.join(qt_env['QTDIR'], "bin"))
-else:
-  qt_install_prefix = subprocess.check_output(['qmake', '-query', 'QT_INSTALL_PREFIX'], encoding='utf8').strip()
-  qt_install_headers = subprocess.check_output(['qmake', '-query', 'QT_INSTALL_HEADERS'], encoding='utf8').strip()
+# Setup cache dir
+cache_dir = '/data/scons_cache' if arch == "comma_arm64" else '/tmp/scons_cache'
+cache_size_limit = 4e9 if "CI" in os.environ else 2e9
+CacheDir(cache_dir)
+Clean(["."], cache_dir)
 
-  qt_env['QTDIR'] = qt_install_prefix
-  qt_dirs = [
-    f"{qt_install_headers}",
-  ]
+def prune_cache_dir(target=None, source=None, env=None):
+  cache_files = sorted((os.path.join(root, f) for root, _, files in os.walk(cache_dir) for f in files), key=os.path.getmtime)
+  cache_size = sum(os.path.getsize(f) for f in cache_files)
+  for f in cache_files:
+    if cache_size < cache_size_limit:
+      break
+    cache_size -= os.path.getsize(f)
+    os.unlink(f)
 
-  qt_gui_path = os.path.join(qt_install_headers, "QtGui")
-  qt_gui_dirs = [d for d in os.listdir(qt_gui_path) if os.path.isdir(os.path.join(qt_gui_path, d))]
-  qt_dirs += [f"{qt_install_headers}/QtGui/{qt_gui_dirs[0]}/QtGui", ] if qt_gui_dirs else []
-  qt_dirs += [f"{qt_install_headers}/Qt{m}" for m in qt_modules]
-
-  qt_libs = [f"Qt5{m}" for m in qt_modules]
-  if arch == "larch64":
-    qt_libs += ["GLESv2", "wayland-client"]
-    qt_env.PrependENVPath('PATH', Dir("#third_party/qt5/larch64/bin/").abspath)
-  elif arch != "Darwin":
-    qt_libs += ["GL"]
-qt_env['QT3DIR'] = qt_env['QTDIR']
-
-# compatibility for older SCons versions
-try:
-  qt_env.Tool('qt3')
-except SCons.Errors.UserError:
-  qt_env.Tool('qt')
-
-qt_env['CPPPATH'] += qt_dirs + ["#third_party/qrcode"]
-qt_flags = [
-  "-D_REENTRANT",
-  "-DQT_NO_DEBUG",
-  "-DQT_WIDGETS_LIB",
-  "-DQT_GUI_LIB",
-  "-DQT_CORE_LIB",
-  "-DQT_MESSAGELOGCONTEXT",
-]
-qt_env['CXXFLAGS'] += qt_flags
-qt_env['LIBPATH'] += ['#selfdrive/ui', ]
-qt_env['LIBS'] = qt_libs
-
-if GetOption("clazy"):
-  checks = [
-    "level0",
-    "level1",
-    "no-range-loop",
-    "no-non-pod-global-static",
-  ]
-  qt_env['CXX'] = 'clazy'
-  qt_env['ENV']['CLAZY_IGNORE_DIRS'] = qt_dirs[0]
-  qt_env['ENV']['CLAZY_CHECKS'] = ','.join(checks)
-
-Export('env', 'qt_env', 'arch', 'real_arch')
+# ********** start building stuff **********
 
 # Build common module
-SConscript(['common/SConscript'])
-Import('_common', '_gpucommon')
-
-common = [_common, 'json11', 'zmq']
-gpucommon = [_gpucommon]
-
-Export('common', 'gpucommon')
+SConscript(['openpilot/common/SConscript'])
+Import('_common')
+common = [_common, 'json11']
+Export('common')
 
 # Build messaging (cereal + msgq + socketmaster + their dependencies)
-# Enable swaglog include in submodules
-env_swaglog = env.Clone()
-env_swaglog['CXXFLAGS'].append('-DSWAGLOG="\\"common/swaglog.h\\""')
-SConscript(['msgq_repo/SConscript'], exports={'env': env_swaglog})
-SConscript(['opendbc_repo/SConscript'], exports={'env': env_swaglog})
+SConscript(['msgq_repo/SConscript'])
 
-SConscript(['cereal/SConscript'])
+SConscript(['openpilot/cereal/SConscript'])
 
 Import('socketmaster', 'msgq')
 messaging = [socketmaster, msgq, 'capnp', 'kj',]
@@ -348,34 +256,66 @@ Export('messaging')
 SConscript(['panda/SConscript'])
 
 # Build rednose library
-SConscript(['rednose/SConscript'])
+SConscript(['rednose_repo/rednose/SConscript'])
 
 # Build system services
 SConscript([
-  'system/ui/SConscript',
-  'system/proclogd/SConscript',
-  'system/ubloxd/SConscript',
-  'system/loggerd/SConscript',
+  'openpilot/system/loggerd/SConscript',
 ])
-if arch != "Darwin":
+
+if arch == "comma_arm64":
+  SConscript(['openpilot/system/camerad/SConscript'])
+
+# Build selfdrive
+SConscript([
+  'openpilot/selfdrive/pandad/SConscript',
+  'openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/SConscript',
+  'openpilot/selfdrive/locationd/SConscript',
+  'openpilot/selfdrive/modeld/SConscript',
+  'openpilot/selfdrive/ui/SConscript',
+])
+
+# Build desktop-only tools
+if GetOption('extras') and arch != "comma_arm64":
   SConscript([
-    'system/sensord/SConscript',
-    'system/logcatd/SConscript',
+    'openpilot/tools/replay/SConscript',
+    'openpilot/tools/cabana/SConscript',
+    'openpilot/tools/jotpluggler/SConscript',
   ])
 
-if arch == "larch64":
-  SConscript(['system/camerad/SConscript'])
 
-# Build openpilot
-SConscript(['third_party/SConscript'])
+env.CompilationDatabase('compile_commands.json')
 
-SConscript(['selfdrive/SConscript'])
+# progress output
+def get_scons_nodes(nodes):
+  seen = set()
+  stack = list(nodes)
 
-if Dir('#tools/cabana/').exists() and GetOption('extras'):
-  SConscript(['tools/replay/SConscript'])
-  if arch != "larch64":
-    SConscript(['tools/cabana/SConscript'])
+  while stack:
+    node = stack.pop().disambiguate()
+    if node in seen:
+      continue
+    seen.add(node)
+    # Only scan directories; generated sources are not ready yet.
+    stack += (node.prerequisites or []) + node.children(scan=isinstance(node, SCons.Node.FS.Dir))
 
-external_sconscript = GetOption('external_sconscript')
-if external_sconscript:
-  SConscript([external_sconscript])
+  return seen
+
+progress_interval = 5
+progress_nodes = get_scons_nodes(env.arg2nodes(BUILD_TARGETS or [Dir('.')], env.fs.Entry))
+progress_total = max(1, len(progress_nodes))
+
+def progress_function(node):
+  if node not in progress_nodes:
+    return
+  progress_nodes.remove(node)
+  if len(progress_nodes) % progress_interval:
+    return
+  progress = round(100. * (1 - len(progress_nodes) / progress_total), 1)
+  sys.stderr.write("\rBuilding: %5.1f%%" % progress if sys.stderr.isatty() else "progress: %.1f\n" % progress)
+  if progress == 100. and sys.stderr.isatty():
+    sys.stderr.write("\n")
+  sys.stderr.flush()
+
+Progress(progress_function)
+AddPostAction(BUILD_TARGETS or [Dir('.')], prune_cache_dir)

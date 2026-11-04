@@ -1,0 +1,49 @@
+#!/bin/sh
+# git-lfs shim. "op setup" copies this into the git dir and points the lfs
+# filter and pre-push hook at it. It finds a real git-lfs and runs it, or if
+# none is available, warns and lets git carry on with the pointer files.
+set -u
+
+warn() { echo "git-lfs shim: $*" >&2; }
+
+find_lfs() {
+  # git runs filters from the worktree root. fall back to the main checkout.
+  root="$(git rev-parse --show-toplevel 2>/dev/null)"
+  main="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null)")"
+  for dir in "$root" "$main"; do
+    for bin in "$dir"/.venv/lib/python3*/site-packages/git_lfs/bin/git-lfs; do
+      [ -x "$bin" ] && echo "$bin" && return 0
+    done
+  done
+  bin="$(command -v git-lfs 2>/dev/null)" || return 1
+  [ "$bin" != "$(readlink -f "$0")" ] && echo "$bin" && return 0
+  return 1
+}
+
+# speak enough of git's long-running filter protocol to say "abort", so git
+# falls back to the pointer files and doesn't retry per file (needs filter.lfs.required=false)
+pkt() { printf '%04x%s' $(( ${#1} + 4 )) "$1"; }
+flush() { printf '0000'; }
+read_pkts() {
+  while len="$(head -c 4)" && [ "$len" != "0000" ]; do
+    [ -z "$len" ] && exit 0
+    head -c $(( 0x$len - 4 )) > /dev/null
+  done
+}
+abort_filter() {
+  read_pkts; pkt "git-filter-server"; pkt "version=2"; flush
+  read_pkts; pkt "capability=clean"; pkt "capability=smudge"; flush
+  read_pkts; read_pkts  # request header, content
+  pkt "status=abort"; flush
+}
+
+if lfs="$(find_lfs)"; then
+  exec "$lfs" "$@"
+fi
+
+warn "git-lfs not found, run 'op setup'. LFS files are left as pointers."
+case "${1:-}" in
+  filter-process) abort_filter ;;
+  pre-push) warn "refusing to push without git-lfs"; exit 1 ;;
+  *) exit 1 ;;
+esac

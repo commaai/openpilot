@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 function fail {
-  echo $1 >&2
+  echo "$1" >&2
   exit 1
 }
 
@@ -14,7 +14,7 @@ function retry {
     "$@" && break || {
       if [[ $n -lt $max ]]; then
         ((n++))
-        sleep $delay;
+        sleep "$delay";
       else
         fail "The command has failed after $n attempts."
       fi
