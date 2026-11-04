@@ -1,11 +1,11 @@
 # Turn the speed blue
 *A getting started guide for openpilot development*
 
-In 30 minutes, we'll get an openpilot development environment setup on your computer and make some changes to openpilot's UI.
+In 30 minutes, we'll get an openpilot development environment set up on your computer and make some changes to openpilot's UI.
 
-And if you have a comma 3/3X, we'll deploy the change to your device for testing.
+And if you have a comma four, we'll deploy the change to your device for testing.
 
-## 1. Setup your development environment
+## 1. Set up your development environment
 
 Run this to clone openpilot and install all the dependencies:
 ```bash
@@ -20,7 +20,7 @@ source .venv/bin/activate
 
 Then, compile openpilot:
 ```bash
-scons -j8
+scons
 ```
 
 ## 2. Run replay
@@ -28,71 +28,84 @@ scons -j8
 We'll run the `replay` tool with the demo route to get data streaming for testing our UI changes.
 ```bash
 # in terminal 1
-tools/replay/replay --demo
+openpilot/tools/replay/replay --demo
 
 # in terminal 2
-selfdrive/ui/ui
+./openpilot/selfdrive/ui/ui.py
 ```
 
 The openpilot UI should launch and show a replay of the demo route.
 
 If you have your own comma device, you can replace `--demo` with one of your own routes from comma connect.
 
+
 ## 3. Make the speed blue
 
-Search for “mph” with git grep in the `ui` folder.
+Now let’s update the speed display color in the UI.
+
+Search for the function responsible for rendering the current speed:
 ```bash
-$ git grep "mph" selfdrive/ui/
-paint.cc:  ui_draw_text(s, s->fb_w/2, 290, s->scene.is_metric ? "km/h" : "mph", 36 * 2.5, COLOR_WHITE_ALPHA(200), "sans-regular");
+git grep "_draw_current_speed" openpilot/selfdrive/ui/onroad/hud_renderer.py
 ```
 
-The line right above contains the actual speed. Unfortunately, COLOR_BLUE isn’t defined, but a git grep of COLOR_WHITE shows it’s nvgRGBA(255, 255, 255, 255). Personally, I like a lighter blue, so I went with #8080FF.
+You'll find the relevant code inside `openpilot/selfdrive/ui/onroad/hud_renderer.py`, in this function:
+
+```python
+def _draw_current_speed(self, rect: rl.Rectangle) -> None:
+  """Draw the current vehicle speed and unit."""
+  speed_text = str(round(self.speed))
+  speed_text_size = measure_text_cached(self._font_bold, speed_text, FONT_SIZES.current_speed)
+  speed_pos = rl.Vector2(rect.x + rect.width / 2 - speed_text_size.x / 2, 180 - speed_text_size.y / 2)
+  rl.draw_text_ex(self._font_bold, speed_text, speed_pos, FONT_SIZES.current_speed, 0, COLORS.white)  # <- this sets the speed text color
+```
+
+Change `COLORS.white` to make it **blue** instead of white. A nice soft blue is `#8080FF`, which you can change inline:
+
+```diff
+- rl.draw_text_ex(self._font_bold, speed_text, speed_pos, FONT_SIZES.current_speed, 0, COLORS.white)
++ rl.draw_text_ex(self._font_bold, speed_text, speed_pos, FONT_SIZES.current_speed, 0, rl.Color(0x80, 0x80, 0xFF, 255))
+```
+
+---
+
+## 4. Re-run the UI
+
+After making changes, re-run the UI to see your new UI:
 ```bash
-$ git diff
-diff --git a/selfdrive/ui/paint.cc b/selfdrive/ui/paint.cc
-index 821d95115..cc996eaa1 100644
---- a/selfdrive/ui/paint.cc
-+++ b/selfdrive/ui/paint.cc
-@@ -175,8 +175,8 @@ static void ui_draw_vision_speed(UIState *s) {
-   const float speed = std::max(0.0, (*s->sm)["carState"].getCarState().getVEgo() * (s->scene.is_metric ? 3.6 : 2.2369363));
-   const std::string speed_str = std::to_string((int)std::nearbyint(speed));
-   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
--  ui_draw_text(s, s->fb_w/2, 210, speed_str.c_str(), 96 * 2.5, COLOR_WHITE, "sans-bold");
--  ui_draw_text(s, s->fb_w/2, 290, s->scene.is_metric ? "km/h" : "mph", 36 * 2.5, COLOR_WHITE_ALPHA(200), "sans-regular");
-+  ui_draw_text(s, s->fb_w/2, 210, speed_str.c_str(), 96 * 2.5, nvgRGBA(128, 128, 255, 255), "sans-bold");
-+  ui_draw_text(s, s->fb_w/2, 290, s->scene.is_metric ? "km/h" : "mph", 36 * 2.5, nvgRGBA(128, 128, 255, 200), "sans-regular");
- }
-
- static void ui_draw_vision_event(UIState *s) {
+./openpilot/selfdrive/ui/ui.py
 ```
-
-
-## 4. Rebuild UI, and admire your work
-
-```
-scons -j8 && selfdrive/ui/ui
-```
-
 ![](https://blog.comma.ai/img/blue_speed_ui.png)
+
+You should now see the speed displayed in a nice blue shade during the demo replay.
+
+---
 
 ## 5. Push your fork to GitHub
 
-Click fork on GitHub. Then, push with:
+Click **"Fork"** on the [Openpilot GitHub repo](https://github.com/commaai/openpilot). Then push with:
 ```bash
 git remote rm origin
 git remote add origin git@github.com:<your-github-username>/openpilot.git
 git add .
-git commit -m "Make the speed blue."
+git commit -m "Make the speed display blue"
 git push --set-upstream origin master
 ```
 
-## 6. Run your fork on device in your car!
+---
 
-Uninstall openpilot from your device through the settings. Then, enter the URL for your very own installer:
+## 6. Run your fork on your comma device
+
+Uninstall Openpilot through the settings on your device.
+
+Then reinstall using your own GitHub-hosted fork:
 ```
 installer.comma.ai/<your-github-username>/master
 ```
 
-## 7. Admire your work IRL
+---
+
+## 7. Admire your work IRL 🚗💨
+
+You’ve now successfully modified Openpilot’s UI and deployed it to your own car!
 
 ![](https://blog.comma.ai/img/c3_blue_ui.jpg)
