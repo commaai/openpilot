@@ -69,13 +69,16 @@ def install():
   remove_git_lfs_hooks(hook.parent)
   remove_git_lfs_hooks(hook.parent / "post-commit.d")  # where `op post-commit` moves an existing post-commit hook
   hook_script = '#!/bin/sh\nexec "$(git rev-parse --git-common-dir)/lfs.py" pre-push "$@"\n'
-  if hook.is_file() and hook.read_text(errors="replace") != hook_script:
-    raise RuntimeError(f"refusing to replace custom hook {hook}")
+  custom_hook = hook.is_file() and hook.read_text(errors="replace") != hook_script
   if Path(__file__).resolve() != script:
     write_executable(script, Path(__file__).read_bytes())
   script.chmod(0o755)
-  hook.parent.mkdir(parents=True, exist_ok=True)
-  write_executable(hook, hook_script.encode())
+  if custom_hook:
+    # keep it so pulls and updates still work; pushes won't upload LFS objects until the hook runs lfs.py
+    print(f"lfs.py: keeping custom hook {hook}; add this line to it to upload LFS objects on push: {hook_script.splitlines()[-1]}", file=sys.stderr)
+  else:
+    hook.parent.mkdir(parents=True, exist_ok=True)
+    write_executable(hook, hook_script.encode())
   # TODO: Remove legacy worktree filter cleanup once migration from stock Git LFS is no longer supported.
   git("config", "--worktree", "--remove-section", "filter.lfs", check=False)
   git("config", "--local", "filter.lfs.process", '"$(git rev-parse --git-common-dir)/lfs.py" filter-process')
