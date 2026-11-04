@@ -36,6 +36,7 @@ PLURAL_SELECTORS = {
   'es': lambda n: 0 if n == 1 else 1,
   'tr': lambda n: 0 if n == 1 else 1,
   'uk': lambda n: 0 if n % 10 == 1 and n % 100 != 11 else (1 if 2 <= n % 10 <= 4 and not 12 <= n % 100 <= 14 else 2),
+  'ro': lambda n: 0 if n == 1 else (1 if n == 0 or 0 < n % 100 < 20 else 2),
   'th': lambda n: 0,
   'zh-CHT': lambda n: 0,
   'zh-CHS': lambda n: 0,
