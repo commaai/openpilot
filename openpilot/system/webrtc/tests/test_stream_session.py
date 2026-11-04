@@ -113,8 +113,50 @@ class TestStreamSession(OpenpilotTestCase):
     params.put("AccessToken", "secret", block=True)
     params.remove("GitBranch")
 
-    response = json.loads(ParamsProxy(params).handle_request({"keys": ["IsMetric", "DongleId", "GitBranch", "AccessToken", "NotARealParam"]}))
+    sent: list[dict] = []
+    proxy = ParamsProxy(params, lambda m: sent.append(json.loads(m)))
+    proxy.handle({"action": "get", "id": 1, "keys": ["IsMetric", "DongleId", "GitBranch", "AccessToken", "NotARealParam"]})
+    proxy.handle({"action": "get", "keys": "IsMetric"})
+    proxy.handle({"action": "nope", "id": 2})
 
-    assert response["type"] == "paramsResponse"
-    assert response["data"]["params"] == {"IsMetric": True, "DongleId": "abc123", "GitBranch": None}
-    assert response["data"]["errors"] == {"AccessToken": "blocked", "NotARealParam": "unknown key"}
+    assert sent == [
+      {"type": "params", "data": {
+        "id": 1,
+        "params": {"IsMetric": True, "DongleId": "abc123", "GitBranch": None},
+        "errors": {"AccessToken": "blocked", "NotARealParam": "unknown key"},
+      }},
+      {"type": "params", "data": {"params": {"IsMetric": True}}},
+      {"type": "params", "data": {"id": 2, "params": {}, "error": "unknown action: nope"}},
+    ]
+
+  def test_params_proxy_subscribe(self):
+    params = Params()
+    params.put_bool("IsMetric", True, block=True)
+    params.put("DongleId", "abc123", block=True)
+
+    sent: list[dict] = []
+    proxy = ParamsProxy(params, lambda m: sent.append(json.loads(m)))
+
+    proxy.handle({"action": "subscribe", "id": 1, "keys": ["IsMetric", "DongleId", "AccessToken"]})
+    assert sent == [{"type": "params", "data": {"id": 1, "params": {"IsMetric": True, "DongleId": "abc123"}, "errors": {"AccessToken": "blocked"}}}]
+
+    # rewriting the same value doesn't send an update
+    params.put_bool("IsMetric", True, block=True)
+    proxy.update()
+    assert len(sent) == 1
+
+    params.put_bool("IsMetric", False, block=True)
+    proxy.update()
+    assert sent[1:] == [{"type": "params", "data": {"params": {"IsMetric": False}}}]
+
+    params.remove("DongleId")
+    proxy.update()
+    assert sent[2:] == [{"type": "params", "data": {"params": {"DongleId": None}}}]
+
+    # unsubscribed and blocked keys don't send updates
+    proxy.handle({"action": "unsubscribe", "id": 2, "keys": ["IsMetric"]})
+    assert sent[3:] == [{"type": "params", "data": {"id": 2, "params": {}}}]
+    params.put_bool("IsMetric", True, block=True)
+    params.put("AccessToken", "secret2", block=True)
+    proxy.update()
+    assert len(sent) == 4

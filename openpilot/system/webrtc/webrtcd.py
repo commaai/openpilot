@@ -75,7 +75,7 @@ class StreamSession:
       self.incoming_bridge = CerealIncomingMessageProxy(self.shared_pub_master)
     if len(body.bridge_services_out) > 0:
       self.outgoing_bridge = CerealOutgoingMessageProxy(body.bridge_services_out, self.video_enabled, self.raw)
-    self.params_proxy = ParamsProxy(self.params)
+    self.params_proxy = ParamsProxy(self.params, lambda msg: self.stream.get_messaging_channel().send(msg))
 
     # async tasks helpers
     self.run_task: asyncio.Task | None = None
@@ -140,8 +140,8 @@ class StreamSession:
               "action": "pong", "browserSendTime": payload["data"]["browserSendTime"], "deviceTime": time.time() * 1000, # noqa: TID251
             }})
             self.stream.get_messaging_channel().send(pong)
-          case "paramsRequest":
-            self.stream.get_messaging_channel().send(self.params_proxy.handle_request(payload.get("data") or {}))
+          case "params":
+            self.params_proxy.handle(payload.get("data") or {})
           case "enableTimingSei":
             for track in self.video_tracks:
               track.timing_sei_enabled = bool(payload["data"]["enabled"])
@@ -184,6 +184,7 @@ class StreamSession:
           self.background_tasks.append(asyncio.create_task(self.outgoing_bridge.run()))
       if self.bitrate_controller is not None:
         self.background_tasks.append(asyncio.create_task(self.bitrate_controller.run()))
+      self.background_tasks.append(asyncio.create_task(self.params_proxy.run()))
 
       with cloudlog.ctx(session_id=self.identifier):
         cloudlog.warning("webrtcd.session.connected")
