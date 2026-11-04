@@ -1,5 +1,6 @@
 import json
-from Crypto.PublicKey import RSA
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
 from pathlib import Path
 
 from openpilot.common.test import OpenpilotTestCase
@@ -23,12 +24,11 @@ class TestRegistration(OpenpilotTestCase):
     self.dongle_id = persist_dir / "dongle_id"
 
   def _generate_keys(self):
-    self.pub_key.touch()
-    k = RSA.generate(2048)
+    k = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     with open(self.priv_key, "wb") as f:
-      f.write(k.export_key())
+      f.write(k.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.TraditionalOpenSSL, serialization.NoEncryption()))
     with open(self.pub_key, "wb") as f:
-      f.write(k.publickey().export_key())
+      f.write(k.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo))
 
   def test_valid_cache(self, mocker):
     # if all params are written, return the cached dongle id.

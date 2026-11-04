@@ -13,17 +13,8 @@ class ModelConstants:
   META_T_IDXS = [2., 4., 6., 8., 10.]
 
   # model inputs constants
-  N_FRAMES = 2
   MODEL_RUN_FREQ = 20
-  MODEL_CONTEXT_FREQ = 5 # "model_trained_fps"
-
-  FEATURE_LEN = 512
-
   DESIRE_LEN = 8
-  TRAFFIC_CONVENTION_LEN = 2
-  LAT_PLANNER_STATE_LEN = 4
-  LATERAL_CONTROL_PARAMS_LEN = 2
-  PREV_DESIRED_CURV_LEN = 1
 
   # model outputs constants
   FCW_THRESHOLDS_5MS2 = np.array([.05, .05, .15, .15, .15], dtype=np.float32)
@@ -38,9 +29,7 @@ class ModelConstants:
   LANE_LINES_WIDTH = 2
   ROAD_EDGES_WIDTH = 2
   PLAN_WIDTH = 15
-  ACTION_WIDTH = 2
   DESIRE_PRED_WIDTH = 8
-  LAT_PLANNER_SOLUTION_WIDTH = 4
   DESIRED_CURV_WIDTH = 1
 
   NUM_LANE_LINES = 4
@@ -53,10 +42,6 @@ class ModelConstants:
   LEAD_MHP_N = 2
   PLAN_MHP_SELECTION = 1
   LEAD_MHP_SELECTION = 3
-
-  FCW_THRESHOLD_5MS2_HIGH = 0.15
-  FCW_THRESHOLD_5MS2_LOW = 0.05
-  FCW_THRESHOLD_3MS2 = 0.7
 
   CONFIDENCE_BUFFER_LEN = 5
   RYG_GREEN = 0.01165

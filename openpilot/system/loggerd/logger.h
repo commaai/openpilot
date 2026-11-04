@@ -34,4 +34,3 @@ protected:
 
 kj::Array<capnp::word> logger_build_init_data(bool route_log = false);
 std::string logger_get_identifier(std::string key);
-std::string zstd_decompress(const std::string &in);

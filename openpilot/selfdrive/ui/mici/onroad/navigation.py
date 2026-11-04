@@ -1,12 +1,12 @@
 import numpy as np
-import pyray as rl
+import raylib_nb as rl
 
 from msgq.visionipc import VisionIpcClient
 from openpilot.cereal.visionipc import VisionStreamType
 from openpilot.common.constants import CV
 from openpilot.selfdrive.navigation.helpers import latest_gps_source
 from openpilot.selfdrive.navigation.renderer import EGO, ROUTE_INTENSITY, SIZE
-from openpilot.selfdrive.ui.mici.onroad.cameraview import CONNECTION_RETRY_INTERVAL
+from openpilot.selfdrive.ui.onroad.cameraview import CONNECTION_RETRY_INTERVAL
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import FontWeight, TextAlignmentVertical
 from openpilot.system.ui.widgets import Widget
@@ -54,7 +54,7 @@ class NavigationPanel(Widget):
     frame = self._client.recv(timeout_ms=0)
     if frame is not None:
       gray = np.frombuffer(frame.data, dtype=np.uint8, count=SIZE * SIZE)
-      rl.update_texture(self._texture, rl.ffi.cast("void *", rl.ffi.from_buffer(MAP_COLORS[gray])))
+      rl.update_texture(self._texture, MAP_COLORS[gray])
       # Without a usable map, mapsd publishes black frames with a zero timestamp.
       self._frame_time = rl.get_time() if self._client.timestamp_sof else 0.0
 

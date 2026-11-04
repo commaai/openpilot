@@ -2,7 +2,7 @@ import math
 from enum import IntEnum
 from collections.abc import Callable
 from typing import Union
-import pyray as rl
+import raylib_nb as rl
 
 from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_TEXT_SIZE, DEFAULT_TEXT_COLOR, FONT_SCALE, TextAlignment, TextAlignmentVertical
 from openpilot.system.ui.widgets import Widget
@@ -298,13 +298,6 @@ class UnifiedLabel(Widget):
     if self._font_size != size:
       self._font_size = size
       self._spacing_pixels = size * self._letter_spacing  # Recalculate spacing
-      self._cached_text = None  # Invalidate cache
-
-  def set_letter_spacing(self, letter_spacing: float):
-    """Update letter spacing (as percentage, e.g., 0.1 = 10%)."""
-    if self._letter_spacing != letter_spacing:
-      self._letter_spacing = letter_spacing
-      self._spacing_pixels = self._font_size * letter_spacing
       self._cached_text = None  # Invalidate cache
 
   def set_line_height(self, line_height: float):

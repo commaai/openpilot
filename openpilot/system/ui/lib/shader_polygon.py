@@ -1,4 +1,5 @@
-import pyray as rl
+from array import array
+import raylib_nb as rl
 import numpy as np
 from dataclasses import dataclass
 from typing import Any, Optional, cast
@@ -119,12 +120,12 @@ class ShaderState:
       'mvp': None,
     }
 
-    # Pre-allocated FFI objects
-    self.fill_color_ptr = rl.ffi.new("float[]", [0.0, 0.0, 0.0, 0.0])
-    self.use_gradient_ptr = rl.ffi.new("int[]", [0])
-    self.color_count_ptr = rl.ffi.new("int[]", [0])
-    self.gradient_colors_ptr = rl.ffi.new("float[]", MAX_GRADIENT_COLORS * 4)
-    self.gradient_stops_ptr = rl.ffi.new("float[]", MAX_GRADIENT_COLORS)
+    # Pre-allocated uniform buffers
+    self.fill_color_ptr = array("f", [0.0, 0.0, 0.0, 0.0])
+    self.use_gradient_ptr = array("i", [0])
+    self.color_count_ptr = array("i", [0])
+    self.gradient_colors_ptr = array("f", [0.0]) * (MAX_GRADIENT_COLORS * 4)
+    self.gradient_stops_ptr = array("f", [0.0]) * MAX_GRADIENT_COLORS
 
   def initialize(self):
     if self.initialized:
@@ -142,15 +143,6 @@ class ShaderState:
 
     self.initialized = True
 
-  def cleanup(self):
-    if not self.initialized:
-      return
-    if self.shader:
-      rl.unload_shader(self.shader)
-      self.shader = None
-
-    self.initialized = False
-
 
 def _configure_shader_color(state: ShaderState, color: Optional[rl.Color],  # noqa: UP045  # rl.Color is a function, so `rl.Color | None` fails
                             gradient: Gradient | None, origin_rect: rl.Rectangle):
@@ -166,7 +158,7 @@ def _configure_shader_color(state: ShaderState, color: Optional[rl.Color],  # no
     for i in range(len(gradient.colors)):
       c = gradient.colors[i]
       base = i * 4
-      state.gradient_colors_ptr[base:base + 4] = [c.r / 255.0, c.g / 255.0, c.b / 255.0, c.a / 255.0]
+      state.gradient_colors_ptr[base:base + 4] = array("f", [c.r / 255.0, c.g / 255.0, c.b / 255.0, c.a / 255.0])
     rl.set_shader_value_v(state.shader, state.locations['gradientColors'], state.gradient_colors_ptr, UNIFORM_VEC4, len(gradient.colors))
 
     for i in range(len(gradient.stops)):
@@ -182,7 +174,7 @@ def _configure_shader_color(state: ShaderState, color: Optional[rl.Color],  # no
     rl.set_shader_value(state.shader, state.locations['gradientEnd'], end_vec, UNIFORM_VEC2)
   else:
     color = color or rl.WHITE
-    state.fill_color_ptr[0:4] = [color.r / 255.0, color.g / 255.0, color.b / 255.0, color.a / 255.0]
+    state.fill_color_ptr[0:4] = array("f", [color.r / 255.0, color.g / 255.0, color.b / 255.0, color.a / 255.0])
     rl.set_shader_value(state.shader, state.locations['fillColor'], state.fill_color_ptr, UNIFORM_VEC4)
 
 
@@ -231,8 +223,3 @@ def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray,
   rl.begin_shader_mode(state.shader)
   rl.draw_triangle_strip(tri_strip, len(tri_strip), rl.WHITE)
   rl.end_shader_mode()
-
-
-def cleanup_shader_resources():
-  state = ShaderState.get_instance()
-  state.cleanup()

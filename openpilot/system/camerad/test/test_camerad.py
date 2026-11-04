@@ -10,6 +10,7 @@ from openpilot.common.test import OpenpilotTestCase
 from openpilot.cereal.services import SERVICE_LIST
 from openpilot.tools.lib.log_time_series import msgs_to_time_series
 from openpilot.system.camerad.snapshot import get_snapshots
+from openpilot.selfdrive.pandad.pandad import panda_ready, flash_panda
 from openpilot.selfdrive.test.helpers import collect_logs, log_collector, processes_context
 
 TEST_TIMESPAN = 10
@@ -30,7 +31,10 @@ def _image_stats(im):
 
 def _converged(ts, cam):
   measured, target = ts[cam]['measuredGreyFraction'], ts[cam]['targetGreyFraction']
-  return np.abs(measured - target) < EXPOSURE_TOLERANCE * target
+  # in a scene too dark (or bright) to reach the target, auto exposure settles at its limit instead
+  ev = ts[cam]['exposureValPercent']
+  saturated = ((ev > 99.9) & (measured < target)) | ((ev < 0.1) & (measured > target))
+  return (np.abs(measured - target) < EXPOSURE_TOLERANCE * target) | saturated
 
 
 def run_and_log(procs, services, duration):
@@ -76,6 +80,10 @@ class TestCamerad(OpenpilotTestCase):
   @classmethod
   def setUpClass(cls):
     super().setUpClass()
+    # Panda generates camera FSIN, including the cabin camera's 25ms stagger.
+    if not panda_ready():
+      flash_panda()
+    assert panda_ready(), "panda not ready for camera synchronization"
     cls.logs, cls.images = _camera_session()
 
   @parameterized.expand(CAMERAS, names=("cam",))

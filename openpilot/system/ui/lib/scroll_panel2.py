@@ -1,6 +1,6 @@
 import os
 import math
-import pyray as rl
+import raylib_nb as rl
 from collections.abc import Callable
 from enum import Enum
 from typing import cast
@@ -158,7 +158,7 @@ class GuiScrollPanel2:
       self._position_buffer.clear()
 
     elif self._state == ScrollState.STEADY:
-      if rl.check_collision_point_rec(mouse_event.pos, bounds):
+      if rl.check_collision_point_rec(rl.Vector2(mouse_event.pos.x, mouse_event.pos.y), bounds):
         if mouse_event.left_pressed:
           self._state = ScrollState.PRESSED
           self._initial_click_event = mouse_event

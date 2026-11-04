@@ -209,15 +209,15 @@ wheels = [
 
 [[package]]
 name = "comma-deps-raylib"
-version = "6.0.0.1.post103"
+version = "6.0.0.1.post106"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cffi" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6f/e3/21e3be3ad1e2382b9ecab7d836e7ca19ea0959fe714d539a71c6b87ba510/comma_deps_raylib-6.0.0.1.post103-py3-none-macosx_11_0_arm64.whl", hash = "sha256:d8bef63b7e49bc8704eda9fecdefbff01d7f6c9027069cb1b1f5150cac077ed1", size = 1885397, upload-time = "2026-09-11T22:33:22.617Z" },
-    { url = "https://files.pythonhosted.org/packages/3d/4d/cceaf969d771af8870094d06bb84dca805f9268584a9a3c134dfee2307c7/comma_deps_raylib-6.0.0.1.post103-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:d9b9bebb39167442bacf627958d57ae95e452550ced1b68337cbf2a73375856a", size = 21707647, upload-time = "2026-09-11T22:33:26.533Z" },
-    { url = "https://files.pythonhosted.org/packages/27/ce/e8b941bcf0b213ca9cb4d8cb69b18398b4dad77923925d80bc3281837461/comma_deps_raylib-6.0.0.1.post103-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:942ec942ec01005f05584eede1a6add483043e8e8f764e68cfebb7c21c443b89", size = 20722617, upload-time = "2026-09-11T22:33:31.158Z" },
+    { url = "https://files.pythonhosted.org/packages/fb/71/e8a63d9969441d0e31b5cd5fa908a245b46e160bd86b73ce13f85aa9eb45/comma_deps_raylib-6.0.0.1.post106-cp312-abi3-macosx_11_0_arm64.whl", hash = "sha256:d3dba4ad783f11f9f1e56105afa856cf3ffb9268dcca44ac3dc1d93e7cbf1874", size = 2383355, upload-time = "2026-11-01T22:33:11.034Z" },
+    { url = "https://files.pythonhosted.org/packages/12/4f/865bf68faf83832540d51c344685d6810a2927cb1c4a5ba5ef6a80cf799b/comma_deps_raylib-6.0.0.1.post106-cp312-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:cfcfd422e36caa47b7cf6a315653a40be2dde87a419637bd87d917ec3b13dec3", size = 26737944, upload-time = "2026-11-01T22:33:15.262Z" },
+    { url = "https://files.pythonhosted.org/packages/ab/56/791a9c5d8ccb0aef0d793dc6a12d574df45861fbb860f8255e4eebf9e05a/comma_deps_raylib-6.0.0.1.post106-cp312-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:22a267761192f9303d13bffe765b9e9bde27986293a10653960aa07a8c65c0ff", size = 24258130, upload-time = "2026-11-01T22:33:20.148Z" },
 ]
 
 [[package]]
@@ -505,19 +505,35 @@ name = "msgq-ipc"
 version = "1.1"
 source = { virtual = "msgq_repo" }
 
+[package.optional-dependencies]
+build = [
+    { name = "nanobind" },
+    { name = "scons" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "codespell", marker = "extra == 'dev'" },
     { name = "cppcheck", marker = "extra == 'dev'" },
     { name = "cpplint", marker = "extra == 'dev'" },
-    { name = "cython", marker = "extra == 'dev'" },
     { name = "lefthook", marker = "extra == 'dev'" },
+    { name = "msgq-ipc", extras = ["build"], marker = "extra == 'dev'" },
+    { name = "nanobind", marker = "extra == 'build'", specifier = ">=2.12" },
     { name = "ruff", marker = "extra == 'dev'" },
-    { name = "scons", marker = "extra == 'dev'" },
+    { name = "scons", marker = "extra == 'build'" },
     { name = "setuptools", marker = "extra == 'dev'" },
     { name = "ty", marker = "extra == 'dev'" },
 ]
-provides-extras = ["dev"]
+provides-extras = ["build", "dev"]
+
+[[package]]
+name = "nanobind"
+version = "3.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/c7/1f/e28fae715401e8f57400e72aeaff4fde12046d31828164f34f61f0816da8/nanobind-3.1.0.tar.gz", hash = "sha256:6661e3dc1434d78781ccf7913442d90361dab395c3424efadb63bbb6ddea7ea3", size = 1145390, upload-time = "2026-09-18T15:59:42.726Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/36/c1/6fd56f7a02a478d54a1a3e6000eccd34b446b1c45cbf0d002fe5d2937126/nanobind-3.1.0-py3-none-any.whl", hash = "sha256:96984dbe8154ffb86e653b1b60aaeed6985c710c5e75ad0279eb87943c66292d", size = 316917, upload-time = "2026-09-18T15:59:37.796Z" },
+]
 
 [[package]]
 name = "numpy"
@@ -606,7 +622,7 @@ dependencies = [
 
 [package.optional-dependencies]
 submodules = [
-    { name = "msgq-ipc" },
+    { name = "msgq-ipc", extra = ["build"] },
     { name = "opendbc" },
     { name = "pandacan" },
     { name = "rednose" },
@@ -651,7 +667,7 @@ requires-dist = [
     { name = "inputs" },
     { name = "jeepney" },
     { name = "matplotlib", marker = "extra == 'tools'" },
-    { name = "msgq-ipc", marker = "extra == 'submodules'", virtual = "msgq_repo" },
+    { name = "msgq-ipc", extras = ["build"], marker = "extra == 'submodules'", virtual = "msgq_repo" },
     { name = "numpy", specifier = ">=2.0" },
     { name = "opendbc", marker = "extra == 'submodules'", editable = "opendbc_repo" },
     { name = "pandacan", marker = "extra == 'submodules'", editable = "panda" },
@@ -990,7 +1006,7 @@ requires-dist = [
     { name = "mkdocs", marker = "extra == 'docs'" },
     { name = "mkdocs-material", marker = "extra == 'docs'" },
     { name = "mkdocstrings", extras = ["python"], marker = "extra == 'docs'" },
-    { name = "mypy", marker = "extra == 'linting'", specifier = "==1.19.1" },
+    { name = "mypy", marker = "extra == 'linting'", specifier = "==2.3.1" },
     { name = "networkx", marker = "extra == 'testing'" },
     { name = "nibabel", marker = "extra == 'testing'" },
     { name = "numba", marker = "extra == 'testing'", specifier = ">=0.55" },
@@ -1011,7 +1027,7 @@ requires-dist = [
     { name = "pytest-split", marker = "extra == 'testing-minimal'" },
     { name = "pytest-xdist", marker = "extra == 'testing-minimal'" },
     { name = "pyyaml", marker = "extra == 'autogen'" },
-    { name = "ruff", marker = "extra == 'linting'", specifier = "==0.14.10" },
+    { name = "ruff", marker = "extra == 'linting'", specifier = "==0.16.4" },
     { name = "safetensors", marker = "extra == 'testing-unit'" },
     { name = "sentencepiece", marker = "extra == 'testing'" },
     { name = "tabulate", marker = "extra == 'testing-unit'" },
@@ -1024,7 +1040,7 @@ requires-dist = [
     { name = "transformers", marker = "extra == 'testing'" },
     { name = "typeguard", marker = "extra == 'linting'" },
     { name = "typing-extensions", marker = "extra == 'linting'" },
-    { name = "z3-solver", marker = "extra == 'testing-minimal'", specifier = "<4.15.4" },
+    { name = "z3-solver", marker = "extra == 'testing-minimal'", specifier = "==5.1.0.0" },
 ]
 provides-extras = ["linting", "testing-minimal", "testing-unit", "testing", "docs", "mesa", "autogen"]
 

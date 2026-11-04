@@ -1,5 +1,6 @@
+import html
 import re
-import pyray as rl
+import raylib_nb as rl
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
@@ -125,7 +126,7 @@ class HtmlRenderer(Widget):
       if current_tag is None:
         current_tag = ElementType.P
 
-      text = ' '.join(current_content).strip()
+      text = html.unescape(' '.join(current_content).strip())
       current_content = []
       if text:
         if current_tag == ElementType.LI:

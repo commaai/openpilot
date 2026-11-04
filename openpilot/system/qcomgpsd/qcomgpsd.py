@@ -330,25 +330,6 @@ def main() -> NoReturn:
         else:
           setattr(poly, k, v)
 
-      '''
-      # Timestamp glonass polys with GPSTime
-      from laika.gps_time import GPSTime, utc_to_gpst, get_leap_seconds
-      from laika.helpers import get_prn_from_nmea_id
-      prn = get_prn_from_nmea_id(poly.svId)
-      if prn[0] == 'R':
-        epoch = GPSTime(current_gps_time.week, (poly.t0 - 3*SECS_IN_HR + SECS_IN_DAY) % (SECS_IN_WEEK) + get_leap_seconds(current_gps_time))
-      else:
-        epoch = GPSTime(current_gps_time.week, poly.t0)
-
-      # handle week rollover
-      if epoch.tow < SECS_IN_DAY and current_gps_time.tow > 6*SECS_IN_DAY:
-        epoch.week += 1
-      elif epoch.tow > 6*SECS_IN_DAY and current_gps_time.tow < SECS_IN_DAY:
-        epoch.week -= 1
-
-      poly.gpsWeek = epoch.week
-      poly.gpsTow = epoch.tow
-      '''
       pm.send('qcomGnss', msg)
 
     elif log_type in [LOG_GNSS_GPS_MEASUREMENT_REPORT, LOG_GNSS_GLONASS_MEASUREMENT_REPORT]:

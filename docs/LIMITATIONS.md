@@ -5,6 +5,8 @@ openpilot ALC and openpilot LDW do not automatically drive the vehicle or reduce
 
 While changing lanes, openpilot is not capable of looking next to you or checking your blind spot. Only nudge the wheel to initiate a lane change after you have confirmed it's safe to do so.
 
+Unexpected steering may occur. openpilot ALC may not steer to avoid stopped or slow-moving vehicles, cross traffic, construction barriers or cones, motorcycles, children, pedestrians, animals, or other objects on the road.
+
 Many factors can impact the performance of openpilot ALC and openpilot LDW, causing them to be unable to function as intended. These include, but are not limited to:
 
 * Poor visibility (heavy rain, snow, fog, etc.) or weather conditions that may interfere with sensor operation.
@@ -13,6 +15,14 @@ Many factors can impact the performance of openpilot ALC and openpilot LDW, caus
 * The device is mounted incorrectly.
 * When in sharp curves, like on-off ramps, intersections etc...; openpilot is designed to be limited in the amount of steering torque it can produce.
 * In the presence of restricted lanes or construction zones.
+* When the lane markings are unclear, worn, missing, or they cross each other.
+* Tar marks, shadows, road cracks, temporary or construction lane markings, or other road imperfections.
+* When lanes merge or split.
+* When entering a highway on-ramp or exiting an off-ramp.
+* On roads with intersections or roundabouts.
+* On slippery roads.
+* When towing a trailer.
+* When entering or exiting a tunnel.
 * When driving on highly banked roads or in presence of strong cross-wind.
 * Extremely hot or cold temperatures.
 * Bright light (due to oncoming headlights, direct sunlight, etc.).
@@ -23,6 +33,8 @@ The list above does not represent an exhaustive list of situations that may inte
 ## Limitations of openpilot ACC and FCW
 
 openpilot ACC and openpilot FCW are not systems that allow careless or inattentive driving. It is still necessary for the driver to pay close attention to the vehicle’s surroundings and to be ready to re-take control of the gas and the brake at all times.
+
+openpilot ACC may not stop your vehicle in time to avoid a collision with a vehicle that quickly stops in front of you. openpilot ACC may occasionally cause your vehicle to brake when not required or when you are not expecting it.
 
 Many factors can impact the performance of openpilot ACC and openpilot FCW, causing them to be unable to function as intended. These include, but are not limited to:
 
@@ -35,9 +47,20 @@ Many factors can impact the performance of openpilot ACC and openpilot FCW, caus
 * In presence of traffic signs or stop lights, which are not detected by openpilot at this time.
 * When the posted speed limit is below the user selected set speed. openpilot does not detect speed limits at this time.
 * In presence of vehicles in the same lane that are not moving.
+* When a vehicle you are following moves out of your driving path and a stationary or slow-moving vehicle or object is in front of you.
+* Narrow vehicles, such as bicycles or motorcycles.
+* Vehicles or objects only partially in the driving lane.
+* On curves, openpilot ACC may not detect a vehicle in the same lane, and may accelerate to the set speed.
+* Cross traffic.
+* Oncoming vehicles.
+* Animals or objects in the road.
+* Rare objects such as trailers, ramps, cargo, open doors, etc. protruding from vehicles.
 * When abrupt braking maneuvers are required. openpilot is designed to be limited in the amount of deceleration and acceleration that it can produce.
 * When surrounding vehicles perform close cut-ins from neighbor lanes.
 * Driving on hills, narrow, or winding roads.
+* On slippery roads.
+* When towing a trailer.
+* When entering or exiting a tunnel.
 * Extremely hot or cold temperatures.
 * Bright light (due to oncoming headlights, direct sunlight, etc.).
 * Interference from other equipment that generates radar waves.
@@ -46,7 +69,9 @@ The list above does not represent an exhaustive list of situations that may inte
 
 ## Limitations of openpilot DM
 
-openpilot DM should not be considered an exact measurement of the alertness of the driver.
+openpilot DM displays a series of escalating warnings. Disregard of these warnings may result in openpilot being unavailable for a period of time.
+
+openpilot DM should not be considered an exact measurement of the alertness of the driver. openpilot DM cannot always detect if the driver is tired or inattentive.
 
 Many factors can impact the performance of openpilot DM, causing it to be unable to function as intended. These include, but are not limited to:
 

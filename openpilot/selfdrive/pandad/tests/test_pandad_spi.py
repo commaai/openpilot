@@ -13,16 +13,13 @@ from openpilot.common.timeout import Timeout
 from openpilot.selfdrive.test.helpers import with_processes
 from openpilot.selfdrive.pandad.tests.test_pandad_loopback import setup_pandad, send_random_can_messages
 
-JUNGLE_SPAM = "JUNGLE_SPAM" in os.environ
-
 class TestBoarddSpi(OpenpilotTestCase):
   COMMA_HARDWARE_TEST = True
   @classmethod
   def setup_class(cls):
     os.environ['STARTED'] = '1'
     os.environ['SPI_ERR_PROB'] = '0.001'
-    if not JUNGLE_SPAM:
-      os.environ['BOARDD_LOOPBACK'] = '1'
+    os.environ['BOARDD_LOOPBACK'] = '1'
 
   @with_processes(['pandad'])
   def test_spi_corruption(self, subtests):
@@ -48,7 +45,7 @@ class TestBoarddSpi(OpenpilotTestCase):
     test_time = int(os.getenv("TEST_TIME", "20"))
     for i in range(test_time + 2):
       # send some CAN messages, then give the last ones time to come back
-      if not JUNGLE_SPAM and i < test_time:
+      if i < test_time:
         sent = send_random_can_messages(sendcan, random.randrange(2, 20))
         for k, v in sent.items():
           sent_msgs[k].extend(list(v))
@@ -62,15 +59,6 @@ class TestBoarddSpi(OpenpilotTestCase):
           assert m.valid or (service == "can")
           if service == "can":
             for msg in m.can:
-              if JUNGLE_SPAM:
-                # PandaJungle.set_generated_can(True)
-                i = msg.address - 0x200
-                assert msg.address >= 0x200
-                assert msg.src == (i%3)
-                assert msg.dat == b"\xff"*(i%8)
-                total_recv_count += 1
-                continue
-
               if msg.src > 4:
                 continue
               key = (msg.address, msg.dat)
@@ -81,14 +69,14 @@ class TestBoarddSpi(OpenpilotTestCase):
             assert len(m.pandaStates) == 1
             ps = m.pandaStates[0]
             assert ps.uptime < 1000
-            assert ps.pandaType == "tres"
+            assert ps.pandaType in ("tres", "cuatro")
             assert ps.ignitionLine
             assert not ps.ignitionCan
-            assert 4000 < ps.voltage < 14000
+            assert 4000 < ps.voltage < 16000
           elif service == "peripheralState":
             ps = m.peripheralState
-            assert ps.pandaType == "tres"
-            assert 4000 < ps.voltage < 14000
+            assert ps.pandaType in ("tres", "cuatro")
+            assert 4000 < ps.voltage < 16000
             assert ps.fanSpeedRpm < 10000
 
       time.sleep(0.5)
