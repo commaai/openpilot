@@ -611,7 +611,6 @@ dependencies = [
     { name = "comma-deps-json11" },
     { name = "comma-deps-raylib" },
     { name = "comma-deps-zstd" },
-    { name = "hf-xet" },
     { name = "inputs" },
     { name = "jeepney" },
     { name = "numpy" },
@@ -646,6 +645,7 @@ tools = [
     { name = "comma-deps-imgui" },
     { name = "comma-deps-libusb" },
     { name = "comma-deps-ncurses" },
+    { name = "hf-xet" },
     { name = "matplotlib" },
 ]
 
@@ -669,7 +669,7 @@ requires-dist = [
     { name = "comma-deps-raylib" },
     { name = "comma-deps-zstd" },
     { name = "coverage", marker = "extra == 'testing'" },
-    { name = "hf-xet", specifier = "==1.7.0" },
+    { name = "hf-xet", marker = "extra == 'tools'", specifier = "==1.7.0" },
     { name = "inputs" },
     { name = "jeepney" },
     { name = "matplotlib", marker = "extra == 'tools'" },
