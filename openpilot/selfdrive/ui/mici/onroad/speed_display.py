@@ -16,17 +16,17 @@ SET_SPEED_PERSISTENCE = 2.5  # s, show MAX this long after it changes or on enga
 # layout: the number is in the top right corner, the chart goes across the top to it
 MARGIN_X = 18
 NUMBER_SIZE = 112
-NUMBER_Y = 4
-LABEL_SIZE = 36
-LABEL_Y = 120  # MAX under the number
+NUMBER_Y = 18
+LABEL_SIZE = 40
+LABEL_Y = 134  # MAX under the number
 LABEL_POP = 0.18  # MAX grows this much when it changes, then goes back
 LABEL_POP_TIME = 0.7  # s
-SHADOW_HEIGHT = 150
+SHADOW_HEIGHT = 170
 SHADOW_ALPHA = 0.5
 
 # plan chart: speed for the next 10 s under a dashed MAX line
 CHART_LEFT = 96  # right of the driver monitoring icon
-CHART_TOP = 44  # the dashed MAX line
+CHART_TOP = 58  # the dashed MAX line
 CHART_HEIGHT = 58
 CHART_NUMBER_GAP = 24
 CHART_LABEL_GAP = 4
@@ -213,6 +213,7 @@ class SpeedDisplay(Widget):
     self._chart_presence = Spring(0.0, 0.45, 1.0)
     self._chart_floor = Spring(0.0, 0.6, 0.9)
     self._label_alpha = FirstOrderFilter(0.0, 0.15, 1 / gui_app.target_fps)
+    self._chart_dim_filter = FirstOrderFilter(1.0, 0.15, 1 / gui_app.target_fps)
 
   def set_can_draw(self, can_draw: bool) -> None:
     self._can_draw = can_draw
@@ -278,7 +279,9 @@ class SpeedDisplay(Widget):
     releasing = now - self._release_time < RELEASE_HOLD
     visible = self._active and self._can_draw and (self._below_max or max_recent or releasing)
 
-    value = self._target_speed if self._below_max else self._max_speed
+    # after MAX changes or on engage the big number is MAX for a short time, then the target again
+    show_target = self._below_max and not max_recent
+    value = self._target_speed if show_target else self._max_speed
     digits = len(str(value))
     if visible and not self._was_visible and self._presence.x < 0.05:
       # start fresh: digits roll in and the plan draws in from the left
@@ -310,13 +313,13 @@ class SpeedDisplay(Widget):
     self._number.draw(right, top + NUMBER_Y, alpha)
 
     # under the number it is MAX, with the chart it names the dashed line
-    label = f"{tr('MAX')} {self._max_speed}" if self._below_max else tr("MAX")
+    label = f"{tr('MAX')} {self._max_speed}" if show_target else tr("MAX")
     if label != self._label:
       self._prev_label = self._label
       self._label = label
       self._label_change_time = now
     # MAX is bright after it changes, and less bright as a chart label
-    label_alpha = self._label_alpha.update(1.0 if max_recent or not self._below_max else 0.75) * alpha
+    label_alpha = self._label_alpha.update(0.75 if show_target else 1.0) * alpha
     progress = ease_out_cubic(clamp((now - self._label_change_time) / ROLL_DURATION))
     chart_left = rect.x + CHART_LEFT
     # pop the MAX label when MAX changes
@@ -327,7 +330,9 @@ class SpeedDisplay(Widget):
 
     if chart_presence > 1e-2:
       chart = rl.Rectangle(chart_left, top + CHART_TOP, right - number_width - CHART_NUMBER_GAP - chart_left, CHART_HEIGHT)
-      self._draw_chart(chart, alpha * chart_presence, now)
+      # dim the chart while the big number is MAX
+      chart_dim = self._chart_dim_filter.update(1.0 if show_target else 0.5)
+      self._draw_chart(chart, alpha * chart_presence * chart_dim, now)
 
   def _draw_label(self, text: str, right: float, chart_left: float, top: float, alpha: float, scale: float) -> None:
     if len(text) == 0 or alpha < 1e-2:
