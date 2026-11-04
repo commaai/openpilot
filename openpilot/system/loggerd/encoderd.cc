@@ -120,7 +120,6 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
 
       // creating our publishers kicked out any subscriber that was already connected (loggerd), and they lose
       // everything we send until they reconnect, like the first keyframe. so wait for them, but not forever
-      // livestream consumers request their own keyframe and don't need the cameras in sync.
       if (!live && !subscribed) {
         subscribed = std::all_of(encoders.begin(), encoders.end(), [](auto &e) { return e->subscribed(); }) || ++frames_waited > MAIN_FPS * 2;
         if (!subscribed) continue;
