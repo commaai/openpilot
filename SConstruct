@@ -39,6 +39,13 @@ for p in reversed(submodule_python_paths):
   if p not in sys.path:
     sys.path.insert(0, p)
 
+# MSM DRM, the upstream kernel's GPU driver, for tinygrad's QCOM device, until these land in tinygrad
+tinygrad_patch = ["git", "apply", "--directory=tinygrad_repo", File("#tinygrad_repo.patch").abspath]
+if subprocess.run(tinygrad_patch[:2] + ["-R", "--check"] + tinygrad_patch[2:], cwd=Dir("#").abspath, capture_output=True).returncode != 0:
+  print("applying tinygrad_repo.patch")
+  if (r := subprocess.run(tinygrad_patch, cwd=Dir("#").abspath, capture_output=True, text=True)).returncode != 0:
+    raise SCons.Errors.UserError(f"tinygrad_repo.patch neither applies nor is applied:\n{r.stderr}")
+
 if external_pythonpath := os.environ.get("PYTHONPATH"):
   submodule_python_paths += [p for p in external_pythonpath.split(os.pathsep) if p and p not in submodule_python_paths]
 

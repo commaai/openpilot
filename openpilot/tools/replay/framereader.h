@@ -75,6 +75,6 @@ public:
   bool decode(FrameReader *reader, int idx, VisionBuf *buf) override;
 
 private:
-  V4LDecoder v4l_decoder;
+  std::unique_ptr<V4LDecoder> v4l_decoder;
 };
 #endif

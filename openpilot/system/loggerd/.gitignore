@@ -2,3 +2,4 @@ loggerd
 encoderd
 bootlog
 tests/test_logger
+tests/test_v4l_util

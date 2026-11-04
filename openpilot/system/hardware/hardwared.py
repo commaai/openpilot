@@ -38,6 +38,7 @@ TEMP_TAU = 5.   # 5s time constant
 DISCONNECT_TIMEOUT = 5.  # wait 5 seconds before going offroad after disconnect so you get an alert
 PANDA_STATES_TIMEOUT = round(1000 / SERVICE_LIST['pandaStates'].frequency * 1.5)  # 1.5x the expected pandaState frequency
 ONROAD_CYCLE_TIME = 1  # seconds to wait offroad after requesting an onroad cycle
+GPU_CLIENTS = ("modeld", "dmonitoringmodeld", "ui")  # the processes that use the GPU, for its load on the upstream kernel
 
 class Chestnut:
   # flash before going onroad, modeld ignores chestnut until the product string matches
@@ -201,7 +202,8 @@ def hw_state_thread(end_event, hw_queue):
 def hardware_thread(end_event, hw_queue) -> None:
   system_stats = LinuxSystemStats() if sys.platform == "linux" else None
   pm = messaging.PubMaster(['deviceState'])
-  sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "selfdriveState", "pandaStates", "chestnutState"], poll="pandaStates")
+  sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "selfdriveState", "pandaStates", "chestnutState", "managerState"],
+                            poll="pandaStates")
 
   count = 0
 
@@ -235,6 +237,7 @@ def hardware_thread(end_event, hw_queue) -> None:
   in_car = False
   engaged_prev = False
   pwrsave = False
+  network_metered_prev: bool | None = None
   offroad_cycle_count = 0
 
   params = Params()
@@ -297,7 +300,8 @@ def hardware_thread(end_event, hw_queue) -> None:
 
     msg.deviceState.freeSpacePercent = get_available_percent(default=100.0)
     msg.deviceState.memoryUsagePercent = int(round(memory_usage))
-    msg.deviceState.gpuUsagePercent = int(round(HARDWARE.get_gpu_usage_percent()))
+    gpu_clients = [p.pid for p in sm['managerState'].processes if p.running and p.name in GPU_CLIENTS]
+    msg.deviceState.gpuUsagePercent = int(round(HARDWARE.get_gpu_usage_percent(gpu_clients)))
     online_cpu_usage = [int(round(n)) for n in cpu_usage]
     offline_cpu_usage = [0., ] * (len(msg.deviceState.cpuTempC) - len(online_cpu_usage))
     msg.deviceState.cpuUsagePercent = online_cpu_usage + offline_cpu_usage
@@ -475,7 +479,10 @@ def hardware_thread(end_event, hw_queue) -> None:
         except Exception:
           cloudlog.exception("failed to save offroad status")
 
-    params.put_bool("NetworkMetered", msg.deviceState.networkMetered)
+    # a param write is a file write and two fsyncs, which keep the storage from going idle. only write on change
+    if msg.deviceState.networkMetered != network_metered_prev:
+      params.put_bool("NetworkMetered", msg.deviceState.networkMetered)
+      network_metered_prev = msg.deviceState.networkMetered
 
     now_ts = time.monotonic()
     if off_ts:

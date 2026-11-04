@@ -2,72 +2,82 @@
 
 #include <assert.h>
 #include <cerrno>
-#include <climits>
-#include <linux/v4l2-controls.h>
-#include <linux/videodev2.h>
+#include <cstring>
+#include <stdexcept>
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-
+#include "system/loggerd/encoder/msm_vidc_decoder.h"
+#include "system/loggerd/encoder/venus_decoder.h"
 #include "common/swaglog.h"
 #include "common/util.h"
 
-constexpr int OFFLINE_CORE_PLACEMENT_RATE = 80 << 16;
-
-// echo "0xFFFF" > /sys/kernel/debug/msm_vidc/debug_level
+std::unique_ptr<V4LDecoder> V4LDecoder::create() {
+  // VisionIPC uses DMA-BUF heaps on the upstream kernel, ION on the downstream one
+  if (strcmp(visionbuf_backend_name(), "dma_heap") == 0) {
+    return std::make_unique<VenusDecoder>();
+  }
+  return std::make_unique<MsmVidcDecoder>();
+}
 
 static void copyBuffer(VisionBuf *src_buf, VisionBuf *dst_buf) {
+  int err = src_buf->begin_cpu_access(false);
+  assert(err == 0);
   // Copy Y plane
   memcpy(dst_buf->y, src_buf->y, src_buf->height * src_buf->stride);
   // Copy UV plane
   memcpy(dst_buf->uv, src_buf->uv, src_buf->height / 2 * src_buf->stride);
+  err = src_buf->end_cpu_access(false);
+  assert(err == 0);
 }
 
-static void request_buffers(int fd, v4l2_buf_type buf_type, unsigned int count) {
+static void request_buffers(int fd, v4l2_memory memory, v4l2_buf_type buf_type, unsigned int count) {
   struct v4l2_requestbuffers reqbuf = {
     .count = count,
     .type = buf_type,
-    .memory = V4L2_MEMORY_USERPTR
+    .memory = memory
   };
   util::safe_ioctl(fd, VIDIOC_REQBUFS, &reqbuf, "VIDIOC_REQBUFS failed");
+  // the driver may give more, but every index that's queued has to exist
+  if (reqbuf.count < count) {
+    LOGE("VIDIOC_REQBUFS gave %u buffers, %u are needed", reqbuf.count, count);
+    throw std::runtime_error("VIDIOC_REQBUFS gave too few buffers");
+  }
 }
 
 V4LDecoder::~V4LDecoder() {
-  if (fd > 0) {
+  if (fd >= 0) {
     close(fd);
+  }
+  // after close, the driver has released them
+  for (auto &buf : out_bufs) {
+    if (buf.addr) buf.free();
+  }
+  for (auto &buf : cap_bufs) {
+    if (buf.addr) buf.free();
   }
 }
 
-bool V4LDecoder::init(const char* dev, size_t width, size_t height, uint64_t codec,
-                   bool direct_mode, uint32_t capture_fourcc) {
-  LOG("Initializing msm_vidc device %s", dev);
+bool V4LDecoder::init(size_t width, size_t height, uint64_t codec, bool direct_mode) {
   this->w = width;
   this->h = height;
   this->direct = direct_mode;
-  this->capture_format = capture_fourcc;
-  this->fd = open(dev, O_RDWR | O_NONBLOCK, 0);
+  this->capture_format = direct ? direct_format() : V4L2_PIX_FMT_NV12;
+  this->fd = openDevice();
   if (fd < 0) {
-    LOGE("failed to open video device %s", dev);
+    LOGE("failed to open the video decoder");
     return false;
   }
   subscribeEvents();
-  v4l2_buf_type out_type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
-  setPlaneFormat(out_type, codec); // Also allocates the output buffers
+  setOutputFormat(codec);
   setFPS(FPS);
-  if (direct) {
-    struct v4l2_control ctrls[] = {
-      // A finite real-time load lets the driver place decode and encode on separate cores.
-      { .id = V4L2_CID_MPEG_VIDC_VIDEO_OPERATING_RATE, .value = OFFLINE_CORE_PLACEMENT_RATE },
-      { .id = V4L2_CID_MPEG_VIDC_VIDEO_PRIORITY, .value = V4L2_MPEG_VIDC_VIDEO_PRIORITY_REALTIME_ENABLE },
-    };
-    for (auto ctrl : ctrls) {
-      util::safe_ioctl(fd, VIDIOC_S_CTRL, &ctrl, "VIDIOC_S_CTRL offline decode failed");
-    }
-  }
-  request_buffers(fd, out_type, OUTPUT_BUFFER_COUNT);
+  setControls();
+  v4l2_buf_type out_type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
+  request_buffers(fd, memory, out_type, OUTPUT_BUFFER_COUNT);
   util::safe_ioctl(fd, VIDIOC_STREAMON, &out_type, "VIDIOC_STREAMON OUTPUT failed");
-  restartCapture();
-  pfd = {fd, POLLIN | POLLOUT | POLLWRNORM | POLLRDNORM | POLLPRI, 0};
+  outputStarted();
+  pfds[0] = {fd, 0, 0};
+  pfds[1] = {wakeFd(), POLLIN, 0};
 
   this->initialized = true;
   return true;
@@ -101,19 +111,34 @@ bool V4LDecoder::queuePacket(const AVPacket *pkt, uint64_t token) {
 
 bool V4LDecoder::pump(V4LDecodedFrame &frame, int timeout_ms) {
   frame = {};
+  beforePoll();
+  pfds[0].events = pollEvents();
   int rc;
   while (true) {
-    rc = poll(&pfd, 1, timeout_ms);
+    rc = poll(pfds, 2, timeout_ms);
     if (rc < 0) {
       if (errno == EINTR) continue;
       LOGE("poll() error: %d", errno);
       return false;
     }
+    // a mem2mem device returns POLLERR at once while neither queue has a buffer queued. then nothing completes until
+    // releaseFrame() queues one from another thread, which writes the wake fd, so wait for that or an event
+    if (pfds[0].revents == POLLERR && pfds[1].fd >= 0 && pfds[0].events != POLLPRI) {
+      pfds[0].events = POLLPRI;
+      continue;
+    }
     break;
   }
 
   if (rc == 0) return true;
+  if (pfds[1].revents & POLLIN) {
+    uint64_t n;
+    if (read(pfds[1].fd, &n, sizeof(n)) < 0) LOGE("eventfd read failed: %d", errno);
+  }
 
+  // POLLERR alone isn't a failure: a mem2mem device reports it while neither queue has buffers. a failed decoder (upstream
+  // Venus puts the queues in an error state after a session error or a firmware crash) fails the DQBUFs with EIO, so
+  // the caller sees pump() fail
   int result;
 
   // Port changes must be handled before capture DQ so no old-format surface is
@@ -124,78 +149,85 @@ bool V4LDecoder::pump(V4LDecodedFrame &frame, int timeout_ms) {
   while ((result = handleOutput()) > 0) {}
   if (result < 0) return false;
 
-  result = handleCapture(&frame);
+  result = capture_started ? dequeueCapture(&frame) : 0;
   return result >= 0;
 }
 
-int V4LDecoder::handleCapture(V4LDecodedFrame *frame) {
+int V4LDecoder::dequeueCapture(V4LDecodedFrame *frame) {
   struct v4l2_buffer buf = {0};
   struct v4l2_plane planes[1] = {0};
   buf.type          = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
-  buf.memory        = V4L2_MEMORY_USERPTR;
+  buf.memory        = this->memory;
   buf.m.planes      = planes;
   buf.length        = 1;
   int err = HANDLE_EINTR(ioctl(this->fd, VIDIOC_DQBUF, &buf));
-  if (err < 0 && errno == EAGAIN) return 0;
+  // EPIPE: the LAST buffer was already dequeued
+  if (err < 0 && (errno == EAGAIN || errno == EPIPE)) return 0;
   if (err < 0) {
     LOGE("VIDIOC_DQBUF CAPTURE failed: %d", errno);
     return -1;
   }
-
-  const bool has_payload = buf.m.planes[0].bytesused != 0;
-  const bool eos = (buf.flags & V4L2_QCOM_BUF_FLAG_EOS) != 0;
-
   frame->buf = nullptr;
-  if (!reconfigure_pending && has_payload) {
-    frame->buf = &cap_bufs[buf.index];
-    frame->token = (uint64_t)buf.timestamp.tv_sec * 1000000ULL + buf.timestamp.tv_usec;
-  } else if (!reconfigure_pending && !eos) {
-    queueCaptureBuffer(buf.index);
-  }
-
+  handleCapture(buf, frame);
   return 1;
 }
 
-bool V4LDecoder::subscribeEvents() {
-  for (uint32_t event : subscriptions) {
-    struct v4l2_event_subscription sub = { .type = event};
-    util::safe_ioctl(fd, VIDIOC_SUBSCRIBE_EVENT, &sub, "VIDIOC_SUBSCRIBE_EVENT failed");
-  }
-  return true;
-}
-
-bool V4LDecoder::setPlaneFormat(enum v4l2_buf_type type, uint32_t fourcc) {
-  struct v4l2_format fmt = {.type = type};
-  struct v4l2_pix_format_mplane *pix = &fmt.fmt.pix_mp;
-  *pix = {
+void V4LDecoder::setOutputFormat(uint32_t fourcc) {
+  struct v4l2_format fmt = {.type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE};
+  fmt.fmt.pix_mp = {
     .width = (__u32)this->w,
     .height = (__u32)this->h,
     .pixelformat = fourcc
   };
   util::safe_ioctl(fd, VIDIOC_S_FMT, &fmt, "VIDIOC_S_FMT failed");
-  if (type == V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE) {
-    this->out_buf_size = pix->plane_fmt[0].sizeimage;
-    for (int i = 0; i < OUTPUT_BUFFER_COUNT; i++) {
-      this->out_bufs[i].allocate(this->out_buf_size);
-      this->out_buf_flag[i] = false;
-    }
-    LOGD("Set output buffer size to %d, count %d, addr %p", this->out_buf_size, OUTPUT_BUFFER_COUNT, this->out_bufs[0].addr);
-  } else if (type == V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE) {
-    request_buffers(this->fd, type, CAPTURE_BUFFER_COUNT);
-    util::safe_ioctl(fd, VIDIOC_G_FMT, &fmt, "VIDIOC_G_FMT failed");
-    const __u32 y_size    = pix->plane_fmt[0].sizeimage;
-    const __u32 y_stride  = pix->plane_fmt[0].bytesperline;
-    for (size_t i = 0; i < CAPTURE_BUFFER_COUNT; i++) {
-      size_t uv_offset = (size_t)y_stride * pix->height;
-      size_t required = uv_offset + (y_stride * pix->height / 2); // enough for Y + UV. For linear NV12, UV plane starts at y_stride * height.
-      size_t alloc_size = std::max<size_t>(y_size, required);
-      this->cap_bufs[i].allocate(alloc_size);
-      this->cap_bufs[i].init_yuv(pix->width, pix->height, y_stride, uv_offset);
-    }
-    LOGD("Set capture buffer size to %d, count %d, addr %p, extradata size %d",
-      pix->plane_fmt[0].sizeimage, CAPTURE_BUFFER_COUNT, this->cap_bufs[0].addr, pix->plane_fmt[1].sizeimage);
+  this->out_buf_size = fmt.fmt.pix_mp.plane_fmt[0].sizeimage;
+  for (int i = 0; i < OUTPUT_BUFFER_COUNT; i++) {
+    this->out_bufs[i].allocate(this->out_buf_size);
+    this->out_buf_flag[i] = false;
   }
-  return true;
+  LOGD("Set output buffer size to %d, count %d, addr %p", this->out_buf_size, OUTPUT_BUFFER_COUNT, this->out_bufs[0].addr);
+}
+
+void V4LDecoder::allocateCapture(v4l2_format &fmt, size_t width, size_t height) {
+  struct v4l2_pix_format_mplane *pix = &fmt.fmt.pix_mp;
+  request_buffers(this->fd, memory, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, CAPTURE_BUFFER_COUNT);
+  util::safe_ioctl(fd, VIDIOC_G_FMT, &fmt, "VIDIOC_G_FMT failed");
+  const __u32 y_size    = pix->plane_fmt[0].sizeimage;
+  const __u32 y_stride  = pix->plane_fmt[0].bytesperline;
+  for (size_t i = 0; i < CAPTURE_BUFFER_COUNT; i++) {
+    size_t uv_offset = (size_t)y_stride * pix->height;
+    size_t required = uv_offset + (y_stride * pix->height / 2); // enough for Y + UV. For linear NV12, UV plane starts at y_stride * height.
+    size_t alloc_size = std::max<size_t>(y_size, required);
+    this->cap_bufs[i].allocate(alloc_size);
+    this->cap_bufs[i].init_yuv(width ? width : pix->width, height ? height : pix->height, y_stride, uv_offset);
+    // the encoder queues a decoded frame at its buffer index
+    this->cap_bufs[i].idx = i;
+  }
+  LOGD("Set capture buffer size to %d, count %d, addr %p, extradata size %d",
+    pix->plane_fmt[0].sizeimage, CAPTURE_BUFFER_COUNT, this->cap_bufs[0].addr, pix->plane_fmt[1].sizeimage);
+}
+
+void V4LDecoder::startCapture() {
+  enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+  util::safe_ioctl(this->fd, VIDIOC_STREAMON, &type, "VIDIOC_STREAMON CAPTURE failed");
+  for (size_t i = 0; i < CAPTURE_BUFFER_COUNT; ++i) {
+    queueCaptureBuffer(i);
+  }
+  this->capture_started = true;
+}
+
+void V4LDecoder::stopCapture() {
+  LOGD("Restarting capture, flushing buffers...");
+  enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
+  util::safe_ioctl(this->fd, VIDIOC_STREAMOFF, &type, "VIDIOC_STREAMOFF CAPTURE failed");
+  struct v4l2_requestbuffers reqbuf = {.type = type, .memory = this->memory};
+  util::safe_ioctl(this->fd, VIDIOC_REQBUFS, &reqbuf, "VIDIOC_REQBUFS failed");
+  for (size_t i = 0; i < CAPTURE_BUFFER_COUNT; ++i) {
+    this->cap_bufs[i].free();
+    cap_bufs[i].~VisionBuf();
+    new (&cap_bufs[i]) VisionBuf();
+  }
+  this->capture_started = false;
 }
 
 bool V4LDecoder::setFPS(uint32_t fps) {
@@ -207,59 +239,18 @@ bool V4LDecoder::setFPS(uint32_t fps) {
   return true;
 }
 
-bool V4LDecoder::restartCapture() {
-  // stop if already initialized
-  enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
-  if (this->initialized) {
-    LOGD("Restarting capture, flushing buffers...");
-    util::safe_ioctl(this->fd, VIDIOC_STREAMOFF, &type, "VIDIOC_STREAMOFF CAPTURE failed");
-    struct v4l2_requestbuffers reqbuf = {.type = type, .memory = V4L2_MEMORY_USERPTR};
-    util::safe_ioctl(this->fd, VIDIOC_REQBUFS, &reqbuf, "VIDIOC_REQBUFS failed");
-    for (size_t i = 0; i < CAPTURE_BUFFER_COUNT; ++i) {
-      this->cap_bufs[i].free();
-      cap_bufs[i].~VisionBuf();
-      new (&cap_bufs[i]) VisionBuf();
-    }
-  }
-  // setup, start and queue capture buffers
-  setDBP();
-  setPlaneFormat(type, capture_format);
-  if (direct) {
-    struct v4l2_control ctrl = {
-      .id = V4L2_CID_MPEG_VIDC_VIDEO_OPERATING_RATE,
-      .value = OFFLINE_CORE_PLACEMENT_RATE,
-    };
-    util::safe_ioctl(fd, VIDIOC_S_CTRL, &ctrl, "VIDIOC_S_CTRL placement decode failed");
-  }
-  util::safe_ioctl(this->fd, VIDIOC_STREAMON, &type, "VIDIOC_STREAMON CAPTURE failed");
-  for (size_t i = 0; i < CAPTURE_BUFFER_COUNT; ++i) {
-    queueCaptureBuffer(i);
-  }
-  if (direct) {
-    struct v4l2_control ctrl = {
-      .id = V4L2_CID_MPEG_VIDC_VIDEO_OPERATING_RATE,
-      .value = INT_MAX,
-    };
-    util::safe_ioctl(fd, VIDIOC_S_CTRL, &ctrl, "VIDIOC_S_CTRL turbo decode failed");
-  }
-
-  return true;
-}
-
 bool V4LDecoder::queueCaptureBuffer(int i) {
   struct v4l2_buffer buf = {0};
   struct v4l2_plane planes[1] = {0};
 
   buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
-  buf.memory = V4L2_MEMORY_USERPTR;
+  buf.memory = this->memory;
   buf.index = i;
   buf.m.planes = planes;
   buf.length = 1;
   // decoded frame plane
-  planes[0].m.userptr     = (unsigned long)this->cap_bufs[i].addr; // no security
+  setPlane(&planes[0], &this->cap_bufs[i]);
   planes[0].length        = this->cap_bufs[i].len;
-  planes[0].reserved[0]   = this->cap_bufs[i].fd; // ION fd
-  planes[0].reserved[1]   = 0;
   planes[0].bytesused     = this->cap_bufs[i].len;
   planes[0].data_offset   = 0;
   util::safe_ioctl(this->fd, VIDIOC_QBUF, &buf, "VIDIOC_QBUF failed");
@@ -271,7 +262,7 @@ bool V4LDecoder::queueOutputBuffer(int i, size_t size, uint64_t token) {
   struct v4l2_plane planes[1] = {0};
 
   buf.type                = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
-  buf.memory              = V4L2_MEMORY_USERPTR;
+  buf.memory              = this->memory;
   buf.index               = i;
   buf.flags               = V4L2_BUF_FLAG_TIMESTAMP_COPY;
   buf.timestamp.tv_sec    = token / 1000000ULL;
@@ -279,10 +270,8 @@ bool V4LDecoder::queueOutputBuffer(int i, size_t size, uint64_t token) {
   buf.m.planes            = planes;
   buf.length              = 1;
   // decoded frame plane
-  planes[0].m.userptr     = (unsigned long)this->out_bufs[i].addr;
+  setPlane(&planes[0], &this->out_bufs[i]);
   planes[0].length        = this->out_buf_size;
-  planes[0].reserved[0]   = this->out_bufs[i].fd; // ION fd
-  planes[0].reserved[1]   = 0;
   planes[0].bytesused     = size;
   planes[0].data_offset   = 0;
   assert(this->out_buf_size % 4096 == 0);               // ditto for size
@@ -292,27 +281,12 @@ bool V4LDecoder::queueOutputBuffer(int i, size_t size, uint64_t token) {
   return true;
 }
 
-bool V4LDecoder::setDBP() {
-  struct v4l2_ext_control control[2] = {0};
-  struct v4l2_ext_controls controls = {0};
-  control[0].id           = V4L2_CID_MPEG_VIDC_VIDEO_STREAM_OUTPUT_MODE;
-  control[0].value        = 1; // V4L2_CID_MPEG_VIDC_VIDEO_STREAM_OUTPUT_SECONDARY
-  control[1].id           = V4L2_CID_MPEG_VIDC_VIDEO_DPB_COLOR_FORMAT;
-  control[1].value        = 0; // V4L2_MPEG_VIDC_VIDEO_DPB_COLOR_FMT_NONE
-  controls.count          = 2;
-  controls.ctrl_class     = V4L2_CTRL_CLASS_MPEG;
-  controls.controls       = control;
-  util::safe_ioctl(fd, VIDIOC_S_EXT_CTRLS, &controls, "VIDIOC_S_EXT_CTRLS failed");
-  return true;
-}
-
 bool V4LDecoder::sendPacket(int buf_index, const AVPacket *pkt, uint64_t token) {
   assert(buf_index >= 0 && buf_index < OUTPUT_BUFFER_COUNT);
   assert(pkt != nullptr && pkt->data != nullptr && pkt->size > 0);
   assert((size_t)pkt->size <= (size_t)this->out_buf_size);
   // Prepare output buffer
-  uint8_t * data = (uint8_t *)this->out_bufs[buf_index].addr;
-  memcpy(data, pkt->data, pkt->size);
+  writePacket(&this->out_bufs[buf_index], pkt);
   queueOutputBuffer(buf_index, pkt->size, token);
   return true;
 }
@@ -331,7 +305,7 @@ int V4LDecoder::handleOutput() {
   struct v4l2_buffer buf = {0};
   struct v4l2_plane planes[1];
   buf.type      = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
-  buf.memory    = V4L2_MEMORY_USERPTR;
+  buf.memory    = this->memory;
   buf.m.planes  = planes;
   buf.length    = 1;
   int err = HANDLE_EINTR(ioctl(this->fd, VIDIOC_DQBUF, &buf));
@@ -341,49 +315,6 @@ int V4LDecoder::handleOutput() {
     return -1;
   }
   this->out_buf_flag[buf.index] = false; // mark as not queued
-  return 1;
-}
-
-int V4LDecoder::handleEvent() {
-  // dequeue event
-  struct v4l2_event event = {0};
-  int err = HANDLE_EINTR(ioctl(this->fd, VIDIOC_DQEVENT, &event));
-  if (err < 0 && (errno == EAGAIN || errno == ENOENT)) return 0;
-  if (err < 0) {
-    LOGE("VIDIOC_DQEVENT failed: %d", errno);
-    return -1;
-  }
-  switch (event.type) {
-    case V4L2_EVENT_MSM_VIDC_PORT_SETTINGS_CHANGED_INSUFFICIENT: {
-      unsigned int *ptr     = (unsigned int *)event.u.data;
-      unsigned int height   = ptr[0];
-      unsigned int width    = ptr[1];
-      this->w               = width;
-      this->h               = height;
-      LOGD("Port Reconfig received insufficient, new size %ux%u, flushing capture bufs...", width, height); // This is normal
-      struct v4l2_decoder_cmd dec;
-      dec.flags = V4L2_QCOM_CMD_FLUSH_CAPTURE;
-      dec.cmd = V4L2_QCOM_CMD_FLUSH;
-      util::safe_ioctl(this->fd, VIDIOC_DECODER_CMD, &dec, "VIDIOC_DECODER_CMD FLUSH_CAPTURE failed");
-      this->reconfigure_pending = true;
-      LOGD("Waiting for flush done event to reconfigure capture queue");
-      break;
-    }
-
-    case V4L2_EVENT_MSM_VIDC_FLUSH_DONE: {
-      unsigned int *ptr   = (unsigned int *)event.u.data;
-      unsigned int flags  = ptr[0];
-      if (flags & V4L2_QCOM_CMD_FLUSH_CAPTURE) {
-        if (this->reconfigure_pending) {
-          this->restartCapture();
-          this->reconfigure_pending = false;
-        }
-      }
-      break;
-    }
-    default:
-      break;
-  }
   return 1;
 }
 

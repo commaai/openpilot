@@ -26,6 +26,10 @@ whitelist: list[str] = [r"^\.lfsconfig$"] if os.getenv("INCLUDE_BIG_MODEL") else
 
 if __name__ == "__main__":
   tracked_files = subprocess.check_output(["git", "ls-files", "-z", "--recurse-submodules"], cwd=ROOT).split(b"\0")
+  # the files tinygrad_repo.patch adds, once a build has applied it (see SConstruct)
+  with open(os.path.join(ROOT, "tinygrad_repo.patch")) as f:
+    added = [os.path.join("tinygrad_repo", p) for p in re.findall(r"^--- /dev/null\n\+\+\+ b/(.+)$", f.read(), re.M)]
+  tracked_files += [os.fsencode(p) for p in added if os.path.isfile(os.path.join(ROOT, p))]
   for tracked_file in tracked_files:
     if not tracked_file:
       continue

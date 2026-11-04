@@ -63,7 +63,11 @@ kj::Array<uint8_t> get_raw_frame_image(const CameraBuf *b) {
   kj::Array<uint8_t> frame_image = kj::heapArray<uint8_t>(b->cur_camera_buf->len);
   uint8_t *resized_dat = frame_image.begin();
 
+  int err = b->cur_camera_buf->begin_cpu_access(false);
+  assert(err == 0);
   memcpy(resized_dat, dat, b->cur_camera_buf->len);
+  err = b->cur_camera_buf->end_cpu_access(false);
+  assert(err == 0);
 
   return kj::mv(frame_image);
 }
@@ -74,13 +78,21 @@ float calculate_exposure_value(const CameraBuf *b, Rect ae_xywh, int x_skip, int
   const uint8_t *pix_ptr = b->cur_yuv_buf->y;
 
   unsigned int lum_total = 0;
+  // the reads and the range they're invalidated over use the same row stride
+  const size_t stride = b->out_img_width;
+  // only the AE rows are read, a fraction of the frame
+  const size_t ae_offset = (pix_ptr - (const uint8_t *)b->cur_yuv_buf->addr) + (size_t)ae_xywh.y * stride;
+  int err = b->cur_yuv_buf->begin_cpu_read(ae_offset, (size_t)ae_xywh.h * stride);
+  assert(err == 0);
   for (int y = ae_xywh.y; y < ae_xywh.y + ae_xywh.h; y += y_skip) {
     for (int x = ae_xywh.x; x < ae_xywh.x + ae_xywh.w; x += x_skip) {
-      uint8_t lum = pix_ptr[(y * b->out_img_width) + x];
+      uint8_t lum = pix_ptr[(y * stride) + x];
       lum_binning[lum]++;
       lum_total += 1;
     }
   }
+  err = b->cur_yuv_buf->end_cpu_access(false);
+  assert(err == 0);
 
   // Find mean lumimance value
   unsigned int lum_cur = 0;

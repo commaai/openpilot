@@ -17,6 +17,7 @@ extern "C" {
 }
 
 #include "common/swaglog.h"
+#include "common/timing.h"
 #include "system/loggerd/encoder/v4l_decoder.h"
 #include "system/loggerd/encoder/v4l_encoder.h"
 #include "system/loggerd/loggerd.h"
@@ -61,16 +62,19 @@ int encode_clip_worker(const std::vector<std::string> &inputs, int width, int he
     return EncoderSettings{.encode_type = cereal::EncodeIndex::Type::QCAMERA_H264,
                            .bitrate = bitrate, .gop_size = 5};
   };
-  V4LDecoder decoder;
+  // the decoder decodes straight to the encoder's input
+  auto decoder_ptr = V4LDecoder::create();
+  V4LDecoder &decoder = *decoder_ptr;
   V4LEncoder::Options options = {
     .packet_callback = std::move(packet_callback),
-    .input_format = V4L2_PIX_FMT_NV12_UBWC,
+    .input_format = decoder.direct_format(),
     .input_done_callback = [&decoder](VisionBuf *buf) { decoder.releaseFrame(buf); },
     .max_performance = true,
   };
-  V4LEncoder encoder(encoder_info, width, height, std::move(options));
+  auto encoder_ptr = V4LEncoder::create(encoder_info, width, height, std::move(options));
+  V4LEncoder &encoder = *encoder_ptr;
   encoder.encoder_open();
-  if (!decoder.init(V4LDecoder::DEVICE, width, height, V4L2_PIX_FMT_HEVC, true, V4L2_PIX_FMT_NV12_UBWC)) return 1;
+  if (!decoder.init(width, height, V4L2_PIX_FMT_HEVC, true)) return 1;
 
   const int64_t first_frame = std::floor(start_time * CLIP_FPS);
   const int64_t end_frame = std::ceil((start_time + duration) * CLIP_FPS);
@@ -149,12 +153,16 @@ int encode_clip_worker(const std::vector<std::string> &inputs, int width, int he
     if (failed || input_frame >= end_frame) break;
   }
 
+  // the decoder returns the remaining frames as the encoder releases their buffers. it has failed if none comes for 5 s
   if (!failed) decoder.sendEOS();
-  for (int empty_polls = 0; !failed && received_frames < input_frame;) {
+  for (double last_frame = millis_since_boot(); !failed && received_frames < input_frame;) {
     const int64_t before = received_frames;
     failed = !pump_decoder(1000);
-    empty_polls = received_frames == before ? empty_polls + 1 : 0;
-    if (empty_polls == 5) failed = true;
+    if (received_frames != before) {
+      last_frame = millis_since_boot();
+    } else if (millis_since_boot() - last_frame > 5000) {
+      failed = true;
+    }
   }
 
   encoder.encoder_close();
