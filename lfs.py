@@ -48,30 +48,39 @@ def remove_git_lfs_hooks(directory):
     commands = {f'git lfs {name} "$@"'}
     if name == "pre-push":
       commands.update(('git lfs push --stdin $*', 'git lfs push --stdin "$@"'))
-      if lines and re.fullmatch(r'exec "[^"]*/git-lfs" pre-push "\$@"', lines[-1]):  # shim from tools/op.sh
+      if lines and re.fullmatch(r'exec "?[^"]*/git-lfs"? pre-push "\$@"', lines[-1]):  # hooks from tools/op.sh (#38775, #39114)
         commands.add(lines[-1])
     has_lfs_guard = len(lines) == 3 and lines[1].startswith("command -v git-lfs ")
     if lines[:1] == ["#!/bin/sh"] and lines[-1] in commands and (len(lines) == 2 or has_lfs_guard):
       path.unlink()
 
 
+def write_executable(path, data):
+  # replace atomically so git never runs a partly written script
+  with tempfile.NamedTemporaryFile(dir=path.parent, prefix=f".{path.name}-", delete=False) as tmp:
+    tmp.write(data)
+  os.chmod(tmp.name, 0o755)
+  os.replace(tmp.name, path)
+
+
 def install():
   script = GIT_DIR / "lfs.py"
   hook = Path(git("rev-parse", "--path-format=absolute", "--git-path", "hooks/pre-push").decode().strip())
   remove_git_lfs_hooks(hook.parent)
+  remove_git_lfs_hooks(hook.parent / "post-commit.d")  # where `op post-commit` moves an existing post-commit hook
   hook_script = '#!/bin/sh\nexec "$(git rev-parse --git-common-dir)/lfs.py" pre-push "$@"\n'
   if hook.is_file() and hook.read_text(errors="replace") != hook_script:
     raise RuntimeError(f"refusing to replace custom hook {hook}")
   if Path(__file__).resolve() != script:
-    shutil.copyfile(__file__, script)
+    write_executable(script, Path(__file__).read_bytes())
   script.chmod(0o755)
   hook.parent.mkdir(parents=True, exist_ok=True)
-  hook.write_text(hook_script)
-  hook.chmod(0o755)
+  write_executable(hook, hook_script.encode())
   # TODO: Remove legacy worktree filter cleanup once migration from stock Git LFS is no longer supported.
   git("config", "--worktree", "--remove-section", "filter.lfs", check=False)
   git("config", "--local", "filter.lfs.process", '"$(git rev-parse --git-common-dir)/lfs.py" filter-process')
-  git("config", "--local", "filter.lfs.required", "true")
+  # a failed download leaves the pointer rather than failing the git command; `./lfs.py pull` fills it in later
+  git("config", "--local", "filter.lfs.required", "false")
 
 
 def object_path(oid):
@@ -174,14 +183,10 @@ def object_info(objects):
 def download_http(oid, size, path, span=None):
   ranges = min(RANGES, max(1, (size + RANGE_MIN - 1) // RANGE_MIN))
   if span is None and ranges > 1:
-    with tempfile.TemporaryDirectory(dir=path.parent) as directory:
-      parts = [Path(directory) / str(i) for i in range(ranges)]
-      parallel(download_http, [(oid, size, part, (i * size // ranges, (i + 1) * size // ranges - 1))
-                               for i, part in enumerate(parts)], ranges)
-      with path.open("wb") as out:
-        for part in parts:
-          with part.open("rb") as stream:
-            shutil.copyfileobj(stream, out, length=1024 * 1024)
+    # each range writes its own slice of one preallocated file
+    with path.open("wb") as out:
+      out.truncate(size)
+    parallel(download_http, [(oid, size, path, (i * size // ranges, (i + 1) * size // ranges - 1)) for i in range(ranges)], ranges)
     return
 
   request = hf_request(f"https://huggingface.co/buckets/{BUCKET}/resolve/sha256/{oid}")
@@ -190,11 +195,15 @@ def download_http(oid, size, path, span=None):
   expected_size = size if span is None else span[1] - span[0] + 1
   for attempt in range(4):
     try:
-      with urllib.request.urlopen(request, timeout=30) as response, path.open("wb") as out:
+      with urllib.request.urlopen(request, timeout=30) as response, path.open("wb" if span is None else "r+b") as out:
         if span is not None and (response.status != 206 or response.headers.get("Content-Range") != f"bytes {span[0]}-{span[1]}/{size}"):
           raise RuntimeError(f"invalid range response for {oid}")
-        shutil.copyfileobj(response, out, length=1024 * 1024)
-      if path.stat().st_size != expected_size:
+        out.seek(0 if span is None else span[0])
+        written = 0
+        while chunk := response.read(1024 * 1024):
+          out.write(chunk)
+          written += len(chunk)
+      if written != expected_size:
         raise http.client.HTTPException(f"incomplete download for {oid}")
       return
     except (urllib.error.URLError, http.client.HTTPException, TimeoutError, ConnectionError) as error:
@@ -274,7 +283,7 @@ def filter_process():
   capabilities = {line.rstrip(b"\n") for line in read_packets(sys.stdin.buffer)}
   write_packets(capability + b"\n" for capability in (b"capability=clean", b"capability=smudge", b"capability=delay")
                 if capability in capabilities)
-  pending, ready = {}, {}
+  pending, ready, pointers = {}, {}, {}
   with concurrent.futures.ThreadPoolExecutor(max_workers=transfer_workers()) as pool:
     while True:
       try:
@@ -296,10 +305,17 @@ def filter_process():
         result = store(content)
       else:
         data = b"".join(content)
-        result = ready.pop(name).result() if name in ready else smudge(data, os.fsdecode(name), exclude,
-                                                                     pool if fields.get(b"can-delay") == b"1" else None)
+        if name in ready:  # git sends no content when it asks again for a delayed blob
+          data = pointers.pop(name)
+        try:
+          result = ready.pop(name).result() if name in ready else smudge(data, os.fsdecode(name), exclude,
+                                                                       pool if fields.get(b"can-delay") == b"1" else None)
+        except Exception as error:
+          print(f"lfs.py: {os.fsdecode(name)}: {error}; leaving the pointer, run ./lfs.py pull to retry", file=sys.stderr)
+          result = data
       if isinstance(result, concurrent.futures.Future):
         pending[name] = result
+        pointers[name] = data
         write_packets(b"status=delayed\n")
         continue
       write_packets(b"status=success\n")
@@ -470,7 +486,12 @@ def pre_push(remote):
   output = git("rev-list", "--objects", "--no-object-names", *local_oids, "--not", f"--remotes={remote}")
   object_ids = output.decode().splitlines()
   objects = [parsed for _oid, data in cat_small(object_ids) if (parsed := parse_pointer(data))]
-  upload(objects)
+  try:
+    upload(objects)
+  except urllib.error.HTTPError as error:
+    if error.code not in (401, 403):
+      raise
+    sys.exit(f"lfs.py: uploading LFS objects to {BUCKET} needs a Hugging Face token with write access (hf auth login, or set HF_TOKEN)")
 
 
 def main():

@@ -104,6 +104,19 @@ function op_check_git() {
     echo -e " ↳ [${GREEN}✔${NC}] git found."
   fi
 
+  echo "Checking for LFS client..."
+  local lfs_client
+  lfs_client="$(git -C "$OPENPILOT_ROOT" rev-parse --path-format=absolute --git-common-dir)/lfs.py"
+  if [[ -z "$(git -C "$OPENPILOT_ROOT" ls-files ':(attr:filter=lfs)')" ]]; then
+    echo -e " ↳ [${GREEN}✔${NC}] no LFS files in this checkout."
+  elif cmp -s "$OPENPILOT_ROOT/lfs.py" "$lfs_client" &&
+       [[ "$(git -C "$OPENPILOT_ROOT" config --get filter.lfs.process)" == '"$(git rev-parse --git-common-dir)/lfs.py" filter-process' ]]; then
+    echo -e " ↳ [${GREEN}✔${NC}] LFS client installed."
+  else
+    echo -e " ↳ [${RED}✗${NC}] LFS client missing or outdated! Run 'op setup'"
+    return 1
+  fi
+
   echo "Checking for LFS files..."
   if [[ $(file -b "$OPENPILOT_ROOT/openpilot/selfdrive/modeld/models/dmonitoring_model.onnx") == "data" ]]; then
     echo -e " ↳ [${GREEN}✔${NC}] LFS files found."

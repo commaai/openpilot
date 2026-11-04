@@ -25,9 +25,6 @@ dependencies = [
   "pycapnp==2.1.0",  # 2.2 introduces a memory leak due to cyclic references
   "numpy >=2.0",
 
-  # large-file uploads
-  "hf-xet==1.7.0",
-
   # vendored native dependencies
   "comma-deps-capnproto",
   "comma-deps-acados",
@@ -62,6 +59,9 @@ testing = [
 
 tools = [
   "matplotlib",
+
+  # LFS uploads (lfs.py pre-push)
+  "hf-xet==1.7.0",
 
   "comma-deps-imgui",
   "comma-deps-bootstrap-icons",
