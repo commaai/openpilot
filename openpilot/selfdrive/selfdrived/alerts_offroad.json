@@ -18,7 +18,7 @@
     "_comment": "Set extra field to the failed reason."
   },
   "Offroad_ChestnutBranch": {
-    "text": "Chestnut detected! Switch to the release-chestnut branch to use chestnut-class models.",
+    "text": "Chestnut detected! Switch to the nightly-chestnut branch to use chestnut-class models.",
     "severity": -1
   },
   "Offroad_ChestnutModelError": {
