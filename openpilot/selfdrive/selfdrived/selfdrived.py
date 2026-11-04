@@ -101,6 +101,7 @@ class SelfdriveD:
     self.is_metric = self.params.get_bool("IsMetric")
     self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
     self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
+    openpilot_enabled = self.params.get_bool("OpenpilotEnabledToggle")
 
     car_recognized = self.CP.brand != 'mock'
 
@@ -142,9 +143,9 @@ class SelfdriveD:
     elif self.CP.secOcRequired and not self.CP.secOcKeyAvailable:
       self.startup_event = EventName.startupNoSecOcKey
 
-    if not car_recognized:
+    set_offroad_alert("Offroad_CarUnrecognized", not car_recognized)
+    if not car_recognized and openpilot_enabled:
       self.events.add(EventName.carUnrecognized, static=True)
-      set_offroad_alert("Offroad_CarUnrecognized", True)
     elif self.CP.passive:
       self.events.add(EventName.dashcamMode, static=True)
 
