@@ -253,7 +253,7 @@ class SelfdriveD:
         (CS.regenBraking and (not self.CS_prev.regenBraking or not CS.standstill)):
         self.events.add(EventName.pedalPressed)
 
-      # Alert when cruise was already on at startup, since controlsd will send cancel
+      # Audible alert when stock cruise was already on at startup, since openpilot will cancel it
       if not self.startup_cruise_checked:
         self.startup_cruise_checked = True
         if CS.cruiseState.enabled and not self.events.contains(ET.ENABLE) and not REPLAY:
