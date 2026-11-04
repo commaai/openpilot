@@ -1,9 +1,7 @@
 import numpy as np
-from openpilot.cereal import log
 from openpilot.common.constants import CV
 from openpilot.common.realtime import DT_MDL
 
-ACCEL_BOOST_INITIAL = 0.1
 ACCEL_BOOST_MAX = 0.2
 ACCEL_BOOST_RATE = 0.025
 ACCEL_BOOST_PER_OVERRIDE = 0.05
@@ -30,7 +28,7 @@ class AccelBoost:
       self.boost_eligible = enabled and model_limited
 
     if not enabled:
-      self.total_boost = ACCEL_BOOST_INITIAL if sm['selfdriveState'].personality == log.LongitudinalPersonality.aggressive else 0.0
+      self.total_boost = 0.0
     elif gas_pressed and self.boost_eligible:
       increase = min(ACCEL_BOOST_RATE * DT_MDL * speed_scale,
                      ACCEL_BOOST_PER_OVERRIDE - self.boost_this_override, ACCEL_BOOST_MAX - self.total_boost)
