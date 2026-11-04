@@ -20,12 +20,11 @@ J_CRUISE_BP = [0., 10.0, 25., 40.]
 A_CRUISE_MIN = -0.5
 CONTROL_N_T_IDX = ModelConstants.T_IDXS[:CONTROL_N]
 
-ACCEL_BOOST = 0.2
-LIFT_GAIN = 0.3  # max lift 0.15 m/s^2
-LIFT_MIN_PROB = 0.5
-LIFT_RC = 0.3
-PROB_IDX = 2  # gas and brake press probabilities 4s ahead
-CURVE_A_LAT_MAX = 2.0  # m/s^2 of lateral accel where the accel gain and lift are gone
+ACCEL_BOOST_STANDARD = 0.2
+ACCEL_BOOST_AGGRESSIVE = 0.4
+BRAKE_BOOST = 0.1
+LIFT_TARGET = 0.3  # m/s^2
+LIFT_PER_SPEED = 0.01  # m/s^2 per m/s
 
 
 def get_cruise_accel(v_cruise, v_ego, a_cruise_prev, a_target_prev, dt):
@@ -36,20 +35,20 @@ def get_cruise_accel(v_cruise, v_ego, a_cruise_prev, a_target_prev, dt):
   return target_accel
 
 
-def get_personality_accel(personality, a_e2e, v_ego, p_gas, p_brake, lift_filter, curvature):
-  curve_scale = max(1.0 - abs(curvature) * v_ego**2 / CURVE_A_LAT_MAX, 0.0)
+def get_personality_accel(personality, a_e2e, v_ego, lift_filter, curvature):
+  curve_scale = np.interp(abs(curvature) * v_ego**2, [1.0, 2.5], [1.0, 0.0])  # m/s^2 of lateral accel, fade out the accel gain and lift in curves
   lift_target = 0.0
-  if personality == log.LongitudinalPersonality.aggressive and a_e2e >= 0.0 and len(p_gas) > PROB_IDX and len(p_brake) > PROB_IDX:
-    # The model predicting a gas press and no brake press means it isn't slowing for anything
-    lift_target = curve_scale * LIFT_GAIN * max(p_gas[PROB_IDX] * (1.0 - p_brake[PROB_IDX]) - LIFT_MIN_PROB, 0.0)
+  if personality == log.LongitudinalPersonality.aggressive:
+    lift_target = curve_scale * min(LIFT_PER_SPEED * v_ego, LIFT_TARGET) * np.interp(a_e2e, [-0.025, 0.025], [0.0, 1.0])  # no lift if the model wants to slow
   lift = lift_filter.update(lift_target)
 
   if personality == log.LongitudinalPersonality.relaxed:
     gain = 1.0
   elif a_e2e > 0.0:  # gas
-    gain = 1.0 + ACCEL_BOOST * curve_scale
+    accel_boost = ACCEL_BOOST_AGGRESSIVE if personality == log.LongitudinalPersonality.aggressive else ACCEL_BOOST_STANDARD
+    gain = 1.0 + accel_boost * curve_scale
   else:  # brake
-    gain = np.interp(v_ego, [5.0, 10.0], [1.0, 1.0 + ACCEL_BOOST])  # m/s, fade the braking gain out so stops don't end early
+    gain = np.interp(v_ego, [10.0, 20.0], [1.0, 1.0 + BRAKE_BOOST])  # m/s, fade the braking gain out so stops don't end early
   return gain * a_e2e + lift
 
 
@@ -59,7 +58,7 @@ class LongitudinalPlanner:
     self.mpc = LongitudinalMpc(dt=dt)
     self.fcw = False
     self.dt = dt
-    self.lift_filter = FirstOrderFilter(0.0, LIFT_RC, dt)
+    self.lift_filter = FirstOrderFilter(0.0, 0.3, dt)
 
     self.v_desired_filter = FirstOrderFilter(init_v, 2.0, self.dt)
     self.a_cruise = init_a
@@ -120,9 +119,8 @@ class LongitudinalPlanner:
     output_a_target_mpc = get_accel_from_plan(self.v_desired_trajectory, self.a_desired_trajectory, CONTROL_N_T_IDX,
                                               action_t=action_t)
     output_should_stop_mpc = should_stop(v_ego, output_a_target_mpc)
-    predictions = sm['modelV2'].meta.disengagePredictions
     output_a_target_e2e = get_personality_accel(sm['selfdriveState'].personality, sm['modelV2'].action.desiredAcceleration, v_ego,
-                                                predictions.gasPressProbs, predictions.brakePressProbs, self.lift_filter, sm['controlsState'].curvature)
+                                                self.lift_filter, sm['controlsState'].curvature)
     output_should_stop_e2e = sm['modelV2'].action.shouldStop
 
     self.a_cruise = get_cruise_accel(v_cruise, v_ego, self.a_cruise, self.output_a_target, self.dt)
