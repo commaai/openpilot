@@ -53,12 +53,10 @@ class SelfdriveD:
     # Ensure the current branch is cached, otherwise the first cycle lags
     self.build_metadata = get_build_metadata()
 
+    # CarParams come from card after fingerprinting, until then we run with defaults and show initializing
     self.CP = car.CarParams()
     self.CP_initialized = False
-    if CP is None:
-      cloudlog.info("selfdrived is waiting for CarParams")
-    else:
-      self.initialize_car_params(CP)
+    self.CP_init_frame = 0
 
     self.pose_calibrator = PoseCalibrator()
     self.calibrated_pose: Pose | None = None
@@ -124,8 +122,14 @@ class SelfdriveD:
 
     self.startup_event = None
 
+    if CP is None:
+      cloudlog.info("selfdrived is waiting for CarParams")
+    else:
+      self.initialize_car_params(CP)
+
   def initialize_car_params(self, CP):
     self.CP = CP
+    self.CP_init_frame = self.sm.frame
     self.car_events = CarEvents(self.CP)
 
     car_recognized = self.CP.brand != 'mock'
@@ -158,7 +162,6 @@ class SelfdriveD:
 
     self.events.clear()
 
-    # TODO: it's fine to show startup alert here right? remove self.startup_event = None for these 2
     if self.sm['controlsState'].lateralControlState.which() == 'debugState':
       self.events.add(EventName.joystickDebug)
       self.startup_event = None
@@ -249,7 +252,7 @@ class SelfdriveD:
 
       if self.CP.notCar:
         # wait for everything to init first
-        if self.sm.frame > int(2. / DT_CTRL) and self.initialized:
+        if (self.sm.frame - self.CP_init_frame) > int(2. / DT_CTRL) and self.initialized:
           # body always wants to enable
           self.events.add(EventName.pcmEnable)
 
@@ -339,7 +342,7 @@ class SelfdriveD:
         safety_mismatch = pandaState.safetyModel not in IGNORED_SAFETY_MODES
 
       # safety mismatch allows some time for pandad to set the safety mode and publish it back from panda
-      if (safety_mismatch and self.sm.frame*DT_CTRL > 10.) or pandaState.safetyRxChecksInvalid or self.mismatch_counter >= 200:
+      if (safety_mismatch and (self.sm.frame - self.CP_init_frame)*DT_CTRL > 10.) or pandaState.safetyRxChecksInvalid or self.mismatch_counter >= 200:
         self.events.add(EventName.controlsMismatch)
 
       if log.PandaState.FaultType.relayMalfunction in pandaState.faults:
@@ -474,9 +477,17 @@ class SelfdriveD:
 
     self.sm.update(0)
 
-    if not self.initialized:
-      all_valid = CS.canValid and self.sm.all_checks() and self.CP_initialized
-      timed_out = self.sm.frame * DT_CTRL > 6.
+    # read on this thread so CarParams and car_events are always set together before any event uses them
+    if not self.CP_initialized:
+      CP_bytes = self.params.get("CarParams")
+      if CP_bytes is not None:
+        self.initialize_car_params(messaging.log_from_bytes(CP_bytes, car.CarParams))
+        cloudlog.info("selfdrived got CarParams")
+
+    # fingerprinting time doesn't count towards the init timeout
+    if not self.initialized and self.CP_initialized:
+      all_valid = CS.canValid and self.sm.all_checks()
+      timed_out = (self.sm.frame - self.CP_init_frame) * DT_CTRL > 6.
       if all_valid or timed_out or (SIMULATION and not REPLAY):
         available_streams = VisionIpcClient.available_streams("camerad", block=False)
         if VisionStreamType.VISION_STREAM_NARROW_ROAD not in available_streams:
@@ -570,17 +581,10 @@ class SelfdriveD:
 
   def params_thread(self, evt):
     while not evt.is_set():
-      if self.CP_initialized:
-        self.is_metric = self.params.get_bool("IsMetric")
-        self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
-        self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
-        self.personality = self.params.get("LongitudinalPersonality", return_default=True)
-      else:
-        CP = self.params.get("CarParams")
-        if CP is not None:
-          self.initialize_car_params(messaging.log_from_bytes(CP, car.CarParams))
-          cloudlog.info("selfdrived got CarParams")
-
+      self.is_metric = self.params.get_bool("IsMetric")
+      self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
+      self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
+      self.personality = self.params.get("LongitudinalPersonality", return_default=True)
       time.sleep(0.1)
 
   def run(self):
