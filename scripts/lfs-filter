@@ -1,0 +1,15 @@
+#!/bin/sh
+# LFS filter that "lfs.py install" copies into the git dir. It runs lfs.py, or without python3
+# has git skip LFS filtering and keep the pointer files, so git keeps working.
+lfs="$(dirname "$0")/lfs.py"
+if command -v python3 >/dev/null 2>&1 && [ -x "$lfs" ]; then
+  exec "$lfs" "$@"
+fi
+echo "lfs.py: python3 not found, leaving LFS files as pointers" >&2
+pkt() { printf '%04x%s\n' $(( ${#1} + 5 )) "$1"; }
+# git reads these replies in order: the handshake, then an abort for the first clean and the first smudge
+pkt git-filter-server; pkt version=2; printf 0000
+pkt capability=clean; pkt capability=smudge; printf 0000
+pkt status=abort; printf 0000
+pkt status=abort; printf 0000
+exec cat >/dev/null

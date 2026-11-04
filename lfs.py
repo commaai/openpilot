@@ -81,9 +81,10 @@ def install():
     write_executable(hook, hook_script.encode())
   # TODO: Remove legacy worktree filter cleanup once migration from stock Git LFS is no longer supported.
   git("config", "--worktree", "--remove-section", "filter.lfs", check=False)
-  git("config", "--local", "filter.lfs.process", '"$(git rev-parse --git-common-dir)/lfs.py" filter-process')
-  # a client that can't run fails git rather than committing raw files; failed downloads still leave the pointer
-  git("config", "--local", "filter.lfs.required", "true")
+  write_executable(GIT_DIR / "lfs-filter", (ROOT / "scripts" / "lfs-filter").read_bytes())
+  git("config", "--local", "filter.lfs.process", '"$(git rev-parse --git-common-dir)/lfs-filter" filter-process')
+  # git only keeps going after the filter's abort when it isn't required; lfs.py itself never fails a file
+  git("config", "--local", "filter.lfs.required", "false")
 
 
 def object_path(oid):
