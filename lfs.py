@@ -79,8 +79,8 @@ def install():
   # TODO: Remove legacy worktree filter cleanup once migration from stock Git LFS is no longer supported.
   git("config", "--worktree", "--remove-section", "filter.lfs", check=False)
   git("config", "--local", "filter.lfs.process", '"$(git rev-parse --git-common-dir)/lfs.py" filter-process')
-  # a failed download leaves the pointer rather than failing the git command; `./lfs.py pull` fills it in later
-  git("config", "--local", "filter.lfs.required", "false")
+  # a client that can't run fails git rather than committing raw files; failed downloads still leave the pointer
+  git("config", "--local", "filter.lfs.required", "true")
 
 
 def object_path(oid):
