@@ -205,6 +205,10 @@ msgstr "ドングルID"
 msgid "Download"
 msgstr "ダウンロード"
 
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Driving Personality"
+msgstr "走行性格"
+
 #: openpilot/system/ui/widgets/network.py
 msgid "EDIT"
 msgstr "編集"
@@ -289,10 +293,6 @@ msgstr "大量配信"
 #: openpilot/selfdrive/ui/widgets/setup.py
 msgid "Firehose Mode"
 msgstr "Firehoseモード"
-
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Following Distance"
-msgstr ""
 
 #: openpilot/system/ui/widgets/network.py
 msgid "Forget"
