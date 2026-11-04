@@ -205,6 +205,10 @@ msgstr "裝置 ID"
 msgid "Download"
 msgstr "下載"
 
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Driving Personality"
+msgstr "駕駛風格"
+
 #: openpilot/system/ui/widgets/network.py
 msgid "EDIT"
 msgstr "編輯"
@@ -289,10 +293,6 @@ msgstr "資料洪流"
 #: openpilot/selfdrive/ui/widgets/setup.py
 msgid "Firehose Mode"
 msgstr "Firehose 模式"
-
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Following Distance"
-msgstr ""
 
 #: openpilot/system/ui/widgets/network.py
 msgid "Forget"

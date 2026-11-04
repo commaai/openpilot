@@ -205,6 +205,10 @@ msgstr "ID del dongle"
 msgid "Download"
 msgstr "Descargar"
 
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Driving Personality"
+msgstr "Estilo de conducción"
+
 #: openpilot/system/ui/widgets/network.py
 msgid "EDIT"
 msgstr "EDITAR"
@@ -289,10 +293,6 @@ msgstr "Flujo masivo"
 #: openpilot/selfdrive/ui/widgets/setup.py
 msgid "Firehose Mode"
 msgstr "Modo Firehose"
-
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Following Distance"
-msgstr ""
 
 #: openpilot/system/ui/widgets/network.py
 msgid "Forget"
