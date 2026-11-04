@@ -256,7 +256,7 @@ class SelfdriveD:
       # Alert when cruise was already on at startup, since controlsd will send cancel
       if not self.startup_cruise_checked:
         self.startup_cruise_checked = True
-        if CS.cruiseState.enabled and not self.enabled and not self.events.contains(ET.ENABLE) and not REPLAY:
+        if CS.cruiseState.enabled and not self.events.contains(ET.ENABLE) and not REPLAY:
           self.events.add(EventName.startupCruiseCancel)
 
     # Create events for temperature, disk space, and memory
