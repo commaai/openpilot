@@ -1,9 +1,11 @@
+import colorsys
 import math
 import raylib_nb as rl
 from enum import IntEnum
 from openpilot.cereal import log
 from openpilot.common.constants import CV
 from openpilot.common.filter_simple import FirstOrderFilter
+from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.multilang import tr
@@ -15,21 +17,32 @@ LongitudinalPlanSource = log.LongitudinalPlan.LongitudinalPlanSource
 SET_SPEED_NA = 255
 
 # layout
-HEIGHT = 76
+HEIGHT = 108
+CORNER_RADIUS = 26
 MARGIN = 12
-PADDING = 20
+PADDING = 18
 COLUMN_GAP = 10
-TRACK_HEIGHT = 4
-NUMBER_SIZE = 52
+NUMBER_SIZE = 48
 LABEL_SIZE = 23
-MAX_SIZE = 19
+MAX_SIZE = 17
+
+# plan chart: speed for the next 10 s under a dashed MAX line
+CHART_TOP = 60
+CHART_HEIGHT = 34
+CHART_MIN_WIDTH = 120
+CHART_LABEL_GAP = 8
+CHART_MIN_RANGE = 10.0  # m/s, so a small gap also looks small
+CHART_SMOOTH = 0.2  # per frame, the plan comes at 20 Hz
+CHART_REVEAL = 0.6  # s, the line draws in from the left
+LINE_WIDTH = 3.0
+DASH_LENGTH = 4
+DASH_GAP = 4
 
 # when to show, in display units (mph or km/h)
 SHOW_GAP = 5
 HIDE_GAP = 2
 TARGET_STEP = 5
 TARGET_HYSTERESIS = 1.0
-LIMITED_HOLD = 1.0  # s, the plan source can flicker to cruise for a short time
 REASON_HOLD = 0.6  # s, a new reason must stay this long before we show it
 
 # reasons
@@ -81,11 +94,20 @@ def fade_out(progress: float) -> float:
 
 
 def fade_in(progress: float) -> float:
-  return clamp((progress - 0.25) / 0.75)
+  return clamp((progress - 0.15) / 0.45)
 
 
 def white(alpha: float) -> rl.Color:
   return rl.Color(255, 255, 255, round(255 * clamp(alpha)))
+
+
+def accel_color(accel: float, alpha: float) -> rl.Color:
+  # same colors as the path: green to speed up, white to hold, red to slow down
+  hue = clamp(60 + accel * 35, 0, 120)
+  saturation = min(abs(accel * 1.5), 1)
+  lightness = lerp(0.95, 0.62, saturation)
+  red, green, blue = colorsys.hls_to_rgb(hue / 360, lightness, saturation)
+  return rl.Color(round(red * 255), round(green * 255), round(blue * 255), round(255 * clamp(alpha)))
 
 
 class Spring:
@@ -197,8 +219,12 @@ class TargetSpeed(Widget):
     self._shown = False
     self._was_visible = False
     self._release_time = -RELEASE_HOLD
-    self._limited_time = -LIMITED_HOLD
-    self._fill_ratio = 1.0
+    self._max_speed_ms = 0.0
+    self._plan_speeds: list[float] = []
+    self._plan_accels: list[float] = []
+    self._chart_speeds: list[float] = []
+    self._chart_accels: list[float] = []
+    self._reveal_time = 0.0
     self._max_speed = 0
     self._target_speed = 0
     self._reason = Reason.CRUISING
@@ -210,7 +236,7 @@ class TargetSpeed(Widget):
     self._number = RollingNumber(self._font_number, NUMBER_SIZE)
     self._presence = Spring(0.0, 0.5, 0.72)
     self._width = Spring(0.0, 0.4, 0.85)
-    self._fill = Spring(0.0, 0.6, 0.9)
+    self._chart_floor = Spring(0.0, 0.6, 0.9)
 
   def set_can_draw(self, can_draw: bool) -> None:
     self._can_draw = can_draw
@@ -237,25 +263,23 @@ class TargetSpeed(Widget):
     max_speed_ms = car_state.vCruiseCluster * CV.KPH_TO_MS
     target_speed_ms = min(self._target_filter.update(max(0.0, model.velocity.x[-1])), max_speed_ms)
 
-    plan_source = sm['longitudinalPlan'].longitudinalPlanSource
-    if plan_source != LongitudinalPlanSource.cruise:
-      self._limited_time = now
-    limited = now - self._limited_time < LIMITED_HOLD
-
+    # only the gap to MAX decides. the plan source is not good for this, it is cruise each time the cruise
+    # accel limit is the lowest, also when the plan stays far below MAX
     self._max_speed = round(max_speed_ms * conversion)
     target_speed = round(target_speed_ms * conversion)
     gap = self._max_speed - target_speed
     was_shown = self._shown
     if self._shown:
-      self._shown = limited and gap >= HIDE_GAP
+      self._shown = gap >= HIDE_GAP
     else:
-      self._shown = limited and gap >= SHOW_GAP
+      self._shown = gap >= SHOW_GAP
 
     if was_shown and not self._shown:
-      # back to MAX: roll the number up and fill the track before the capsule goes away
+      # back to MAX: roll the number up and raise the plan to the MAX line before the capsule goes away
       self._release_time = now
       self._target_speed = self._max_speed
-      self._fill_ratio = 1.0
+      self._plan_speeds = [max_speed_ms] * len(self._plan_speeds)
+      self._plan_accels = [0.0] * len(self._plan_accels)
       self._set_reason(Reason.RESUMING, now)
 
     if not self._shown:
@@ -264,9 +288,13 @@ class TargetSpeed(Widget):
     # steps of 5 with some hysteresis, so the number only rolls when the target really changes
     if not was_shown or abs(target_speed - self._target_speed) > TARGET_STEP / 2 + TARGET_HYSTERESIS:
       self._target_speed = min(round(target_speed / TARGET_STEP) * TARGET_STEP, self._max_speed)
-    self._fill_ratio = target_speed_ms / max(max_speed_ms, 1.0)
+    self._max_speed_ms = max_speed_ms
+    self._plan_speeds = [min(speed, max_speed_ms) for speed in model.velocity.x]
+    self._plan_accels = list(model.acceleration.x)
 
-    reason = self._get_reason(target_speed_ms, max_speed_ms, plan_source)
+    # the reason uses the plan without the filter, so it does not lag behind the chart
+    plan_source = sm['longitudinalPlan'].longitudinalPlanSource
+    reason = self._get_reason(min(model.velocity.x[-1], max_speed_ms), max_speed_ms, plan_source)
     if reason != self._candidate_reason:
       self._candidate_reason = reason
       self._candidate_time = now
@@ -311,14 +339,17 @@ class TargetSpeed(Widget):
     digits = len(str(self._target_speed))
     label = reason_text(self._reason)
     max_text = f"{tr('MAX')} {self._max_speed}"
-    label_width = max(measure_text_cached(self._font_label, label, LABEL_SIZE).x,
-                      measure_text_cached(self._font_max, max_text, MAX_SIZE).x)
+    label_width = measure_text_cached(self._font_label, label, LABEL_SIZE).x
+    max_text_width = measure_text_cached(self._font_max, max_text, MAX_SIZE).x
 
     if visible and not self._was_visible and self._presence.x < 0.05:
-      # start fresh: digits roll in and the track drains from full
+      # start fresh: digits roll in and the plan draws in from the left
       self._number.reset(digits)
-      self._fill.snap(1.0)
-      self._width.snap(PADDING + self._number.width.x + COLUMN_GAP + label_width + PADDING)
+      self._chart_speeds = list(self._plan_speeds)
+      self._chart_accels = list(self._plan_accels)
+      self._chart_floor.snap(self._get_chart_floor())
+      self._reveal_time = -1.0
+      self._width.snap(self._content_width(self._number.width.x, label_width, max_text_width))
     self._was_visible = visible
 
     presence = self._presence.update(float(visible))
@@ -327,7 +358,7 @@ class TargetSpeed(Widget):
       return
 
     number_width = self._number.update_width(digits)
-    full_width = self._width.update(PADDING + number_width + COLUMN_GAP + label_width + PADDING)
+    full_width = self._width.update(self._content_width(number_width, label_width, max_text_width))
 
     # grow out of a small pill on the right, with a small overshoot
     grow = max(0.0, presence)
@@ -347,35 +378,102 @@ class TargetSpeed(Widget):
 
     # set the number here, so the digits roll in when the content shows
     self._number.set_value(self._target_speed)
-    fill = clamp(self._fill.update(self._fill_ratio))
+    if self._reveal_time < 0:
+      self._reveal_time = now
 
     # content stays at its full size layout, the capsule grows around it
     x = right - full_width + PADDING
     y = rect.y + MARGIN
 
-    self._number.draw(x + number_width, y + 5, content_alpha)
+    self._number.draw(x + number_width, y + 6, content_alpha)
 
     label_x = x + number_width + COLUMN_GAP
+    label_y = y + 22
     progress = ease_out_cubic(clamp((now - self._reason_change_time) / ROLL_DURATION))
     if progress < 1:
       prev_label = reason_text(self._prev_reason)
-      rl.draw_text_ex(self._font_label, prev_label, rl.Vector2(label_x, y + 12 - 6 * progress), LABEL_SIZE, 0,
+      rl.draw_text_ex(self._font_label, prev_label, rl.Vector2(label_x, label_y - 6 * progress), LABEL_SIZE, 0,
                       white(content_alpha * fade_out(progress)))
-    rl.draw_text_ex(self._font_label, label, rl.Vector2(label_x, y + 12 + 6 * (1 - progress)), LABEL_SIZE, 0,
+    rl.draw_text_ex(self._font_label, label, rl.Vector2(label_x, label_y + 6 * (1 - progress)), LABEL_SIZE, 0,
                     white(content_alpha * fade_in(progress)))
-    rl.draw_text_ex(self._font_max, max_text, rl.Vector2(label_x, y + 36), MAX_SIZE, 0, white(content_alpha * 0.55))
 
-    # track from zero to MAX, filled up to the target speed
-    track = rl.Rectangle(x, y + HEIGHT - 16, full_width - PADDING * 2, TRACK_HEIGHT)
-    rl.draw_rectangle_rounded(track, 1.0, 8, white(content_alpha * 0.2))
-    fill_rect = rl.Rectangle(track.x, track.y, max(TRACK_HEIGHT, track.width * fill), TRACK_HEIGHT)
-    rl.draw_rectangle_rounded(fill_rect, 1.0, 8, white(content_alpha * 0.95))
+    chart_width = full_width - PADDING * 2 - CHART_LABEL_GAP - max_text_width
+    self._draw_chart(rl.Rectangle(x, y + CHART_TOP, chart_width, CHART_HEIGHT), max_text, content_alpha, now)
+
+  @staticmethod
+  def _content_width(number_width: float, label_width: float, max_text_width: float) -> float:
+    top_row = number_width + COLUMN_GAP + label_width
+    chart_row = CHART_MIN_WIDTH + CHART_LABEL_GAP + max_text_width
+    return PADDING + max(top_row, chart_row) + PADDING
+
+  def _get_chart_floor(self) -> float:
+    # MAX is the top of the chart, show at least CHART_MIN_RANGE below it
+    lowest = min(self._plan_speeds, default=self._max_speed_ms)
+    return self._max_speed_ms - max(CHART_MIN_RANGE, (self._max_speed_ms - lowest) * 1.15)
+
+  def _draw_chart(self, chart: rl.Rectangle, max_text: str, alpha: float, now: float) -> None:
+    # smooth the plan, it only comes at 20 Hz
+    if len(self._chart_speeds) != len(self._plan_speeds):
+      self._chart_speeds = list(self._plan_speeds)
+      self._chart_accels = list(self._plan_accels)
+    for i in range(len(self._chart_speeds)):
+      self._chart_speeds[i] += (self._plan_speeds[i] - self._chart_speeds[i]) * CHART_SMOOTH
+      self._chart_accels[i] += (self._plan_accels[i] - self._chart_accels[i]) * CHART_SMOOTH
+
+    floor = self._chart_floor.update(self._get_chart_floor())
+    span = max(self._max_speed_ms - floor, 1.0)
+    bottom = chart.y + chart.height
+
+    # dashed MAX line along the top, with the MAX label at its end
+    dash_x = chart.x
+    while dash_x < chart.x + chart.width:
+      dash_end = min(dash_x + DASH_LENGTH, chart.x + chart.width)
+      rl.draw_line_ex(rl.Vector2(dash_x, chart.y), rl.Vector2(dash_end, chart.y), 1.5, white(alpha * 0.45))
+      dash_x += DASH_LENGTH + DASH_GAP
+    max_text_height = measure_text_cached(self._font_max, max_text, MAX_SIZE).y
+    rl.draw_text_ex(self._font_max, max_text, rl.Vector2(chart.x + chart.width + CHART_LABEL_GAP, chart.y - max_text_height / 2),
+                    MAX_SIZE, 0, white(alpha * 0.6))
+
+    if len(self._chart_speeds) < 2:
+      return
+
+    # planned speed for the next 10 s, colored by the planned accel like the path
+    t_end = ModelConstants.T_IDXS[-1]
+    points = []
+    for t, speed in zip(ModelConstants.T_IDXS, self._chart_speeds, strict=False):
+      point_y = chart.y + chart.height * (1 - (speed - floor) / span)
+      points.append(rl.Vector2(chart.x + chart.width * t / t_end, max(chart.y, min(bottom, point_y))))
+
+    reveal_x = chart.x + chart.width * ease_out_cubic(clamp((now - self._reveal_time) / CHART_REVEAL))
+    head = points[0]
+    for i in range(len(points) - 1):
+      start, end = points[i], points[i + 1]
+      if start.x >= reveal_x:
+        break
+
+      if end.x > reveal_x:
+        t = (reveal_x - start.x) / max(end.x - start.x, 1e-3)
+        end = rl.Vector2(reveal_x, lerp(start.y, end.y, t))
+      head = end
+
+      # area under the line fades out to the bottom
+      color = accel_color(self._chart_accels[i], alpha)
+      area_top = round((start.y + end.y) / 2)
+      rl.draw_rectangle_gradient_v(round(start.x), area_top, max(1, round(end.x) - round(start.x)), round(bottom) - area_top,
+                                   accel_color(self._chart_accels[i], alpha * 0.3), accel_color(self._chart_accels[i], 0.0))
+      rl.draw_line_ex(start, end, LINE_WIDTH, color)
+      rl.draw_circle_v(end, LINE_WIDTH / 2, color)
+
+    # dot at the end of the plan, that is the target speed
+    rl.draw_circle_v(head, LINE_WIDTH * 1.4, white(alpha))
 
   @staticmethod
   def _draw_capsule(capsule: rl.Rectangle, alpha: float) -> None:
     # soft shadow, then the capsule and a faint edge
     for spread, shadow_alpha in ((8, 0.08), (4, 0.12)):
       shadow = rl.Rectangle(capsule.x - spread, capsule.y - spread + 2, capsule.width + spread * 2, capsule.height + spread * 2)
-      rl.draw_rectangle_rounded(shadow, 1.0, 16, rl.Color(0, 0, 0, round(255 * shadow_alpha * alpha)))
-    rl.draw_rectangle_rounded(capsule, 1.0, 16, rl.Color(0, 0, 0, round(255 * 0.62 * alpha)))
-    rl.draw_rectangle_rounded_lines_ex(capsule, 1.0, 16, 1.5, white(0.1 * alpha))
+      roundness = clamp(2 * (CORNER_RADIUS + spread) / max(min(shadow.width, shadow.height), 1))
+      rl.draw_rectangle_rounded(shadow, roundness, 16, rl.Color(0, 0, 0, round(255 * shadow_alpha * alpha)))
+    roundness = clamp(2 * CORNER_RADIUS / max(min(capsule.width, capsule.height), 1))
+    rl.draw_rectangle_rounded(capsule, roundness, 16, rl.Color(0, 0, 0, round(255 * 0.62 * alpha)))
+    rl.draw_rectangle_rounded_lines_ex(capsule, roundness, 16, 1.5, white(0.1 * alpha))
