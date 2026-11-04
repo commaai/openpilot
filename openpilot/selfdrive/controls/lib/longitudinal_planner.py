@@ -111,6 +111,8 @@ class LongitudinalPlanner:
 
     # help the model slow down for a sharp curve in its own plan
     a_curve = self.curve_speed.update(model, sm['vehicleParameters'].roll, output_a_target_e2e)
+    # and to accelerate again when the curve ends
+    output_a_target_e2e = self.curve_speed.exit_accel(output_a_target_e2e)
 
     candidates = [(output_a_target_mpc, self.mpc.source, output_should_stop_mpc),
                   (self.a_cruise, LongitudinalPlanSource.cruise, cruise_should_stop),

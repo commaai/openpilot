@@ -15,6 +15,13 @@ CURVE_ACCEL_MIN = -2.0       # m/s², hardest braking for a curve
 CURVE_JERK = 2.0             # m/s³, how fast the correction starts and ends
 NO_LIMIT = 10.0              # m/s², no curve ahead
 
+# After the curve limit slowed the car, the model is often slow to accelerate again. Give its accel a small boost
+# when the curve ends, that fades out over EXIT_TIME.
+EXIT_TIME = 5.0              # s after the curve limit ends
+EXIT_GAIN = 1.3
+EXIT_MIN_ACCEL = 0.1         # m/s², the model must ask for at least this much accel
+EXIT_LAT_ACCEL = 1.5         # m/s², only when the plan lateral accel in the next 3 s is below this
+
 # The model often sees how sharp a curve is only late (e.g. at night), but its yaw rate std is higher before such a
 # curve. Take each plan point as this many stds sharper, so the car slows earlier when the model is not sure.
 YAW_RATE_STD_K = 1.0
@@ -55,6 +62,8 @@ class CurveSpeed:
 
   def reset(self):
     self.a_curve = NO_LIMIT
+    self.time_since_limit = np.inf
+    self.lat_accel_ahead = 0.0
 
   def update(self, model, roll, a_e2e):
     position = model.position
@@ -62,6 +71,10 @@ class CurveSpeed:
     if n == 0 or len(model.velocity.x) != n or len(model.orientationRate.z) != n:
       self.reset()
       return self.a_curve
+
+    t, v, yaw_rate = (np.asarray(a, dtype=float) for a in (position.t, model.velocity.x, model.orientationRate.z))
+    near = (t >= CURVE_T_MIN) & (t <= 3.0)
+    self.lat_accel_ahead = float(np.max(np.abs(v[near] * yaw_rate[near]))) if near.sum() > 0 else 0.0
 
     yaw_rate_std = model.orientationRate.zStd if len(model.orientationRate.zStd) == n else np.zeros(n)
     gap = get_curve_gap(position.t, model.velocity.x, model.orientationRate.z, yaw_rate_std, roll)
@@ -76,4 +89,13 @@ class CurveSpeed:
       self.a_curve = a_prev + step
     else:
       self.a_curve = NO_LIMIT
+    self.time_since_limit = 0.0 if self.a_curve < NO_LIMIT else self.time_since_limit + self.dt
     return self.a_curve
+
+  def exit_accel(self, a_e2e):
+    """The model's accel with the curve exit boost. Only when it accelerates, after the curve limit, as the curve ends."""
+    if self.a_curve < NO_LIMIT or self.time_since_limit > EXIT_TIME or a_e2e <= EXIT_MIN_ACCEL:
+      return a_e2e
+    if self.lat_accel_ahead > EXIT_LAT_ACCEL:
+      return a_e2e
+    return a_e2e * float(np.interp(self.time_since_limit, [0.0, EXIT_TIME], [EXIT_GAIN, 1.0]))
