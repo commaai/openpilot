@@ -125,6 +125,7 @@ class SelfdriveD:
     self.not_running_prev = None
     self.personality = self.params.get("LongitudinalPersonality", return_default=True)
     self.recalibrating_seen = False
+    self.startup_cruise_checked = False
     self.dm_lockout_set = False
     self.dm_uncertain_alerted = False
     self.state_machine = StateMachine()
@@ -251,6 +252,13 @@ class SelfdriveD:
         (CS.brakePressed and (not self.CS_prev.brakePressed or not CS.standstill)) or \
         (CS.regenBraking and (not self.CS_prev.regenBraking or not CS.standstill)):
         self.events.add(EventName.pedalPressed)
+
+      # If cruise is already on when openpilot starts, we missed the rising edge and controlsd cancels it.
+      # Check one time, on the first frame with valid CAN.
+      if not self.startup_cruise_checked:
+        self.startup_cruise_checked = True
+        if CS.cruiseState.enabled and self.state_machine.state == State.disabled and not self.events.contains(ET.ENABLE):
+          self.events.add(EventName.cruiseCanceledOnStartup)
 
     # Create events for temperature, disk space, and memory
     if self.sm['deviceState'].thermalStatus >= ThermalStatus.overheated:
