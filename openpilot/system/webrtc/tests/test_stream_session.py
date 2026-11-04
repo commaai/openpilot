@@ -7,7 +7,8 @@ from openpilot.common.test import OpenpilotTestCase
 from openpilot.cereal import messaging, log
 from teleoprtc.tracks import VIDEO_CLOCK_RATE
 
-from openpilot.system.webrtc.webrtcd import CerealOutgoingMessageProxy, CerealIncomingMessageProxy, ServerState, handle_get_stream
+from openpilot.system.webrtc.device.messaging import CerealOutgoingMessageProxy, CerealIncomingMessageProxy
+from openpilot.system.webrtc.webrtcd import ServerState, handle_get_stream
 from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
 
 
