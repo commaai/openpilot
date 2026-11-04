@@ -3,7 +3,7 @@ import raylib_nb as rl
 from dataclasses import dataclass
 from openpilot.common.constants import CV
 from openpilot.selfdrive.ui.mici.onroad.torque_bar import TorqueBar
-from openpilot.selfdrive.ui.mici.onroad.target_speed import TargetSpeed
+from openpilot.selfdrive.ui.mici.onroad.speed_display import SpeedDisplay
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus, ChestnutState
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.multilang import tr
@@ -104,7 +104,6 @@ class HudRenderer(Widget):
     self.is_cruise_set: bool = False
     self.is_cruise_available: bool = True
     self.set_speed: float = SET_SPEED_NA
-    self._set_speed_changed_time: float = 0
     self.speed: float = 0.0
     self.v_ego_cluster_seen: bool = False
     self._engaged: bool = False
@@ -120,7 +119,7 @@ class HudRenderer(Widget):
 
     self._turn_intent = TurnIntent()
     self._torque_bar = TorqueBar()
-    self._target_speed = self._child(TargetSpeed())
+    self._speed_display = self._child(SpeedDisplay())
 
     self._txt_wheel: rl.Texture = gui_app.texture('icons_mici/wheel.png', 50, 50)
     self._txt_wheel_critical: rl.Texture = gui_app.texture('icons_mici/wheel_critical.png', 50, 50)
@@ -132,7 +131,6 @@ class HudRenderer(Widget):
     self._wheel_alpha_filter = FirstOrderFilter(0, 0.05, 1 / gui_app.target_fps)
     self._wheel_y_filter = FirstOrderFilter(0, 0.1, 1 / gui_app.target_fps)
 
-    self._set_speed_alpha_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._chestnut_alpha_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
   def set_wheel_critical_icon(self, critical: bool):
@@ -142,10 +140,6 @@ class HudRenderer(Widget):
   def set_can_draw_top_icons(self, can_draw_top_icons: bool):
     """Set whether to draw the top part of the HUD."""
     self._can_draw_top_icons = can_draw_top_icons
-
-  def drawing_top_icons(self) -> bool:
-    # whether we're drawing any top icons currently
-    return bool(self._set_speed_alpha_filter.x > 1e-2)
 
   def _update_state(self) -> None:
     """Update HUD state based on car state and controls state."""
@@ -160,8 +154,6 @@ class HudRenderer(Widget):
 
     set_speed = car_state.vCruiseCluster
     engaged = sm['selfdriveState'].enabled
-    if (set_speed != self.set_speed and engaged) or (engaged and not self._engaged):
-      self._set_speed_changed_time = rl.get_time()
     if engaged != self._engaged:
       self._chestnut_fade_time = rl.get_time() if engaged else 0
     self._engaged = engaged
@@ -180,14 +172,11 @@ class HudRenderer(Widget):
 
     self._torque_bar.render(rect)
 
-    if self.is_cruise_set:
-      self._draw_set_speed(rect)
-
     self._draw_model_source(rect)
 
     self._draw_steering_wheel(rect)
-    self._target_speed.set_can_draw(self._can_draw_top_icons)
-    self._target_speed.render(rect)
+    self._speed_display.set_can_draw(self._can_draw_top_icons)
+    self._speed_display.render(rect)
 
   def _draw_model_source(self, rect: rl.Rectangle) -> None:
     loading = ui_state.chestnut_state == ChestnutState.LOADING
@@ -256,48 +245,6 @@ class HudRenderer(Widget):
       exclamation_pos_x = pos_x - self._txt_exclamation_point.width / 2 + wheel_txt.width / 2 + EXCLAMATION_POINT_SPACING
       exclamation_pos_y = pos_y - self._txt_exclamation_point.height / 2
       rl.draw_texture_ex(self._txt_exclamation_point, rl.Vector2(exclamation_pos_x, exclamation_pos_y), 0.0, 1.0, rl.WHITE)
-
-  def _draw_set_speed(self, rect: rl.Rectangle) -> None:
-    """Draw the MAX speed indicator box."""
-    alpha = self._set_speed_alpha_filter.update(0 < rl.get_time() - self._set_speed_changed_time < SET_SPEED_PERSISTENCE and
-                                                self._can_draw_top_icons and self._engaged)
-    if alpha < 1e-2:
-      return
-
-    x = rect.x
-    y = rect.y
-
-    # draw drop shadow
-    circle_radius = 162 // 2
-    rl.draw_circle_gradient(rl.Vector2(x + circle_radius, y + circle_radius), circle_radius,
-                            rl.Color(0, 0, 0, int(255 / 2 * alpha)), rl.BLANK)
-
-    set_speed_color = rl.Color(255, 255, 255, int(255 * 0.9 * alpha))
-    max_color = rl.Color(255, 255, 255, int(255 * 0.9 * alpha))
-
-    set_speed = self.set_speed
-    if self.is_cruise_set and not ui_state.is_metric:
-      set_speed *= KM_TO_MILE
-
-    set_speed_text = CRUISE_DISABLED_CHAR if not self.is_cruise_set else str(round(set_speed))
-    rl.draw_text_ex(
-      self._font_display,
-      set_speed_text,
-      rl.Vector2(x + 13 + 4, y + 3 - 8 - 3 + 4),
-      FONT_SIZES.set_speed,
-      0,
-      set_speed_color,
-    )
-
-    max_text = tr("MAX")
-    rl.draw_text_ex(
-      self._font_semi_bold,
-      max_text,
-      rl.Vector2(x + 25, y + FONT_SIZES.set_speed - 7 + 4),
-      FONT_SIZES.max_speed,
-      0,
-      max_color,
-    )
 
   def _draw_current_speed(self, rect: rl.Rectangle) -> None:
     """Draw the current vehicle speed and unit."""
