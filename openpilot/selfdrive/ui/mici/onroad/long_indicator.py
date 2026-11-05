@@ -22,14 +22,10 @@ class LongIndicator(Widget):
                               for _ in range(3)]
     self._personality: int | None = None
     self._personality_changed_time = -HIGHLIGHT_TIME
-    self._should_draw = False
 
   @staticmethod
   def _texture(name: str, width: int, height: int) -> rl.Texture:
     return gui_app.texture(f'icons_mici/longitudinal/{name}.png', width, height, keep_aspect_ratio=False)
-
-  def set_should_draw(self, should_draw: bool):
-    self._should_draw = should_draw
 
   def _render(self, rect: rl.Rectangle) -> None:
     sm = ui_state.sm
@@ -39,8 +35,8 @@ class LongIndicator(Widget):
       self._alpha_filter.x = 0.0
       return
 
-    # hidden under alerts and set speed
-    visible = self._should_draw and sm['selfdriveState'].alertSize == log.SelfdriveState.AlertSize.none
+    # hidden under alerts
+    visible = sm['selfdriveState'].alertSize == log.SelfdriveState.AlertSize.none
     alpha = self._alpha_filter.update(visible)
     self._draw_lead_car(rect, alpha)
     self._draw_distance_bars(rect, alpha, visible)
