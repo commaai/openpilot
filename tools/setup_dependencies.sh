@@ -123,8 +123,14 @@ function install_python_deps() {
   uv self update || true
 
   echo "installing python packages..."
-  uv sync --frozen --all-extras
-  source .venv/bin/activate
+  # as a member of a uv workspace (like in xx), the venv is the workspace's: only add to it
+  VENV="$(uv run --no-sync python -c 'import sys; print(sys.prefix)')"
+  if [[ "$VENV" -ef .venv ]]; then
+    uv sync --frozen --all-extras
+  else
+    uv sync --frozen --all-extras --inexact
+  fi
+  source "$VENV/bin/activate"
 }
 
 # --- Main ---
