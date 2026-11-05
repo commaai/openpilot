@@ -1013,6 +1013,7 @@ struct DrivingModelData {
   frameDropPerc @6 :Float32;
   modelExecutionTime @7 :Float32;
   big @8 :Bool;
+  bigExpected @9 :Bool;  # modeld tried the big model this drive, so with big false it failed
 
   action @2 :ModelDataV2.Action;
 
