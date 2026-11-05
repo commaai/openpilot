@@ -14,7 +14,7 @@ class CurveSpeed:
   def __init__(self, dt):
     self.dt = dt
     self.gap = FirstOrderFilter(0.0, 0.2, dt)
-    self.reset()
+    self.correction = 0.0
 
   def reset(self):
     self.gap.x = 0.0
