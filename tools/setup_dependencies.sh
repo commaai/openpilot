@@ -123,14 +123,9 @@ function install_python_deps() {
   uv self update || true
 
   echo "installing python packages..."
-  # as a member of a uv workspace (like in xx), the venv is the workspace's: only add to it
-  VENV="$(uv run --no-sync python -c 'import sys; print(sys.prefix)')"
-  if [[ "$VENV" -ef .venv ]]; then
-    uv sync --frozen --all-extras
-  else
-    uv sync --frozen --all-extras --inexact
-  fi
-  source "$VENV/bin/activate"
+  # openpilot's own venv, also as a uv workspace member (like in xx), where uv would strip the workspace's venv
+  UV_PROJECT_ENVIRONMENT="$ROOT/.venv" uv sync --frozen --all-extras
+  source .venv/bin/activate
 }
 
 # --- Main ---

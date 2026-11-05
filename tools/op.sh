@@ -147,22 +147,9 @@ function op_check_os() {
   fi
 }
 
-# the venv uv syncs: openpilot's own, or as a member of a uv workspace (like in xx) the workspace's
-function op_venv_dir() {
-  local dir="$OPENPILOT_ROOT"
-  while [[ ! -d "$OPENPILOT_ROOT/.venv" && "$dir" != / ]]; do
-    dir="$(dirname "$dir")"
-    if grep -qs '^\[tool\.uv\.workspace\]' "$dir/pyproject.toml"; then
-      echo "$dir/.venv"
-      return
-    fi
-  done
-  echo "$OPENPILOT_ROOT/.venv"
-}
-
 function op_check_venv() {
   echo "Checking for venv..."
-  if [[ -f "$(op_venv_dir)/bin/activate" ]]; then
+  if [[ -f "$OPENPILOT_ROOT/.venv/bin/activate" ]]; then
     echo -e " ↳ [${GREEN}✔${NC}] venv detected."
   else
     echo -e " ↳ [${RED}✗${NC}] Can't activate venv in '$OPENPILOT_ROOT'. Assuming global env!"
@@ -250,25 +237,21 @@ function op_auth() {
 }
 
 function op_activate_venv() {
-  local venv
-  venv="$(op_venv_dir)"
   # bash 3.2 can't handle this without the 'set +e'
   set +e
-  source "$venv/bin/activate" &> /dev/null || true
+  source "$OPENPILOT_ROOT/.venv/bin/activate" &> /dev/null || true
   set -e
 
   # persist venv on PATH across GitHub Actions steps
   if [ -n "$GITHUB_PATH" ]; then
-    echo "$venv/bin" >> "$GITHUB_PATH"
+    echo "$OPENPILOT_ROOT/.venv/bin" >> "$GITHUB_PATH"
   fi
 }
 
 function op_venv() {
   op_before_cmd
 
-  local venv
-  venv="$(op_venv_dir)"
-  if [[ ! -f "$venv/bin/activate" ]]; then
+  if [[ ! -f "$OPENPILOT_ROOT/.venv/bin/activate" ]]; then
     echo -e "No venv found in '$OPENPILOT_ROOT'"
     return 1
   fi
@@ -276,10 +259,10 @@ function op_venv() {
   case $SHELL_NAME in
     "zsh")
       ZSHRC_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t 'tmp_zsh')
-      echo "source \"$RC_FILE\"; source \"$venv/bin/activate\"" >> "$ZSHRC_DIR/.zshrc"
+      echo "source \"$RC_FILE\"; source \"$OPENPILOT_ROOT/.venv/bin/activate\"" >> "$ZSHRC_DIR/.zshrc"
       ZDOTDIR=$ZSHRC_DIR zsh ;;
     *)
-      bash --rcfile <(echo "source \"$RC_FILE\"; source \"$venv/bin/activate\"") ;;
+      bash --rcfile <(echo "source \"$RC_FILE\"; source \"$OPENPILOT_ROOT/.venv/bin/activate\"") ;;
   esac
 }
 
