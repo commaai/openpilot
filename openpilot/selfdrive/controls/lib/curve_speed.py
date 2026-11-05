@@ -1,6 +1,7 @@
 import numpy as np
 
 from openpilot.common.constants import ACCELERATION_DUE_TO_GRAVITY
+from openpilot.common.filter_simple import FirstOrderFilter
 
 # Help e2e long slow down for a sharp curve in its own plan. At each plan point, compare the plan speed with the
 # curve speed for A_LAT_MAX. Only the gap is corrected, on top of the model's own accel: when the model slows down
@@ -15,7 +16,6 @@ CURVE_ACCEL_MIN = -2.0       # m/s², hardest braking for a curve
 CURVE_JERK = 2.0             # m/s³, how fast the correction starts and ends
 NO_LIMIT = 10.0              # m/s², no curve ahead
 # the gap from the plan is noisy: filter it, and use two thresholds so the limit does not go on and off
-GAP_TC = 0.5                 # s, only for a gap that gets smaller
 GAP_ON = 0.05                # m/s²
 GAP_OFF = 0.01               # m/s²
 
@@ -61,13 +61,15 @@ def get_curve_accel(a_e2e, gap):
 class CurveSpeed:
   def __init__(self, dt):
     self.dt = dt
+    # only for a gap that gets smaller, a bigger gap is used at once
+    self.gap = FirstOrderFilter(0.0, 0.5, dt)
     self.reset()
 
   def reset(self):
     self.a_curve = NO_LIMIT
     self.time_since_limit = np.inf
     self.lat_accel_ahead = 0.0
-    self.gap = 0.0
+    self.gap.x = 0.0
     self.active = False
 
   def update(self, model, roll, a_e2e):
@@ -84,12 +86,15 @@ class CurveSpeed:
     yaw_rate_std = model.orientationRate.zStd if len(model.orientationRate.zStd) == n else np.zeros(n)
     gap = get_curve_gap(position.t, model.velocity.x, model.orientationRate.z, yaw_rate_std, roll)
     # a bigger gap is used at once (no delay before braking), a smaller gap comes down slowly
-    self.gap = gap if gap > self.gap else self.gap + self.dt / (GAP_TC + self.dt) * (gap - self.gap)
-    if self.active:
-      self.active = self.gap > GAP_OFF
+    if gap > self.gap.x:
+      self.gap.x = gap
     else:
-      self.active = self.gap > GAP_ON
-    a_target = get_curve_accel(a_e2e, self.gap) if self.active else NO_LIMIT
+      self.gap.update(gap)
+    if self.active:
+      self.active = self.gap.x > GAP_OFF
+    else:
+      self.active = self.gap.x > GAP_ON
+    a_target = get_curve_accel(a_e2e, self.gap.x) if self.active else NO_LIMIT
 
     # the correction starts from the model's own accel and changes with limited jerk
     a_prev = a_e2e if self.a_curve >= NO_LIMIT else self.a_curve
