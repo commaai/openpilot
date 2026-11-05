@@ -3,6 +3,7 @@ from pathlib import Path
 from collections.abc import Sequence
 
 import openpilot.system.loggerd.deleter as deleter
+from openpilot.system.loggerd.xattr_cache import _setxattr
 from openpilot.system.loggerd.tests.loggerd_tests_common import UploaderTestCase
 
 Stats = namedtuple("Stats", ['f_bavail', 'f_blocks', 'f_frsize'])
@@ -53,6 +54,16 @@ class TestDeleter(UploaderTestCase):
       self.make_file_with_data(self.seg_format2.format(i), self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE)
       for i in range(5)
     ])
+
+  def test_delete_preserved_after_first_step(self):
+    old = self.make_file_with_data(self.seg_format.format(0), self.f_type)
+    bookmarked = self.make_file_with_data(self.seg_format.format(1), self.f_type)
+    newer = self.make_file_with_data(self.seg_format2.format(0), self.f_type)
+    assert deleter.deleter_step() == (True, str(old.parent))
+
+    # loggerd sets the preserve attribute from its own process, bypassing this process's xattr cache
+    _setxattr(str(bookmarked.parent), deleter.PRESERVE_ATTR_NAME, deleter.PRESERVE_ATTR_VALUE)
+    self.assertDeleteOrder([newer, bookmarked])
 
   def test_delete_last(self):
     self.assertDeleteOrder([
