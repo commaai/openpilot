@@ -1163,6 +1163,7 @@ struct ModelDataV2 {
     desiredCurvature @0 :Float32;
     desiredAcceleration @1 :Float32;
     shouldStop @2 :Bool;
+    actionAcceleration @3 :Float32;  # the model's action accel, not smoothed, before using the plan
   }
 
   deprecated :group {

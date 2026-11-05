@@ -79,7 +79,8 @@ def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.
 
   return log.ModelDataV2.Action(desiredCurvature=float(desired_curvature),
                                 desiredAcceleration=float(desired_accel),
-                                shouldStop=bool(stop))
+                                shouldStop=bool(stop),
+                                actionAcceleration=float(action_accel if action_accel is not None else float('nan')))
 
 
 class ChestnutGpuState:
