@@ -53,13 +53,15 @@ BIG_MODEL_TIMEOUT = 60
 def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.ModelDataV2.Action,
                           lat_action_t: float, long_action_t: float, v_ego: float) -> log.ModelDataV2.Action:
   plan, plan_stds = model_output['plan'][0], model_output['plan_stds'][0]
-  # long uses the whole plan, also for models with an action
+  action_accel = model_output['action'][0,1] if 'action' in model_output else None
+  # long uses the whole plan to slow down early, also for models with an action
   desired_accel = get_accel_from_plan_horizon(plan[:,Plan.VELOCITY][:,0],
                                               plan[:,Plan.ACCELERATION][:,0],
                                               plan[:,Plan.POSITION][:,0],
+                                              plan[:,Plan.POSITION][:,1],
                                               plan_stds[:,Plan.POSITION][:,0],
                                               np.array(ModelConstants.T_IDXS),
-                                              long_action_t)
+                                              long_action_t, v_ego, action_accel)
   if 'action' not in model_output:
     desired_curvature = get_curvature_from_plan(plan[:,Plan.T_FROM_CURRENT_EULER][:,2],
                                                 plan[:,Plan.ORIENTATION_RATE][:,2],
