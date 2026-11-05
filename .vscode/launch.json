@@ -8,7 +8,7 @@
       "options": [
         "openpilot/selfdrive/controls/controlsd.py",
         "openpilot/system/timed/timed.py",
-        "openpilot/tools/sim/run_bridge.py"
+        "openpilot/tools/sim/run.py"
       ]
     },
     {
