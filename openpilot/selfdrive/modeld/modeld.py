@@ -36,7 +36,7 @@ from openpilot.common.transformations.camera import DEVICE_CAMERAS
 from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 from openpilot.common.transformations.model import get_warp_matrix
 from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
-from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan, should_stop, smooth_value, get_curvature_from_plan
+from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan_horizon, should_stop, smooth_value, get_curvature_from_plan
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_driving_model_data, fill_pose_msg, PublishState
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
@@ -52,19 +52,21 @@ BIG_MODEL_TIMEOUT = 60
 
 def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.ModelDataV2.Action,
                           lat_action_t: float, long_action_t: float, v_ego: float) -> log.ModelDataV2.Action:
+  plan, plan_stds = model_output['plan'][0], model_output['plan_stds'][0]
+  # long uses the whole plan, also for models with an action
+  desired_accel = get_accel_from_plan_horizon(plan[:,Plan.VELOCITY][:,0],
+                                              plan[:,Plan.ACCELERATION][:,0],
+                                              plan[:,Plan.POSITION][:,0],
+                                              plan_stds[:,Plan.POSITION][:,0],
+                                              np.array(ModelConstants.T_IDXS),
+                                              long_action_t)
   if 'action' not in model_output:
-    plan = model_output['plan'][0]
-    desired_accel = get_accel_from_plan(plan[:,Plan.VELOCITY][:,0],
-                                        plan[:,Plan.ACCELERATION][:,0],
-                                        ModelConstants.T_IDXS,
-                                        action_t=long_action_t)
     desired_curvature = get_curvature_from_plan(plan[:,Plan.T_FROM_CURRENT_EULER][:,2],
                                                 plan[:,Plan.ORIENTATION_RATE][:,2],
                                                 ModelConstants.T_IDXS,
                                                 v_ego,
                                                 lat_action_t)
   else:
-    desired_accel = model_output['action'][0,1]
     desired_curvature = model_output['action'][0,0] / (max(2.5, v_ego))**2
   stop = should_stop(v_ego, desired_accel)
   desired_accel = smooth_value(desired_accel, prev_action.desiredAcceleration, LONG_SMOOTH_SECONDS)
