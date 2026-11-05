@@ -110,7 +110,7 @@ function op_check_git() {
   if [[ -z "$(git -C "$OPENPILOT_ROOT" ls-files ':(attr:filter=lfs)')" ]]; then
     echo -e " ↳ [${GREEN}✔${NC}] no LFS files in this checkout."
   elif cmp -s "$OPENPILOT_ROOT/lfs.py" "$lfs_client" &&
-       [[ "$(git -C "$OPENPILOT_ROOT" config --get filter.lfs.process)" == '"$(git rev-parse --git-common-dir)/lfs-filter" filter-process' ]]; then
+       [[ "$(git -C "$OPENPILOT_ROOT" config --get filter.lfs.process)" == '"$(git rev-parse --git-common-dir)/lfs.py" filter-process' ]]; then
     echo -e " ↳ [${GREEN}✔${NC}] LFS client installed."
   else
     echo -e " ↳ [${RED}✗${NC}] LFS client missing or outdated! Run 'op setup'"
