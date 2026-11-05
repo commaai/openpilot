@@ -15,7 +15,7 @@ CURVE_ACCEL_MIN = -2.0       # m/s², hardest braking for a curve
 CURVE_JERK = 2.0             # m/s³, how fast the correction starts and ends
 NO_LIMIT = 10.0              # m/s², no curve ahead
 # the gap from the plan is noisy: filter it, and use two thresholds so the limit does not go on and off
-GAP_TC = 0.3                 # s
+GAP_TC = 0.5                 # s, only for a gap that gets smaller
 GAP_ON = 0.05                # m/s²
 GAP_OFF = 0.01               # m/s²
 
@@ -83,7 +83,8 @@ class CurveSpeed:
 
     yaw_rate_std = model.orientationRate.zStd if len(model.orientationRate.zStd) == n else np.zeros(n)
     gap = get_curve_gap(position.t, model.velocity.x, model.orientationRate.z, yaw_rate_std, roll)
-    self.gap += self.dt / (GAP_TC + self.dt) * (gap - self.gap)
+    # a bigger gap is used at once (no delay before braking), a smaller gap comes down slowly
+    self.gap = gap if gap > self.gap else self.gap + self.dt / (GAP_TC + self.dt) * (gap - self.gap)
     if self.active:
       self.active = self.gap > GAP_OFF
     else:
