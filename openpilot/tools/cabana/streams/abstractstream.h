@@ -15,6 +15,7 @@
 
 #include "openpilot/cereal/messaging/messaging.h"
 #include "tools/cabana/core/can_data.h"
+#include "tools/cabana/streams/cerealseries.h"
 #include "tools/cabana/core/observable.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/utils/util.h"
@@ -26,6 +27,9 @@ public:
   virtual ~AbstractStream() = default;
   virtual void start() = 0;
   virtual bool liveStreaming() const { return true; }
+  virtual std::vector<std::string> cerealSignalNames() const { return {}; }
+  virtual bool supportsCereal() const { return false; }
+  virtual cabana::CerealReader cerealReader() const { return {}; }
   virtual void seekTo(double ts) {}
   virtual std::string routeName() const = 0;
   virtual std::string carFingerprint() const { return ""; }
@@ -63,6 +67,7 @@ public:
   Observable<double> seekedTo;
   Observable<const std::optional<std::pair<double, double>> &> timeRangeChanged;
   Observable<const MessageEventsMap &> eventsMerged;
+  Observable<> cerealChanged;
   Observable<const std::set<MessageId> *, bool> msgsReceived;
   Observable<const std::string &> error;
 

@@ -1,6 +1,8 @@
 #include "tools/cabana/streams/replaystream.h"
 
 #include <string>
+#include <stdexcept>
+#include <limits>
 
 #include "common/timing.h"
 #include "common/util.h"
@@ -32,7 +34,12 @@ void ReplayStream::mergeSegments() {
       std::vector<const CanEvent *> new_events;
       new_events.reserve(seg->log->events.size());
       MessageEventsMap msg_events;
+      std::set<std::string> cereal_names;
       for (const Event &e : seg->log->events) {
+        if (e.which != cereal::Event::Which::CAN && e.which != cereal::Event::Which::SENDCAN) {
+          capnp::FlatArrayMessageReader reader(e.data);
+          discovery_.observe(reader.getRoot<cereal::Event>());
+        }
         if (e.which == cereal::Event::Which::CAN) {
           capnp::FlatArrayMessageReader reader(e.data);
           auto event = reader.getRoot<cereal::Event>();
@@ -43,14 +50,21 @@ void ReplayStream::mergeSegments() {
           }
         }
       }
-      postToMainThreadAndWait([&]() { insertEvents(new_events, msg_events); });
+      const auto names = discovery_.names();
+      cereal_names.insert(names.begin(), names.end());
+      postToMainThreadAndWait([&]() {
+        cereal_names_.insert(cereal_names.begin(), cereal_names.end());
+        insertEvents(new_events, msg_events);
+      });
     }
   }
+  // Seeking back into already visited segments still changes the cereal cache window.
+  postToMainThread([this]() { cerealChanged(); });
 }
 
 bool ReplayStream::loadRoute(const std::string &route, const std::string &data_dir, uint32_t replay_flags, bool auto_source) {
-  replay.reset(new Replay(route, {"can", "narrowRoadEncodeIdx", "cabinEncodeIdx", "wideRoadEncodeIdx", "carParams"},
-                          {}, nullptr, replay_flags, data_dir, auto_source));
+  // Keep cereal events available to charts as well as the existing CAN/video data.
+  replay.reset(new Replay(route, {}, {}, nullptr, replay_flags | REPLAY_FLAG_ALL_SERVICES, data_dir, auto_source));
   replay->setSegmentCacheLimit(settings.max_cached_minutes);
   replay->installEventFilter([this](const Event *event) { return eventFilter(event); });
 
@@ -112,4 +126,69 @@ bool ReplayStream::eventFilter(const Event *event) {
 void ReplayStream::pause(bool pause) {
   replay->pause(pause);
   pause ? paused() : resume();
+}
+
+
+std::vector<std::string> ReplayStream::cerealSignalNames() const {
+  return {cereal_names_.begin(), cereal_names_.end()};
+}
+
+cabana::CerealReader ReplayStream::cerealReader() const {
+  if (!replay) return {};
+  auto data = replay->getEventData();
+  auto cache_state = cereal_cache_;
+  // The closure owns the source snapshot and cache, never ReplayStream or Replay.
+  // It is safe for a queued job to finish after the user closes this route.
+  return [data, cache_state](const std::string &path, const cabana::CerealCancel &cancelled) {
+    auto check_cancel = [&]() {
+      if (cancelled && cancelled()) throw std::runtime_error("Cereal request cancelled");
+    };
+    check_cancel();
+    const auto service = path.substr(0, path.find('/'));
+    auto schema = capnp::Schema::from<cereal::Event>().asStruct();
+    auto field = schema.findFieldByName(service);
+    uint16_t which = 65535;
+    KJ_IF_MAYBE(found, field) { which = found->getProto().getDiscriminantValue(); }
+    if (which == 65535) throw std::invalid_argument("Unknown cereal service: " + service);
+
+    std::lock_guard lock(cache_state->mutex);
+    check_cancel();
+    for (auto &[_, cache] : cache_state->paths) {
+      for (auto it = cache.begin(); it != cache.end();) {
+        it = data->segments.count(it->first) ? std::next(it) : cache.erase(it);
+      }
+    }
+    // Segment-window eviction alone does not release previously plotted paths.
+    // Bound retained decoded fields even when users browse many signals.
+    if (!cache_state->paths.count(path) && cache_state->paths.size() >= 64) {
+      cache_state->paths.erase(cache_state->paths.begin());
+    }
+    auto &cache = cache_state->paths[path];
+    cabana::CerealPoints result;
+    for (const auto &[number, segment] : data->segments) {
+      check_cancel();
+      auto &entry = cache[number];
+      if (entry.segment.lock() != segment) {
+        cabana::CerealPoints points;
+        size_t count = 0;
+        for (const auto &event : segment->log->events) {
+          if (!(++count % 256)) check_cancel();
+          if (static_cast<uint16_t>(event.which) != which) continue;
+          capnp::FlatArrayMessageReader reader(event.data);
+          auto value = cabana::cerealSignalValue(reader.getRoot<cereal::Event>(), path);
+          points.push_back({event.mono_time, value.value_or(std::numeric_limits<double>::quiet_NaN())});
+        }
+        // A cancelled query must never publish a partially decoded segment.
+        check_cancel();
+        entry.points = std::move(points);
+        entry.segment = segment;
+      }
+      result.insert(result.end(), entry.points.begin(), entry.points.end());
+    }
+    std::stable_sort(result.begin(), result.end(), [](const auto &a, const auto &b) {
+      return a.mono_time < b.mono_time;
+    });
+    check_cancel();
+    return result;
+  };
 }

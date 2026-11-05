@@ -1,7 +1,9 @@
 #pragma once
 
 #include <algorithm>
+#include <map>
 #include <memory>
+#include <mutex>
 #include <set>
 
 #include "common/prefix.h"
@@ -15,6 +17,9 @@ public:
   void start() override { replay->start(); }
   bool loadRoute(const std::string &route, const std::string &data_dir, uint32_t replay_flags = REPLAY_FLAG_NONE, bool auto_source = false);
   bool eventFilter(const Event *event);
+  std::vector<std::string> cerealSignalNames() const override;
+  bool supportsCereal() const override { return true; }
+  cabana::CerealReader cerealReader() const override;
   void seekTo(double ts) override { replay->seekTo(std::max(double(0), ts), false); }
   bool liveStreaming() const override { return false; }
   inline std::string routeName() const override { return replay->route().name(); }
@@ -39,5 +44,17 @@ private:
   std::unique_ptr<Replay> replay = nullptr;
   Connection settings_connection_;
   std::set<int> processed_segments;
+  std::set<std::string> cereal_names_;
+  // Only requested signals are decoded and cached, bounded by replay's segment window.
+  cabana::CerealDiscovery discovery_;  // touched only by the replay merge thread
+  struct CerealSegment {
+    std::weak_ptr<Segment> segment;
+    std::vector<cabana::CerealPoint> points;
+  };
+  struct CerealCache {
+    std::mutex mutex;
+    std::map<std::string, std::map<int, CerealSegment>> paths;
+  };
+  std::shared_ptr<CerealCache> cereal_cache_ = std::make_shared<CerealCache>();
   std::unique_ptr<OpenpilotPrefix> op_prefix;
 };

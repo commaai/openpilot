@@ -37,7 +37,8 @@ bootstrap_icons_src = env.Command('assets/bootstrap_icons.cc', str(bootstrap_ico
 # sources shared by the imgui frontend and the core test
 core_srcs = ['streams/pandastream.cc', 'streams/devicestream.cc', 'streams/livestream.cc', 'streams/abstractstream.cc', 'streams/replaystream.cc',
              'dbc/dbc.cc', 'dbc/dbcfile.cc', 'dbc/dbcmanager.cc', 'utils/export.cc', 'utils/util.cc', 'utils/strings.cc',
-             'commands.cc', 'settings.cc', 'routes.cc', 'panda.cc']
+             'commands.cc', 'settings.cc', 'routes.cc', 'panda.cc', 'streams/cerealseries.cc',
+             'core/analysis.cc', 'core/pythonseries.cc']
 if arch != "Darwin":
   core_srcs += ['streams/socketcanstream.cc']
 
@@ -45,7 +46,9 @@ if arch != "Darwin":
 ui_env = env.Clone()
 ui_env['CPPPATH'] += [imgui.INCLUDE_DIR, libusb.INCLUDE_DIR]
 ui_env['LIBPATH'] += [imgui.MESA_DIR, libusb.LIB_DIR]
+repo_root_define = '-DCABANA_REPO_ROOT=\'"%s"\'' % os.path.realpath(BASEDIR)
 ui_env['CXXFLAGS'] += [
+  repo_root_define,
   opendbc_path,
   "-DGLFW_INCLUDE_NONE",
   '-DCABANA_FONTS_DIR=\'"%s"\'' % os.path.join(os.path.realpath(BASEDIR), "openpilot", "selfdrive", "assets", "fonts"),
@@ -64,6 +67,14 @@ cabana_ui = ui_env.Program('cabana', ui_objs, LIBS=ui_libs)
 ui_env.Requires(cabana_ui, generated_dbcs)
 
 if GetOption('extras'):
+  cereal_test_env = env.Clone()
+  cereal_test_env.Program('tests/test_cerealseries',
+                         ['tests/test_cerealseries.cc', 'streams/cerealseries.cc'], LIBS=[cereal, 'capnp', 'kj'])
+  analysis_test_env = env.Clone()
+  analysis_test_env['CXXFLAGS'] += [repo_root_define]
+  analysis_objects = [analysis_test_env.Object('tests/analysis_' + source.replace('/', '_')[:-3], source)
+                      for source in ['tests/test_analysis.cc', 'core/analysis.cc', 'core/pythonseries.cc', 'streams/cerealseries.cc']]
+  analysis_test_env.Program('tests/test_analysis', analysis_objects, LIBS=[cereal, 'json11', 'capnp', 'kj', 'pthread'])
   cabana_core_test_env = env.Clone()
   cabana_core_test_env['CXXFLAGS'] += [opendbc_path]
   cabana_core_test_objects = [

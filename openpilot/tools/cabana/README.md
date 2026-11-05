@@ -96,3 +96,65 @@ cabana
 ## Additional Information
 
 For more information, see the [openpilot wiki](https://github.com/commaai/openpilot/wiki/Cabana)
+
+## Plotting cereal fields from recorded routes
+
+Open a route, click **New Chart**, and select **Cereal signals** in the message dropdown.
+Filter for a field such as `/carState/vEgo` or `/carState/cruiseState/speed`, then
+double-click it to add it to the selection. CAN and cereal signals can share a chart.
+The chart uses the same route clock, playback cursor, zoom, and seek controls as CAN plots.
+**Manage Signals** can add or remove either source, and split/merge and chart restoration
+also retain cereal paths.
+
+Field discovery observes later messages, growing lists, and active union members.
+Numeric, boolean, and enum values are supported; enums retain their labels in the
+cursor display. Optional or nonfinite values leave gaps instead of connecting
+unrelated samples. Raw values use causal sample-and-hold at the cursor.
+
+Only requested fields are decoded, off the UI thread. Jobs own their source snapshot,
+and changing the selection or route cancels stale results. Decoded fields are cached
+within replay's segment window, with at most 64 retained field entries. Lists in the
+browser have no fixed 64-entry truncation. Dense lines use an extrema-preserving
+pixel envelope for drawing; calculations and cursor values retain original samples.
+
+### Transforms and derived curves
+
+A chart's menu provides **Transforms** for scale, offset, and an adjacent-sample
+derivative. A positive divisor overrides elapsed time, matching JotPluggler's layout
+convention; zero uses timestamp differences. Scale and offset apply after differentiation.
+
+Use **Layouts → New Python curve** to create a NumPy expression or function body.
+The linked source is available as `value` and `time` (seconds since route start);
+additional sources are aligned to it with causal sample-and-hold as `v1`, `v2`, etc.
+Initialization runs once per evaluation. Evaluation reuses JotPluggler's existing
+Python helper in a separate process, with cancellation and a 15-second timeout.
+Failures appear on the affected curve, without suppressing other charts.
+
+### Layouts
+
+Use **Layouts → Open layout** / **Save layout**, or start with a bundled plot layout:
+
+```sh
+./openpilot/tools/cabana/cabana --demo --layout tuning
+./openpilot/tools/cabana/cabana --demo --layout CAN-bus-debug
+```
+
+Saved layouts retain chart/tab names, CAN identities, cereal paths, curve colors and
+visibility, transforms, Python source, and fixed Y limits. Existing chart sessions
+remain readable. JotPluggler's plot-only JSON layouts can be imported into Cabana's
+existing chart grid; nested split ratios and independent X ranges are not restored.
+Layouts with camera/map panes are rejected explicitly rather than partially loaded.
+
+This support covers recorded routes and the segments in replay's cache. Live cereal
+subscriptions, string-valued series, map panes, and PlotJuggler XML import are not
+implemented. Python initialization restarts when the cached input window changes;
+stateful results can depend on the beginning of that window. This is a migration
+step, not grounds to remove PlotJuggler yet.
+
+Build and run the native regression tests:
+
+```sh
+scons -u -j4 openpilot/tools/cabana/tests/test_cerealseries openpilot/tools/cabana/tests/test_analysis
+./openpilot/tools/cabana/tests/test_cerealseries
+./openpilot/tools/cabana/tests/test_analysis
+```

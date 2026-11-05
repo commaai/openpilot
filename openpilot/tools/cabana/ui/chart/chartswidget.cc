@@ -7,8 +7,15 @@
 #include <cmath>
 #include <cstdio>
 #include <future>
+#include <filesystem>
+#include <fstream>
+#include <sstream>
 
 #include "tools/cabana/settings.h"
+#include "tools/cabana/ui/dialogs/filedialog.h"
+#ifndef CABANA_REPO_ROOT
+#define CABANA_REPO_ROOT "."
+#endif
 #include "tools/cabana/ui/chart/chart.h"
 #include "tools/cabana/ui/icons.h"
 #include "tools/cabana/ui/util.h"
@@ -34,13 +41,18 @@ ChartsWidget::ChartsWidget() {
   display_range_ = std::make_pair(can->minSeconds(), can->minSeconds() + max_chart_range_);
   range_slider_.setValue(max_chart_range_);
 
-  connections_.push_back(dbc()->fileChanged.connect([this]() { removeAll(); }));
+  connections_.push_back(dbc()->fileChanged.connect([this]() {
+    std::vector<ChartView *> charts;
+    for (auto &chart : charts_) charts.push_back(chart.get());
+    for (auto *chart : charts) chart->removeIf([](const auto &s) { return !s.isCereal(); });
+  }));
   connections_.push_back(can->eventsMerged.connect([this](const MessageEventsMap &events) { eventsMerged(events); }));
   connections_.push_back(can->msgsReceived.connect([this](const std::set<MessageId> *, bool) { updateState(); }));
   connections_.push_back(can->seeking.connect([this](double) { updateState(); }));
   connections_.push_back(can->timeRangeChanged.connect([this](const auto &) { updateState(); }));
   connections_.push_back(settings.changed.connect([this]() { settingChanged(); }));
-  connections_.push_back(seriesChanged.connect([this]() { updateTabBar(); }));
+  connections_.push_back(seriesChanged.connect([this]() { updateTabBar(); requestCerealUpdate(); }));
+  connections_.push_back(can->cerealChanged.connect([this]() { requestCerealUpdate(); }));
   connections_.push_back(tabbar_.tabCloseRequested.connect([this](int index) { removeTab(index); }));
   connections_.push_back(tabbar_.tabContextMenu.connect([this](int index) {
     if (dropdown::BeginPopupContextItem()) {
@@ -59,7 +71,57 @@ ChartsWidget::ChartsWidget() {
   newTab();
 }
 
-ChartsWidget::~ChartsWidget() = default;
+ChartsWidget::~ChartsWidget() {
+  ++*cereal_generation_;
+  alive_.reset();
+}
+
+void ChartsWidget::requestCerealUpdate() {
+  if (changing_layout_) return;
+  const auto generation = ++*cereal_generation_;
+  auto reader = can->cerealReader();  // owns/pins all data needed by the worker
+  std::set<std::string> paths;
+  std::map<std::string, cabana::PythonSeries> expressions;
+  for (const auto &chart : charts_) {
+    for (const auto &series : chart->signals()) {
+      if (series.python) {
+        expressions[series.key()] = *series.python;
+        paths.insert(series.python->linked_source);
+        paths.insert(series.python->additional_sources.begin(), series.python->additional_sources.end());
+      } else if (series.isCereal()) paths.insert(series.cereal_path);
+    }
+  }
+  if (!reader || paths.empty()) return;
+  auto state = cereal_generation_;
+  const auto time_origin = can->beginMonoTime();
+  auto publish = utils::guarded(alive_, [this, state, generation](std::map<std::string, cabana::CerealPoints> result,
+                                                               const std::map<std::string, std::string> &errors) {
+    if (state->load() != generation) return;
+    for (auto &chart : charts_) {
+      for (const auto &[path, points] : result) chart->setCerealSeries(path, points);
+      for (const auto &[path, error] : errors) chart->setCerealError(path, error);
+    }
+    updateState();
+  });
+  ThreadPool::instance().run([reader = std::move(reader), paths = std::move(paths), state, generation, publish, time_origin, expressions = std::move(expressions)]() {
+    auto cancelled = [state, generation]() { return state->load() != generation; };
+    if (cancelled()) return;
+    std::map<std::string, cabana::CerealPoints> result;
+    std::map<std::string, std::string> errors;
+    for (const auto &path : paths) {
+      if (cancelled()) return;
+      try { result[path] = reader(path, cancelled); }
+      catch (const std::exception &error) { errors[path] = error.what(); }
+    }
+    for (const auto &[key, spec] : expressions) {
+      if (cancelled()) return;
+      try { result[key] = cabana::evaluatePythonSeries(spec, result, cancelled, 15.0, time_origin); }
+      catch (const std::exception &error) { errors[key] = error.what(); }
+    }
+    if (cancelled()) return;
+    utils::runOnMainThread([publish, result = std::move(result), errors]() { publish(result, errors); });
+  });
+}
 
 std::string ChartsWidget::whatsThis() const {
   return R"(
@@ -92,7 +154,9 @@ void ChartsWidget::removeTab(int index) {
 void ChartsWidget::updateTabBar() {
   for (int i = 0; i < tabbar_.count(); ++i) {
     const auto &charts_in_tab = tab_charts_[tabbar_.tabData(i)];
-    tabbar_.setTabText(i, "Tab " + std::to_string(i + 1) + " (" + std::to_string((int)charts_in_tab.size()) + ")");
+    const auto name = tab_names_.find(tabbar_.tabData(i));
+    const std::string title = name == tab_names_.end() || name->second.empty() ? "Tab " + std::to_string(i + 1) : name->second;
+    tabbar_.setTabText(i, title + " (" + std::to_string(charts_in_tab.size()) + ")");
   }
 }
 
@@ -102,6 +166,7 @@ void ChartsWidget::eventsMerged(const MessageEventsMap &new_events) {
     futures.push_back(ThreadPool::instance().run([c = c.get(), &new_events]() { c->updateSeries(nullptr, &new_events); }));
   }
   for (auto &f : futures) f.get();
+  requestCerealUpdate();
 }
 
 void ChartsWidget::zoomReset() {
@@ -165,6 +230,23 @@ void ChartsWidget::drawToolBar() {
     if (iconButton("new_tab_btn", icon::WINDOW_PLUS, "New Tab")) newTab();
   }});
 
+  items.push_back(toolbarMenu("analysis_layouts", "Layouts", "Layouts", [this]() {
+    if (dropdown::Item("Open layout...")) {
+      FileDialog::getOpenFileName("Open analysis layout", settings.last_dir, ".json",
+                                 utils::guarded(alive_, [this](const std::string &path) { loadAnalysisLayoutFile(path); }));
+    }
+    if (dropdown::Item("Save layout...")) {
+      FileDialog::getSaveFileName("Save analysis layout", settings.last_dir + "/analysis.json", ".json",
+        utils::guarded(alive_, [this](const std::string &path) {
+          try {
+            std::ofstream file(path);
+            file << cabana::writeAnalysisLayout(analysisLayout());
+            if (!file) throw std::runtime_error("Cannot save analysis layout: " + path);
+          } catch (const std::exception &error) { can->error(error.what()); }
+        }));
+    }
+    if (dropdown::Item("New Python curve...")) editPythonSeries();
+  }));
   const int type_count = (int)std::size(SERIES_TYPE_NAMES);
   const std::string chart_type_text = std::string("Type:  ") + SERIES_TYPE_NAMES[std::clamp(settings.chart_series_type, 0, type_count - 1)];
   auto chart_type_items = [this]() {
@@ -274,6 +356,12 @@ ChartView *ChartsWidget::createChart(int pos) {
   return ptr;
 }
 
+void ChartsWidget::showCerealChart(const std::string &path, bool merge) {
+  auto chart = merge && !currentCharts().empty() ? currentCharts().front() : createChart();
+  chart->addCerealSignal(path);
+  updateState();
+}
+
 void ChartsWidget::showChart(const MessageId &id, const cabana::Signal *sig, bool show, bool merge) {
   ChartView *chart = findChart(id, sig);
   if (show && !chart) {
@@ -297,25 +385,24 @@ void ChartsWidget::splitChart(ChartView *src_chart) {
 }
 
 std::vector<std::string> ChartsWidget::serializeChartIds() const {
-  std::vector<std::string> chart_ids;
-  for (auto &c : charts_) {
-    std::string ids;
-    for (const auto &s : c->signals()) {
-      if (!ids.empty()) ids += ',';
-      ids += s.msg_id.toString() + "|" + s.sig->name;
-    }
-    chart_ids.push_back(ids);
-  }
-  std::reverse(chart_ids.begin(), chart_ids.end());
-  return chart_ids;
+  return {cabana::writeAnalysisLayout(analysisLayout())};
 }
 
 void ChartsWidget::restoreChartsFromIds(const std::vector<std::string> &chart_ids) {
   for (const auto &chart_id : chart_ids) {
+    if (!chart_id.empty() && chart_id.front() == '{') {
+      try { loadAnalysisLayout(cabana::parseAnalysisLayout(chart_id)); }
+      catch (const std::exception &error) { can->error(error.what()); }
+      continue;
+    }
     int index = 0;
     for (const auto &part : utils::split(chart_id, ',')) {
       const size_t sep = part.find('|');
       if (sep == std::string::npos) continue;
+      if (part.substr(0, sep) == "cereal") {
+        showCerealChart(part.substr(sep + 1), index++ > 0);
+        continue;
+      }
       MessageId msg_id = MessageId::fromString(part.substr(0, sep));
       if (auto *msg = dbc()->msg(msg_id))
         if (auto *sig = msg->sig(part.substr(sep + 1)))
@@ -486,7 +573,8 @@ void ChartsWidget::newChart() {
     if (!items.empty()) {
       auto c = createChart();
       for (const auto &it : items) {
-        c->addSignal(it.msg_id, it.sig);
+        if (!it.cereal_path.empty()) c->addCerealSignal(it.cereal_path);
+        else c->addSignal(it.msg_id, it.sig);
       }
       updateState();
     }
@@ -501,6 +589,7 @@ void ChartsWidget::execSignalSelector(std::unique_ptr<SignalSelector> dlg, Chart
 }
 
 void ChartsWidget::removeChart(ChartView *chart) {
+  if (python_owner_ == chart) { python_owner_ = nullptr; python_editor_open_ = false; }
   if (drag_.source == chart) cancelChartDrag();
   if (drop_target_ == chart) drop_target_ = nullptr;
   if (signal_selector_owner_ == chart) {
@@ -520,6 +609,7 @@ void ChartsWidget::removeChart(ChartView *chart) {
 }
 
 void ChartsWidget::removeAll() {
+  tab_names_.clear();
   while (tabbar_.count() > 1) {
     tabbar_.removeTab(1);
   }
@@ -589,6 +679,7 @@ void ChartsWidget::draw() {
     signal_selector_owner_ = nullptr;
     if (dlg->accepted() && accepted) accepted(*dlg);
   }
+  drawPythonEditor();
   ImGui::PopID();
 }
 
@@ -647,4 +738,106 @@ ChartView *ChartsContainer::childAt(const ImVec2 &pos) const {
     if (c->rect().Contains(pos)) return c;
   }
   return nullptr;
+}
+
+cabana::AnalysisLayout ChartsWidget::analysisLayout() const {
+  cabana::AnalysisLayout layout;
+  layout.current_tab = std::max(0, tabbar_.currentIndex());
+  for (int i = 0; i < tabbar_.count(); ++i) {
+    const int id = tabbar_.tabData(i);
+    cabana::LayoutTab tab;
+    auto name = tab_names_.find(id);
+    tab.name = name == tab_names_.end() ? "Tab " + std::to_string(i + 1) : name->second;
+    auto charts = tab_charts_.find(id);
+    if (charts != tab_charts_.end()) {
+      for (auto *chart : charts->second) tab.charts.push_back(chart->analysisLayout());
+    }
+    layout.tabs.push_back(std::move(tab));
+  }
+  return layout;
+}
+
+void ChartsWidget::loadAnalysisLayoutFile(const std::string &path) {
+  try {
+    std::filesystem::path file(path);
+    if (!std::filesystem::exists(file)) {
+      file = std::filesystem::path(CABANA_REPO_ROOT) / "openpilot/tools/jotpluggler/layouts" /
+             (std::filesystem::path(path).extension() == ".json" ? path : path + ".json");
+    }
+    std::ifstream input(file);
+    if (!input) throw std::runtime_error("Layout not found: " + path);
+    const std::string contents{std::istreambuf_iterator<char>(input), {}};
+    loadAnalysisLayout(cabana::parseAnalysisLayout(contents));
+  } catch (const std::exception &error) { can->error(error.what()); }
+}
+
+void ChartsWidget::loadAnalysisLayout(const cabana::AnalysisLayout &layout) {
+  // Validate CAN identities before altering the current workspace.
+  for (const auto &tab : layout.tabs) for (const auto &chart : tab.charts) for (const auto &curve : chart.curves) {
+    if (curve.can_id.empty()) continue;
+    auto id = MessageId::parse(curve.can_id);
+    if (!id || !dbc()->msg(*id) || !dbc()->msg(*id)->sig(curve.name)) {
+      throw std::invalid_argument("Load the DBC containing CAN signal: " + curve.can_id + "|" + curve.name);
+    }
+  }
+  changing_layout_ = true;
+  ++*cereal_generation_;
+  removeAll();
+  for (size_t i = 0; i < layout.tabs.size(); ++i) {
+    if (i) newTab();
+    const auto &tab = layout.tabs[i];
+    tab_names_[tabbar_.tabData(tabbar_.currentIndex())] = tab.name;
+    for (auto it = tab.charts.rbegin(); it != tab.charts.rend(); ++it) createChart()->applyLayout(*it);
+  }
+  tabbar_.setCurrentIndex(layout.current_tab);
+  changing_layout_ = false;
+  updateTabBar();
+  updateState();
+  requestCerealUpdate();
+}
+
+void ChartsWidget::editPythonSeries(ChartView *owner, const std::string &name, const cabana::PythonSeries &spec) {
+  python_owner_ = owner;
+  python_name_ = name;
+  python_spec_ = spec;
+  if (python_spec_.linked_source.empty()) python_spec_.linked_source = "carState/vEgo";
+  if (python_spec_.function_code.empty()) python_spec_.function_code = "return value";
+  python_inputs_.clear();
+  for (const auto &path : spec.additional_sources) python_inputs_ += path + "\n";
+  python_error_.clear();
+  python_editor_open_ = true;
+}
+
+void ChartsWidget::drawPythonEditor() {
+  if (!python_editor_open_) return;
+  ImGui::SetNextWindowSize(ImVec2(700, 520), ImGuiCond_FirstUseEver);
+  if (ImGui::Begin("Derived signal###CabanaPythonEditor", &python_editor_open_)) {
+    inputText("Name", &python_name_);
+    inputText("Source", &python_spec_.linked_source, "carState/vEgo");
+    ImGui::TextUnformatted("Additional sources (one path per line, available as v1, v2, ...)");
+    inputTextMultiline("##additional", &python_inputs_, ImVec2(-1, 70));
+    ImGui::TextUnformatted("Initialization (runs once for each evaluation)");
+    inputTextMultiline("##globals", &python_spec_.globals_code, ImVec2(-1, 70));
+    ImGui::TextUnformatted("Python / NumPy expression or body, e.g. return value - v1");
+    inputTextMultiline("##code", &python_spec_.function_code, ImVec2(-1, 160));
+    if (ImGui::Button("Plot")) {
+      if (python_name_.empty() || python_spec_.linked_source.empty() || python_spec_.function_code.empty()) {
+        python_error_ = "Name, source, and function are required.";
+      } else {
+        if (python_spec_.linked_source.front() == '/') python_spec_.linked_source.erase(0, 1);
+        python_spec_.additional_sources.clear();
+        std::istringstream sources(python_inputs_);
+        std::string path;
+        while (sources >> path) {
+          if (path.front() == '/') path.erase(0, 1);
+          python_spec_.additional_sources.push_back(path);
+        }
+        auto *chart = python_owner_ ? python_owner_ : createChart();
+        chart->addPythonSignal(python_name_, python_spec_);
+        python_editor_open_ = false;
+      }
+    }
+    if (!python_error_.empty()) ImGui::TextWrapped("%s", python_error_.c_str());
+  }
+  ImGui::End();
 }

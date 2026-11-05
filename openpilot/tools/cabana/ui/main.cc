@@ -36,6 +36,7 @@ struct CabanaArgs {
   std::string remote;
   std::string data_dir;
   std::string dbc;
+  std::string layout;
   std::string route;
 };
 
@@ -63,7 +64,8 @@ void printUsage(const char *argv0) {
           "  --data_dir <dir>          local directory with routes\n"
           "  --no-vipc                 do not output video\n"
           "  --no-cache                turn off the local route file cache\n"
-          "  --dbc <file>              dbc file to open\n",
+          "  --dbc <file>              dbc file to open\n"
+          "  --layout <name-or-file>    analysis layout to open\n",
           argv0);
 }
 
@@ -116,6 +118,8 @@ std::optional<int> parseArgs(int argc, char *argv[], CabanaArgs &args) {
       args.no_cache = true;
     } else if (std::strcmp(a, "--dbc") == 0) {
       if (!takeValue(argc, argv, i, args.dbc)) return 1;
+    } else if (std::strcmp(a, "--layout") == 0) {
+      if (!takeValue(argc, argv, i, args.layout)) return 1;
     } else if (a[0] == '-') {
       fprintf(stderr, "error: unknown option %s\n", a);
       printUsage(argv[0]);
@@ -139,12 +143,14 @@ int main(int argc, char *argv[]) {
   // arenas fragment without bound (RSS grew ~3 MB/min with charts open). macOS has a single allocator zone.
   mallopt(M_ARENA_MAX, 1);
 #endif
+  CabanaArgs args;
+  if (auto code = parseArgs(argc, argv, args)) return *code;
+  if (!args.layout.empty() && std::filesystem::is_regular_file(args.layout)) {
+    args.layout = std::filesystem::absolute(args.layout).string();
+  }
   // ensure the current dir matches the executable's directory
   std::error_code ec;
   std::filesystem::current_path(executableDir(), ec);
-
-  CabanaArgs args;
-  if (auto code = parseArgs(argc, argv, args)) return *code;
 
   std::unique_ptr<AbstractStream> stream;
   StreamLoader stream_loader;
@@ -198,5 +204,5 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  return run(std::move(stream), std::move(stream_loader), args.dbc);
+  return run(std::move(stream), std::move(stream_loader), args.dbc, args.layout);
 }

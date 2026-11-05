@@ -10,6 +10,7 @@
 #include "imgui_internal.h"
 #include "implot.h"
 
+#include "tools/cabana/core/analysis.h"
 #include "tools/cabana/ui/chart/tiplabel.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
@@ -31,6 +32,28 @@ public:
   struct SigItem {
     MessageId msg_id;
     const cabana::Signal *sig = nullptr;
+    std::string cereal_path;
+    std::optional<cabana::PythonSeries> python;
+    std::string key() const { return python ? cabana::pythonSeriesKey(*python) : cereal_path; }
+    bool isCereal() const { return !cereal_path.empty(); }
+    std::string name() const { return isCereal() ? (python ? cereal_path : "/" + cereal_path) : sig->name; }
+    std::string unit() const { return isCereal() ? "" : sig->unit; }
+    std::string label() const { return isCereal() ? " cereal" : msgLabel(msg_id); }
+    std::string formatValue(double value, bool with_unit = true) const {
+      if (!std::isfinite(value)) return "--";
+      if (!isCereal() && !transform.derivative && transform.scale == 1 && transform.offset == 0) {
+        return sig->formatValue(value, with_unit);
+      }
+      if (!isCereal()) return doubleToString(value);
+      if (transform.derivative || transform.scale != 1 || transform.offset != 0 ||
+          value < 0 || value > 65535 || std::floor(value) != value) return doubleToString(value);
+      auto label = enum_labels.find(static_cast<uint16_t>(value));
+      return label != enum_labels.end() ? label->second : doubleToString(value);
+    }
+    std::map<uint16_t, std::string> enum_labels;
+    cabana::CerealPoints raw_points;
+    cabana::SeriesTransform transform;
+    std::string error;
     CabanaColor color;
     bool visible = true;
     std::vector<ImPlotPoint> vals;
@@ -43,6 +66,13 @@ public:
 
   ChartView(const std::pair<double, double> &x_range, ChartsWidget *parent);
   void addSignal(const MessageId &msg_id, const cabana::Signal *sig);
+  void addCerealSignal(const std::string &path);
+  void addPythonSignal(const std::string &name, const cabana::PythonSeries &spec);
+  void applyLayout(const cabana::LayoutChart &layout);
+  cabana::LayoutChart analysisLayout() const;
+  bool hasCerealSignal(const std::string &path) const;
+  void setCerealSeries(const std::string &path, const cabana::CerealPoints &points);
+  void setCerealError(const std::string &key, const std::string &error);
   bool hasSignal(const MessageId &msg_id, const cabana::Signal *sig) const;
   void updateSeries(const cabana::Signal *sig = nullptr, const MessageEventsMap *msg_new_events = nullptr);
   void updatePlot(double cur, double min, double max);
@@ -69,11 +99,12 @@ private:
 
   void signalUpdated(const cabana::Signal *sig);
   void manageSignals();
-  void msgRemoved(MessageId id) { removeIf([=](auto &s) { return s.msg_id.address == id.address && !dbc()->msg(id); }); }
+  void msgRemoved(MessageId id) { removeIf([=](auto &s) { return !s.isCereal() && s.msg_id.address == id.address && !dbc()->msg(id); }); }
   void signalRemoved(const cabana::Signal *sig) { removeIf([=](auto &s) { return s.sig == sig; }); }
 
   void appendCanEvents(const cabana::Signal *sig, const std::vector<const CanEvent *> &events,
-                       std::vector<ImPlotPoint> &vals, std::vector<ImPlotPoint> &step_vals);
+                       cabana::CerealPoints &points);
+  void rebuildSeries(SigItem &series);
   void createToolButtons();
   void drawContextMenu();
   void handleMousePress();
@@ -132,6 +163,8 @@ private:
   bool drawing_ghost_ = false;  // drawing the drag preview: no mouse handling, no tip
   ImGuiID context_menu_id_ = 0;
 
+  std::string title_;
+  std::optional<std::pair<double, double>> fixed_y_limits_;
   TipLabel tip_label_;
   std::vector<SigItem> sigs_;
   double cur_sec_ = 0;

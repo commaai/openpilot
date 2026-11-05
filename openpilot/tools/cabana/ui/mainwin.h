@@ -23,7 +23,7 @@ struct GLFWwindow;
 
 class MainWindow {
 public:
-  MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader, const std::string &dbc_file);
+  MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader, const std::string &dbc_file, const std::string &layout_file = {});
   ~MainWindow();
   void draw();
   void close();  // remind unsaved changes, save state, exit
@@ -106,6 +106,8 @@ private:
   bool video_visible_ = true;
   bool charts_visible_ = true;
   bool reset_layout_ = false;
+  bool analysis_session_restored_ = false;
+  std::string startup_layout_;
   bool full_screen_ = false;
 #ifndef __APPLE__
   int windowed_rect_[4] = {0, 0, 1600, 900};

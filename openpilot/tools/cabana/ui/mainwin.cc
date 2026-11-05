@@ -36,7 +36,7 @@ constexpr const char *CHARTS_WINDOW = "Charts###ChartsWindow";
 }  // namespace
 
 MainWindow::MainWindow(GLFWwindow *window, std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader,
-                       const std::string &dbc_file) : window_(window) {
+                       const std::string &dbc_file, const std::string &layout_file) : window_(window), startup_layout_(layout_file) {
   can = &dummy_;
   messages_visible_ = inistate::main_window.messages_visible;
   video_visible_ = inistate::main_window.video_visible;
@@ -360,6 +360,7 @@ void MainWindow::openStream(std::unique_ptr<AbstractStream> stream, const std::s
 }
 
 void MainWindow::startStream(std::unique_ptr<AbstractStream> stream, const std::string &dbc_file) {
+  analysis_session_restored_ = false;
   stream_ = std::move(stream);
   can = stream_.get();
   stream_connections_.push_back(can->error.connect([](const std::string &msg) {
@@ -371,6 +372,7 @@ void MainWindow::startStream(std::unique_ptr<AbstractStream> stream, const std::
   loadFile(dbc_file, SOURCE_ALL, [this]() {
     showStatusMessage("Stream [" + can->routeName() + "] started", 2000);
     createDockWidgets();
+    nextFrame([this]() { restoreSessionState(); });
 
     // Don't overwrite already loaded DBC
     if (!dbc()->nonEmptyDBCCount()) {
@@ -667,17 +669,22 @@ void MainWindow::saveSessionState() {
 }
 
 void MainWindow::restoreSessionState() {
-  if (settings.recent_dbc_file.empty() || dbc()->nonEmptyDBCCount() == 0) return;
-
-  if (dbc()->nonEmptyDBCFiles().front()->filename != settings.recent_dbc_file) return;
-
-  if (!settings.selected_msg_ids.empty()) {
+  if (!charts_widget_ || analysis_session_restored_) return;
+  if (!startup_layout_.empty()) {
+    analysis_session_restored_ = true;
+    charts_widget_->loadAnalysisLayoutFile(std::exchange(startup_layout_, ""));
+    return;
+  }
+  const bool matching_dbc = !settings.recent_dbc_file.empty() && dbc()->nonEmptyDBCCount() &&
+                           dbc()->nonEmptyDBCFiles().front()->filename == settings.recent_dbc_file;
+  // A cereal-only workspace has no DBC dependency. CAN workspaces still wait
+  // for their original DBC, including the route's asynchronous fingerprint load.
+  if (!settings.recent_dbc_file.empty() && !matching_dbc) return;
+  analysis_session_restored_ = true;
+  if (matching_dbc && !settings.selected_msg_ids.empty()) {
     center_widget_.ensureDetailWidget()->restoreTabs(settings.active_msg_id, settings.selected_msg_ids);
   }
-
-  if (charts_widget_ != nullptr && !settings.active_charts.empty()) {
-    charts_widget_->restoreChartsFromIds(settings.active_charts);
-  }
+  if (!settings.active_charts.empty()) charts_widget_->restoreChartsFromIds(settings.active_charts);
 }
 
 void MainWindow::handleShortcuts() {
