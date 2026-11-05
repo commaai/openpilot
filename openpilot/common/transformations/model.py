@@ -39,6 +39,20 @@ sbigmodel_intrinsics = np.array([
   [0.0,  sbigmodel_fl,      0.5 * (256 + MEDMODEL_CY)],
   [0.0,  0.0,                                     1.0]])
 
+
+# FULL FRAME model (c4, whole sensor with no warp)
+FULLFRAME_INPUT_SIZE = (1024, 512)
+
+fullframe_intrinsics = np.array([
+  [869.714,  0.0,  0.5 * FULLFRAME_INPUT_SIZE[0]],
+  [0.0,  769.011,  0.5 * FULLFRAME_INPUT_SIZE[1]],
+  [0.0,  0.0,                               1.0]])
+
+fullframe_wide_intrinsics = np.array([
+  [324.0,  0.0,    0.5 * FULLFRAME_INPUT_SIZE[0]],
+  [0.0,  286.484,  0.5 * FULLFRAME_INPUT_SIZE[1]],
+  [0.0,  0.0,                               1.0]])
+
 DM_INPUT_SIZE = (1440, 960)
 dmonitoringmodel_fl = _ar_ox_fisheye.focal_length
 dmonitoringmodel_intrinsics = np.array([
