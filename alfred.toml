@@ -146,6 +146,7 @@ mkdir -p /data/pandaextra/certs && printf '%s\n' "$PANDA_RELEASE_KEY" > /data/pa
 unset RELEASE_KEY PANDA_RELEASE_KEY
 export GIT_SSH_COMMAND="ssh -i /data/gitkey -o StrictHostKeyChecking=accept-new"
 git config remote.origin.url git@github.com:commaai/openpilot.git
+git config --unset-all remote.origin.pushurl || true  # it overrides the url for pushes
 if [ -n "${UP_REMOTE:-}" ]; then openpilot/tools/replay/can_replay.py --up; fi
 tools/release/build_release.sh $RELEASE_TESTS
 """

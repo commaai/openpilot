@@ -104,6 +104,11 @@ for branch in ${RELEASE_BRANCH//,/ }; do
 done
 # uploading the larger pack is faster than spending CPU to optimize it
 # The big model is already published to LFS by the source branch.
-GIT_LFS_SKIP_PUSH=1 git -c pack.window=0 -c pack.depth=0 -c pack.compression=0 push -f origin "${REFS[@]}"
+# retry, a network blip shouldn't throw away the tests
+for i in 1 2 3 4 5; do
+  GIT_LFS_SKIP_PUSH=1 git -c pack.window=0 -c pack.depth=0 -c pack.compression=0 push -f origin "${REFS[@]}" && break
+  [ "$i" -lt 5 ] || exit 1
+  sleep 30
+done
 
 echo "[-] done T=$SECONDS"
