@@ -66,6 +66,15 @@ def get_accel_from_plan_horizon(a_now, speeds, accels, x, y, x_stds, t_idxs, act
   # stop accelerating first if the plan slows down later
   return max(a_now, 0.0) * np.interp(-a_slow, [0.0, 0.3], [1.0, 0.0]) + min(a_now, a_slow)
 
+def get_lane_center_curvature(v_ego, plan_x, plan_y, lane_x, left_y, right_y, left_prob, right_prob):
+  # the model sits ~0.3 m to the inside of curves. steer the planned path 2 s ahead halfway to the lane center
+  dist = max(2.0 * v_ego, 10.0)
+  center = (np.interp(dist, lane_x, left_y) + np.interp(dist, lane_x, right_y)) / 2
+  error = center - np.interp(dist, plan_x, plan_y)
+  weight = min(left_prob, right_prob) * np.interp(v_ego, [4.0, 8.0], [0.0, 1.0])
+  max_curvature = 0.5 / max(v_ego, 1.0) ** 2  # at most 0.5 m/s^2 of lat accel
+  return float(np.clip(0.5 * weight * 2 * error / dist ** 2, -max_curvature, max_curvature))
+
 def curv_from_psis(psi_target, psi_rate, vego, action_t):
   vego = np.clip(vego, MIN_SPEED, np.inf)
   curv_from_psi = psi_target / (vego * action_t)

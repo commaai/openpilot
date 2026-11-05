@@ -36,7 +36,8 @@ from openpilot.common.transformations.camera import DEVICE_CAMERAS
 from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 from openpilot.common.transformations.model import get_warp_matrix
 from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
-from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan, get_accel_from_plan_horizon, should_stop, smooth_value, get_curvature_from_plan
+from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan, get_accel_from_plan_horizon, get_lane_center_curvature, \
+                                                     should_stop, smooth_value, get_curvature_from_plan
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_driving_model_data, fill_pose_msg, PublishState
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
@@ -52,7 +53,7 @@ BIG_MODEL_TIMEOUT = 60
 
 def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.ModelDataV2.Action,
                           lat_action_t: float, long_action_t: float, v_ego: float,
-                          plan_offset: FirstOrderFilter) -> log.ModelDataV2.Action:
+                          plan_offset: FirstOrderFilter, lane_offset: FirstOrderFilter) -> log.ModelDataV2.Action:
   plan, plan_stds = model_output['plan'][0], model_output['plan_stds'][0]
   action_accel = model_output['action'][0,1] if 'action' in model_output else None
   a_plan = get_accel_from_plan(plan[:,Plan.VELOCITY][:,0], plan[:,Plan.ACCELERATION][:,0], ModelConstants.T_IDXS, action_t=long_action_t)
@@ -76,6 +77,10 @@ def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.
                                                 lat_action_t)
   else:
     desired_curvature = model_output['action'][0,0] / (max(2.5, v_ego))**2
+  lane_lines, lane_probs = model_output['lane_lines'][0,:,:,0], model_output['lane_lines_prob'][0,1::2]
+  desired_curvature += lane_offset.update(get_lane_center_curvature(v_ego, plan[:,Plan.POSITION][:,0], plan[:,Plan.POSITION][:,1],
+                                                                    np.array(ModelConstants.X_IDXS), lane_lines[1], lane_lines[2],
+                                                                    lane_probs[1], lane_probs[2]))
   stop = should_stop(v_ego, desired_accel)
   desired_accel = smooth_value(desired_accel, prev_action.desiredAcceleration, LONG_SMOOTH_SECONDS)
   if v_ego > MIN_LAT_CONTROL_SPEED:
@@ -356,6 +361,7 @@ def main(demo=False):
   long_delay = CP.longitudinalActuatorDelay + LONG_SMOOTH_SECONDS
   prev_action = log.ModelDataV2.Action()
   plan_offset = FirstOrderFilter(0.0, 3.0, DT_MDL)
+  lane_offset = FirstOrderFilter(0.0, 0.5, DT_MDL)
 
   DH = DesireHelper()
 
@@ -463,7 +469,7 @@ def main(demo=False):
 
       if not sm['carControl'].latActive:
         prev_action.desiredCurvature = sm['controlsState'].curvature
-      action = get_action_from_model(model_output, prev_action, lat_action_t, long_action_t, v_ego, plan_offset)
+      action = get_action_from_model(model_output, prev_action, lat_action_t, long_action_t, v_ego, plan_offset, lane_offset)
       prev_action = action
       fill_model_msg(modelv2_send, model_output, action,
                      publish_state, meta_main.frame_id, meta_extra.frame_id, frame_id,
