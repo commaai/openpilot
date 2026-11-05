@@ -17,8 +17,8 @@ concurrency:
 
 env:
   GIT_CONFIG_COUNT: 1
-  GIT_CONFIG_KEY_0: lfs.fetchexclude
-  GIT_CONFIG_VALUE_0: openpilot/selfdrive/modeld/models/big_driving_tinygrad.pkl
+  GIT_CONFIG_KEY_0: lfs.fetchinclude
+  GIT_CONFIG_VALUE_0: docs/**
 
 jobs:
   docs:
@@ -32,11 +32,12 @@ jobs:
     steps:
     - uses: commaai/timeout@v1
     - uses: actions/checkout@v7
-    - run: ./tools/op.sh setup
+      with:
+        lfs: true
 
     # Build
     - name: Build docs
-      run: ./tools/op.sh docs --build
+      run: python3 docs/serve.py --build
 
     # Push to docs.comma.ai
     - uses: actions/checkout@v7
