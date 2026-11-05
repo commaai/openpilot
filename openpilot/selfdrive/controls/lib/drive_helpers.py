@@ -54,13 +54,7 @@ def get_accel_from_plan(speeds, accels, t_idxs, action_t=DT_MDL):
     a_target = 0.0
   return a_target
 
-def get_accel_from_plan_horizon(speeds, accels, x, y, x_stds, t_idxs, action_t, v_ego, action_accel=None):
-  a_now = get_accel_from_plan(speeds, accels, t_idxs, action_t)
-  # the plan is off-policy, it has no pull to a road speed. the on-policy action sets the speed once moving,
-  # the plan can only make its accel up to 2x stronger, which goes away as the action reaches the road speed
-  if action_accel is not None:
-    a_go = max(action_accel, min(a_now, 2 * action_accel))
-    a_now = float(np.interp(v_ego, [5.0, 10.0], [a_now, a_go]))
+def get_accel_from_plan_horizon(a_now, speeds, accels, x, y, x_stds, t_idxs, action_t):
   # distance along the path, x alone is short in curves
   dist = x[0] + np.concatenate(([0.0], np.cumsum(np.hypot(np.diff(x), np.diff(y)))))
   ahead = t_idxs >= 2.0
