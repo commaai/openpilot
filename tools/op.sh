@@ -73,16 +73,14 @@ function op_get_openpilot_dir() {
 
 function op_install_post_commit() {
   op_get_openpilot_dir
+  # TODO: Remove after the Git LFS transition; discard stock hooks before wrapping post-commit.
+  (cd "$OPENPILOT_ROOT" && ./lfs.py install)
   if [[ ! -d "$OPENPILOT_ROOT/.git/hooks/post-commit.d" ]]; then
     mkdir "$OPENPILOT_ROOT/.git/hooks/post-commit.d"
     mv "$OPENPILOT_ROOT/.git/hooks/post-commit" "$OPENPILOT_ROOT/.git/hooks/post-commit.d" 2>/dev/null || true
   fi
   cd "$OPENPILOT_ROOT/.git/hooks"
   ln -sf ../../scripts/post-commit post-commit
-}
-
-function op_lfs_shim() {
-  echo "$(git -C "$OPENPILOT_ROOT" rev-parse --path-format=absolute --git-common-dir)/git-lfs"
 }
 
 function op_check_openpilot_dir() {
@@ -106,17 +104,24 @@ function op_check_git() {
     echo -e " ↳ [${GREEN}✔${NC}] git found."
   fi
 
-  echo "Checking for git lfs..."
-  if cmp -s "$OPENPILOT_ROOT/scripts/git-lfs" "$(op_lfs_shim)"; then
-    echo -e " ↳ [${GREEN}✔${NC}] git lfs shim installed."
+  echo "Checking for LFS client..."
+  local lfs_client
+  lfs_client="$(git -C "$OPENPILOT_ROOT" rev-parse --path-format=absolute --git-common-dir)/lfs.py"
+  if [[ -z "$(git -C "$OPENPILOT_ROOT" ls-files ':(attr:filter=lfs)')" ]]; then
+    echo -e " ↳ [${GREEN}✔${NC}] no LFS files in this checkout."
+  elif cmp -s "$OPENPILOT_ROOT/lfs.py" "$lfs_client" &&
+       [[ "$(git -C "$OPENPILOT_ROOT" config --get filter.lfs.process)" == '"$(git rev-parse --git-common-dir)/lfs.py" filter-process' ]]; then
+    echo -e " ↳ [${GREEN}✔${NC}] LFS client installed."
   else
-    echo -e " ↳ [${RED}✗${NC}] git lfs shim missing or outdated! Run 'op setup'"
+    echo -e " ↳ [${RED}✗${NC}] LFS client missing or outdated! Run 'op setup'"
     return 1
   fi
+
+  echo "Checking for LFS files..."
   if [[ $(file -b "$OPENPILOT_ROOT/openpilot/selfdrive/modeld/models/dmonitoring_model.onnx") == "data" ]]; then
-    echo -e " ↳ [${GREEN}✔${NC}] git lfs files found."
+    echo -e " ↳ [${GREEN}✔${NC}] LFS files found."
   else
-    echo -e " ↳ [${RED}✗${NC}] git lfs files not found! Run 'git lfs pull'"
+    echo -e " ↳ [${RED}✗${NC}] LFS files not found! Run './lfs.py pull'"
     return 1
   fi
 
@@ -214,10 +219,10 @@ EOF
 
   op_activate_venv
 
-  echo "Pulling git lfs files..."
+  echo "Pulling LFS files..."
   st="$(date +%s)"
   if ! retry 3 ./tools/lfs.sh pull; then
-    echo -e " ↳ [${RED}✗${NC}] Pulling git lfs files failed!"
+    echo -e " ↳ [${RED}✗${NC}] Pulling LFS files failed!"
     return 1
   fi
   et="$(date +%s)"

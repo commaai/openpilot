@@ -193,7 +193,8 @@ def finalize_update() -> None:
   t = time.monotonic()
   try:
     run(["git", "gc"], FINALIZED)
-    run(["git", "lfs", "prune"], FINALIZED)
+    lfs = os.path.join(FINALIZED, "tools/lfs.sh")
+    run([lfs, "prune"] if os.path.isfile(lfs) else ["git", "lfs", "prune"], FINALIZED)
     cloudlog.event("Done git cleanup", duration=time.monotonic() - t)
   except subprocess.CalledProcessError:
     cloudlog.exception(f"Failed git cleanup, took {time.monotonic() - t:.3f} s")
