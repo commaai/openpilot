@@ -1,10 +1,10 @@
 import numpy as np
 
+from opendbc.car.lateral import AVERAGE_ROAD_ROLL
 from openpilot.common.constants import ACCELERATION_DUE_TO_GRAVITY
 from openpilot.common.filter_simple import FirstOrderFilter
 
 MAX_LAT_ACCEL = 2.8  # m/s^2
-MAX_BANK = 0.07  # rad
 MIN_CURVE_ACCEL = -2.0  # m/s^2
 MAX_CURVE_JERK = 2.0  # m/s^3
 
@@ -25,8 +25,8 @@ class CurveSpeed:
     gap = 0.0
     if len(plan_t) == len(plan_v) == len(yaw_rate):
       ahead = (plan_t > 0.5) & (plan_t < 6.0)
-      # banked curves allow more speed
-      bank = np.clip(roll * np.sign(yaw_rate[ahead]), -MAX_BANK, MAX_BANK)
+      # banked curves allow more speed, up to the bank angle safety allows for
+      bank = np.minimum(roll * np.sign(yaw_rate[ahead]), AVERAGE_ROAD_ROLL)
       curvature = np.abs(yaw_rate[ahead]) / np.maximum(plan_v[ahead], 1.0)
       v_max = np.sqrt((MAX_LAT_ACCEL + ACCELERATION_DUE_TO_GRAVITY * bank) / np.maximum(curvature, 1e-4))
       # extra decel needed to hit the curve speed
