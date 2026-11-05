@@ -9,6 +9,7 @@
 
 #include "common/tests/native_test.h"
 #include "tools/cabana/core/analysis.h"
+#include "tools/cabana/core/csv.h"
 #include "tools/cabana/ui/chart/downsample.h"
 
 #ifndef CABANA_REPO_ROOT
@@ -25,6 +26,15 @@ void requireError(F function, const std::string &part) {
   throw std::runtime_error("Expected error containing: " + part);
 }
 
+void test_csv() {
+  const double nan = std::numeric_limits<double>::quiet_NaN();
+  std::ostringstream csv;
+  cabana::writeSeriesCsv(csv, {{"a,quoted", {{1, 2}, {2, 3}, {2, 4}, {4, nan}}, {}},
+                             {"text", {{2, 0}, {3, 1}}, {{0, "a\"b"}, {1, "next"}}}});
+  REQUIRE(csv.str() == "time_s,\"a,quoted\",\"text\"\n1,2,\n2,4,\"a\"\"b\"\n3,4,\"next\"\n4,,\"next\"\n");
+  requireError([] { std::ostringstream out; cabana::writeSeriesCsv(out, {{"x", {{2, 1}, {1, 2}}, {}}}); }, "unsorted");
+}
+
 void test_layouts() {
   const std::string input = R"({"cabana_layout":1,"current_tab_index":1,"tabs":[
     {"name":"Empty","charts":[]},
@@ -36,9 +46,11 @@ void test_layouts() {
     ]}]}]})";
   auto layout = cabana::parseAnalysisLayout(input);
   REQUIRE(layout.current_tab == 1 && layout.tabs[0].charts.empty());
+  layout.calculations["hidden dependency"] = {"carState/vEgo", {}, "", "return value*2", "lua"};
   const auto saved = cabana::writeAnalysisLayout(layout);
   auto restored = cabana::parseAnalysisLayout(saved);
   REQUIRE(cabana::writeAnalysisLayout(restored) == saved);
+  REQUIRE(restored.calculations.at("hidden dependency").language == "lua");
   const auto &chart = restored.tabs[1].charts[0];
   REQUIRE(chart.title == "Two transforms" && chart.series_type == 2);
   REQUIRE(chart.y_limits->first == -2 && chart.y_limits->second == 8);
@@ -48,20 +60,20 @@ void test_layouts() {
   REQUIRE(chart.curves[3].python->linked_source == "carState/vEgo");
   REQUIRE(chart.curves[3].python->additional_sources[0] == "controlsState/curvature");
   requireError([] { cabana::parseAnalysisLayout("bad json"); }, "JSON");
+  requireError([] { cabana::parseAnalysisLayout(R"({"tabs":[{"charts":[]}],"calculations":{"/bad":null}})"); }, "calculation definition");
   requireError([] { cabana::parseAnalysisLayout(R"({"tabs":[]})"); }, "no tabs");
   requireError([] { cabana::parseAnalysisLayout(R"({"cabana_layout":9,"tabs":[{}]})"); }, "version");
-  requireError([] { cabana::parseAnalysisLayout(R"({"tabs":[{"root":{"kind":"camera"}}]})"); }, "camera pane");
+  requireError([] { cabana::parseAnalysisLayout(R"({"tabs":[{"root":{"kind":"unsupported"}}]})"); }, "Unsupported pane kind");
   requireError([] { cabana::parseAnalysisLayout(R"({"tabs":[{"charts":[{"curves":[{"name":"unresolved"}]}]}]})"); }, "Unresolved");
   requireError([] { cabana::parseAnalysisLayout(R"({"tabs":[{"charts":[{"curves":[{"name":"/x","color":"#nope00"}]}]}]})"); }, "color");
   requireError([] { cabana::parseAnalysisLayout(R"({"tabs":[{"charts":[{"curves":[{"name":"/x","transform":"mystery"}]}]}]})"); }, "Unsupported transform");
 
   size_t count = 0, curves = 0;
-  const auto directory = std::filesystem::path(CABANA_REPO_ROOT) / "openpilot/tools/jotpluggler/layouts";
+  const auto directory = std::filesystem::path(CABANA_REPO_ROOT) / "openpilot/tools/cabana/layouts";
   for (const auto &entry : std::filesystem::directory_iterator(directory)) {
     if (entry.path().extension() != ".json") continue;
     const auto name = entry.path().stem().string();
-    // Those layouts require non-plot panes or have no initialized pane.
-    if (name == "cameras-and-map" || name == "driver-monitoring-debug" || name == "new-layout") continue;
+    (void)name;
     std::ifstream file(entry.path());
     std::stringstream text;
     text << file.rdbuf();
@@ -71,7 +83,7 @@ void test_layouts() {
     for (const auto &tab : imported.tabs) for (const auto &plot : tab.charts) curves += plot.curves.size();
     ++count;
   }
-  REQUIRE(count == 14 && curves > 200);
+  REQUIRE(count == 17 && curves > 200);
   std::cout << "Layout round trips: " << count << " layouts, " << curves << " curves\n";
 }
 
@@ -137,5 +149,5 @@ void test_envelope() {
 }
 
 int main() {
-  return run_native_test([] { test_layouts(); test_python(); test_envelope(); std::cout << "Analysis tests passed\n"; });
+  return run_native_test([] { test_layouts(); test_python(); test_envelope(); test_csv(); std::cout << "Analysis tests passed\n"; });
 }

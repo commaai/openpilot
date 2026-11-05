@@ -49,11 +49,13 @@ ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *par
 }
 
 void ChartView::drawMenuActions() {
+  inputText("Title", &title_);
   for (int i = 0; i < (int)std::size(SERIES_TYPE_NAMES); ++i) {
     if (dropdown::Item(SERIES_TYPE_NAMES[i], nullptr, i == (int)series_type_)) {
       setSeriesType((SeriesType)i);
     }
   }
+  if (dropdown::Item("Follow playback X", nullptr, !fixed_x_limits_)) fixed_x_limits_.reset();
   ImGui::Separator();
   if (ImGui::BeginMenu("Transforms")) {
     for (size_t i = 0; i < sigs_.size(); ++i) {
@@ -63,6 +65,7 @@ void ChartView::drawMenuActions() {
       if (series.python && ImGui::Button("Edit Python")) charts_widget_->editPythonSeries(this, series.cereal_path, *series.python);
       bool changed = ImGui::InputDouble("Scale", &series.transform.scale);
       changed |= ImGui::InputDouble("Offset", &series.transform.offset);
+      changed |= ImGui::InputDouble("Time offset (s)", &series.transform.time_offset);
       changed |= ImGui::Checkbox("Derivative", &series.transform.derivative);
       if (series.transform.derivative) {
         changed |= ImGui::InputDouble("Divisor (s; 0 = timestamps)", &series.transform.derivative_dt);
@@ -140,6 +143,7 @@ bool ChartView::hasCerealSignal(const std::string &path) const {
 }
 
 void ChartView::removeIf(std::function<bool(const SigItem &s)> predicate) {
+  if (kind_ != "plot") return;
   int prev_size = sigs_.size();
   sigs_.erase(std::remove_if(sigs_.begin(), sigs_.end(), predicate), sigs_.end());
   if (sigs_.empty()) {
@@ -229,6 +233,7 @@ void ChartView::updateLayout() {
 
 void ChartView::updatePlot(double cur, double min, double max) {
   cur_sec_ = cur;
+  if (fixed_x_limits_ && !can->timeRange()) { min = fixed_x_limits_->first; max = fixed_x_limits_->second; }
   if (min != x_min_ || max != x_max_) {
     x_min_ = min;
     x_max_ = max;
@@ -255,8 +260,28 @@ void ChartView::rebuildSeries(SigItem &series) {
   series.step_vals.clear();
   series.error.clear();
   try {
-    for (const auto &point : cabana::transformSeries(series.raw_points, series.transform)) {
-      double sec = can->toSeconds(point.mono_time);
+    const auto *points = &series.raw_points;
+    cabana::CerealPoints text_points;
+    if (std::any_of(points->begin(), points->end(), [](const auto &point) { return point.text.has_value(); })) {
+      if (series.transform.derivative || series.transform.scale != 1 || series.transform.offset != 0) {
+        throw std::invalid_argument("Text states do not support numerical transforms");
+      }
+      text_points = *points;
+      for (auto &point : text_points) {
+        if (!point.text) continue;
+        auto code = series.text_codes.find(*point.text);
+        if (code == series.text_codes.end()) {
+          if (series.text_codes.size() >= 65536) throw std::runtime_error("Too many distinct text states");
+          code = series.text_codes.emplace(*point.text, static_cast<uint16_t>(series.text_codes.size())).first;
+          series.enum_labels[code->second] = point.text->empty() ? "(empty)" : *point.text;
+        }
+        point.value = code->second;
+        point.text.reset();
+      }
+      points = &text_points;
+    }
+    for (const auto &point : cabana::transformSeries(*points, series.transform)) {
+      double sec = (static_cast<long double>(point.mono_time) - can->beginMonoTime()) * 1e-9L;
       series.vals.emplace_back(sec, point.value);
       if (!series.step_vals.empty()) series.step_vals.emplace_back(sec, series.step_vals.back().y);
       series.step_vals.emplace_back(sec, point.value);
@@ -473,6 +498,7 @@ void ChartView::handleMouseRelease() {
     // Prevent zooming/seeking past the end of the route
     double min = std::clamp(secondsAtPoint(rubber_rect_.Min), can->minSeconds(), can->maxSeconds());
     double max = std::clamp(secondsAtPoint(rubber_rect_.Max), can->minSeconds(), can->maxSeconds());
+    if (min > max) std::swap(min, max);
     if (rubber_rect_.GetWidth() <= 10) {
       // Small movements are still clicks; use the same threshold as drag-to-zoom.
       can->seekTo(std::clamp(secondsAtPoint(press_pos_), can->minSeconds(), can->maxSeconds()));
@@ -559,18 +585,33 @@ void ChartView::hideTip() {
   tip_label_.hide();
 }
 
-void ChartView::draw(float width) {
+void ChartView::draw(float width, float height) {
   ImGui::PushID(this);
   width = std::max(width, (float)CHART_MIN_WIDTH);
   layout_.plot_hovered = false;
   // the tile geometry is known before the child is entered, so it stays valid when imgui culls a scrolled out chart
   const ImVec2 tile_pos = ImGui::GetCursorScreenPos();
-  const ImVec2 tile_size(width, (float)settings.chart_height);
+  const ImVec2 tile_size(width, height > 0 ? height : (float)settings.chart_height);
   layout_.rect = ImRect(tile_pos, tile_pos + tile_size);
   if (ImGui::BeginChild("chart", tile_size, ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse)) {
     updateLayout();
-    paint();
-    drawContextMenu();
+    if (kind_ == "plot") {
+      paint();
+      drawContextMenu();
+    } else {
+      ImGui::InvisibleButton("pane_grip", ImVec2(18, ImGui::GetFrameHeight()));
+      if (ImGui::IsItemActivated()) charts_widget_->startChartDrag(this, ImGui::GetMousePos());
+      ImGui::GetWindowDrawList()->AddText(ImGui::GetItemRectMin(), ImGui::GetColorU32(ImGuiCol_TextDisabled), icon::GRIP_HORIZONTAL);
+      ImGui::SameLine();
+      ImGui::TextUnformatted(title_.empty() ? kind_.c_str() : title_.c_str());
+      ImGui::SameLine();
+      if (ImGui::SmallButton("Close")) charts_widget_->removeChart(this);
+      if (!pane_error_.empty()) ImGui::TextWrapped("%s", pane_error_.c_str());
+      const auto size = ImGui::GetContentRegionAvail();
+      if (recorded_camera_) recorded_camera_->draw(can->toMonoTime(can->currentSec()), size);
+      else if (camera_) camera_->draw(size);
+      else if (map_) { if (auto time = map_->draw(can->currentSec(), can->liveStreaming())) can->seekTo(*time); }
+    }
     // Keep the tip above the plot, but below popup menus and other windows.
     ImRect visible_rect = charts_widget_->chartVisibleRect(this);
     visible_rect.ClipWith(ImRect(ImVec2(layout_.rect.Min.x, layout_.plot_area.Min.y),
@@ -629,13 +670,33 @@ void ChartView::drawAxes() {
   // reserve room for the right half of the last x tick label
   const float x_label_width = ImGui::CalcTextSize(formatNumber(x_max_, xAxisPrecision()).c_str()).x + ImGui::GetStyle().ItemInnerSpacing.x;
   if (ImPlot::BeginPlot("##plot", ImVec2(layout_.content_rect.GetWidth() - x_label_width / 2, plot_h), flags)) {
-    ImPlot::SetupAxis(ImAxis_X1, nullptr, axis_flags);
-    ImPlot::SetupAxis(ImAxis_Y1, y_unit_.empty() ? nullptr : y_unit_.c_str(), axis_flags);
+    ImPlot::SetupAxis(ImAxis_X1, nullptr, axis_flags | (flip_x_ ? ImPlotAxisFlags_Invert : 0));
+    ImPlot::SetupAxis(ImAxis_Y1, y_unit_.empty() ? nullptr : y_unit_.c_str(), axis_flags | (flip_y_ ? ImPlotAxisFlags_Invert : 0));
     ImPlot::SetupAxisLimits(ImAxis_X1, x_min_, x_max_, ImPlotCond_Always);
     ImPlot::SetupAxisLimits(ImAxis_Y1, y_min_, y_max_, ImPlotCond_Always);
     // the format must be set before the ticks are generated
     ImPlot::SetupAxisFormat(ImAxis_Y1, ("%." + std::to_string(y_precision_) + "f").c_str());
-    ImPlot::SetupAxisTicks(ImAxis_Y1, y_min_, y_max_, y_tick_count_);
+    const SigItem *states = nullptr;
+    bool categorical_axis = true;
+    for (const auto &series : sigs_) {
+      if (!series.visible) continue;
+      if (series.text_codes.empty() || (states && states->enum_labels != series.enum_labels)) {
+        categorical_axis = false;
+        break;
+      }
+      states = &series;
+    }
+    if (categorical_axis && states && states->enum_labels.size() <= 64) {
+      std::vector<double> positions;
+      std::vector<const char *> labels;
+      for (const auto &[value, label] : states->enum_labels) {
+        positions.push_back(value);
+        labels.push_back(label.c_str());
+      }
+      ImPlot::SetupAxisTicks(ImAxis_Y1, positions.data(), positions.size(), labels.data());
+    } else {
+      ImPlot::SetupAxisTicks(ImAxis_Y1, y_min_, y_max_, y_tick_count_);
+    }
     ImPlot::SetupAxisFormat(ImAxis_X1, ("%." + std::to_string(xAxisPrecision()) + "f").c_str());
     ImPlot::SetupAxisTicks(ImAxis_X1, x_min_, x_max_, X_TICK_COUNT);
     ImPlot::SetupFinish();
@@ -719,7 +780,7 @@ void ChartView::drawSeries() {
     double pixels_per_point = 0;
     if (first != last) {
       const ImPlotPoint &right_pt = last == s.vals.cend() ? s.vals.back() : *last;
-      pixels_per_point = (xPos(right_pt.x) - xPos(first->x)) / num_points;
+      pixels_per_point = std::abs(xPos(right_pt.x) - xPos(first->x)) / num_points;
     }
 
     const std::string label = "##sig" + std::to_string(i);
@@ -732,7 +793,7 @@ void ChartView::drawSeries() {
       spec.MarkerSize = radius;
       if (first != last) ImPlot::PlotScatter(label.c_str(), &first->x, &first->y, last - first, spec);
     } else {
-      const auto &points = series_type_ == SeriesType::StepLine ? s.step_vals : s.vals;
+      const auto &points = series_type_ == SeriesType::StepLine || !s.text_codes.empty() ? s.step_vals : s.vals;
       // one sample beyond each edge so the line runs out of the plot
       auto [begin, end] = visibleRange(points);
       if (begin != points.cbegin()) --begin;
@@ -878,6 +939,10 @@ void ChartView::addPythonSignal(const std::string &name, const cabana::PythonSer
 cabana::LayoutChart ChartView::analysisLayout() const {
   cabana::LayoutChart result;
   result.title = title_;
+  result.kind = kind_;
+  result.flip_x = flip_x_; result.flip_y = flip_y_;
+  result.camera_view = camera_view_;
+  result.x_limits = can->timeRange() ? can->timeRange() : fixed_x_limits_;
   result.series_type = static_cast<int>(series_type_);
   result.y_limits = fixed_y_limits_;
   for (const auto &series : sigs_) {
@@ -887,6 +952,7 @@ cabana::LayoutChart ChartView::analysisLayout() const {
     curve.name = series.isCereal() ? (series.python ? series.cereal_path : "/" + series.cereal_path) : series.sig->name;
     curve.can_id = series.isCereal() ? "" : series.msg_id.toString();
     curve.color = color;
+    curve.label = series.display_name;
     curve.visible = series.visible;
     curve.transform = series.transform;
     curve.python = series.python;
@@ -897,6 +963,22 @@ cabana::LayoutChart ChartView::analysisLayout() const {
 
 void ChartView::applyLayout(const cabana::LayoutChart &layout) {
   title_ = layout.title;
+  kind_ = layout.kind;
+  flip_x_ = layout.flip_x; flip_y_ = layout.flip_y;
+  camera_view_ = layout.camera_view;
+  fixed_x_limits_ = layout.x_limits;
+  if (kind_ == "camera" || kind_ == "thumbnail") {
+    const auto stream = camera_view_ == "cabin" ? VISION_STREAM_CABIN :
+                        camera_view_ == "wide_road" ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_NARROW_ROAD;
+    if (can->liveStreaming() && kind_ != "thumbnail") camera_ = std::make_unique<CameraWidget>("camerad", stream);
+    else {
+      recorded_camera_ = std::make_unique<cabana::RecordedCameraWidget>();
+      recorded_camera_->setSource(can->cameraReader(kind_ == "thumbnail" ? "thumbnail" : camera_view_));
+      connections_.push_back(can->cerealChanged.connect([this]() {
+        recorded_camera_->setSource(can->cameraReader(kind_ == "thumbnail" ? "thumbnail" : camera_view_));
+      }));
+    }
+  } else if (kind_ == "map") map_ = std::make_unique<cabana::MapWidget>();
   series_type_ = static_cast<SeriesType>(layout.series_type);
   fixed_y_limits_ = layout.y_limits;
   for (const auto &curve : layout.curves) {
@@ -914,6 +996,7 @@ void ChartView::applyLayout(const cabana::LayoutChart &layout) {
     sigs_.push_back(std::move(item));
     auto &series = sigs_.back();
     series.visible = curve.visible;
+    series.display_name = curve.label;
     series.transform = curve.transform;
     if (!curve.color.empty()) {
       const auto value = std::stoul(curve.color.substr(1), nullptr, 16);
@@ -923,4 +1006,8 @@ void ChartView::applyLayout(const cabana::LayoutChart &layout) {
     rebuildSeries(series);
   }
   updateAxisY();
+}
+
+void ChartView::setMapSeries(const std::map<std::string, cabana::CerealPoints> &series) {
+  if (map_) map_->setSeries(series, can->beginMonoTime());
 }

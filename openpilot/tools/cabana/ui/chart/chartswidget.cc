@@ -9,6 +9,7 @@
 #include <future>
 #include <filesystem>
 #include <fstream>
+#include <numeric>
 #include <sstream>
 
 #include "tools/cabana/settings.h"
@@ -17,6 +18,7 @@
 #define CABANA_REPO_ROOT "."
 #endif
 #include "tools/cabana/ui/chart/chart.h"
+#include "tools/cabana/core/csv.h"
 #include "tools/cabana/ui/icons.h"
 #include "tools/cabana/ui/util.h"
 #include "tools/cabana/utils/strings.h"
@@ -48,11 +50,11 @@ ChartsWidget::ChartsWidget() {
   }));
   connections_.push_back(can->eventsMerged.connect([this](const MessageEventsMap &events) { eventsMerged(events); }));
   connections_.push_back(can->msgsReceived.connect([this](const std::set<MessageId> *, bool) { updateState(); }));
-  connections_.push_back(can->seeking.connect([this](double) { updateState(); }));
+  connections_.push_back(can->seeking.connect([this](double) { updateState(); requestDerivedUpdate(false); }));
   connections_.push_back(can->timeRangeChanged.connect([this](const auto &) { updateState(); }));
   connections_.push_back(settings.changed.connect([this]() { settingChanged(); }));
   connections_.push_back(seriesChanged.connect([this]() { updateTabBar(); requestCerealUpdate(); }));
-  connections_.push_back(can->cerealChanged.connect([this]() { requestCerealUpdate(); }));
+  connections_.push_back(can->cerealChanged.connect([this]() { requestCerealUpdate(true); }));
   connections_.push_back(tabbar_.tabCloseRequested.connect([this](int index) { removeTab(index); }));
   connections_.push_back(tabbar_.tabContextMenu.connect([this](int index) {
     if (dropdown::BeginPopupContextItem()) {
@@ -73,39 +75,39 @@ ChartsWidget::ChartsWidget() {
 
 ChartsWidget::~ChartsWidget() {
   ++*cereal_generation_;
+  ++*map_generation_;
+  ++*derived_generation_;
   alive_.reset();
 }
 
-void ChartsWidget::requestCerealUpdate() {
+void ChartsWidget::requestCerealUpdate(bool data_changed) {
   if (changing_layout_) return;
+  requestMapUpdate(data_changed);
+  requestDerivedUpdate(data_changed);
+  if (data_changed && cereal_running_) { cereal_dirty_ = true; return; }
+  cereal_running_ = cereal_dirty_ = false;
   const auto generation = ++*cereal_generation_;
-  auto reader = can->cerealReader();  // owns/pins all data needed by the worker
+  auto reader = can->cerealReader();
   std::set<std::string> paths;
-  std::map<std::string, cabana::PythonSeries> expressions;
-  for (const auto &chart : charts_) {
-    for (const auto &series : chart->signals()) {
-      if (series.python) {
-        expressions[series.key()] = *series.python;
-        paths.insert(series.python->linked_source);
-        paths.insert(series.python->additional_sources.begin(), series.python->additional_sources.end());
-      } else if (series.isCereal()) paths.insert(series.cereal_path);
-    }
+  for (const auto &chart : charts_) for (const auto &series : chart->signals()) {
+    if (series.isCereal() && !series.python) paths.insert(series.cereal_path);
   }
   if (!reader || paths.empty()) return;
+  cereal_running_ = true;
   auto state = cereal_generation_;
-  const auto time_origin = can->beginMonoTime();
-  auto publish = utils::guarded(alive_, [this, state, generation](std::map<std::string, cabana::CerealPoints> result,
+  auto publish = utils::guarded(alive_, [this, state, generation](const std::map<std::string, cabana::CerealPoints> &result,
                                                                const std::map<std::string, std::string> &errors) {
     if (state->load() != generation) return;
     for (auto &chart : charts_) {
       for (const auto &[path, points] : result) chart->setCerealSeries(path, points);
       for (const auto &[path, error] : errors) chart->setCerealError(path, error);
     }
+    cereal_running_ = false;
     updateState();
+    if (cereal_dirty_) requestCerealUpdate(true);
   });
-  ThreadPool::instance().run([reader = std::move(reader), paths = std::move(paths), state, generation, publish, time_origin, expressions = std::move(expressions)]() {
+  ThreadPool::analysis().run([reader = std::move(reader), paths = std::move(paths), state, generation, publish]() {
     auto cancelled = [state, generation]() { return state->load() != generation; };
-    if (cancelled()) return;
     std::map<std::string, cabana::CerealPoints> result;
     std::map<std::string, std::string> errors;
     for (const auto &path : paths) {
@@ -113,13 +115,102 @@ void ChartsWidget::requestCerealUpdate() {
       try { result[path] = reader(path, cancelled); }
       catch (const std::exception &error) { errors[path] = error.what(); }
     }
-    for (const auto &[key, spec] : expressions) {
-      if (cancelled()) return;
-      try { result[key] = cabana::evaluatePythonSeries(spec, result, cancelled, 15.0, time_origin); }
-      catch (const std::exception &error) { errors[key] = error.what(); }
+    if (!cancelled()) utils::runOnMainThread([publish, result = std::move(result), errors]() { publish(result, errors); });
+  });
+}
+
+void ChartsWidget::requestDerivedUpdate(bool data_changed) {
+  if (data_changed && derived_running_) { derived_dirty_ = true; return; }
+  const auto generation = ++*derived_generation_;
+  derived_running_ = derived_dirty_ = false;
+  std::map<std::string, cabana::PythonSeries> expressions;
+  std::map<std::string, std::string> aliases;
+  const auto raw_names = can->cerealSignalNames();
+  for (const auto &[name, spec] : derived_definitions_) {
+    const auto key = cabana::pythonSeriesKey(spec);
+    expressions[key] = spec;
+    if (std::find(raw_names.begin(), raw_names.end(), name) == raw_names.end()) aliases[name] = key;
+  }
+  std::set<std::string> requested;
+
+  for (const auto &chart : charts_) for (const auto &series : chart->signals()) {
+    if (!series.python) continue;
+    const auto key = series.key();
+    expressions[key] = *series.python;
+    requested.insert(key);
+    auto name = series.cereal_path;
+    if (!name.empty() && name.front() == '/') name.erase(0, 1);
+    if (std::find(raw_names.begin(), raw_names.end(), name) != raw_names.end()) continue;
+    auto found = aliases.find(name);
+    if (found == aliases.end()) aliases[name] = key;
+    else if (found->second != key) found->second.clear();
+  }
+  if (requested.empty()) return;
+  auto reader = can->cerealHistoryReader();
+  if (!reader) return;
+  derived_running_ = true;
+  const auto origin = can->beginMonoTime();
+  auto state = derived_generation_;
+  auto publish = utils::guarded(alive_, [this, state, generation](const std::map<std::string, cabana::CerealPoints> &result,
+                                                               const std::map<std::string, std::string> &errors) {
+    if (state->load() != generation) return;
+    for (auto &chart : charts_) {
+      for (const auto &[key, points] : result) chart->setCerealSeries(key, points);
+      for (const auto &[key, error] : errors) chart->setCerealError(key, error);
     }
-    if (cancelled()) return;
-    utils::runOnMainThread([publish, result = std::move(result), errors]() { publish(result, errors); });
+    derived_running_ = false;
+    updateState();
+    if (derived_dirty_) requestDerivedUpdate(true);
+  });
+  ThreadPool::history().run([reader, expressions, aliases, requested, origin, state, generation, publish]() {
+    auto cancelled = [state, generation]() { return state->load() != generation; };
+    std::set<std::string> paths;
+    std::set<std::string> needed;
+    const auto collect = [&](auto &&self, const std::string &key) -> void {
+      if (!needed.insert(key).second) return;
+      const auto &spec = expressions.at(key);
+      auto sources = spec.additional_sources; sources.push_back(spec.linked_source);
+      for (const auto &source : sources) {
+        auto found = aliases.find(source);
+        if (found != aliases.end() && !found->second.empty()) self(self, found->second);
+        else paths.insert(source);
+      }
+    };
+    for (const auto &key : requested) collect(collect, key);
+    for (const auto &[name, _] : aliases) paths.erase(name);
+    std::map<std::string, cabana::CerealPoints> inputs, result;
+    std::map<std::string, std::string> errors;
+    std::map<std::string, bool> visiting;
+    std::string history_error;
+    try { inputs = reader(paths, cancelled); }
+    catch (const std::exception &failure) { history_error = failure.what(); }
+    const auto evaluate = [&](auto &&self, const std::string &key) -> void {
+      if (cancelled()) throw std::runtime_error("Calculation cancelled");
+      if (result.count(key)) return;
+      if (errors.count(key)) throw std::runtime_error(errors.at(key));
+      if (visiting[key]) throw std::invalid_argument("Derived curves have a cyclic dependency");
+      visiting[key] = true;
+      try {
+        const auto &spec = expressions.at(key);
+        auto sources = spec.additional_sources; sources.push_back(spec.linked_source);
+        for (const auto &source : sources) {
+          const auto dependency = aliases.find(source);
+          if (dependency == aliases.end()) continue;
+          if (dependency->second.empty()) throw std::invalid_argument("Ambiguous derived curve name: " + source);
+          self(self, dependency->second);
+          inputs[source] = result.at(dependency->second);
+        }
+        if (!history_error.empty()) throw std::runtime_error(history_error);
+        result[key] = cabana::evaluatePythonSeries(spec, inputs, cancelled, 15.0, origin);
+        visiting[key] = false;
+      } catch (...) { visiting[key] = false; throw; }
+    };
+    for (const auto &key : requested) {
+      if (cancelled()) return;
+      try { evaluate(evaluate, key); }
+      catch (const std::exception &failure) { errors[key] = failure.what(); }
+    }
+    if (!cancelled()) utils::runOnMainThread([publish, result = std::move(result), errors]() { publish(result, errors); });
   });
 }
 
@@ -147,6 +238,7 @@ void ChartsWidget::removeTab(int index) {
     removeChart(c);
   }
   tab_charts_.erase(id);
+  tab_names_.erase(id); tab_roots_.erase(id);
   tabbar_.removeTab(index);
   updateTabBar();
 }
@@ -166,7 +258,7 @@ void ChartsWidget::eventsMerged(const MessageEventsMap &new_events) {
     futures.push_back(ThreadPool::instance().run([c = c.get(), &new_events]() { c->updateSeries(nullptr, &new_events); }));
   }
   for (auto &f : futures) f.get();
-  requestCerealUpdate();
+  requestCerealUpdate(true);
 }
 
 void ChartsWidget::zoomReset() {
@@ -231,9 +323,44 @@ void ChartsWidget::drawToolBar() {
   }});
 
   items.push_back(toolbarMenu("analysis_layouts", "Layouts", "Layouts", [this]() {
+    if (ImGui::BeginMenu("Bundled layouts")) {
+      std::error_code error;
+      const auto directory = std::filesystem::path(CABANA_REPO_ROOT) / "openpilot/tools/cabana/layouts";
+      for (const auto &entry : std::filesystem::directory_iterator(directory, error)) {
+        if (entry.path().extension() == ".json" && ImGui::MenuItem(entry.path().stem().c_str())) loadAnalysisLayoutFile(entry.path().string());
+      }
+      ImGui::EndMenu();
+    }
+    if (dropdown::Item("Use grid layout")) {
+      tab_roots_.erase(tabbar_.tabData(tabbar_.currentIndex())); ++layout_generation_; updateLayout();
+    }
     if (dropdown::Item("Open layout...")) {
-      FileDialog::getOpenFileName("Open analysis layout", settings.last_dir, ".json",
+      FileDialog::getOpenFileName("Open analysis layout", settings.last_dir, ".json,.xml",
                                  utils::guarded(alive_, [this](const std::string &path) { loadAnalysisLayoutFile(path); }));
+    }
+    if (dropdown::Item("Export plotted CSV...")) {
+      FileDialog::getSaveFileName("Export plotted series", settings.last_dir + "/plots.csv", ".csv",
+        utils::guarded(alive_, [this](const std::string &path) {
+          std::vector<cabana::CsvSeries> series;
+          for (const auto &chart : charts_) for (const auto &signal : chart->signals()) {
+            if (!signal.visible) continue;
+            cabana::CsvSeries item; item.name = signal.name();
+            if (!signal.text_codes.empty()) item.labels = signal.enum_labels;
+            for (const auto &point : signal.vals) item.points.push_back({point.x, point.y});
+            series.push_back(std::move(item));
+          }
+          auto failure = utils::guarded(alive_, [](const std::string &error) { can->error(error); });
+          ThreadPool::analysis().run([path, series = std::move(series), failure]() {
+            try {
+              std::ofstream output(path);
+              if (!output) throw std::runtime_error("Cannot open CSV file: " + path);
+              cabana::writeSeriesCsv(output, series);
+            } catch (const std::exception &error) {
+              const std::string message = error.what();
+              utils::runOnMainThread([failure, message]() { failure(message); });
+            }
+          });
+        }));
     }
     if (dropdown::Item("Save layout...")) {
       FileDialog::getSaveFileName("Save analysis layout", settings.last_dir + "/analysis.json", ".json",
@@ -246,6 +373,20 @@ void ChartsWidget::drawToolBar() {
         }));
     }
     if (dropdown::Item("New Python curve...")) editPythonSeries();
+    if (dropdown::Item("New map pane")) {
+      cabana::LayoutChart pane; pane.kind = "map"; pane.title = "Map";
+      createChart()->applyLayout(pane); seriesChanged();
+    }
+    if (ImGui::BeginMenu("New camera pane")) {
+      for (const std::string view : {"road", "cabin", "wide_road", "qroad", "thumbnail"}) {
+        if (ImGui::MenuItem(view.c_str())) {
+          cabana::LayoutChart pane; pane.kind = view == "thumbnail" ? "thumbnail" : "camera";
+          pane.title = view; pane.camera_view = view == "thumbnail" ? "road" : view;
+          createChart()->applyLayout(pane); seriesChanged();
+        }
+      }
+      ImGui::EndMenu();
+    }
   }));
   const int type_count = (int)std::size(SERIES_TYPE_NAMES);
   const std::string chart_type_text = std::string("Type:  ") + SERIES_TYPE_NAMES[std::clamp(settings.chart_series_type, 0, type_count - 1)];
@@ -346,12 +487,16 @@ ChartView *ChartsWidget::findChart(const MessageId &id, const cabana::Signal *si
 }
 
 ChartView *ChartsWidget::createChart(int pos) {
+  const int tab_id = tabbar_.tabData(tabbar_.currentIndex());
+  const auto before = currentCharts();
   auto chart = std::make_unique<ChartView>(can->timeRange().value_or(display_range_), this);
   ChartView *ptr = chart.get();
   pos = std::clamp(pos, 0, (int)charts_.size());
   charts_.insert(charts_.begin() + pos, std::move(chart));
   auto &current = currentCharts();
   current.insert(current.begin() + std::min(pos, (int)current.size()), ptr);
+  remapLayoutTree(tab_id, before);
+  ++layout_generation_;
   updateLayout();
   return ptr;
 }
@@ -429,7 +574,7 @@ void ChartsWidget::updateLayout() {
     if ((n * CHART_MIN_WIDTH + (n - 1) * ImGui::GetStyle().ItemSpacing.x) < container_width) break;
   }
 
-  columns_action_visible_ = n > 1;
+  columns_action_visible_ = n > 1 && !tab_roots_.count(tabbar_.tabData(tabbar_.currentIndex()));
   current_column_count_ = std::min(column_count_, n);
 }
 
@@ -458,7 +603,7 @@ void ChartsWidget::dragChartMove(const ImVec2 &global_pos) {
 
   ChartView *target = nullptr;
   for (auto c : currentCharts()) {
-    if (c != drag_.source && c->rect().Contains(global_pos)) {
+    if (c != drag_.source && c->isPlot() && drag_.source->isPlot() && c->rect().Contains(global_pos)) {
       target = c;
       break;
     }
@@ -496,6 +641,7 @@ void ChartsWidget::dragChartRelease(const ImVec2 &global_pos) {
     target->takeSignalsFrom(source);
   } else if (in_viewport && !charts_container_.childAt(global_pos)) {
     // reorder within the current tab
+    const auto previous_tabs = tab_charts_;
     auto w = charts_container_.getDropAfter(global_pos);
     if (w != source) {
       for (auto &[_, list] : tab_charts_) {
@@ -504,6 +650,8 @@ void ChartsWidget::dragChartRelease(const ImVec2 &global_pos) {
       auto &cur = currentCharts();
       int to = w ? std::find(cur.begin(), cur.end(), w) - cur.begin() + 1 : 0;
       cur.insert(cur.begin() + to, source);
+      for (const auto &[id, before] : previous_tabs) remapLayoutTree(id, before);
+      ++layout_generation_;
       updateLayout();
       updateTabBar();
     }
@@ -589,6 +737,8 @@ void ChartsWidget::execSignalSelector(std::unique_ptr<SignalSelector> dlg, Chart
 }
 
 void ChartsWidget::removeChart(ChartView *chart) {
+  const auto previous_tabs = tab_charts_;
+  ++layout_generation_;
   if (python_owner_ == chart) { python_owner_ = nullptr; python_editor_open_ = false; }
   if (drag_.source == chart) cancelChartDrag();
   if (drop_target_ == chart) drop_target_ = nullptr;
@@ -604,11 +754,13 @@ void ChartsWidget::removeChart(ChartView *chart) {
   for (auto &[_, list] : tab_charts_) {
     list.erase(std::remove(list.begin(), list.end(), chart), list.end());
   }
+  for (const auto &[id, before] : previous_tabs) remapLayoutTree(id, before);
   updateLayout();
   seriesChanged();
 }
 
 void ChartsWidget::removeAll() {
+  tab_roots_.clear();
   tab_names_.clear();
   while (tabbar_.count() > 1) {
     tabbar_.removeTab(1);
@@ -664,7 +816,11 @@ void ChartsWidget::draw() {
   tabbar_.draw();
 
   any_plot_hovered_ = false;
-  if (ImGui::BeginChild("charts_scroll", ImVec2(0, 0), ImGuiChildFlags_None, 0)) {
+  const auto &visible_charts = currentCharts();
+  for (const auto &chart : charts_) {
+    if (std::find(visible_charts.begin(), visible_charts.end(), chart.get()) == visible_charts.end()) chart->hidePane();
+  }
+  if (ImGui::BeginChild("charts_scroll", ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar)) {
     charts_scroll_ = ImGui::GetCurrentWindow();
     charts_scroll_viewport_ = charts_scroll_->InnerRect;
     charts_container_.draw();
@@ -695,6 +851,72 @@ void ChartsContainer::draw() {
   const ImVec2 origin = ImGui::GetCursorScreenPos();
   auto current_charts = charts_widget_->currentCharts();  // copy: drawing may remove charts
   float bottom = origin.y;
+  auto tree = charts_widget_->tab_roots_.find(charts_widget_->tabbar_.tabData(charts_widget_->tabbar_.currentIndex()));
+  if (tree != charts_widget_->tab_roots_.end()) {
+    const auto minimum = [&](auto &&self, const cabana::LayoutNode &node) -> ImVec2 {
+      if (node.chart >= 0) return ImVec2(CHART_MIN_WIDTH, 180);
+      ImVec2 result;
+      for (size_t i = 0; i < node.children.size(); ++i) {
+        const auto child = self(self, node.children[i]);
+        const double fraction = node.sizes[i] / std::accumulate(node.sizes.begin(), node.sizes.end(), 0.0);
+        if (node.horizontal) { result.x = std::max(result.x, static_cast<float>(child.x / fraction)); result.y = std::max(result.y, child.y); }
+        else { result.y = std::max(result.y, static_cast<float>(child.y / fraction)); result.x = std::max(result.x, child.x); }
+      }
+      if (node.horizontal) result.x += 6 * (node.children.size() - 1);
+      else result.y += 6 * (node.children.size() - 1);
+      return result;
+    };
+    ImVec2 size = minimum(minimum, tree->second);
+    size.x = std::max(size.x, width_avail);
+    size.y = std::max(size.y, ImGui::GetContentRegionAvail().y);
+    const auto render = [&](auto &&self, cabana::LayoutNode &node, ImVec2 pos, ImVec2 extent) -> void {
+      if (node.chart >= 0) {
+        if (node.chart < static_cast<int>(current_charts.size())) {
+          ImGui::SetCursorScreenPos(pos);
+          auto *chart = current_charts[node.chart];
+          chart->draw(extent.x, extent.y);
+          if (chart->plotHovered()) charts_widget_->any_plot_hovered_ = true;
+        }
+        return;
+      }
+      ImGui::PushID("node");
+      const float length = node.horizontal ? extent.x : extent.y;
+      const float gap = 6;
+      const float available = std::max(1.0f, length - gap * (node.children.size() - 1));
+      double total = std::accumulate(node.sizes.begin(), node.sizes.end(), 0.0);
+      float offset = 0;
+      for (size_t i = 0; i < node.children.size(); ++i) {
+        const float part = available * node.sizes[i] / total;
+        const ImVec2 child_pos = pos + (node.horizontal ? ImVec2(offset, 0) : ImVec2(0, offset));
+        ImGui::PushID(static_cast<int>(i));
+        self(self, node.children[i], child_pos, node.horizontal ? ImVec2(part, extent.y) : ImVec2(extent.x, part));
+        ImGui::PopID();
+        offset += part;
+        if (i + 1 < node.children.size()) {
+          ImGui::PushID(static_cast<int>(i));
+          ImGui::SetCursorScreenPos(pos + (node.horizontal ? ImVec2(offset, 0) : ImVec2(0, offset)));
+          ImGui::InvisibleButton("splitter", node.horizontal ? ImVec2(gap, extent.y) : ImVec2(extent.x, gap));
+          if (ImGui::IsItemHovered() || ImGui::IsItemActive()) ImGui::SetMouseCursor(node.horizontal ? ImGuiMouseCursor_ResizeEW : ImGuiMouseCursor_ResizeNS);
+          if (ImGui::IsItemActive()) {
+            const float movement = node.horizontal ? ImGui::GetIO().MouseDelta.x : ImGui::GetIO().MouseDelta.y;
+            const double combined = node.sizes[i] + node.sizes[i + 1];
+            const double first = std::clamp(node.sizes[i] + movement / available * total, combined * 0.05, combined * 0.95);
+            node.sizes[i] = first; node.sizes[i + 1] = combined - first;
+          }
+          ImGui::PopID();
+          offset += gap;
+        }
+      }
+      ImGui::PopID();
+    };
+    // Keep a local tree: a pane may delete itself while its draw callback runs.
+    const auto generation = charts_widget_->layout_generation_;
+    auto working_tree = tree->second;
+    render(render, working_tree, origin, size);
+    if (generation == charts_widget_->layout_generation_) tree->second = std::move(working_tree);
+    bottom = origin.y + size.y;
+    geometry_.Max.x = origin.x + size.x;
+  } else {
   const bool aligned = ImPlot::BeginAlignedPlots("charts_align", true);
   for (int i = 0; i < current_charts.size(); ++i) {
     ImVec2 pos = origin + ImVec2((i % n) * (width + spacing), (i / n) * (settings.chart_height + ImGui::GetStyle().ItemSpacing.y));
@@ -704,6 +926,7 @@ void ChartsContainer::draw() {
     if (current_charts[i]->plotHovered()) charts_widget_->any_plot_hovered_ = true;  // the window must be hovered too
   }
   if (aligned) ImPlot::EndAlignedPlots();
+  }
   ImGui::SetCursorScreenPos(ImVec2(origin.x, bottom));
   ImGui::Dummy(ImVec2(geometry_.GetWidth(), ImGui::GetStyle().ItemSpacing.y));
   geometry_.Max.y = bottom + ImGui::GetStyle().ItemSpacing.y;
@@ -742,6 +965,7 @@ ChartView *ChartsContainer::childAt(const ImVec2 &pos) const {
 
 cabana::AnalysisLayout ChartsWidget::analysisLayout() const {
   cabana::AnalysisLayout layout;
+  layout.calculations = derived_definitions_;
   layout.current_tab = std::max(0, tabbar_.currentIndex());
   for (int i = 0; i < tabbar_.count(); ++i) {
     const int id = tabbar_.tabData(i);
@@ -752,6 +976,8 @@ cabana::AnalysisLayout ChartsWidget::analysisLayout() const {
     if (charts != tab_charts_.end()) {
       for (auto *chart : charts->second) tab.charts.push_back(chart->analysisLayout());
     }
+    auto tree = tab_roots_.find(id);
+    if (tree != tab_roots_.end()) tab.root = tree->second;
     layout.tabs.push_back(std::move(tab));
   }
   return layout;
@@ -761,12 +987,14 @@ void ChartsWidget::loadAnalysisLayoutFile(const std::string &path) {
   try {
     std::filesystem::path file(path);
     if (!std::filesystem::exists(file)) {
-      file = std::filesystem::path(CABANA_REPO_ROOT) / "openpilot/tools/jotpluggler/layouts" /
-             (std::filesystem::path(path).extension() == ".json" ? path : path + ".json");
+      const auto requested = std::filesystem::path(path).filename();
+      file = std::filesystem::path(CABANA_REPO_ROOT) / "openpilot/tools/cabana/layouts" /
+             (requested.has_extension() ? requested.string() : requested.string() + ".json");
     }
     std::ifstream input(file);
     if (!input) throw std::runtime_error("Layout not found: " + path);
-    const std::string contents{std::istreambuf_iterator<char>(input), {}};
+    const std::string contents = file.extension() == ".xml" ? cabana::convertLegacyLayout(file.string()) :
+      std::string(std::istreambuf_iterator<char>(input), {});
     loadAnalysisLayout(cabana::parseAnalysisLayout(contents));
   } catch (const std::exception &error) { can->error(error.what()); }
 }
@@ -783,11 +1011,20 @@ void ChartsWidget::loadAnalysisLayout(const cabana::AnalysisLayout &layout) {
   changing_layout_ = true;
   ++*cereal_generation_;
   removeAll();
+  derived_definitions_ = layout.calculations;
+  for (const auto &tab : layout.tabs) for (const auto &chart : tab.charts) for (const auto &curve : chart.curves) {
+    if (curve.python) {
+      auto name = curve.name;
+      if (!name.empty() && name.front() == '/') name.erase(0, 1);
+      derived_definitions_.emplace(name, *curve.python);
+    }
+  }
   for (size_t i = 0; i < layout.tabs.size(); ++i) {
     if (i) newTab();
     const auto &tab = layout.tabs[i];
     tab_names_[tabbar_.tabData(tabbar_.currentIndex())] = tab.name;
     for (auto it = tab.charts.rbegin(); it != tab.charts.rend(); ++it) createChart()->applyLayout(*it);
+    if (tab.root) tab_roots_[tabbar_.tabData(tabbar_.currentIndex())] = *tab.root;
   }
   tabbar_.setCurrentIndex(layout.current_tab);
   changing_layout_ = false;
@@ -818,7 +1055,10 @@ void ChartsWidget::drawPythonEditor() {
     inputTextMultiline("##additional", &python_inputs_, ImVec2(-1, 70));
     ImGui::TextUnformatted("Initialization (runs once for each evaluation)");
     inputTextMultiline("##globals", &python_spec_.globals_code, ImVec2(-1, 70));
-    ImGui::TextUnformatted("Python / NumPy expression or body, e.g. return value - v1");
+    const char *languages[] = {"Python / NumPy", "Lua (legacy XML)"};
+    int language = python_spec_.language == "lua" ? 1 : 0;
+    if (ImGui::Combo("Language", &language, languages, 2)) python_spec_.language = language ? "lua" : "python";
+    ImGui::TextUnformatted("Expression or function body, e.g. return value - v1");
     inputTextMultiline("##code", &python_spec_.function_code, ImVec2(-1, 160));
     if (ImGui::Button("Plot")) {
       if (python_name_.empty() || python_spec_.linked_source.empty() || python_spec_.function_code.empty()) {
@@ -828,10 +1068,14 @@ void ChartsWidget::drawPythonEditor() {
         python_spec_.additional_sources.clear();
         std::istringstream sources(python_inputs_);
         std::string path;
-        while (sources >> path) {
+        while (std::getline(sources, path)) {
+          const auto first = path.find_first_not_of(" \t\r");
+          if (first == std::string::npos) continue;
+          path = path.substr(first, path.find_last_not_of(" \t\r") - first + 1);
           if (path.front() == '/') path.erase(0, 1);
           python_spec_.additional_sources.push_back(path);
         }
+        derived_definitions_[python_name_] = python_spec_;
         auto *chart = python_owner_ ? python_owner_ : createChart();
         chart->addPythonSignal(python_name_, python_spec_);
         python_editor_open_ = false;
@@ -840,4 +1084,78 @@ void ChartsWidget::drawPythonEditor() {
     if (!python_error_.empty()) ImGui::TextWrapped("%s", python_error_.c_str());
   }
   ImGui::End();
+}
+
+void ChartsWidget::remapLayoutTree(int id, const std::vector<ChartView *> &before) {
+  auto root = tab_roots_.find(id);
+  if (root == tab_roots_.end()) return;
+  const auto &after = tab_charts_[id];
+  std::set<int> used;
+  const auto remap = [&](auto &&self, cabana::LayoutNode node) -> std::optional<cabana::LayoutNode> {
+    if (node.chart >= 0) {
+      if (node.chart >= static_cast<int>(before.size())) return std::nullopt;
+      const auto found = std::find(after.begin(), after.end(), before[node.chart]);
+      if (found == after.end()) return std::nullopt;
+      node.chart = found - after.begin(); used.insert(node.chart); return node;
+    }
+    std::vector<cabana::LayoutNode> children;
+    std::vector<double> sizes;
+    for (size_t i = 0; i < node.children.size(); ++i) {
+      if (auto child = self(self, node.children[i])) { children.push_back(std::move(*child)); sizes.push_back(node.sizes[i]); }
+    }
+    if (children.empty()) return std::nullopt;
+    if (children.size() == 1) return children.front();
+    node.children = std::move(children); node.sizes = std::move(sizes); return node;
+  };
+  auto updated = remap(remap, root->second);
+  for (size_t i = 0; i < after.size(); ++i) {
+    if (used.count(i)) continue;
+    cabana::LayoutNode leaf; leaf.chart = i;
+    if (!updated) updated = leaf;
+    else {
+      cabana::LayoutNode split;
+      split.children = {leaf, *updated}; split.sizes = {1, static_cast<double>(std::max<size_t>(used.size(), 1))};
+      updated = std::move(split);
+    }
+    used.insert(i);
+  }
+  if (updated) root->second = std::move(*updated);
+  else tab_roots_.erase(root);
+}
+
+void ChartsWidget::requestMapUpdate(bool data_changed) {
+  if (data_changed && map_running_) { map_dirty_ = true; return; }
+  const auto generation = ++*map_generation_;
+  map_running_ = map_dirty_ = false;
+  if (std::none_of(charts_.begin(), charts_.end(), [](const auto &chart) { return chart->isMap(); })) return;
+  auto reader = can->cerealHistoryReader(true);
+  if (!reader) return;
+  map_running_ = true;
+  auto state = map_generation_;
+  auto publish = utils::guarded(alive_, [this, state, generation](const std::map<std::string, cabana::CerealPoints> &result,
+                                                               const std::string &error) {
+    if (state->load() != generation) return;
+    for (auto &chart : charts_) if (chart->isMap()) {
+      chart->setMapError(error);
+      if (error.empty()) chart->setMapSeries(result);
+    }
+    map_running_ = false;
+    if (map_dirty_) requestMapUpdate(true);
+  });
+  ThreadPool::history().run([reader, publish, state, generation]() {
+    auto cancelled = [state, generation]() { return state->load() != generation; };
+    std::set<std::string> paths;
+    for (const std::string service : {"gpsLocation", "gpsLocationExternal"}) {
+      for (const std::string field : {"latitude", "longitude", "bearingDeg", "hasFix"}) paths.insert(service + "/" + field);
+    }
+    paths.insert("liveLocationKalman/positionGeodetic/value/0");
+    paths.insert("liveLocationKalman/positionGeodetic/value/1");
+    paths.insert("liveLocationKalman/positionGeodetic/valid");
+    paths.insert("selfdriveState/enabled");
+    std::map<std::string, cabana::CerealPoints> result;
+    std::string error;
+    try { result = reader(paths, cancelled); }
+    catch (const std::exception &failure) { error = failure.what(); }
+    if (!cancelled()) utils::runOnMainThread([publish, result = std::move(result), error]() { publish(result, error); });
+  });
 }

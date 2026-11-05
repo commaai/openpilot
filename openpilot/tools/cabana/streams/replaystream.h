@@ -20,6 +20,8 @@ public:
   std::vector<std::string> cerealSignalNames() const override;
   bool supportsCereal() const override { return true; }
   cabana::CerealReader cerealReader() const override;
+  cabana::CerealHistoryReader cerealHistoryReader(bool entire_route = false) const override;
+  cabana::RecordedCameraReader cameraReader(const std::string &view) const override;
   void seekTo(double ts) override { replay->seekTo(std::max(double(0), ts), false); }
   bool liveStreaming() const override { return false; }
   inline std::string routeName() const override { return replay->route().name(); }
@@ -44,6 +46,7 @@ private:
   std::unique_ptr<Replay> replay = nullptr;
   Connection settings_connection_;
   std::set<int> processed_segments;
+  std::shared_ptr<LogReader> thumbnail_log_;
   std::set<std::string> cereal_names_;
   // Only requested signals are decoded and cached, bounded by replay's segment window.
   cabana::CerealDiscovery discovery_;  // touched only by the replay merge thread
@@ -55,6 +58,12 @@ private:
     std::mutex mutex;
     std::map<std::string, std::map<int, CerealSegment>> paths;
   };
+  struct HistoryCache {
+    std::mutex mutex;
+    std::map<std::string, std::map<int, cabana::CerealPoints>> paths;
+  };
+  std::shared_ptr<HistoryCache> map_history_cache_ = std::make_shared<HistoryCache>();
+  std::shared_ptr<HistoryCache> history_cache_ = std::make_shared<HistoryCache>();
   std::shared_ptr<CerealCache> cereal_cache_ = std::make_shared<CerealCache>();
   std::unique_ptr<OpenpilotPrefix> op_prefix;
 };

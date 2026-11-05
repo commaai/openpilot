@@ -62,7 +62,7 @@ void DeviceStream::start() {
     if (pid == 0) {
       ::close(err_pipe[0]);
       ::fcntl(err_pipe[1], F_SETFD, FD_CLOEXEC);
-      execl(path.c_str(), path.c_str(), remote_address.c_str(), "can", static_cast<char *>(nullptr));
+      execl(path.c_str(), path.c_str(), remote_address.c_str(), static_cast<char *>(nullptr));
       const int err = errno;
       (void)!::write(err_pipe[1], &err, sizeof(err));
       _exit(127);
@@ -93,15 +93,24 @@ void DeviceStream::start() {
 }
 
 void DeviceStream::streamThread() {
-  std::unique_ptr<SubSocket> sock(SubSocket::create("can", false, services.at("can").queue_size));
-  assert(sock != NULL);
-  // run as fast as messages come in
+  std::vector<std::unique_ptr<SubSocket>> sockets;
+  for (const auto &[name, service] : services) {
+    // Match bridge.py's default subscription set: encoded video uses visionipc.
+    if (name.size() >= 10 && name.compare(name.size() - 10, 10, "EncodeData") == 0) continue;
+    sockets.emplace_back(SubSocket::create(name.c_str(), false, service.queue_size));
+    assert(sockets.back() != nullptr);
+  }
   while (!exit_) {
-    std::unique_ptr<Message> msg(sock->receive(true));
-    if (!msg) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(50));
-      continue;
+    bool received = false;
+    for (const auto &socket : sockets) {
+      // Limit each drain so a fast publisher cannot starve other services or shutdown.
+      for (int batch = 0; batch < 64 && !exit_; ++batch) {
+        std::unique_ptr<Message> msg(socket->receive(true));
+        if (!msg) break;
+        received = true;
+        handleEvent(kj::ArrayPtr<capnp::word>((capnp::word*)msg->getData(), msg->getSize() / sizeof(capnp::word)));
+      }
     }
-    handleEvent(kj::ArrayPtr<capnp::word>((capnp::word*)msg->getData(), msg->getSize() / sizeof(capnp::word)));
+    if (!received) std::this_thread::sleep_for(std::chrono::milliseconds(5));
   }
 }

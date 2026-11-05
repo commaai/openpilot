@@ -75,6 +75,7 @@ CerealPoints evaluatePythonSeries(const PythonSeries &spec, const std::map<std::
     auto values_file = temp.path / (std::to_string(index++) + ".v");
     std::vector<double> times, values;
     for (const auto &point : inputs.at(path)) {
+      if (point.text) throw std::invalid_argument("Python numerical inputs cannot contain text states: /" + path);
       // Crop the reference before evaluation: a stateful function must not see
       // future auxiliary values while processing its initial samples.
       if (path == spec.linked_source && point.mono_time < start) continue;
@@ -88,12 +89,12 @@ CerealPoints evaluatePythonSeries(const PythonSeries &spec, const std::map<std::
     series.push_back(json11::Json::object{{"path", "/" + path}, {"t", times_file.string()}, {"v", values_file.string()}});
   }
   write(temp.path / "manifest.json", json11::Json(json11::Json::object{
-    {"linked_source", "/" + spec.linked_source}, {"additional_sources", additional}, {"series", series}}).dump());
+    {"linked_source", "/" + spec.linked_source}, {"additional_sources", additional}, {"series", series}, {"language", spec.language}}).dump());
   write(temp.path / "globals.py", spec.globals_code);
   write(temp.path / "code.py", spec.function_code);
   const char *venv = std::getenv("VIRTUAL_ENV");
   std::string python = venv ? std::string(venv) + "/bin/python" : "python3";
-  std::vector<std::string> arguments{python, std::string(CABANA_REPO_ROOT) + "/openpilot/tools/jotpluggler/math_eval.py",
+  std::vector<std::string> arguments{python, std::string(CABANA_REPO_ROOT) + "/openpilot/tools/cabana/core/math_eval.py",
     (temp.path / "manifest.json").string(), (temp.path / "globals.py").string(), (temp.path / "code.py").string(),
     (temp.path / "out.t").string(), (temp.path / "out.v").string()};
   std::vector<char *> argv;

@@ -390,6 +390,12 @@ void MainWindow::startStream(std::unique_ptr<AbstractStream> stream, const std::
         wait_dlg_.open = false;
         wait_dlg_.connection.disconnect();
       });
+      stream_connections_.push_back(can->cerealChanged.connect([this]() {
+        if (!can->cerealSignalNames().empty()) {
+          wait_dlg_.open = false;
+          wait_dlg_.connection.disconnect();
+        }
+      }));
     }
   });
 }

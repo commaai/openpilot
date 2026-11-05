@@ -38,7 +38,7 @@ bootstrap_icons_src = env.Command('assets/bootstrap_icons.cc', str(bootstrap_ico
 core_srcs = ['streams/pandastream.cc', 'streams/devicestream.cc', 'streams/livestream.cc', 'streams/abstractstream.cc', 'streams/replaystream.cc',
              'dbc/dbc.cc', 'dbc/dbcfile.cc', 'dbc/dbcmanager.cc', 'utils/export.cc', 'utils/util.cc', 'utils/strings.cc',
              'commands.cc', 'settings.cc', 'routes.cc', 'panda.cc', 'streams/cerealseries.cc',
-             'core/analysis.cc', 'core/pythonseries.cc']
+             'core/analysis.cc', 'core/pythonseries.cc', 'core/layout_io.cc', 'core/csv.cc']
 if arch != "Darwin":
   core_srcs += ['streams/socketcanstream.cc']
 
@@ -73,7 +73,7 @@ if GetOption('extras'):
   analysis_test_env = env.Clone()
   analysis_test_env['CXXFLAGS'] += [repo_root_define]
   analysis_objects = [analysis_test_env.Object('tests/analysis_' + source.replace('/', '_')[:-3], source)
-                      for source in ['tests/test_analysis.cc', 'core/analysis.cc', 'core/pythonseries.cc', 'streams/cerealseries.cc']]
+                      for source in ['tests/test_analysis.cc', 'core/analysis.cc', 'core/pythonseries.cc', 'core/csv.cc', 'streams/cerealseries.cc']]
   analysis_test_env.Program('tests/test_analysis', analysis_objects, LIBS=[cereal, 'json11', 'capnp', 'kj', 'pthread'])
   cabana_core_test_env = env.Clone()
   cabana_core_test_env['CXXFLAGS'] += [opendbc_path]

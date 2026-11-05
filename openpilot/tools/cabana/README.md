@@ -1,6 +1,6 @@
 # Cabana
 
-Cabana is a tool developed to view raw CAN data. One use for this is creating and editing [CAN Dictionaries](http://socialledge.com/sjsu/index.php/DBC_Format) (DBC files), and the tool provides direct integration with [commaai/opendbc](https://github.com/commaai/opendbc) (a collection of DBC files), allowing you to load the DBC files direct from source, and save to your fork. In addition, you can load routes from [comma connect](https://connect.comma.ai).
+Cabana analyzes recorded and live CAN/cereal data with plots, derived curves, cameras, and maps. One use for this is creating and editing [CAN Dictionaries](http://socialledge.com/sjsu/index.php/DBC_Format) (DBC files), and the tool provides direct integration with [commaai/opendbc](https://github.com/commaai/opendbc) (a collection of DBC files), allowing you to load the DBC files direct from source, and save to your fork. In addition, you can load routes from [comma connect](https://connect.comma.ai).
 
 ## Usage Instructions
 
@@ -18,7 +18,7 @@ Options:
   --qcam                    load qcamera
   --wide-road               load wide road camera (alias: --ecam)
   --cabin                   load cabin camera (alias: --dcam)
-  --msgq                    read can messages from the msgq
+  --msgq, --stream          read live cereal messages from msgq
   --panda                   read can messages from panda
   --panda-serial <serial>   read can messages from panda with given serial
   --socketcan <device>      read can messages from given SocketCAN device
@@ -27,6 +27,7 @@ Options:
   --no-vipc                 do not output video
   --no-cache                turn off the local route file cache
   --dbc <file>              dbc file to open
+  --layout <name-or-file>    open a bundled JSON or legacy XML layout
 ```
 
 ## Examples
@@ -97,64 +98,94 @@ cabana
 
 For more information, see the [openpilot wiki](https://github.com/commaai/openpilot/wiki/Cabana)
 
-## Plotting cereal fields from recorded routes
+## Cereal analysis
 
-Open a route, click **New Chart**, and select **Cereal signals** in the message dropdown.
-Filter for a field such as `/carState/vEgo` or `/carState/cruiseState/speed`, then
-double-click it to add it to the selection. CAN and cereal signals can share a chart.
-The chart uses the same route clock, playback cursor, zoom, and seek controls as CAN plots.
-**Manage Signals** can add or remove either source, and split/merge and chart restoration
-also retain cereal paths.
+Open a recorded route or a live source, click **New Chart**, and choose **Cereal signals**.
+Paths such as `/carState/vEgo`, `/carState/cruiseState/speed`, and list entries can
+share plots with CAN signals. The browser observes later messages, growing lists,
+and active union members. Enums retain their labels; text fields use step traces
+with readable state labels. Missing values leave gaps. Cursor values use causal
+sample-and-hold.
 
-Field discovery observes later messages, growing lists, and active union members.
-Numeric, boolean, and enum values are supported; enums retain their labels in the
-cursor display. Optional or nonfinite values leave gaps instead of connecting
-unrelated samples. Raw values use causal sample-and-hold at the cursor.
+Use a chart's **Transforms** menu for scale, value/time offsets, or derivatives.
+A positive derivative divisor overrides timestamp differences; zero uses elapsed
+time. Text states support time offsets but reject numerical transforms.
 
-Only requested fields are decoded, off the UI thread. Jobs own their source snapshot,
-and changing the selection or route cancels stale results. Decoded fields are cached
-within replay's segment window, with at most 64 retained field entries. Lists in the
-browser have no fixed 64-entry truncation. Dense lines use an extrema-preserving
-pixel envelope for drawing; calculations and cursor values retain original samples.
+### Derived curves
 
-### Transforms and derived curves
+Use **Layouts → New Python curve** for Python/NumPy expressions or function bodies.
+The linked source is available as `value` and `time` (seconds since route start).
+Additional sources are aligned causally as `v1`, `v2`, and so on. Initialization runs
+once per evaluation. Recorded calculations read history from the beginning of the
+selected route, so seeking or changing the replay cache window does not reset an
+arbitrary stateful program at a different point. Named calculations can depend on
+other calculations; cycles and ambiguous names report an error. Imported unplotted
+Lua definitions survive layout saves and remain available to dependent curves. Reading that history can require
+additional log downloads. Live calculations use a temporary disk spool from the
+start of the stream; it is released when the stream and its pending readers close.
 
-A chart's menu provides **Transforms** for scale, offset, and an adjacent-sample
-derivative. A positive divisor overrides elapsed time, matching JotPluggler's layout
-convention; zero uses timestamp differences. Scale and offset apply after differentiation.
+Evaluation runs in a separate process with cancellation and a 15-second timeout.
+Errors appear on the affected curve. Legacy XML equations execute their original
+Lua source. They require a Lua 5.3 or 5.4 shared runtime (`liblua5.4-0` on Ubuntu,
+`lua` from Homebrew on macOS). Native Python layouts do not require Lua.
 
-Use **Layouts → New Python curve** to create a NumPy expression or function body.
-The linked source is available as `value` and `time` (seconds since route start);
-additional sources are aligned to it with causal sample-and-hold as `v1`, `v2`, etc.
-Initialization runs once per evaluation. Evaluation reuses JotPluggler's existing
-Python helper in a separate process, with cancellation and a 15-second timeout.
-Failures appear on the affected curve, without suppressing other charts.
+### Layouts, maps and cameras
 
-### Layouts
-
-Use **Layouts → Open layout** / **Save layout**, or start with a bundled plot layout:
+Open and save layouts from the **Layouts** menu, select a bundled layout, or launch:
 
 ```sh
 ./openpilot/tools/cabana/cabana --demo --layout tuning
-./openpilot/tools/cabana/cabana --demo --layout CAN-bus-debug
+./openpilot/tools/cabana/cabana --demo --layout cameras-and-map
+./openpilot/tools/cabana/cabana --demo --layout tuning.xml
 ```
 
-Saved layouts retain chart/tab names, CAN identities, cereal paths, curve colors and
-visibility, transforms, Python source, and fixed Y limits. Existing chart sessions
-remain readable. JotPluggler's plot-only JSON layouts can be imported into Cabana's
-existing chart grid; nested split ratios and independent X ranges are not restored.
-Layouts with camera/map panes are rejected explicitly rather than partially loaded.
+Layouts retain nested horizontal/vertical splits, proportions, tabs, titles, curve
+identities, labels, colors, visibility, Python/Lua source, transforms and axis
+ranges. Drag separators to resize panes. Adding or removing panes preserves the
+remaining split tree; **Use grid layout** explicitly restores Cabana's grid.
+A chart's **Follow playback X** action releases an imported fixed X range.
 
-This support covers recorded routes and the segments in replay's cache. Live cereal
-subscriptions, string-valued series, map panes, and PlotJuggler XML import are not
-implemented. Python initialization restarts when the cached input window changes;
-stateful results can depend on the beginning of that window. This is a migration
-step, not grounds to remove PlotJuggler yet.
+**New camera pane** adds road, cabin, wide-road, qcamera or recorded thumbnails.
+Recorded video loads on demand and follows the playback cursor. Live cameras use
+visionipc; thumbnail panes decode the live thumbnail service. **New map pane** displays the route, playback position and engagement
+state with cached vector roads. Wheel zoom, dragging and click-to-seek share the
+same playback clock as the charts. Basemap requests use the public Overpass API;
+GPS coordinates in those requests describe the displayed route.
 
-Build and run the native regression tests:
+The XML importer covers the shipped time-series layouts, derivative and
+Scale/Offset transforms, and Lua equations. Unsupported XML plugin transforms,
+non-time-series plots and floating-container workspaces report an
+explicit error before replacing the current workspace.
+
+### Export
+
+**Layouts → Export plotted CSV** exports visible curves across the workspace,
+including transformed and derived results and text-state labels. Columns use
+causal sample-and-hold, preserve gaps, and quote text correctly.
+
+### Live streaming
 
 ```sh
-scons -u -j4 openpilot/tools/cabana/tests/test_cerealseries openpilot/tools/cabana/tests/test_analysis
+./openpilot/tools/cabana/cabana --msgq
+./openpilot/tools/cabana/cabana --remote DEVICE_IP
+```
+
+For a remote source, run `openpilot/system/webrtc/webrtcd.py --host 0.0.0.0` on the
+device. Cabana starts the existing bridge automatically and subscribes to non-video
+cereal services. Ordinary live charts retain up to ten minutes / 256 MiB of raw
+cereal messages; calculation history uses the temporary disk spool described above.
+
+### Build checks
+
+```sh
+scons -u -j4 openpilot/tools/cabana/cabana openpilot/tools/cabana/tests/test_cerealseries openpilot/tools/cabana/tests/test_analysis
 ./openpilot/tools/cabana/tests/test_cerealseries
 ./openpilot/tools/cabana/tests/test_analysis
+python3 -m pytest -q openpilot/tools/cabana/tests/test_layout_conversion.py
 ```
+
+The retired PlotJuggler launcher and downloader have been removed. `op juggle` is
+an alias for Cabana and supports the native route, `--demo`, `--layout`, and
+`--stream` workflows. Third-party PlotJuggler plugins are not loaded by Cabana.
+Long route calculations retain decoded selected history and are recomputed when
+inputs change; their memory and execution time grow with recording duration.

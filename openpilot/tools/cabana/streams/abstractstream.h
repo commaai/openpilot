@@ -30,6 +30,15 @@ public:
   virtual std::vector<std::string> cerealSignalNames() const { return {}; }
   virtual bool supportsCereal() const { return false; }
   virtual cabana::CerealReader cerealReader() const { return {}; }
+  virtual cabana::CerealHistoryReader cerealHistoryReader(bool = false) const {
+    auto reader = cerealReader();
+    return [reader](const std::set<std::string> &paths, const cabana::CerealCancel &cancelled) {
+      std::map<std::string, cabana::CerealPoints> result;
+      if (reader) for (const auto &path : paths) result[path] = reader(path, cancelled);
+      return result;
+    };
+  }
+  virtual cabana::RecordedCameraReader cameraReader(const std::string &view) const { return {}; }
   virtual void seekTo(double ts) {}
   virtual std::string routeName() const = 0;
   virtual std::string carFingerprint() const { return ""; }

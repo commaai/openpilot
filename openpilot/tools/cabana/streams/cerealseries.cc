@@ -50,6 +50,7 @@ struct CerealDiscovery::Impl {
       if (complete) return;
       if (depth > 64) throw std::runtime_error("Cereal schema exceeds the supported nesting depth");
       switch (value.getType()) {
+        case capnp::DynamicValue::TEXT:
         case capnp::DynamicValue::BOOL:
         case capnp::DynamicValue::INT:
         case capnp::DynamicValue::UINT:
@@ -63,7 +64,7 @@ struct CerealDiscovery::Impl {
           if (fields.empty()) {
             for (auto field : reader.getSchema().getFields()) {
               auto type = field.getType();
-              if (type.isVoid() || type.isText() || type.isData() || type.isInterface() || type.isAnyPointer()) continue;
+              if (type.isVoid() || type.isData() || type.isInterface() || type.isAnyPointer()) continue;
               fields.push_back({field, std::make_unique<Node>(path + "/" + field.getProto().getName().cStr())});
             }
           }
@@ -127,19 +128,9 @@ std::vector<std::string> cerealSignalPaths(cereal::Event::Reader event) {
   return discovery.names();
 }
 
-std::optional<double> cerealSignalValue(cereal::Event::Reader event, const std::string &path) {
+namespace {
+std::optional<capnp::DynamicValue::Reader> resolveCerealValue(cereal::Event::Reader event, const std::string &path) {
   if (path.empty() || path.front() == '/' || path.back() == '/') return std::nullopt;
-  const auto slash = path.find('/');
-  if (slash != std::string::npos && path.substr(slash + 1, 2) == "__") {
-    auto reader = capnp::toDynamic(event);
-    KJ_IF_MAYBE(field, reader.which()) {
-      if (path.substr(0, slash) != field->getProto().getName().cStr()) return std::nullopt;
-      auto name = path.substr(slash + 1);
-      if (name == "__valid") return event.getValid() ? 1.0 : 0.0;
-      if (name == "__logMonoTimeSeconds") return event.getLogMonoTime() * 1e-9;
-    }
-    return std::nullopt;
-  }
   capnp::DynamicValue::Reader value = capnp::toDynamic(event);
   size_t begin = 0;
   while (begin < path.size()) {
@@ -154,7 +145,7 @@ std::optional<double> cerealSignalValue(cereal::Event::Reader event, const std::
       KJ_IF_MAYBE(found, field) {
         if (!activeField(reader, *found)) return std::nullopt;
         auto type = found->getType();
-        if ((type.isStruct() || type.isList()) && !reader.has(*found)) return std::nullopt;
+        if ((type.isStruct() || type.isList() || type.isText()) && !reader.has(*found)) return std::nullopt;
         value = reader.get(*found);
       } else {
         return std::nullopt;
@@ -170,7 +161,32 @@ std::optional<double> cerealSignalValue(cereal::Event::Reader event, const std::
     }
     begin = end + 1;
   }
-  return numericValue(value);
+  return value;
+}
+}  // namespace
+
+std::optional<double> cerealSignalValue(cereal::Event::Reader event, const std::string &path) {
+  if (path.empty() || path.front() == '/' || path.back() == '/') return std::nullopt;
+  const auto slash = path.find('/');
+  if (slash != std::string::npos && path.substr(slash + 1, 2) == "__") {
+    auto reader = capnp::toDynamic(event);
+    KJ_IF_MAYBE(field, reader.which()) {
+      if (path.substr(0, slash) != field->getProto().getName().cStr()) return std::nullopt;
+      auto name = path.substr(slash + 1);
+      if (name == "__valid") return event.getValid() ? 1.0 : 0.0;
+      if (name == "__logMonoTimeSeconds") return event.getLogMonoTime() * 1e-9;
+    }
+    return std::nullopt;
+  }
+  auto value = resolveCerealValue(event, path);
+  return value ? numericValue(*value) : std::nullopt;
+}
+
+std::optional<std::string> cerealSignalText(cereal::Event::Reader event, const std::string &path) {
+  auto value = resolveCerealValue(event, path);
+  if (!value || value->getType() != capnp::DynamicValue::TEXT) return std::nullopt;
+  auto text = value->as<capnp::Text>();
+  return std::string(text.begin(), text.size());
 }
 
 std::map<uint16_t, std::string> cerealEnumLabels(const std::string &path) {
@@ -210,13 +226,14 @@ std::optional<double> heldValue(const CerealPoints &points, uint64_t time) {
 
 CerealPoints transformSeries(const CerealPoints &points, const SeriesTransform &transform) {
   if (!std::isfinite(transform.scale) || !std::isfinite(transform.offset) ||
-      !std::isfinite(transform.derivative_dt) || transform.derivative_dt < 0) {
+      !std::isfinite(transform.derivative_dt) || !std::isfinite(transform.time_offset) || transform.derivative_dt < 0) {
     throw std::invalid_argument("Transforms require finite scale/offset and a nonnegative derivative divisor");
   }
   CerealPoints output;
   output.reserve(points.size());
   for (size_t i = 0; i < points.size(); ++i) {
     if (i && points[i].mono_time < points[i - 1].mono_time) throw std::invalid_argument("Series timestamps are not sorted");
+    if (points[i].text) throw std::invalid_argument("Text states cannot be used in numerical transforms");
     double value = points[i].value;
     if (transform.derivative) {
       if (!i) continue;
@@ -228,7 +245,9 @@ CerealPoints transformSeries(const CerealPoints &points, const SeriesTransform &
       value = (value - points[i - 1].value) / dt;
     }
     value = value * transform.scale + transform.offset;
-    output.push_back({points[i].mono_time, std::isfinite(value) ? value : std::numeric_limits<double>::quiet_NaN()});
+    const long double shifted = points[i].mono_time + static_cast<long double>(transform.time_offset) * 1e9L;
+    if (shifted < 0 || shifted > static_cast<long double>(UINT64_MAX)) throw std::invalid_argument("Time offset exceeds the monotonic clock range");
+    output.push_back({static_cast<uint64_t>(std::round(shifted)), std::isfinite(value) ? value : std::numeric_limits<double>::quiet_NaN()});
   }
   return output;
 }
