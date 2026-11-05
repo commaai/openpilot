@@ -7,6 +7,7 @@ from openpilot.common.filter_simple import FirstOrderFilter
 MAX_LAT_ACCEL = 2.8  # m/s^2
 MIN_CURVE_ACCEL = -2.0  # m/s^2
 MAX_CURVE_JERK = 2.0  # m/s^3
+COAST_CORRECTION = 0.3  # m/s^2
 
 
 class CurveSpeed:
@@ -33,4 +34,6 @@ class CurveSpeed:
       gap = max(np.max((plan_v[ahead] - v_max) / plan_t[ahead], initial=0.0), 0.0)
     max_step = MAX_CURVE_JERK * self.dt
     self.correction = float(np.clip(self.gap.update(gap), self.correction - max_step, self.correction + max_step))
-    return min(a_e2e, max(a_e2e - self.correction, MIN_CURVE_ACCEL))
+    # the model often doesn't slow down later like it plans, so stop accelerating first
+    coast = max(a_e2e, 0.0) * np.interp(self.correction, [0.0, COAST_CORRECTION], [1.0, 0.0]) + min(a_e2e, 0.0)
+    return min(coast, max(a_e2e - self.correction, MIN_CURVE_ACCEL))
