@@ -9,7 +9,7 @@ VideoWriter::VideoWriter(const char *path, const char *filename, bool remuxing, 
   vid_path = util::string_format("%s/%s", path, filename);
   lock_path = util::string_format("%s/%s.lock", path, filename);
 
-  int lock_fd = HANDLE_EINTR(open(lock_path.c_str(), O_RDWR | O_CREAT, 0664));
+  int lock_fd = open(lock_path.c_str(), O_RDWR | O_CREAT, 0664);
   assert(lock_fd >= 0);
   close(lock_fd);
 
@@ -44,7 +44,7 @@ VideoWriter::VideoWriter(const char *path, const char *filename, bool remuxing, 
     assert(err >= 0);
 
   } else {
-    this->of = util::safe_fopen(this->vid_path.c_str(), "wb");
+    this->of = fopen(this->vid_path.c_str(), "wb");
     assert(this->of);
   }
 }
@@ -95,7 +95,7 @@ void VideoWriter::initialize_audio(int sample_rate) {
 
 void VideoWriter::write(uint8_t *data, int len, long long timestamp, bool codecconfig, bool keyframe) {
   if (of && data) {
-    size_t written = util::safe_fwrite(data, 1, len, of);
+    size_t written = fwrite(data, 1, len, of);
     if (written != len) {
       LOGE("failed to write file.errno=%d", errno);
     }
@@ -234,7 +234,7 @@ VideoWriter::~VideoWriter() {
     if (err != 0) LOGE("avio_closep failed %d", err);
     avformat_free_context(this->ofmt_ctx);
   } else {
-    util::safe_fflush(this->of);
+    fflush(this->of);
     fclose(this->of);
     this->of = nullptr;
   }

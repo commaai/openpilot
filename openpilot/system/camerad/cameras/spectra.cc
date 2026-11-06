@@ -34,7 +34,7 @@ int do_cam_control(int fd, int op_code, void *handle, int size) {
     camcontrol.handle_type = CAM_HANDLE_USER_POINTER;
   }
 
-  int ret = HANDLE_EINTR(ioctl(fd, VIDIOC_CAM_CONTROL, &camcontrol));
+  int ret = ioctl(fd, VIDIOC_CAM_CONTROL, &camcontrol);
   if (ret == -1) {
     LOGE("VIDIOC_CAM_CONTROL error: op_code %d - errno %d", op_code, errno);
   }
@@ -47,7 +47,7 @@ int do_sync_control(int fd, uint32_t id, void *handle, uint32_t size) {
     .size = size,
     .ioctl_ptr = (uint64_t)handle,
   };
-  int ret = HANDLE_EINTR(ioctl(fd, CAM_PRIVATE_IOCTL_CMD, &arg));
+  int ret = ioctl(fd, CAM_PRIVATE_IOCTL_CMD, &arg);
 
   int32_t ioctl_result = static_cast<int32_t>(arg.result);
   if (ret < 0) {
@@ -177,12 +177,12 @@ MemoryManager::~MemoryManager() {
 void SpectraMaster::init() {
   LOG("-- Opening devices");
   // video0 is req_mgr, the target of many ioctls
-  video0_fd = HANDLE_EINTR(open("/dev/v4l/by-path/platform-soc:qcom_cam-req-mgr-video-index0", O_RDWR | O_NONBLOCK));
+  video0_fd = open("/dev/v4l/by-path/platform-soc:qcom_cam-req-mgr-video-index0", O_RDWR | O_NONBLOCK);
   assert(video0_fd >= 0);
   LOGD("opened video0");
 
   // video1 is cam_sync, the target of some ioctls
-  cam_sync_fd = HANDLE_EINTR(open("/dev/v4l/by-path/platform-cam_sync-video-index0", O_RDWR | O_NONBLOCK));
+  cam_sync_fd = open("/dev/v4l/by-path/platform-cam_sync-video-index0", O_RDWR | O_NONBLOCK);
   assert(cam_sync_fd >= 0);
   LOGD("opened video1 (cam_sync)");
 
@@ -223,7 +223,7 @@ void SpectraMaster::init() {
   struct v4l2_event_subscription sub = {0};
   sub.type = V4L_EVENT_CAM_REQ_MGR_EVENT;
   sub.id = V4L_EVENT_CAM_REQ_MGR_SOF_BOOT_TS;
-  ret = HANDLE_EINTR(ioctl(video0_fd, VIDIOC_SUBSCRIBE_EVENT, &sub));
+  ret = ioctl(video0_fd, VIDIOC_SUBSCRIBE_EVENT, &sub);
   LOGD("req mgr subscribe: %d", ret);
 
   mem_mgr.init(video0_fd);

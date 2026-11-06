@@ -135,7 +135,7 @@ int V4LDecoder::handleCapture(V4LDecodedFrame *frame) {
   buf.memory        = V4L2_MEMORY_USERPTR;
   buf.m.planes      = planes;
   buf.length        = 1;
-  int err = HANDLE_EINTR(ioctl(this->fd, VIDIOC_DQBUF, &buf));
+  int err = ioctl(this->fd, VIDIOC_DQBUF, &buf);
   if (err < 0 && errno == EAGAIN) return 0;
   if (err < 0) {
     LOGE("VIDIOC_DQBUF CAPTURE failed: %d", errno);
@@ -334,7 +334,7 @@ int V4LDecoder::handleOutput() {
   buf.memory    = V4L2_MEMORY_USERPTR;
   buf.m.planes  = planes;
   buf.length    = 1;
-  int err = HANDLE_EINTR(ioctl(this->fd, VIDIOC_DQBUF, &buf));
+  int err = ioctl(this->fd, VIDIOC_DQBUF, &buf);
   if (err < 0 && errno == EAGAIN) return 0;
   if (err < 0) {
     LOGE("VIDIOC_DQBUF OUTPUT failed: %d", errno);
@@ -347,7 +347,7 @@ int V4LDecoder::handleOutput() {
 int V4LDecoder::handleEvent() {
   // dequeue event
   struct v4l2_event event = {0};
-  int err = HANDLE_EINTR(ioctl(this->fd, VIDIOC_DQEVENT, &event));
+  int err = ioctl(this->fd, VIDIOC_DQEVENT, &event);
   if (err < 0 && (errno == EAGAIN || errno == ENOENT)) return 0;
   if (err < 0) {
     LOGE("VIDIOC_DQEVENT failed: %d", errno);

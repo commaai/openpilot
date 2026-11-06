@@ -113,8 +113,6 @@ class Serial:
         break
       try:
         chunk = os.read(self._fd, size - len(buf))
-      except InterruptedError:
-        continue
       except OSError as e:
         if e.errno in (errno.EAGAIN, errno.EWOULDBLOCK):
           if self._timeout == 0:
@@ -141,8 +139,6 @@ class Serial:
 
       try:
         chunk = os.read(self._fd, 1)
-      except InterruptedError:
-        continue
       except OSError as e:
         if e.errno in (errno.EAGAIN, errno.EWOULDBLOCK):
           if self._timeout == 0:
@@ -164,8 +160,6 @@ class Serial:
     while total < len(data):
       try:
         n = os.write(self._fd, view[total:])
-      except InterruptedError:
-        continue
       except OSError as e:
         if e.errno in (errno.EAGAIN, errno.EWOULDBLOCK):
           select.select([], [self._fd], [], None)
@@ -216,10 +210,7 @@ class Serial:
     """Return True if fd is readable. timeout None blocks; 0 polls."""
     if timeout is not None and timeout < 0:
       timeout = 0.0
-    try:
-      ready, _, _ = select.select([self._fd], [], [], timeout)
-    except InterruptedError:
-      return False
+    ready, _, _ = select.select([self._fd], [], [], timeout)
     return bool(ready)
 
   def _baud_constant(self, baudrate: int) -> int:

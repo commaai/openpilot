@@ -281,7 +281,7 @@ void camerad_thread() {
     if (!(fds[0].revents & POLLPRI)) continue;
 
     struct v4l2_event ev = {0};
-    ret = HANDLE_EINTR(ioctl(fds[0].fd, VIDIOC_DQEVENT, &ev));
+    ret = ioctl(fds[0].fd, VIDIOC_DQEVENT, &ev);
     if (ret == 0) {
       if (ev.type == V4L_EVENT_CAM_REQ_MGR_EVENT) {
         struct cam_req_mgr_message *event_data = (struct cam_req_mgr_message *)ev.u.data;
