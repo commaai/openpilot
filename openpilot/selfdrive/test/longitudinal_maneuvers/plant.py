@@ -108,7 +108,8 @@ class Plant:
           'carState': car_state.carState,
           'controlsState': control.controlsState,
           'selfdriveState': ss.selfdriveState,
-          'modelV2': model.modelV2}
+          'modelV2': model.modelV2,
+          'vehicleParameters': messaging.new_message('vehicleParameters').vehicleParameters}
     self.planner.update(sm)
     self.acceleration = self.planner.output_a_target
     if self.planner.output_should_stop:
