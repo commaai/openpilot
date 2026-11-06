@@ -356,11 +356,12 @@ class SegmentRange:
       return [start]
 
     s = slice(start, end, step)
-    # no specified end or using relative indexing, need number of segments
-    if end is None or end < 0 or (start is not None and start < 0):
-      return list(range(get_max_seg_number_cached(self) + 1))[s]
+    # A reverse slice without a start begins at the last segment.
+    if end is None or end < 0 or (start is not None and start < 0) or (start is None and step is not None and step < 0):
+      last = get_max_seg_number_cached(self)
     else:
-      return list(range(end + 1))[s]
+      last = max(start or 0, end)
+    return list(range(last + 1)[s])
 
   def __str__(self) -> str:
     return f"{self.dongle_id}/{self.log_id}" + (f"/{self.slice}" if self.slice else "") + (f"/{self.selector}" if self.selector else "")
