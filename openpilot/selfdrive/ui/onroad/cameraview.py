@@ -6,12 +6,13 @@ from openpilot.cereal.visionipc import VisionStreamType
 from msgq.visionipc import VisionIpcClient, VisionBuf
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.hardware import COMMA_HARDWARE
-from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.application import gui_app, CPU_RENDERER
 from openpilot.system.ui.lib.egl import init_egl, create_egl_image, destroy_egl_image, bind_egl_image_to_texture, EGLImage
 from openpilot.system.ui.widgets import Widget
 from openpilot.selfdrive.ui.ui_state import ui_state
 
 CONNECTION_RETRY_INTERVAL = 0.2  # seconds between connection attempts
+USE_EGL = COMMA_HARDWARE and not CPU_RENDERER
 
 VERSION = """
 #version 300 es
@@ -66,6 +67,16 @@ else:
     """
 
 
+def shader_curve(curve) -> np.ndarray:
+  """a frame shader's per channel curve as a lut for channel values -512 to 767, the GPU doesn't clamp them before the shader"""
+  with np.errstate(invalid="ignore"):
+    out = np.nan_to_num(curve((np.arange(1280) - 512) / 255), nan=0.0)
+  return np.round(np.clip(out, 0, 1) * 255).astype(np.uint8)
+
+
+CPU_COLOR = (shader_curve(lambda c: c ** (1 / 1.28)), 1.0)
+
+
 class CameraView(Widget):
   FRAGMENT_SHADER = FRAME_FRAGMENT_SHADER
 
@@ -99,7 +110,7 @@ class CameraView(Widget):
     self._placeholder_color: rl.Color | None = None
 
     # Initialize EGL for zero-copy rendering on COMMA_HARDWARE
-    if COMMA_HARDWARE:
+    if USE_EGL:
       if not init_egl():
         raise RuntimeError("Failed to initialize EGL")
 
@@ -145,7 +156,7 @@ class CameraView(Widget):
     self._clear_textures()
 
     # Clean up EGL texture
-    if COMMA_HARDWARE and self.egl_texture:
+    if USE_EGL and self.egl_texture:
       rl.unload_texture(self.egl_texture)
       self.egl_texture = None
 
@@ -222,7 +233,11 @@ class CameraView(Widget):
     dst_rect = rl.Rectangle(x_offset, y_offset, scale_x, scale_y)
 
     # Render with appropriate method
-    if COMMA_HARDWARE:
+    if CPU_RENDERER:
+      from openpilot.system.ui.lib.cpu_renderer import draw_nv12
+      draw_nv12(self.frame, dst_rect, src_rect.width < 0, *self._cpu_color(), self._texture_needs_update)
+      self._texture_needs_update = False
+    elif USE_EGL:
       self._render_egl(src_rect, dst_rect)
     else:
       self._render_textures(src_rect, dst_rect)
@@ -283,6 +298,10 @@ class CameraView(Widget):
 
   def _set_shader_uniforms(self) -> None:
     pass
+
+  def _cpu_color(self) -> tuple[np.ndarray, float]:
+    """FRAGMENT_SHADER for the CPU renderer: its per channel curve and saturation"""
+    return CPU_COLOR
 
   def _ensure_connection(self) -> bool:
     if not self.client.is_connected():
@@ -357,7 +376,7 @@ class CameraView(Widget):
       self.texture_uv = None
 
     # Clean up EGL resources
-    if COMMA_HARDWARE:
+    if USE_EGL:
       for data in self.egl_images.values():
         destroy_egl_image(data)
       self.egl_images = {}
