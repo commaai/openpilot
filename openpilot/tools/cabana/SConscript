@@ -75,7 +75,6 @@ if GetOption('extras'):
     cabana_core_test_env.Object('tests/cabana_core_util', 'utils/util.cc'),
     cabana_core_test_env.Object('tests/cabana_core_icons', bootstrap_icons_src),
     cabana_core_test_env.Object('tests/cabana_core_routes', 'routes.cc'),
-    cabana_core_test_env.Object('tests/cabana_core_qtstate', 'ui/qtstate.cc'),
   ]
   cabana_core_test = cabana_core_test_env.Program('tests/test_cabana', cabana_core_test_objects, LIBS=[replay_lib, common])
   cabana_core_test_env.Requires(cabana_core_test, generated_dbcs)
