@@ -45,6 +45,19 @@ name = "Onroad tests"
 run = "openpilot/tools/replay/can_replay.py --up && ./openpilot/selfdrive/test/test_onroad.py TestOnroad"
 timeout-minutes = 1.5
 
+# panda, car and process faults end to end, the UP plays the car
+[jobs.faults]
+runs-on = "up-can"
+timeout-minutes = 35
+
+[[jobs.faults.steps]]
+uses = "build"
+
+[[jobs.faults.steps]]
+name = "Fault tests"
+run = "./openpilot/selfdrive/test/up/test_faults.py"
+timeout-minutes = 10
+
 [jobs.hardware]
 runs-on = "up-mici"
 timeout-minutes = 35
