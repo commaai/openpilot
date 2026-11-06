@@ -106,12 +106,12 @@ class Route:
       op_match = re.match(RE.OP_SEGMENT_DIR, f)
 
       if explorer_match:
-        segment_name = explorer_match.group('segment_name')
+        segment_name = explorer_match.group('segment_name').replace('_', '|')
         fn = explorer_match.group('file_name')
-        if segment_name.replace('_', '|').startswith(self.name.canonical_name):
+        if segment_name.startswith(self.name.canonical_name):
           segment_files[segment_name].append((fullpath, fn))
       elif op_match and os.path.isdir(fullpath):
-        segment_name = op_match.group('segment_name')
+        segment_name = op_match.group('segment_name').replace('_', '|')
         if segment_name.startswith(self.name.canonical_name):
           for seg_f in os.listdir(fullpath):
             segment_files[segment_name].append((os.path.join(fullpath, seg_f), seg_f))
