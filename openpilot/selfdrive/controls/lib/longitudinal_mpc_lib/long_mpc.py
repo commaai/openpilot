@@ -55,7 +55,17 @@ T_DIFFS = np.diff(T_IDXS, prepend=[0.])
 COMFORT_BRAKE = 2.5
 STOP_DISTANCE = 6.0
 MIN_X_LEAD_FACTOR = 0.5
-JERK_FACTOR = 0.5
+
+def get_jerk_factor(personality=log.LongitudinalPersonality.standard):
+  if personality==log.LongitudinalPersonality.relaxed:
+    return 1.0
+  elif personality==log.LongitudinalPersonality.standard:
+    return 1.0
+  elif personality==log.LongitudinalPersonality.aggressive:
+    return 0.5
+  else:
+    raise NotImplementedError("Longitudinal personality not supported")
+
 
 def get_T_FOLLOW(personality=log.LongitudinalPersonality.standard):
   if personality==log.LongitudinalPersonality.relaxed:
@@ -250,9 +260,10 @@ class LongitudinalMpc:
     for i in range(N):
       self.solver.cost_set(i, 'Zl', Zl)
 
-  def set_weights(self, prev_accel_constraint=True):
+  def set_weights(self, prev_accel_constraint=True, personality=log.LongitudinalPersonality.standard):
+    jerk_factor = get_jerk_factor(personality)
     a_change_cost = A_CHANGE_COST if prev_accel_constraint else 0
-    cost_weights = [X_EGO_OBSTACLE_COST, X_EGO_COST, V_EGO_COST, A_EGO_COST, JERK_FACTOR * a_change_cost, JERK_FACTOR * J_EGO_COST]
+    cost_weights = [X_EGO_OBSTACLE_COST, X_EGO_COST, V_EGO_COST, A_EGO_COST, jerk_factor * a_change_cost, jerk_factor * J_EGO_COST]
     constraint_cost_weights = [LIMIT_COST, LIMIT_COST, LIMIT_COST, DANGER_ZONE_COST]
     self.set_cost_weights(cost_weights, constraint_cost_weights)
 
