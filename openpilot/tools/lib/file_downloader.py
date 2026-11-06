@@ -231,10 +231,6 @@ def cmd_download(args):
       sys.exit(1)
 
     total = int(r.headers.get('content-length', 0))
-    if total <= 0:
-      sys.stderr.write("ERROR:File not found or empty\n")
-      sys.stderr.flush()
-      sys.exit(1)
 
     os.makedirs(Paths.download_cache_root(), exist_ok=True)
     tmp_fd, tmp_path = tempfile.mkstemp(dir=Paths.download_cache_root())
@@ -254,6 +250,8 @@ def cmd_download(args):
           sys.stderr.write(f"PROGRESS:{downloaded}:{total}\n")
           sys.stderr.flush()
 
+      if not downloaded:
+        raise EOFError("File not found or empty")
       if decompressor and not decompressor.eof:
         raise EOFError(f"Compressed {compression} file ended before the end-of-stream marker")
 
