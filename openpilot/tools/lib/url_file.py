@@ -172,6 +172,9 @@ class URLFile:
     if r.status not in [200, 206]:
       raise URLFileException(f"Expected 206 or 200 response {r.status} ({self._url})")
 
+    if r.status == 200:
+      return [r.data[start:end] for start, end in ranges]
+
     ctype = (r.headers.get("content-type") or "").lower()
     if "multipart/byteranges" not in ctype:
       return [r.data,]
