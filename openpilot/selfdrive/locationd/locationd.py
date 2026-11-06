@@ -211,7 +211,13 @@ class LocationEstimator:
     std = np.sqrt(np.diag(cov))
     filter_time_valid = bool(np.isfinite(self.kf.t))
     filter_valid = filter_initialized and filter_time_valid
-    overall_valid = sensors_valid and inputs_valid and filter_valid
+
+    old_mean = np.mean(self.posenet_stds[:POSENET_STD_HIST_HALF])
+    new_mean = np.mean(self.posenet_stds[POSENET_STD_HIST_HALF:])
+    std_spike = (new_mean / old_mean) > 4.0 and new_mean > 7.0
+    posenet_valid = not std_spike or self.car_speed <= 5.0
+
+    overall_valid = (sensors_valid or posenet_valid) and inputs_valid and filter_valid
 
     orientation_ned, orientation_ned_std = state[States.NED_ORIENTATION], std[States.NED_ORIENTATION]
     velocity_device, velocity_device_std = state[States.DEVICE_VELOCITY], std[States.DEVICE_VELOCITY]
@@ -235,12 +241,8 @@ class LocationEstimator:
         for k in self.observations.keys()
       ]
 
-    old_mean = np.mean(self.posenet_stds[:POSENET_STD_HIST_HALF])
-    new_mean = np.mean(self.posenet_stds[POSENET_STD_HIST_HALF:])
-    std_spike = (new_mean / old_mean) > 4.0 and new_mean > 7.0
-
     deviceMotion.inputsOK = inputs_valid
-    deviceMotion.posenetOK = not std_spike or self.car_speed <= 5.0
+    deviceMotion.posenetOK = posenet_valid
     deviceMotion.sensorsOK = sensors_valid
     deviceMotion.filterOK = filter_valid
     deviceMotion.timestamp = int(np.nan_to_num(self.kf.t) * 1e9)
