@@ -44,7 +44,6 @@ class TestSubMaster(OpenpilotTestCase):
     sm.update(1000)
     assert_carstate(msg.carState, sm[sock])
 
-  # TODO: break this test up to individually test SubMaster.update and SubMaster.update_msgs
   def test_update(self):
     sock = "carState"
     pub_sock = messaging.pub_sock(sock)
@@ -54,6 +53,18 @@ class TestSubMaster(OpenpilotTestCase):
       msg = messaging.new_message(sock)
       pub_sock.send(msg.to_bytes())
       sm.update(1000)
+      assert sm.frame == i
+      assert all(sm.updated.values())
+
+  def test_update_msgs(self):
+    sock = "carState"
+    pub_sock = messaging.pub_sock(sock)
+    sm = messaging.SubMaster([sock,])
+
+    for i in range(10):
+      msg = messaging.new_message(sock)
+      pub_sock.send(msg.to_bytes())
+      sm.update_msgs(time.monotonic(), [msg])
       assert sm.frame == i
       assert all(sm.updated.values())
 
