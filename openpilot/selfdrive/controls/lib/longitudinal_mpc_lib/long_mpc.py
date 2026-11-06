@@ -56,7 +56,16 @@ COMFORT_BRAKE = 2.5
 STOP_DISTANCE = 6.0
 MIN_X_LEAD_FACTOR = 0.5
 JERK_FACTOR = 0.5
-T_FOLLOW = 1.25
+
+def get_T_FOLLOW(personality=log.LongitudinalPersonality.standard):
+  if personality==log.LongitudinalPersonality.relaxed:
+    return 1.75
+  elif personality==log.LongitudinalPersonality.standard:
+    return 1.45
+  elif personality==log.LongitudinalPersonality.aggressive:
+    return 1.25
+  else:
+    raise NotImplementedError("Longitudinal personality not supported")
 
 def get_stopped_equivalence_factor(v_lead):
   return (v_lead**2) / (2 * COMFORT_BRAKE)
@@ -154,7 +163,7 @@ def gen_long_ocp():
 
   x0 = np.zeros(X_DIM)
   ocp.constraints.x0 = x0
-  ocp.parameter_values = np.array([-1.2, 1.2, 0.0, 0.0, T_FOLLOW, LEAD_DANGER_FACTOR])
+  ocp.parameter_values = np.array([-1.2, 1.2, 0.0, 0.0, get_T_FOLLOW(), LEAD_DANGER_FACTOR])
 
 
   # We put all constraint cost weights to 0 and only set them at runtime
@@ -286,7 +295,9 @@ class LongitudinalMpc:
     lead_xv = self.extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau)
     return lead_xv
 
-  def update(self, radarstate):
+  def update(self, radarstate, personality=log.LongitudinalPersonality.standard):
+    t_follow = get_T_FOLLOW(personality)
+
     lead_xv_0 = self.process_lead(radarstate.leadOne)
     lead_xv_1 = self.process_lead(radarstate.leadTwo)
 
@@ -308,7 +319,7 @@ class LongitudinalMpc:
     self.params[:,1] = ACCEL_MAX
     self.params[:,2] = np.min(x_obstacles, axis=1)
     self.params[:,3] = np.copy(self.a_prev)
-    self.params[:,4] = T_FOLLOW
+    self.params[:,4] = t_follow
     self.params[:,5] = LEAD_DANGER_FACTOR
 
     self.run()
