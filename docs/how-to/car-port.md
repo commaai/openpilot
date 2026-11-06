@@ -1,9 +1,9 @@
 # What is a car port?
 
-A car port enables openpilot support on a particular car. Each car model openpilot supports needs to be individually ported. The complexity of a car port varies depending on many factors including:
+A car port enables openpilot support on a particular car. Each car model openpilot supports needs to be individually ported. The complexity of a car port varies depending on many factors, including:
 
-* existing openpilot support for similar cars
-* architecture and APIs available in the car
+* Existing openpilot support for similar cars
+* Architecture and APIs available in the car
 
 
 # Structure of a car port
@@ -21,7 +21,7 @@ Each car brand is supported by a standard interface structure in `opendbc/car/[b
 * `values.py`: Limits for actuation, general constants for cars, and supported car documentation
 * `radar_interface.py`: Interface for parsing radar points from the car, if applicable
 
-## safety
+## Safety
 
 * `opendbc/safety/modes/[brand].h`: Brand-specific safety logic
 * `opendbc/safety/tests/test_[brand].py`: Brand-specific safety CI tests
@@ -32,20 +32,20 @@ For historical reasons, openpilot still contains a small amount of car-specific 
 
 * `openpilot/selfdrive/car/car_specific.py`: Brand-specific event logic
 
-# How do I port car?
+# How do I port a car?
 
 [Jason Young](https://github.com/jyoung8607) gave a talk at COMMA_CON with an overview of the car porting process. The talk is available on YouTube:
 
 https://www.youtube.com/watch?v=XxPS5TpTUnI
 
-## Brand Port
+## Brand port
 
 A brand port is a port of openpilot to a substantially new car brand or platform within a brand.
 
-Here's an example of one: https://github.com/commaai/openpilot/pull/23331.
+Example: [Brand port in PR #23331](https://github.com/commaai/openpilot/pull/23331).
 
-## Model Port
+## Model port
 
 A model port is a port of openpilot to a new car model within an already supported brand. Model ports are easier than brand ports because the car's existing APIs are already known.
 
-Here's an example of one: https://github.com/commaai/openpilot/pull/30672/.
+Example: [Model port in PR #30672](https://github.com/commaai/openpilot/pull/30672).
