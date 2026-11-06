@@ -310,7 +310,9 @@ int num_decimals(double num) {
 }
 
 std::filesystem::path executableDir() {
-#ifdef __APPLE__
+#if defined(__EMSCRIPTEN__)
+  return "/";  // bundled assets are preloaded at the root of the virtual filesystem
+#elif defined(__APPLE__)
   char buf[PATH_MAX];
   uint32_t size = sizeof(buf);
   if (_NSGetExecutablePath(buf, &size) != 0) return {};

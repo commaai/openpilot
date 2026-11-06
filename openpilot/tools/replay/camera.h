@@ -5,11 +5,25 @@
 #include <tuple>
 #include <utility>
 
+#include "tools/replay/framereader.h"
+#include "tools/replay/logreader.h"
+
+#ifdef __EMSCRIPTEN__
+class CameraServer {
+public:
+  CameraServer(std::pair<int, int> camera_size[MAX_CAMERAS] = nullptr) {}
+  void pushFrame(CameraType type, FrameReader *fr, const Event *event);
+  void waitForSent() {}
+
+private:
+  // the decoder's position per camera, to send only what it still needs
+  FrameReader *last_reader_[MAX_CAMERAS] = {};
+  int last_idx_[MAX_CAMERAS] = {-1, -1, -1};
+};
+#else
 #include "openpilot/cereal/visionstream.h"
 #include "msgq/visionipc/visionipc_server.h"
 #include "common/queue.h"
-#include "tools/replay/framereader.h"
-#include "tools/replay/logreader.h"
 
 class CameraServer {
 public:
@@ -40,3 +54,4 @@ protected:
   std::atomic<int> publishing_ = 0;
   std::unique_ptr<VisionIpcServer> vipc_server_;
 };
+#endif  // __EMSCRIPTEN__

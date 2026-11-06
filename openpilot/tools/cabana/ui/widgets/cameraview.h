@@ -16,7 +16,9 @@
 #include "imgui_internal.h"
 #include "openpilot/cereal/visionstream.h"
 #include "tools/cabana/core/observable.h"
+#ifndef __EMSCRIPTEN__
 #include "msgq/visionipc/visionipc_client.h"
+#endif
 
 // OS04C10 output, also used by its 1344x760 downscaled video.
 constexpr float DEFAULT_CAMERA_ASPECT_RATIO = 2688.0f / 1520.0f;
