@@ -11,9 +11,9 @@ def get_accel_boost(personality=log.LongitudinalPersonality.standard):
   if personality==log.LongitudinalPersonality.relaxed:
     return 0.0
   elif personality==log.LongitudinalPersonality.standard:
-    return 0.2
+    return 0.15
   elif personality==log.LongitudinalPersonality.aggressive:
-    return 0.4
+    return 0.3
   else:
     raise NotImplementedError("Longitudinal personality not supported")
 
