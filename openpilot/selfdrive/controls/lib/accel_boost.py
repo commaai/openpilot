@@ -21,9 +21,11 @@ def get_accel_boost(personality=log.LongitudinalPersonality.standard):
 class AccelBoost:
   def __init__(self, dt=DT_MDL):
     self.lift_filter = FirstOrderFilter(0.0, 0.3, dt)
+    self.total_boost = 0.0
 
   def reset(self):
     self.lift_filter.x = 0.0
+    self.total_boost = 0.0
 
   def update(self, sm, output_a_target_e2e):
     boost = get_accel_boost(sm['selfdriveState'].personality)
@@ -35,4 +37,5 @@ class AccelBoost:
     lift = self.lift_filter.update(curve_scale * boost * min(v_ego / LIFT_FULL_SPEED, 1.0) * gate)
 
     gain = 1.0 + (boost * curve_scale if output_a_target_e2e > 0.0 else 0.0)  # boost gas only, braking is left to the model
-    return output_a_target_e2e * gain + lift  # gain makes model's own acceleration stronger, lift increases the overall acceleration
+    self.total_boost = output_a_target_e2e * (gain - 1.0) + lift
+    return output_a_target_e2e + self.total_boost
