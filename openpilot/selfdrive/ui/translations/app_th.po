@@ -205,6 +205,10 @@ msgstr "รหัสดองเกิล"
 msgid "Download"
 msgstr "ดาวน์โหลด"
 
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Driving Personality"
+msgstr "บุคลิกภาพในการขับขี่"
+
 #: openpilot/system/ui/widgets/network.py
 msgid "EDIT"
 msgstr "แก้ไข"
@@ -289,10 +293,6 @@ msgstr "สายดับเพลิง"
 #: openpilot/selfdrive/ui/widgets/setup.py
 msgid "Firehose Mode"
 msgstr "โหมดสายดับเพลิง"
-
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Following Distance"
-msgstr ""
 
 #: openpilot/system/ui/widgets/network.py
 msgid "Forget"

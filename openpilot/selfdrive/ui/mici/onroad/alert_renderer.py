@@ -4,26 +4,20 @@ from typing import NamedTuple
 import raylib_nb as rl
 import random
 import string
-from dataclasses import dataclass
-from openpilot.cereal import messaging, log
-from opendbc.car.structs import car
+from openpilot.cereal import log
+from openpilot.selfdrive.ui.onroad.alert_renderer import Alert, get_alert
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.common.filter_simple import BounceFilter, FirstOrderFilter
-from openpilot.common.hardware import COMMA_HARDWARE
 from openpilot.system.ui.lib.application import gui_app, FontWeight, TextAlignment
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import UnifiedLabel
 
-AlertSize = log.SelfdriveState.AlertSize
 AlertStatus = log.SelfdriveState.AlertStatus
 
 ALERT_MARGIN = 18
 
 ALERT_FONT_SMALL = 66 - 50
 ALERT_FONT_BIG = 88 - 40
-
-SELFDRIVE_STATE_TIMEOUT = 5  # Seconds
-SELFDRIVE_UNRESPONSIVE_TIMEOUT = 10  # Seconds
 
 # Constants
 ALERT_COLORS = {
@@ -54,39 +48,6 @@ class AlertLayout(NamedTuple):
   icon: IconLayout | None
 
 
-@dataclass
-class Alert:
-  text1: str = ""
-  text2: str = ""
-  size: int = 0
-  status: int = 0
-  visual_alert: int = car.CarControl.HUDControl.VisualAlert.none
-  alert_type: str = ""
-
-
-# Pre-defined alert instances
-ALERT_STARTUP_PENDING = Alert(
-  text1="openpilot Unavailable",
-  text2="Waiting to start",
-  size=AlertSize.mid,
-  status=AlertStatus.normal,
-)
-
-ALERT_CRITICAL_TIMEOUT = Alert(
-  text1="TAKE CONTROL IMMEDIATELY",
-  text2="System Unresponsive",
-  size=AlertSize.full,
-  status=AlertStatus.critical,
-)
-
-ALERT_CRITICAL_REBOOT = Alert(
-  text1="System Unresponsive",
-  text2="Reboot Device",
-  size=AlertSize.full,
-  status=AlertStatus.critical,
-)
-
-
 class AlertRenderer(Widget):
   def __init__(self):
     super().__init__()
@@ -110,6 +71,11 @@ class AlertRenderer(Widget):
     self._last_icon_side: IconSide | None = None
 
     self._load_icons()
+    ui_state.add_offroad_transition_callback(self._offroad_transition)
+
+  def _offroad_transition(self):
+    # Don't fade out an alert from the previous onroad session
+    self._prev_alert = None
 
   def _load_icons(self):
     self._txt_turn_signal_left = gui_app.texture('icons_mici/onroad/turn_signal_left.png', 104, 96)
@@ -117,40 +83,8 @@ class AlertRenderer(Widget):
     self._txt_blind_spot_left = gui_app.texture('icons_mici/onroad/blind_spot_left.png', 134, 150)
     self._txt_blind_spot_right = gui_app.texture('icons_mici/onroad/blind_spot_left.png', 134, 150, flip_x=True)
 
-  def get_alert(self, sm: messaging.SubMaster) -> Alert | None:
-    """Generate the current alert based on selfdrive state."""
-    ss = sm['selfdriveState']
-
-    # Check if selfdriveState messages have stopped arriving
-    if not sm.updated['selfdriveState']:
-      recv_frame = sm.recv_frame['selfdriveState']
-      time_since_onroad = time.monotonic() - ui_state.started_time
-
-      # 1. Never received selfdriveState since going onroad
-      waiting_for_startup = recv_frame < ui_state.started_frame
-      if waiting_for_startup and time_since_onroad > 10:
-        return ALERT_STARTUP_PENDING
-
-      # 2. Lost communication with selfdriveState after receiving it
-      if COMMA_HARDWARE and not waiting_for_startup:
-        ss_missing = time.monotonic() - sm.recv_time['selfdriveState']
-        if ss_missing > SELFDRIVE_STATE_TIMEOUT:
-          if ss.enabled and (ss_missing - SELFDRIVE_STATE_TIMEOUT) < SELFDRIVE_UNRESPONSIVE_TIMEOUT:
-            return ALERT_CRITICAL_TIMEOUT
-          return ALERT_CRITICAL_REBOOT
-
-    # No alert if size is none
-    if ss.alertSize == 0:
-      return None
-
-    # Return current alert
-    ret = Alert(text1=ss.alertText1, text2=ss.alertText2, size=ss.alertSize.raw, status=ss.alertStatus.raw,
-                visual_alert=ss.alertHudVisual, alert_type=ss.alertType)
-    self._prev_alert = ret
-    return ret
-
   def will_render(self) -> tuple[Alert | None, bool]:
-    alert = self.get_alert(ui_state.sm)
+    alert = get_alert(ui_state.sm)
     return alert or self._prev_alert, alert is None
 
   def _icon_helper(self, alert: Alert) -> AlertLayout:
@@ -217,7 +151,7 @@ class AlertRenderer(Widget):
     return AlertLayout(text_rect, icon_layout)
 
   def _render(self, rect: rl.Rectangle) -> bool:
-    alert = self.get_alert(ui_state.sm)
+    alert = get_alert(ui_state.sm)
 
     # Animate fade and slide in/out
     self._alert_y_filter.update(self._rect.y - 50 if alert is None else self._rect.y)
@@ -230,6 +164,8 @@ class AlertRenderer(Widget):
       else:
         self._prev_alert = None
         return False
+    else:
+      self._prev_alert = alert
 
     self._draw_background(alert)
 

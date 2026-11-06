@@ -205,6 +205,10 @@ msgstr "ID ключа"
 msgid "Download"
 msgstr "Завантажити"
 
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Driving Personality"
+msgstr "Стиль водіння"
+
 #: openpilot/system/ui/widgets/network.py
 msgid "EDIT"
 msgstr "РЕДАГ."
@@ -289,10 +293,6 @@ msgstr "Злива"
 #: openpilot/selfdrive/ui/widgets/setup.py
 msgid "Firehose Mode"
 msgstr "Режим зливи"
-
-#: openpilot/selfdrive/ui/layouts/settings/toggles.py
-msgid "Following Distance"
-msgstr ""
 
 #: openpilot/system/ui/widgets/network.py
 msgid "Forget"

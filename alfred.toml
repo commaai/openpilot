@@ -23,6 +23,10 @@ for p in msgq_repo/msgq opendbc_repo/opendbc rednose_repo/rednose teleoprtc_repo
 cd openpilot/system/manager && ./build.py
 """
 
+[steps.flash-chestnut]
+name = "Flash Chestnut"
+run = "sudo python3 openpilot/system/hardware/chestnut/flash.py"
+
 # jobs run on comma fours, and on a comma 3x only where it differs, like its camera sensor
 [jobs.onroad]
 runs-on = "up-can"
@@ -122,8 +126,7 @@ timeout-minutes = 35
 uses = "build"
 
 [[jobs.chestnut.steps]]
-name = "Flash Chestnut"
-run = "sudo python3 openpilot/system/hardware/chestnut/flash.py"
+uses = "flash-chestnut"
 
 [[jobs.chestnut.steps]]
 name = "Model replay"
@@ -133,3 +136,51 @@ run = "openpilot/selfdrive/test/process_replay/model_replay.py --chestnut"
 name = "Onroad tests"
 run = "./openpilot/selfdrive/test/test_onroad.py TestChestnutOnroad"
 timeout-minutes = 2
+
+[steps.release]
+name = "Build and test the release"
+run = """
+trap 'rm -rf /data/gitkey /data/pandaextra' EXIT
+printf '%s\n' "$RELEASE_KEY" > /data/gitkey && chmod 600 /data/gitkey
+mkdir -p /data/pandaextra/certs && printf '%s\n' "$PANDA_RELEASE_KEY" > /data/pandaextra/certs/release
+unset RELEASE_KEY PANDA_RELEASE_KEY
+export GIT_SSH_COMMAND="ssh -i /data/gitkey -o StrictHostKeyChecking=accept-new"
+git config remote.origin.url git@github.com:commaai/openpilot.git
+if [ -n "${UP_REMOTE:-}" ]; then openpilot/tools/replay/can_replay.py --up; fi
+tools/release/build_release.sh $RELEASE_TESTS
+"""
+
+[jobs.nightly]
+runs-on = "up-can"
+timeout-minutes = 90
+push = ["nightly"]
+env = { RELEASE_TESTS = "TestOnroad" }
+steps = [{ uses = "build" }, { uses = "release" }]
+
+[jobs.nightly-dev]
+runs-on = "up-can"
+timeout-minutes = 90
+push = ["nightly-dev"]
+env = { RELEASE_TESTS = "TestOnroad", PANDA_DEBUG_BUILD = "1" }
+steps = [{ uses = "build" }, { uses = "release" }]
+
+[jobs.release-staging]
+runs-on = "up-can"
+timeout-minutes = 90
+push = ["release-tizi-staging", "release-mici-staging"]
+env = { RELEASE_TESTS = "TestOnroad" }
+steps = [{ uses = "build" }, { uses = "release" }]
+
+[jobs.nightly-chestnut]
+runs-on = "chestnut"
+timeout-minutes = 150
+push = ["nightly-chestnut"]
+env = { RELEASE_TESTS = "TestChestnutOnroad TestChestnutDrive", INCLUDE_BIG_MODEL = "1", SCONSFLAGS = "-j4" }
+steps = [{ uses = "build" }, { uses = "flash-chestnut" }, { uses = "release" }]
+
+[jobs.nightly-chestnut-dev]
+runs-on = "chestnut"
+timeout-minutes = 90
+push = ["nightly-chestnut-dev"]
+env = { RELEASE_TESTS = "TestChestnutOnroad", INCLUDE_BIG_MODEL = "1", SCONSFLAGS = "-j4", PANDA_DEBUG_BUILD = "1" }
+steps = [{ uses = "build" }, { uses = "flash-chestnut" }, { uses = "release" }]

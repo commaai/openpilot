@@ -31,7 +31,6 @@ dependencies = [
   "comma-deps-ffmpeg",
   "comma-deps-zstd",
   "comma-deps-json11",
-  "comma-deps-git-lfs",
   "comma-deps-gcc-arm-none-eabi",
 
   # athena
@@ -61,6 +60,9 @@ testing = [
 tools = [
   "matplotlib",
 
+  # LFS uploads (lfs.py pre-push)
+  "hf-xet==1.7.0",
+
   "comma-deps-imgui",
   "comma-deps-bootstrap-icons",
   "comma-deps-libusb",
@@ -71,7 +73,7 @@ tools = [
 ]
 
 submodules = [
-  "msgq-ipc",
+  "msgq-ipc[build]",
   "opendbc",
   "pandacan",
   "rednose",

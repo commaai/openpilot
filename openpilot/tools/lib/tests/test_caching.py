@@ -104,9 +104,13 @@ class TestFileDownload(OpenpilotTestCase):
     self.compare_loads(small_file_url, length - 100, 100)
     self.compare_loads(small_file_url, 50, 100)
 
-    #  Load small file 100 bytes at a time
+    #  Load small file 100 bytes at a time from the cache, checked against one full download
+    data = URLFile(small_file_url, cache=False).read()
+    assert len(data) == length
     for i in range(length // 100):
-      self.compare_loads(small_file_url, 100 * i, 100)
+      file_cached = URLFile(small_file_url, cache=True)
+      file_cached.seek(100 * i)
+      assert file_cached.read(ll=100) == data[100 * i:100 * (i + 1)]
 
   def test_large_file(self):
     large_file_url = "https://commadataci.blob.core.windows.net/openpilotci/0375fdf7b1ce594d/2019-06-13--08-32-25/3/qlog.bz2"
