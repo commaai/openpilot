@@ -2,12 +2,12 @@
 import numpy as np
 
 import openpilot.cereal.messaging as messaging
-from openpilot.cereal import log
 from opendbc.car.interfaces import ACCEL_MIN, ACCEL_MAX
 from openpilot.common.constants import CV
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.modeld.constants import ModelConstants
+from openpilot.selfdrive.controls.lib.accel_boost import AccelBoost
 from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc, LongitudinalPlanSource
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import T_IDXS as T_IDXS_MPC
@@ -20,12 +20,6 @@ J_CRUISE_BP = [0., 10.0, 25., 40.]
 A_CRUISE_MIN = -0.5
 CONTROL_N_T_IDX = ModelConstants.T_IDXS[:CONTROL_N]
 
-ACCEL_BOOST_STANDARD = 0.2
-ACCEL_BOOST_AGGRESSIVE = 0.4
-BRAKE_BOOST = 0.1
-LIFT_TARGET = 0.3  # m/s^2
-LIFT_PER_SPEED = 0.01  # m/s^2 per m/s
-
 
 def get_cruise_accel(v_cruise, v_ego, a_cruise_prev, a_target_prev, dt):
   target_accel = np.clip(v_cruise - v_ego, A_CRUISE_MIN, ACCEL_MAX)
@@ -35,30 +29,13 @@ def get_cruise_accel(v_cruise, v_ego, a_cruise_prev, a_target_prev, dt):
   return target_accel
 
 
-def get_personality_accel(personality, a_e2e, v_ego, lift_filter, curvature):
-  curve_scale = np.interp(abs(curvature) * v_ego**2, [1.0, 2.5], [1.0, 0.0])  # m/s^2 of lateral accel, fade out the accel gain and lift in curves
-  lift_target = 0.0
-  if personality == log.LongitudinalPersonality.aggressive:
-    lift_target = curve_scale * min(LIFT_PER_SPEED * v_ego, LIFT_TARGET) * np.interp(a_e2e, [-0.025, 0.025], [0.0, 1.0])  # no lift if the model wants to slow
-  lift = lift_filter.update(lift_target)
-
-  if personality == log.LongitudinalPersonality.relaxed:
-    gain = 1.0
-  elif a_e2e > 0.0:  # gas
-    accel_boost = ACCEL_BOOST_AGGRESSIVE if personality == log.LongitudinalPersonality.aggressive else ACCEL_BOOST_STANDARD
-    gain = 1.0 + accel_boost * curve_scale
-  else:  # brake
-    gain = np.interp(v_ego, [10.0, 20.0], [1.0, 1.0 + BRAKE_BOOST])  # m/s, fade the braking gain out so stops don't end early
-  return gain * a_e2e + lift
-
-
 class LongitudinalPlanner:
   def __init__(self, CP, init_v=0.0, init_a=0.0, dt=DT_MDL):
     self.CP = CP
     self.mpc = LongitudinalMpc(dt=dt)
     self.fcw = False
     self.dt = dt
-    self.lift_filter = FirstOrderFilter(0.0, 0.3, dt)
+    self.accel_boost = AccelBoost(dt)
 
     self.v_desired_filter = FirstOrderFilter(init_v, 2.0, self.dt)
     self.a_cruise = init_a
@@ -88,7 +65,7 @@ class LongitudinalPlanner:
       self.v_desired_filter.x = v_ego
       self.output_a_target = np.clip(sm['carState'].aEgo, ACCEL_MIN, ACCEL_MAX)
       self.a_cruise = self.output_a_target
-      self.lift_filter.x = 0.0
+      self.accel_boost.reset()
 
     # Prevent divergence, smooth in current v_ego
     self.v_desired_filter.x = max(0.0, self.v_desired_filter.update(v_ego))
@@ -119,8 +96,7 @@ class LongitudinalPlanner:
     output_a_target_mpc = get_accel_from_plan(self.v_desired_trajectory, self.a_desired_trajectory, CONTROL_N_T_IDX,
                                               action_t=action_t)
     output_should_stop_mpc = should_stop(v_ego, output_a_target_mpc)
-    output_a_target_e2e = get_personality_accel(sm['selfdriveState'].personality, sm['modelV2'].action.desiredAcceleration, v_ego,
-                                                self.lift_filter, sm['controlsState'].curvature)
+    output_a_target_e2e = self.accel_boost.update(sm, sm['modelV2'].action.desiredAcceleration)
     output_should_stop_e2e = sm['modelV2'].action.shouldStop
 
     self.a_cruise = get_cruise_accel(v_cruise, v_ego, self.a_cruise, self.output_a_target, self.dt)
