@@ -20,6 +20,7 @@ SAMPLE_BUFFER = 4096 # (approx 100ms)
 MAX_VOLUME = 1.0
 MIN_VOLUME = 0.1
 VOICE_VOLUME = 0.8
+VOICE_MAX_S = 30  # never buffer more than this, whatever the voice assistant sends
 ALERT_RAMP_TIME = 4 # seconds to ramp critical alerts to max volume
 ALERT_MAX_TIME = 8 # seconds before critical alerts switch to the max sound
 SELFDRIVE_STATE_TIMEOUT = 5 # 5 seconds
@@ -127,11 +128,13 @@ class Soundd:
     return ret * self.current_volume
 
   def queue_voice(self, data: bytes, sample_rate: int):
-    x = np.frombuffer(data, dtype=np.int16).astype(np.float32) / (2**16/2)
+    if sample_rate < 8000:
+      return
+    x = np.frombuffer(data[:len(data) // 2 * 2], dtype=np.int16).astype(np.float32) / (2**16/2)
     if sample_rate != SAMPLE_RATE:
       x = np.interp(np.arange(0, len(x), sample_rate / SAMPLE_RATE), np.arange(len(x)), x).astype(np.float32)
     with self.voice_lock:
-      self.voice = np.concatenate([self.voice, x])
+      self.voice = np.concatenate([self.voice, x])[:VOICE_MAX_S * SAMPLE_RATE]
 
   def get_voice_data(self, frames):
     ret = np.zeros(frames, dtype=np.float32)
@@ -213,8 +216,12 @@ class Soundd:
 
         self.get_audible_alert(sm)
 
-        for m in messaging.drain_sock(voice_sock):
-          self.queue_voice(m.voiceAudioData.data, m.voiceAudioData.sampleRate)
+        # bad voice audio must never take down alert sounds
+        try:
+          for m in messaging.drain_sock(voice_sock):
+            self.queue_voice(m.voiceAudioData.data, m.voiceAudioData.sampleRate)
+        except Exception:
+          cloudlog.exception("soundd: bad voice audio")
 
         if self.current_alert in (AudibleAlert.warningSoft, AudibleAlert.warningImmediate):
           elapsed = time.monotonic() - self.ramp_start_time

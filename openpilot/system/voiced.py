@@ -38,6 +38,7 @@ OUT_CHUNK_S = 0.25
 # no ping answer for this long and the link is dead, cell links often drop without a reset
 LINK_TIMEOUT_S = 5.0
 LEVEL_HOP_S = 0.05
+SAMPLE_RATES = (16000, 22050, 24000, 48000)
 
 
 def tone(notes: list[tuple[float, float]], db: float, h3: bool = False) -> np.ndarray:
@@ -112,7 +113,7 @@ class Voiced:
 
   def context(self) -> dict:
     # what the assistant may want to know about the drive, sent with every query
-    sm, ctx = self.sm, {'unix_time': time.time(), 'tz': time.strftime('%z')}
+    sm, ctx = self.sm, {'unix_time': time.time(), 'tz': time.strftime('%z')}  # noqa: TID251 wall clock for the llm
     gps = next((sm[s] for s in ('gpsLocationExternal', 'gpsLocation') if sm.recv_frame[s] > 0 and sm[s].hasFix), None)
     if gps is not None:
       ctx['gps'] = {'lat': round(gps.latitude, 5), 'lon': round(gps.longitude, 5), 'speed_mps': round(gps.speed, 1),
@@ -239,7 +240,8 @@ class Voiced:
             play_end = max(play_end, time.monotonic()) + self.play(WAKE_CHIME, SR)
         elif t == 12:
           d = json.loads(p)
-          rate = d.get('sample_rate', rate)
+          # soundd resamples whatever it gets, only take rates that make sense
+          rate = d['sample_rate'] if d.get('sample_rate') in SAMPLE_RATES else rate
           self.reply = d.get('reply', self.reply)
         elif t == 11:
           self.state = State.speaking
@@ -355,7 +357,8 @@ class Streamer(Voiced):
             self.state, chimed = State.idle, False
         elif t == 12:
           d = json.loads(p)
-          rate = d.get('sample_rate', rate)
+          # soundd resamples whatever it gets, only take rates that make sense
+          rate = d['sample_rate'] if d.get('sample_rate') in SAMPLE_RATES else rate
           server_lat = d.get('latency', server_lat)
           if 'say' in d:
             self.reply = f"{self.reply} {d['say'].strip()}".strip()
@@ -449,11 +452,17 @@ def main():
   server = Params().get("VoiceAssistantServer")
   if isinstance(server, bytes):
     server = server.decode()
-  if not server:
-    cloudlog.warning("voiced: disabled, no VoiceAssistantServer")
-    while True:
-      time.sleep(60)
-  Streamer(server).run()
+  # a dead voiced blocks engaging, so it never exits, it logs and starts over
+  while True:
+    try:
+      if not server:
+        cloudlog.warning("voiced: disabled, no VoiceAssistantServer")
+        time.sleep(60)
+        continue
+      Streamer(server).run()
+    except Exception:
+      cloudlog.exception("voiced: crashed, restarting")
+      time.sleep(2)
 
 
 if __name__ == "__main__":

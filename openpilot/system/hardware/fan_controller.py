@@ -26,13 +26,3 @@ class FanController:
                  error=(cur_temp - (75 + OFFSET)),  # temperature setpoint in C
                  feedforward=np.interp(cur_temp, [60.0 + OFFSET, 100.0 + OFFSET], [0, 100])
               ))
-
-
-VOICE_IDLE_FAN_CAP = 60
-VOICE_MAX_TEMP = 70.  # above this the thermal need wins over a quiet mic
-
-
-def voice_fan_limit(desired: int, cur_temp: float, listening: bool, querying: bool) -> int:
-  if not listening or cur_temp > VOICE_MAX_TEMP:
-    return desired
-  return 0 if querying else min(desired, VOICE_IDLE_FAN_CAP)

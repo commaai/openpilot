@@ -29,7 +29,7 @@ BAR_GAIN = (0.6, 0.8, 1.0, 0.8, 0.6)
 USER_FONT, REPLY_FONT, TOP_FONT = 22, 24, 36
 # the ping line on top, the caption rows and the pill each get their own band so nothing overlaps
 TOP_H = 46
-CAPTION_LEFT, CAPTION_RIGHT = 150, 50
+CAPTION_LEFT, CAPTION_RIGHT = 150, 72
 MAX_ROWS = 4
 ATTACK_S, RELEASE_S, FADE_S = 0.06, 0.2, 0.15
 SWEEP_S = 1.2
@@ -159,6 +159,9 @@ def _draw_top(rect: rl.Rectangle) -> None:
   elif ui_state.sm.alive["voiceAssistant"]:
     rtt = ui_state.sm["voiceAssistant"].serverRttMs
   else:
+    return
+  # openpilot's own messages use the top of the screen
+  if _alert_active():
     return
   # 0 means not connected, a stalled link counts up until voiced reconnects
   bad = not 0 < rtt < 300
