@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
+import compileall
 import importlib
 import os
+import py_compile
 import shutil
 import subprocess
 import sys
@@ -78,6 +80,9 @@ if __name__ == '__main__':
   with tempfile.TemporaryDirectory() as tmp:
     for src, package in DIRS.items():
       shutil.copytree(BASEDIR + '/' + src, tmp + '/' + package, symlinks=False, dirs_exist_ok=True, copy_function=copy)
+    # zipimport can't cache bytecode, so ship it. legacy puts foo.pyc next to foo.py where zipimport looks,
+    # and a .pyc from another python version falls back to compiling foo.py
+    compileall.compile_dir(tmp, quiet=1, legacy=True, invalidation_mode=py_compile.PycInvalidationMode.UNCHECKED_HASH)
     entry = f'{args.module}:{args.entrypoint}'
     zipapp.create_archive(tmp, target=args.output, interpreter=INTERPRETER, main=entry)
 
