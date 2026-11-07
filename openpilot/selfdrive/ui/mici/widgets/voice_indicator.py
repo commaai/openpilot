@@ -26,14 +26,15 @@ DEMO_RTT = os.getenv('VOICE_UI_RTT')
 PILL_W, PILL_H = 112, 40
 BAR_W, BAR_GAP, BAR_MIN, BAR_MAX = 6, 8, 6, 28
 BAR_GAIN = (0.6, 0.8, 1.0, 0.8, 0.6)
-USER_FONT, REPLY_FONT, TOP_FONT = 22, 24, 26
+USER_FONT, REPLY_FONT, TOP_FONT = 22, 24, 36
 # the ping line on top, the caption rows and the pill each get their own band so nothing overlaps
-TOP_H = 40
+TOP_H = 46
+CAPTION_LEFT, CAPTION_RIGHT = 150, 50
 MAX_ROWS = 4
 ATTACK_S, RELEASE_S, FADE_S = 0.06, 0.2, 0.15
 SWEEP_S = 1.2
 # the reply stays readable a moment after the voice ends
-LINGER_S, LINGER_PER_WORD_S, LINGER_MAX_S = 2.0, 0.25, 6.0
+LINGER_S, LINGER_PER_WORD_S, LINGER_MAX_S = 1.0, 0.1, 3.0
 
 
 class _Anim:
@@ -105,7 +106,9 @@ def _answer_ms() -> float:
 
 
 def _draw_caption(rect: rl.Rectangle, bottom: float, user: str, reply: str, a: float) -> None:
-  width = rect.width - 150
+  # between the set speed on the left and the status dot on the right
+  left, right = rect.x + CAPTION_LEFT, rect.x + rect.width - CAPTION_RIGHT
+  width = right - left - 32
   user, reply = _ascii(user).strip(), _ascii(reply).strip()
   rows = _wrap(gui_app.font(FontWeight.BOLD), reply, REPLY_FONT, width) if reply else []
   # long replies keep the newest lines, the one being spoken, and push out what the driver said
@@ -120,7 +123,7 @@ def _draw_caption(rect: rl.Rectangle, bottom: float, user: str, reply: str, a: f
   sizes = [(gui_app.font(FontWeight.BOLD if sz == REPLY_FONT else FontWeight.MEDIUM), sz) for _, sz, _ in lines]
   w = max(measure_text_cached(f, ln, sz).x for (ln, _, _), (f, sz) in zip(lines, sizes, strict=True)) + 32
   h = sum(sz + 4 for _, sz, _ in lines) + 12
-  box = rl.Rectangle(rect.x + (rect.width - w) / 2, max(rect.y + TOP_H, bottom - h), w, h)
+  box = rl.Rectangle(left + (right - left - w) / 2, max(rect.y + TOP_H, bottom - h), w, h)
   rl.draw_rectangle_rounded(box, 0.3, 12, _fade(rl.Color(0, 0, 0, 200), a))
   y = box.y + 7
   for (ln, sz, c), (f, _) in zip(lines, sizes, strict=True):
@@ -183,10 +186,16 @@ def draw_voice_indicator(rect: rl.Rectangle) -> None:
   elif not _anim.idle_since:
     _anim.idle_since = now
 
+  _draw_top(rect)
+  # nothing to show once the drive is over
+  if not ui_state.started and DEMO is None:
+    _anim.rows = ('', '')
+    return
+
   if _anim.alpha > 0:
     _draw_pill(rect, state if state is not None else State.listening, _anim.alpha, now)
 
-  # a few seconds of reading time after the voice is done, then fade out
+  # a short reading time after the voice is done, then fade out
   user, reply = _anim.rows
   a = 1.
   if state is None and (user or reply):
@@ -194,9 +203,7 @@ def draw_voice_indicator(rect: rl.Rectangle) -> None:
     a = min(1., (_anim.idle_since + linger - now) / 0.3)
     if a <= 0:
       _anim.rows = ('', '')
-      user = reply = ''
-  _draw_top(rect)
-  if user or reply:
-    if state != State.listening and not _alert_active():
-      # always above where the pill sits, so the text never moves while the pill fades
-      _draw_caption(rect, rect.y + rect.height - PILL_H - 18, user, reply, a)
+      return
+  if (user or reply) and state != State.listening and not _alert_active():
+    # always above where the pill sits, so the text never moves while the pill fades
+    _draw_caption(rect, rect.y + rect.height - PILL_H - 18, user, reply, a)
