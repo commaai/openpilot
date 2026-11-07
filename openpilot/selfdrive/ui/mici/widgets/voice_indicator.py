@@ -29,7 +29,7 @@ BAR_GAIN = (0.6, 0.8, 1.0, 0.8, 0.6)
 USER_FONT, REPLY_FONT, TOP_FONT = 22, 24, 36
 # the ping line on top, the caption rows and the pill each get their own band so nothing overlaps
 TOP_H = 46
-CAPTION_LEFT, CAPTION_RIGHT = 150, 72
+CAPTION_LEFT, CAPTION_RIGHT = 72, 72
 MAX_ROWS = 4
 ATTACK_S, RELEASE_S, FADE_S = 0.06, 0.2, 0.15
 SWEEP_S = 1.2
@@ -106,7 +106,7 @@ def _answer_ms() -> float:
 
 
 def _draw_caption(rect: rl.Rectangle, bottom: float, user: str, reply: str, a: float) -> None:
-  # between the set speed on the left and the status dot on the right
+  # inside the camera view, clear of the icons on both sides
   left, right = rect.x + CAPTION_LEFT, rect.x + rect.width - CAPTION_RIGHT
   width = right - left - 32
   user, reply = _ascii(user).strip(), _ascii(reply).strip()
