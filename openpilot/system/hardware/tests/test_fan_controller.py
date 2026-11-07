@@ -1,7 +1,7 @@
 
 from openpilot.common.parameterized import parameterized
 from openpilot.common.test import OpenpilotTestCase
-from openpilot.system.hardware.fan_controller import FanController
+from openpilot.system.hardware.fan_controller import FanController, voice_fan_limit, VOICE_IDLE_FAN_CAP
 
 ALL_CONTROLLERS = [FanController]
 
@@ -45,3 +45,12 @@ class TestFanController(OpenpilotTestCase):
     for _ in range(10):
       controller.update(90, True)
     assert controller.update(90, True) >= 60
+
+
+def test_voice_fan_limit():
+  # thermals win above the limit, otherwise cap while listening and duck during a query
+  assert voice_fan_limit(90, 80., True, True) == 90
+  assert voice_fan_limit(90, 60., True, False) == VOICE_IDLE_FAN_CAP
+  assert voice_fan_limit(90, 60., True, True) == 0
+  assert voice_fan_limit(40, 60., True, False) == 40
+  assert voice_fan_limit(90, 60., False, True) == 90

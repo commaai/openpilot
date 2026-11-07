@@ -1,4 +1,5 @@
 import math
+import threading
 import numpy as np
 import time
 import wave
@@ -18,6 +19,7 @@ SAMPLE_RATE = 48000
 SAMPLE_BUFFER = 4096 # (approx 100ms)
 MAX_VOLUME = 1.0
 MIN_VOLUME = 0.1
+VOICE_VOLUME = 0.8
 ALERT_RAMP_TIME = 4 # seconds to ramp critical alerts to max volume
 ALERT_MAX_TIME = 8 # seconds before critical alerts switch to the max sound
 SELFDRIVE_STATE_TIMEOUT = 5 # 5 seconds
@@ -79,6 +81,9 @@ class Soundd:
 
     self.spl_filter_weighted = FirstOrderFilter(0, 2.5, FILTER_DT, initialized=False)
 
+    self.voice = np.zeros(0, dtype=np.float32)
+    self.voice_lock = threading.Lock()
+
   def load_sounds(self):
     self.loaded_sounds: dict[int, np.ndarray] = {}
 
@@ -121,10 +126,28 @@ class Soundd:
 
     return ret * self.current_volume
 
+  def queue_voice(self, data: bytes, sample_rate: int):
+    x = np.frombuffer(data, dtype=np.int16).astype(np.float32) / (2**16/2)
+    if sample_rate != SAMPLE_RATE:
+      x = np.interp(np.arange(0, len(x), sample_rate / SAMPLE_RATE), np.arange(len(x)), x).astype(np.float32)
+    with self.voice_lock:
+      self.voice = np.concatenate([self.voice, x])
+
+  def get_voice_data(self, frames):
+    ret = np.zeros(frames, dtype=np.float32)
+    with self.voice_lock:
+      # openpilot alerts always win over the voice assistant
+      if self.current_alert != AudibleAlert.none:
+        self.voice = self.voice[:0]
+      n = min(frames, len(self.voice))
+      ret[:n] = self.voice[:n]
+      self.voice = self.voice[n:]
+    return ret * VOICE_VOLUME
+
   def callback(self, data_out: np.ndarray, frames: int, time, status) -> None:
     if status:
       cloudlog.warning(f"soundd stream over/underflow: {status}")
-    data_out[:frames, 0] = self.get_sound_data(frames)
+    data_out[:frames, 0] = self.get_sound_data(frames) + self.get_voice_data(frames)
 
   def update_alert(self, new_alert):
     current_alert_played_once = self.current_alert == AudibleAlert.none or self.current_sound_frame >= len(self.loaded_sounds[self.current_sound])
@@ -173,6 +196,7 @@ class Soundd:
     micd.patch_sounddevice(sd)
 
     sm = messaging.SubMaster(['selfdriveState', 'soundPressure'])
+    voice_sock = messaging.sub_sock('voiceAudioData', conflate=False)
 
     with self.get_stream(sd) as stream:
       rk = Ratekeeper(20)
@@ -188,6 +212,9 @@ class Soundd:
             self.current_volume = self.calculate_volume(float(self.spl_filter_weighted.x))
 
         self.get_audible_alert(sm)
+
+        for m in messaging.drain_sock(voice_sock):
+          self.queue_voice(m.voiceAudioData.data, m.voiceAudioData.sampleRate)
 
         if self.current_alert in (AudibleAlert.warningSoft, AudibleAlert.warningImmediate):
           elapsed = time.monotonic() - self.ramp_start_time
