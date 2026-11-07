@@ -10,12 +10,14 @@ COMMA_CAR_SEGMENTS_LFS_INSTANCE = os.environ.get("COMMA_CAR_SEGMENTS_LFS_INSTANC
 def get_comma_car_segments_database():
   from opendbc.car.fingerprints import MIGRATION
 
-  database = requests.get(get_repo_raw_url("database.json")).json()
+  response = requests.get(get_repo_raw_url("database.json"))
+  response.raise_for_status()
+  database = response.json()
 
   ret = {}
   for platform in database:
     # TODO: remove this when commaCarSegments is updated to remove selector
-    ret[MIGRATION.get(platform, platform)] = [s.rstrip('/s') for s in database[platform]]
+    ret.setdefault(MIGRATION.get(platform, platform), []).extend(s.removesuffix('/s') for s in database[platform])
 
   return ret
 
