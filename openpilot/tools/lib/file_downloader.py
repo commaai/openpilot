@@ -68,14 +68,23 @@ def make_decompressor(compression):
   raise ValueError(f"Unsupported compression type: {compression}")
 
 
+def decompress_chunk(decompressor, compression, data, dst):
+  while data:
+    if decompressor.eof:
+      decompressor = make_decompressor(compression)
+    dst.write(decompressor.decompress(data))
+    data = decompressor.unused_data
+  return decompressor
+
+
 def decompress_file(source, destination, compression=None):
   with open(source, 'rb') as src, open(destination, 'wb') as dst:
     header = src.read(4)
     compression = compression or compression_type(header)
     decompressor = make_decompressor(compression)
-    dst.write(decompressor.decompress(header))
+    decompressor = decompress_chunk(decompressor, compression, header, dst)
     while data := src.read(1024 * 1024):
-      dst.write(decompressor.decompress(data))
+      decompressor = decompress_chunk(decompressor, compression, data, dst)
   if not decompressor.eof:
     raise EOFError(f"Compressed {compression} file ended before the end-of-stream marker")
 
@@ -249,7 +258,10 @@ def cmd_download(args):
             compression = compression_type(data)
             if compression:
               decompressor = make_decompressor(compression)
-          f.write(decompressor.decompress(data) if decompressor else data)
+          if decompressor:
+            decompressor = decompress_chunk(decompressor, compression, data, f)
+          else:
+            f.write(data)
           downloaded += len(data)
           sys.stderr.write(f"PROGRESS:{downloaded}:{total}\n")
           sys.stderr.flush()
