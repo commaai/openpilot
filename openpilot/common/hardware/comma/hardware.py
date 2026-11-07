@@ -359,9 +359,9 @@ class HardwareComma(HardwareBase):
     # mask off big cluster from default affinity
     sudo_write("f", "/proc/irq/default_smp_affinity")
 
-    # move these off the default core
-    affine_irq(1, "msm_vidc")  # encoders
-    affine_irq(1, "i2c_geni")  # sensors
+    # move these off the default core, and off the cores AGNOS keeps for everything but openpilot
+    affine_irq(2, "msm_vidc")  # encoders
+    affine_irq(2, "i2c_geni")  # sensors
 
     # *** GPU config ***
     # https://github.com/commaai/agnos-kernel-sdm845/blob/master/arch/arm64/boot/dts/qcom/sdm845-gpu.dtsi#L216
