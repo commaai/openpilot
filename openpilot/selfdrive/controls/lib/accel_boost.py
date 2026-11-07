@@ -3,8 +3,8 @@ from openpilot.cereal import log
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import DT_MDL
 
-LIFT_FULL_SPEED = 30.0  # m/s, lift ramps up from 0 to the full boost by this speed
-LIFT_GATE = [0.95, 1.0]  # slowest planned speed / v_ego: no lift at the low end, full lift at the high end
+LIFT_SCALE = 0.5  # lift is this fraction of the boost, in m/s^2
+LIFT_GATE_STDS = [-1.5, 1.5]  # no lift if the future plan is behind compared to maintaining current speed, full lift if ahead
 
 
 def get_accel_boost(personality=log.LongitudinalPersonality.standard):
@@ -29,12 +29,15 @@ class AccelBoost:
 
   def update(self, sm, output_a_target_e2e):
     boost = get_accel_boost(sm['selfdriveState'].personality)
-    v_ego = sm['carState'].vEgo
-    plan_v = sm['modelV2'].velocity.x or [0.0]
+    v_ego = max(sm['carState'].vEgo, 1.0)
     curve_scale = np.interp(abs(sm['controlsState'].curvature) * v_ego**2, [1.0, 2.5], [1.0, 0.0])  # fade out boost on curves
 
-    gate = np.interp(min(plan_v) / max(v_ego, 1.0), LIFT_GATE, [0.0, 1.0])  # lift gated by if the model plans to slow more than 5% in the next 10 s
-    lift = self.lift_filter.update(curve_scale * boost * min(v_ego / LIFT_FULL_SPEED, 1.0) * gate)
+    pos = sm['modelV2'].position
+    t, x, x_std = np.array(pos.t), np.array(pos.x), np.array(pos.xStd)
+    # how many stds the plan is ahead compared to holding the current speed, at its worst point after 1 s
+    plan_ahead = ((x - v_ego * t) / x_std)[t >= 1.0].min() if len(x_std) else LIFT_GATE_STDS[0]
+    gate = np.interp(plan_ahead, LIFT_GATE_STDS, [0.0, 1.0])
+    lift = self.lift_filter.update(curve_scale * LIFT_SCALE * boost * gate)
 
     gain = 1.0 + (boost * curve_scale if output_a_target_e2e > 0.0 else 0.0)  # boost gas only, braking is left to the model
     self.total_boost = output_a_target_e2e * (gain - 1.0) + lift
