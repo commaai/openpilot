@@ -3,8 +3,8 @@ from openpilot.cereal import log
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import DT_MDL
 
-LIFT_SCALE = 0.5  # lift is this fraction of the boost, in m/s^2
-LIFT_GATE_STDS = [-1.5, 1.5]  # no lift if the future plan is behind compared to maintaining current speed, full lift if ahead
+LIFT_SCALE = 0.75  # lift is this fraction of the boost, in m/s^2
+LIFT_GATE_STDS = [-1.5, 1.5]  # less lift if the future plan is behind compared to maintaining current speed, more if ahead
 
 
 def get_accel_boost(personality=log.LongitudinalPersonality.standard):
