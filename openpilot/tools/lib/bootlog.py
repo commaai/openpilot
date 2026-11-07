@@ -36,12 +36,12 @@ class Bootlog:
   def __eq__(self, b) -> bool:
     if not isinstance(b, Bootlog):
       return False
-    return self.id == b.id
+    return (self.id, self.dongle_id) == (b.id, b.dongle_id)
 
   def __lt__(self, b) -> bool:
     if not isinstance(b, Bootlog):
-      return False
-    return self.id < b.id
+      return NotImplemented
+    return (self.id, self.dongle_id) < (b.id, b.dongle_id)
 
 def get_bootlog_from_id(bootlog_id: str) -> Bootlog | None:
   # TODO: implement an API endpoint for this
