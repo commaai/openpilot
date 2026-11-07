@@ -15,6 +15,7 @@ from openpilot.common.esim.base import LPABase
 from openpilot.common.hardware.base import HardwareBase, ThermalConfig, ThermalZone
 from openpilot.common.hardware.comma.pins import GPIO
 from openpilot.common.hardware.comma.amplifier import Amplifier
+from openpilot.common.hardware.comma.drm import set_dpms
 
 MODEM_STATE_PATH = "/dev/shm/modem"
 
@@ -276,8 +277,12 @@ class HardwareComma(HardwareBase):
 
   def set_display_power(self, on):
     try:
+      if on:
+        set_dpms(True)
       with open("/sys/class/backlight/panel0-backlight/bl_power", "w") as f:
         f.write("0" if on else "4")
+      if not on:
+        set_dpms(False)
     except Exception:
       pass
 
@@ -325,6 +330,24 @@ class HardwareComma(HardwareBase):
         # cap max core freq to 1689 Mhz
         sudo_write('1689600', f'/sys/devices/system/cpu/cpufreq/policy{n}/scaling_max_freq')
 
+    # *** memory bus config ***
+    for n in ('cpubw', 'memlat-cpu0', 'memlat-cpu4', 'l3-cpu0', 'l3-cpu4', 'llccbw'):
+      sudo_write('powersave' if powersave_enabled else 'performance', f'/sys/class/devfreq/soc:qcom,{n}/governor')
+
+    # *** GPU config ***
+    # forced on at its top level, the GPU keeps the DDR vote up: ~200mW
+    # min_pwrlevel >= max_pwrlevel, so the order of these writes matters
+    if powersave_enabled:
+      for f in ('force_bus_on', 'force_clk_on', 'force_rail_on'):
+        sudo_write('0', f'/sys/class/kgsl/kgsl-3d0/{f}')
+      sudo_write('6', '/sys/class/kgsl/kgsl-3d0/min_pwrlevel')
+      sudo_write('6', '/sys/class/kgsl/kgsl-3d0/max_pwrlevel')
+    else:
+      sudo_write('1', '/sys/class/kgsl/kgsl-3d0/max_pwrlevel')
+      sudo_write('1', '/sys/class/kgsl/kgsl-3d0/min_pwrlevel')
+      for f in ('force_bus_on', 'force_clk_on', 'force_rail_on'):
+        sudo_write('1', f'/sys/class/kgsl/kgsl-3d0/{f}')
+
     # *** IRQ config ***
 
     # GPU, modeld core
@@ -367,11 +390,6 @@ class HardwareComma(HardwareBase):
     # https://github.com/commaai/agnos-kernel-sdm845/blob/master/arch/arm64/boot/dts/qcom/sdm845-gpu.dtsi#L216
     affine_irq(5, "fts_ts")    # touch
     affine_irq(5, "msm_drm")   # display
-    sudo_write("1", "/sys/class/kgsl/kgsl-3d0/min_pwrlevel")
-    sudo_write("1", "/sys/class/kgsl/kgsl-3d0/max_pwrlevel")
-    sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_bus_on")
-    sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_clk_on")
-    sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_rail_on")
     sudo_write("1000", "/sys/class/kgsl/kgsl-3d0/idle_timer")
     sudo_write("performance", "/sys/class/kgsl/kgsl-3d0/devfreq/governor")
     sudo_write("710", "/sys/class/kgsl/kgsl-3d0/max_clock_mhz")
