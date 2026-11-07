@@ -122,6 +122,22 @@ def log_event(kind: str, **kw) -> None:
       f.write(entry + '\n')
 
 
+class OpusDecoder:
+  # the device sends 20 ms opus packets, 16 kHz mono
+  def __init__(self):
+    import ctypes, ctypes.util
+    self.lib = ctypes.CDLL(ctypes.util.find_library('opus'))
+    self.lib.opus_decoder_create.restype = ctypes.c_void_p
+    self.lib.opus_decode.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_int32, ctypes.c_char_p, ctypes.c_int, ctypes.c_int]
+    err = ctypes.c_int()
+    self.dec = self.lib.opus_decoder_create(16000, 1, ctypes.byref(err))
+    self.out = ctypes.create_string_buffer(1920 * 2)
+
+  def decode(self, packet: bytes) -> bytes:
+    n = self.lib.opus_decode(self.dec, packet, len(packet), self.out, 1920, 0)
+    return self.out.raw[:max(n, 0) * 2]
+
+
 def frame(t: int, payload: bytes) -> bytes:
   return struct.pack('<BI', t, len(payload)) + payload
 
@@ -129,7 +145,7 @@ def frame(t: int, payload: bytes) -> bytes:
 def transcribe(pcm: np.ndarray) -> str:
   # the comma four mic sits around -55 dBFS, whisper drops quiet starts
   pcm = pcm / (np.abs(pcm).max() + 1e-6) * 0.9
-  segs, _ = whisper.transcribe(pcm, language='en', beam_size=1, temperature=0.0, vad_filter=False)
+  segs, _ = whisper.transcribe(pcm, language='en', beam_size=1, vad_filter=False)
   return ' '.join(s.text for s in segs).strip()
 
 
@@ -235,7 +251,7 @@ def words(pcm: np.ndarray, t0: int) -> list[tuple[str, int, int]]:
   if len(pcm) < 8000:
     return []
   pcm = pcm / (np.abs(pcm).max() + 1e-6) * 0.9
-  segs, _ = whisper.transcribe(pcm, language='en', beam_size=1, temperature=0.0, vad_filter=False, word_timestamps=True, condition_on_previous_text=False)
+  segs, _ = whisper.transcribe(pcm, language='en', beam_size=1, vad_filter=False, word_timestamps=True, condition_on_previous_text=False)
   # whisper's own silence rule, what it writes over noise is mostly made up
   return [(w.word, t0 + int(w.start * 16000), t0 + int(w.end * 16000)) for g in segs for w in (g.words or [])
           if not (g.no_speech_prob > 0.6 and g.avg_logprob < -1.0)]
@@ -268,7 +284,7 @@ def forced_wake(pcm: np.ndarray) -> bool:
   pcm = pcm / (np.abs(pcm).max() + 1e-6) * 0.9
   lp = []
   for prefix in ('Clanker,', None):
-    segs, _ = whisper.transcribe(pcm, language='en', beam_size=1, temperature=0.0, vad_filter=False, condition_on_previous_text=False, prefix=prefix, without_timestamps=True)
+    segs, _ = whisper.transcribe(pcm, language='en', beam_size=1, vad_filter=False, condition_on_previous_text=False, prefix=prefix, without_timestamps=True)
     segs = list(segs)
     lp.append(float(np.mean([g.avg_logprob for g in segs])) if segs else -9.0)
   return lp[0] > FORCED_MIN and lp[0] - lp[1] > FORCED_GAIN
@@ -309,7 +325,8 @@ async def stream(reader, writer, meta):
   # how far the audio lags real time on the network, and how stale it is when whisper reads it
   t_conn, offset, last_rx = time.monotonic(), None, 0.
   link = {'net_max': 0., 'stale_max': 0., 'asr': [], 'next': 10 * 16000}
-  q: asyncio.Queue = asyncio.Queue()
+  # offline evals read one frame at a time so their clock follows what whisper has seen
+  q: asyncio.Queue = asyncio.Queue(0 if SKIP_BACKLOG else 1)
 
   async def read():
     # pings are answered right away, everything else queues so whisper can skip audio it fell behind on
@@ -321,17 +338,22 @@ async def stream(reader, writer, meta):
           writer.write(frame(14, payload))
           await writer.drain()
         else:
-          q.put_nowait((typ, payload, time.monotonic()))
+          await q.put((typ, payload, time.monotonic()))
     except Exception as e:
-      q.put_nowait(e)
+      await q.put(e)
 
   reader_task = asyncio.create_task(read())
+  opus = None
   try:
     while True:
       item = await q.get()
       if isinstance(item, Exception):
         raise item
       typ, payload, rx = item
+      if typ == 6:
+        # compressed mic audio, the same as raw from here on
+        opus = opus or OpusDecoder()
+        typ, payload = 2, opus.decode(payload)
       n = len(payload)
       if typ == 1:
         # keep the auth fields and the last reply id, the device only refreshes its context

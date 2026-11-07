@@ -18,6 +18,7 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.voice.kws import Kws, SR, WIN
+from openpilot.system.voice.opus import Encoder
 
 CONTEXT_SERVICES = ['gpsLocationExternal', 'gpsLocation', 'carState', 'selfdriveState', 'carParams', 'deviceState', 'navInstruction']
 
@@ -306,6 +307,8 @@ class Streamer(Voiced):
     # sends and receives give up on a dead link instead of blocking forever
     s.settimeout(LINK_TIMEOUT_S)
     self.ping_sent = None
+    # a fresh encoder per connection, the server keeps one decoder per stream
+    self.encoder = Encoder()
     auth = {'stream': True, 'dongle_id': self.dongle_id, 'token': Api(self.dongle_id).get_token(expiry_hours=24)}
     s.sendall(frame(1, json.dumps(auth).encode()))
     s.sendall(self.meta())
@@ -429,7 +432,8 @@ class Streamer(Voiced):
             last_ping = now
             if self.ping_sent is None:
               self.ping_sent = now
-          s.sendall(frame(2, m.rawAudioData.data))
+          for pkt in self.encoder.encode(m.rawAudioData.data):
+            s.sendall(frame(6, pkt))
         except OSError:
           cloudlog.exception("voiced: send failed")
           s.close()
