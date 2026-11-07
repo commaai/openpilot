@@ -2,12 +2,15 @@
 import os
 import time
 
+import raylib_nb as rl
+
 from openpilot.cereal import messaging
 from openpilot.common.hardware import COMMA_HARDWARE
 from openpilot.common.realtime import Priority, config_realtime_process, set_core_affinity
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.ui.layouts.main import MainLayout
 from openpilot.selfdrive.ui.mici.layouts.main import MiciMainLayout
+from openpilot.selfdrive.ui.mici.widgets.voice_indicator import draw_voice_indicator
 from openpilot.selfdrive.ui.ui_state import ui_state
 
 BIG_UI = gui_app.big_ui()
@@ -30,6 +33,10 @@ def main():
     ui_state.update()
 
     if should_render:
+      # drawn here so it sits on top of every screen, the frame is still open
+      if not BIG_UI:
+        draw_voice_indicator(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
+
       # reaffine after power save offlines our core
       if COMMA_HARDWARE and os.sched_getaffinity(0) != cores:
         try:

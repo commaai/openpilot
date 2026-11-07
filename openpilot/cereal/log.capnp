@@ -2521,6 +2521,22 @@ struct AudioData {
   sampleRate @1 :UInt32;
 }
 
+struct VoiceAssistant {
+  state @0 :State;
+  wakeScore @1 :Float32;
+  transcript @2 :Text;
+  reply @3 :Text;
+  # round trip to the workstation, 0 when not connected
+  serverRttMs @4 :Float32;
+
+  enum State {
+    idle @0;
+    listening @1;
+    thinking @2;
+    speaking @3;
+  }
+}
+
 struct Touch {
   sec @0 :Int64;
   usec @1 :Int64;
@@ -2604,6 +2620,8 @@ struct Event {
     deviceState @6 :DeviceState;
     chestnutState @152 :ChestnutState;
     chestnutGpuState @153 :ChestnutState;
+    voiceAssistant @154 :VoiceAssistant;
+    voiceAudioData @155 :AudioData;
     logMessage @18 :Text;
     errorLogMessage @85 :Text;
 

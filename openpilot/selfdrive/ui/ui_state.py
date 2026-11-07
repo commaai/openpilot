@@ -72,6 +72,7 @@ class UIState:
         "vehicleParameters",
         "testJoystick",
         "rawAudioData",
+        "voiceAssistant",
       ]
     )
 
