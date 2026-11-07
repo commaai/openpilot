@@ -314,7 +314,7 @@ function op_build() {
 
 function op_juggle() {
   op_before_cmd
-  op_run_command openpilot/tools/plotjuggler/juggle.py "$@"
+  op_run_command openpilot/tools/cabana/cabana "$@"
 }
 
 function op_lint() {
@@ -461,7 +461,7 @@ function op_default() {
   echo -e "  ${BOLD}stop${NC}         Stops openpilot"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands [Tooling]:${NC}"
-  echo -e "  ${BOLD}juggle${NC}       Run PlotJuggler"
+  echo -e "  ${BOLD}juggle${NC}       Run Cabana analysis (compatibility alias)"
   echo -e "  ${BOLD}replay${NC}       Run Replay"
   echo -e "  ${BOLD}cabana${NC}       Run Cabana"
   echo -e "  ${BOLD}clip${NC}         Run clip (linux only)"
@@ -495,7 +495,7 @@ function op_default() {
   echo "          Compile openpilot using 4 cores"
   echo ""
   echo "  op juggle --demo"
-  echo "          Run PlotJuggler on the demo route"
+  echo "          Run Cabana analysis (compatibility alias) on the demo route"
 }
 
 

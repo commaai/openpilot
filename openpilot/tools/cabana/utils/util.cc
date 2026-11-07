@@ -59,7 +59,9 @@ void SegmentTree::build(int n, const std::function<double(int)> &y) {
 
 void SegmentTree::build_tree(const std::function<double(int)> &y, int n, int left, int right) {
   if (left == right) {
-    tree[n] = {y(left), y(left)};
+    const double value = y(left);
+    tree[n] = std::isfinite(value) ? std::make_pair(value, value) :
+                                   std::make_pair(std::numeric_limits<double>::max(), std::numeric_limits<double>::lowest());
   } else {
     const int mid = (left + right) >> 1;
     build_tree(y, 2 * n, left, mid);

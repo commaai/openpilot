@@ -9,6 +9,8 @@
 #include <mutex>
 #include <queue>
 #include <thread>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 // Reusing the same threads matters: a std::async thread per update lands each allocation in a different
@@ -20,9 +22,15 @@ public:
     return pool;
   }
 
-  std::future<void> run(std::function<void()> fn) {
-    auto task = std::make_shared<std::packaged_task<void()>>(std::move(fn));
-    std::future<void> future = task->get_future();
+  static ThreadPool &media() { static ThreadPool pool(4); return pool; }
+  static ThreadPool &history() { static ThreadPool pool(2); return pool; }
+  static ThreadPool &analysis() { static ThreadPool pool(2); return pool; }
+
+  template <class Function>
+  auto run(Function &&fn) -> std::future<std::invoke_result_t<Function>> {
+    using Result = std::invoke_result_t<Function>;
+    auto task = std::make_shared<std::packaged_task<Result()>>(std::forward<Function>(fn));
+    auto future = task->get_future();
     {
       std::lock_guard lk(mutex_);
       tasks_.push([task]() { (*task)(); });

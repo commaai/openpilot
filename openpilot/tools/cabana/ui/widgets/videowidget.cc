@@ -58,7 +58,7 @@ static std::pair<double, double> displayedTimeRange() {
 }
 
 // decode with libavcodec, already linked for the replay video decoder
-static bool decodeJpeg(const uint8_t *data, size_t size, RgbImage *out) {
+bool decodeJpegImage(const uint8_t *data, size_t size, RgbImage *out) {
   const AVCodec *codec = avcodec_find_decoder(AV_CODEC_ID_MJPEG);
   AVCodecContext *context = codec ? avcodec_alloc_context3(codec) : nullptr;
   AVFrame *frame = av_frame_alloc();
@@ -493,7 +493,7 @@ void StreamCameraView::parseQLog(std::shared_ptr<LogReader> qlog) {
       capnp::FlatArrayMessageReader reader(e.data);
       auto thumb_data = reader.getRoot<cereal::Event>().getThumbnail();
       auto image_data = thumb_data.getThumbnail();
-      if (RgbImage thumb; decodeJpeg(image_data.begin(), image_data.size(), &thumb)) {
+      if (RgbImage thumb; decodeJpegImage(image_data.begin(), image_data.size(), &thumb)) {
         (*thumbnails)[thumb_data.getTimestampEof()] = std::move(thumb);
       }
     }

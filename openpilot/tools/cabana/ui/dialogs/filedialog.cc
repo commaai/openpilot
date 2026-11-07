@@ -74,7 +74,18 @@ void listDir() {
     if (name.empty() || name[0] == '.') continue;
     const bool is_dir = entry.is_directory(ec);
     if (!is_dir && s.mode == Mode::Directory) continue;
-    if (!is_dir && !s.extension.empty() && entry.path().extension() != s.extension) continue;
+    if (!is_dir && !s.extension.empty()) {
+      const std::string extension = entry.path().extension().string();
+      bool matches = false;
+      size_t start = 0;
+      while (start <= s.extension.size()) {
+        const auto end = s.extension.find(',', start);
+        matches |= extension == s.extension.substr(start, end == std::string::npos ? end : end - start);
+        if (end == std::string::npos) break;
+        start = end + 1;
+      }
+      if (!matches) continue;
+    }
     s.entries.push_back(entry);
   }
   std::sort(s.entries.begin(), s.entries.end(), [](const auto &a, const auto &b) {

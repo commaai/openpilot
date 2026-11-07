@@ -55,7 +55,7 @@
  <customMathEquations>
   <snippet name="haversine distance [m]">
    <global>R = 6378.137 -- Radius of earth in KM</global>
-   <function>-- Compute the Haversine distance between 
+   <function>-- Compute the Haversine distance between
 -- two points defined by latitude and longitude.
 -- Return the distance in meters
 lat1, lon1 = value, v1

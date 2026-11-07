@@ -11,6 +11,7 @@
 #include "tools/cabana/utils/strings.h"
 
 SignalSelector::SignalSelector(std::string title) : title_(std::move(title)) {
+  if (can->supportsCereal()) msgs_combo_.push_back({"Cereal signals", {}, true});
   std::set<MessageId> ids;
   for (const auto &[id, _] : can->eventsMap()) ids.insert(id);
   for (const auto &[id, _] : can->lastMessages()) ids.insert(id);
@@ -20,6 +21,9 @@ SignalSelector::SignalSelector(std::string title) : title_(std::move(title)) {
     }
   }
   std::sort(msgs_combo_.begin(), msgs_combo_.end(), [](auto &a, auto &b) { return a.text < b.text; });
+  cereal_connection_ = can->cerealChanged.connect([this]() {
+    if (msgs_combo_index_ >= 0 && msgs_combo_[msgs_combo_index_].cereal) updateAvailableList(msgs_combo_index_);
+  });
 }
 
 bool SignalSelector::draw() {
@@ -38,7 +42,7 @@ bool SignalSelector::draw() {
   const float btn_w = iconButtonWidth();
   const float column_w = (ImGui::GetContentRegionAvail().x - btn_w - ImGui::GetStyle().ItemSpacing.x * 2) / 2;
   // the selected list spans the combo row too; both lists end above the Ok/Cancel row
-  const float lists_h = ImGui::GetContentRegionAvail().y - ImGui::GetFrameHeightWithSpacing() * 3;
+  const float lists_h = ImGui::GetContentRegionAvail().y - ImGui::GetFrameHeightWithSpacing() * 4;
 
   ImGui::BeginGroup();
   ImGui::AlignTextToFramePadding();
@@ -63,6 +67,8 @@ bool SignalSelector::draw() {
     }
     dropdown::EndCombo();
   }
+  ImGui::SetNextItemWidth(column_w);
+  if (inputText("##signal_filter", &signal_filter_, "Filter signals...")) available_row_ = -1;
   bool add_dbl = false;
   drawList("##available_list", available_list_, &available_row_, false, &add_dbl, ImVec2(column_w, lists_h));
   ImGui::EndGroup();
@@ -107,6 +113,8 @@ void SignalSelector::drawList(const char *id, std::vector<ListItem> &list, int *
   if (!ImGui::BeginListBox(id, size)) return;
   for (int i = 0; i < (int)list.size(); ++i) {
     const auto &item = list[i];
+    const std::string name = item.cereal_path.empty() ? item.sig->name : "/" + item.cereal_path;
+    if (&list == &available_list_ && !utils::containsCI(name, signal_filter_)) continue;
     ImGui::PushID(i);
     const ImVec2 pos = ImGui::GetCursorScreenPos();
     if (selectable("##item", i == *current_row)) *current_row = i;
@@ -117,12 +125,12 @@ void SignalSelector::drawList(const char *id, std::vector<ListItem> &list, int *
     // label: colored square, signal name, then the message name/id in gray
     ImDrawList *dl = ImGui::GetWindowDrawList();
     float x = pos.x + 5;
-    drawColorMarker(dl, ImVec2(x, pos.y), toImU32(item.sig->color));
+    drawColorMarker(dl, ImVec2(x, pos.y), toImU32(item.cereal_path.empty() ? item.sig->color : CabanaColor(60, 140, 220)));
     x += markerSize() + 4;
-    dl->AddText(ImVec2(x, pos.y), ImGui::GetColorU32(i == *current_row ? palette().text_selected : palette().text), item.sig->name.c_str());
+    dl->AddText(ImVec2(x, pos.y), ImGui::GetColorU32(i == *current_row ? palette().text_selected : palette().text), name.c_str());
     if (show_msg_name) {
-      x += ImGui::CalcTextSize(item.sig->name.c_str()).x;
-      dl->AddText(ImVec2(x, pos.y), ImGui::GetColorU32(i == *current_row ? palette().text_selected : palette().text_disabled), msgLabel(item.msg_id).c_str());
+      x += ImGui::CalcTextSize(name.c_str()).x;
+      dl->AddText(ImVec2(x, pos.y), ImGui::GetColorU32(i == *current_row ? palette().text_selected : palette().text_disabled), (item.cereal_path.empty() ? msgLabel(item.msg_id) : std::string(" cereal")).c_str());
     }
     ImGui::PopID();
   }
@@ -131,15 +139,19 @@ void SignalSelector::drawList(const char *id, std::vector<ListItem> &list, int *
 
 void SignalSelector::add(int row) {
   const auto &item = available_list_[row];
-  selected_list_.emplace_back(item.msg_id, item.sig);
+  selected_list_.push_back(item);
   available_list_.erase(available_list_.begin() + row);
   available_row_ = -1;
 }
 
 void SignalSelector::remove(int row) {
   const auto &item = selected_list_[row];
-  if (msgs_combo_index_ >= 0 && item.msg_id == msgs_combo_[msgs_combo_index_].id) {
-    available_list_.emplace_back(item.msg_id, item.sig);
+  if (msgs_combo_index_ >= 0) {
+    const auto &group = msgs_combo_[msgs_combo_index_];
+    if ((!item.cereal_path.empty() && group.cereal) ||
+        (item.cereal_path.empty() && !group.cereal && item.msg_id == group.id)) {
+      available_list_.push_back(item);
+    }
   }
   selected_list_.erase(selected_list_.begin() + row);
   selected_row_ = -1;
@@ -149,10 +161,18 @@ void SignalSelector::updateAvailableList(int index) {
   if (index == -1) return;
   available_list_.clear();
   available_row_ = -1;
+  if (msgs_combo_[index].cereal) {
+    for (const auto &path : can->cerealSignalNames()) {
+      if (std::none_of(selected_list_.begin(), selected_list_.end(), [&](const auto &item) { return item.cereal_path == path; })) {
+        available_list_.emplace_back(path);
+      }
+    }
+    return;
+  }
   MessageId msg_id = msgs_combo_[index].id;
   for (auto s : dbc()->msg(msg_id)->getSignals()) {
     bool is_selected = std::any_of(selected_list_.begin(), selected_list_.end(),
-                                   [sig = s, &msg_id](auto &it) { return it.msg_id == msg_id && it.sig == sig; });
+                                   [sig = s, &msg_id](auto &it) { return it.cereal_path.empty() && it.msg_id == msg_id && it.sig == sig; });
     if (!is_selected) {
       available_list_.emplace_back(msg_id, s);
     }

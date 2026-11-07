@@ -64,6 +64,8 @@ struct RgbImage {
   void swap(RgbImage &other) { std::swap(width, other.width); std::swap(height, other.height); data.swap(other.data); }
 };
 
+bool decodeJpegImage(const uint8_t *data, size_t size, RgbImage *out);
+
 // GL texture holding an RgbImage. Created/uploaded/freed on the GUI thread only (the GL context is current there).
 struct GlTexture {
   GlTexture() = default;
