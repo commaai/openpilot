@@ -1,0 +1,7 @@
+CM_ "IMPORT _honda_common.dbc";
+CM_ "IMPORT _bosch_2018.dbc";
+CM_ "IMPORT _bosch_radar_acc.dbc";
+CM_ "IMPORT _lkas_hud_5byte.dbc";
+CM_ "IMPORT _bosch_standstill.dbc";
+CM_ "IMPORT _steering_sensors_b.dbc";
+CM_ "IMPORT _gearbox_common.dbc";
