@@ -1,41 +1,41 @@
 import numpy as np
 from openpilot.cereal import log
-from openpilot.common.constants import CV
+from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import DT_MDL
 
-ACCEL_BOOST_INITIAL = 0.1
-ACCEL_BOOST_MAX = 0.2
-ACCEL_BOOST_RATE = 0.025
-ACCEL_BOOST_PER_OVERRIDE = 0.05
-ACCEL_BOOST_MIN_SPEED = 10 * CV.MPH_TO_MS
+LIFT_GATE_STDS = [-1.0, 2.0]  # less lift if the future plan is behind compared to maintaining current speed, more if ahead
+
+
+def get_accel_boost(personality=log.LongitudinalPersonality.standard):
+  # extra accel on top of the model's, in m/s^2
+  if personality==log.LongitudinalPersonality.relaxed:
+    return 0.0
+  elif personality==log.LongitudinalPersonality.standard:
+    return 0.1
+  elif personality==log.LongitudinalPersonality.aggressive:
+    return 0.2
+  else:
+    raise NotImplementedError("Longitudinal personality not supported")
 
 
 class AccelBoost:
-  def __init__(self):
+  def __init__(self, dt=DT_MDL):
+    self.lift_filter = FirstOrderFilter(0.0, 0.3, dt)
     self.total_boost = 0.0
-    self.boost_this_override = 0.0
-    self.boost_eligible = False
 
-  def update(self, sm, output_a_target_e2e, output_a_target_mpc, a_cruise):
-    enabled = sm['selfdriveState'].enabled
-    gas_pressed = sm['carState'].gasPressed
-    v_ego = sm['carState'].vEgo
-    initial_boost = ACCEL_BOOST_INITIAL if sm['selfdriveState'].personality == log.LongitudinalPersonality.aggressive else 0.0
-    self.total_boost = max(self.total_boost, initial_boost) if enabled else initial_boost
+  def reset(self):
+    self.lift_filter.x = 0.0
+    self.total_boost = 0.0
 
-    speed_scale = np.interp(v_ego, [ACCEL_BOOST_MIN_SPEED, 2 * ACCEL_BOOST_MIN_SPEED], [0.0, 1.0])
-    boost_scale = speed_scale * np.interp(output_a_target_e2e, [-1.0, -0.5, 5.0], [0.0, 1.0, 1.0], right=0.0)
-    model_limited = output_a_target_e2e + self.total_boost * boost_scale < min(output_a_target_mpc, a_cruise) - 0.1
+  def update(self, sm, output_a_target_e2e):
+    boost = get_accel_boost(sm['selfdriveState'].personality)
+    v_ego = max(sm['carState'].vEgo, 1.0)
+    curve_scale = np.interp(abs(sm['controlsState'].curvature) * v_ego**2, [1.0, 2.5], [1.0, 0.0])  # fade out boost on curves
 
-    if not enabled or not gas_pressed:
-      self.boost_this_override = 0.0
-      # Latch eligibility before the override changes the lead plan.
-      self.boost_eligible = enabled and model_limited
-
-    if enabled and gas_pressed and self.boost_eligible:
-      increase = min(ACCEL_BOOST_RATE * DT_MDL * speed_scale,
-                     ACCEL_BOOST_PER_OVERRIDE - self.boost_this_override, ACCEL_BOOST_MAX - self.total_boost)
-      self.total_boost += increase
-      self.boost_this_override += increase
-
-    return output_a_target_e2e + self.total_boost * boost_scale
+    pos = sm['modelV2'].position
+    t, x, x_std = np.array(pos.t), np.array(pos.x), np.array(pos.xStd)
+    # how many stds the plan is ahead compared to holding the current speed, at its worst point after 1 s
+    plan_ahead = ((x - v_ego * t) / x_std)[t >= 1.0].min() if len(x_std) else LIFT_GATE_STDS[0]
+    gate = np.interp(plan_ahead, LIFT_GATE_STDS, [0.0, 1.0])
+    self.total_boost = self.lift_filter.update(curve_scale * boost * gate)
+    return output_a_target_e2e + self.total_boost
