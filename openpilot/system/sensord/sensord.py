@@ -36,7 +36,7 @@ def interrupt_loop(sensors: list[tuple[Sensor, str, bool]], event) -> None:
   if not os.path.exists(irq_path):
     irq_path = "/proc/irq/335/smp_affinity_list"
   if os.path.exists(irq_path):
-    sudo_write('1\n', irq_path)
+    sudo_write('2\n', irq_path)
 
   offset = time.time_ns() - time.monotonic_ns()
 
@@ -93,7 +93,8 @@ def polling_loop(sensor: Sensor, service: str, event: threading.Event) -> None:
 
 def main() -> None:
   # with its IRQ, and off the cores AGNOS keeps for everything but openpilot
-  config_realtime_process([2, ], 1)
+  # above the realtime processes that float over cores 0-3, they land on core 2 when AGNOS keeps 0 and 1 busy
+  config_realtime_process([2, ], 10)
 
   sensors_cfg = [
     (LSM6DS3_Accel(I2C_BUS_IMU), "accelerometer", True),

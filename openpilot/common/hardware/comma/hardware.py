@@ -356,9 +356,6 @@ class HardwareComma(HardwareBase):
 
     # *** IRQ config ***
 
-    # mask off big cluster from default affinity
-    sudo_write("f", "/proc/irq/default_smp_affinity")
-
     # move these off the default core, and off the cores AGNOS keeps for everything but openpilot
     affine_irq(2, "msm_vidc")  # encoders
     affine_irq(2, "i2c_geni")  # sensors
