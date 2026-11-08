@@ -96,7 +96,7 @@ class FirehoseLayoutBase(Widget):
 
 class SegmentCountCard(GreyBigButton):
   def __init__(self):
-    super().__init__(tr("training segments:"), "0")
+    super().__init__(tr("uploaded segments:"), "0")
     self._label.set_font_weight(FontWeight.DISPLAY_REGULAR)
     self._sub_label.set_font_weight(FontWeight.BOLD)
     self._sub_label.set_font_size(64)
@@ -104,13 +104,32 @@ class SegmentCountCard(GreyBigButton):
     self._sub_label.set_text_color(rl.WHITE)
 
 
+class StatusCard(GreyBigButton):
+  ICON_SIZE = 32
+  ICON_SPACING = 14
+
+  def __init__(self):
+    super().__init__("firehose mode", "", gui_app.texture("icons_mici/settings/firehose.png", 52, 62))
+    self._check_icon = gui_app.texture("icons_mici/setup/driver_monitoring/dm_check.png", self.ICON_SIZE, self.ICON_SIZE)
+    self._x_icon = gui_app.texture("icons_mici/setup/cancel.png", self.ICON_SIZE, self.ICON_SIZE)
+    self.active = False
+
+  def _draw_subtitle(self, rect: rl.Rectangle):
+    # check or X to the left of the status text
+    icon = self._check_icon if self.active else self._x_icon
+    offset = self.ICON_SIZE + self.ICON_SPACING
+    text_rect = rl.Rectangle(rect.x + offset, rect.y, rect.width - offset, rect.height)
+    text_height = self._sub_label.get_content_height(int(text_rect.width))
+    icon_y = rect.y + rect.height - (text_height + icon.height) / 2
+    rl.draw_texture_v(icon, rl.Vector2(rect.x, icon_y), rl.Color(255, 255, 255, int(255 * 0.9)))
+    super()._draw_subtitle(text_rect)
+
+
 class FirehoseLayout(NavScroller, FirehoseLayoutBase):
   def __init__(self):
     super().__init__()
 
-    self._active_icon = gui_app.texture("icons_mici/settings/green_firehose.png", 64, 64)
-    self._inactive_icon = gui_app.texture("icons_mici/settings/orange_firehose.png", 64, 64)
-    self._status_card = GreyBigButton("firehose mode", "", self._inactive_icon)
+    self._status_card = StatusCard()
     self._segments_card = SegmentCountCard()
     self._segments_card.set_visible(lambda: self._segment_count > 0)
 
@@ -123,11 +142,10 @@ class FirehoseLayout(NavScroller, FirehoseLayoutBase):
   def _update_state(self):
     super()._update_state()
 
-    active = self._is_active()
-    status_text = tr("active") if active else tr("inactive: connect to\nan unmetered network")
+    self._status_card.active = self._is_active()
+    status_text = tr("active") if self._status_card.active else tr("inactive: connect to\nan unmetered network")
     if self._status_card.get_value() != status_text:
       self._status_card.set_value(status_text)
-      self._status_card.set_icon(self._active_icon if active else self._inactive_icon)
 
     segments_text = f"{self._segment_count:,}"
     if self._segments_card.get_value() != segments_text:
