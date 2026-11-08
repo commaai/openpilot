@@ -38,17 +38,41 @@ jobs:
     - name: Build docs
       run: ./tools/op.sh docs --build
 
-    # Push to docs.comma.ai
-    - uses: actions/checkout@v7
+    - uses: actions/upload-artifact@v7
       if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
+      with:
+        name: docs-site
+        path: docs/_site
+
+  deploy:
+    name: deploy docs
+    needs: docs
+    if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
+    runs-on: ubuntu-24.04
+    concurrency:
+      group: docs-deploy
+      cancel-in-progress: false
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        sparse-checkout: tools/release
+    - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+      with:
+        name: docs-site
+        path: docs/_site
+    - uses: actions/checkout@v7
       with:
         path: openpilot-docs
         ssh-key: ${{ secrets.OPENPILOT_DOCS_KEY }}
         repository: commaai/openpilot-docs
     - name: Push
-      if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
       run: |
         set -x
+
+        # a newer commit's deploy is coming
+        if [ "$(git ls-remote origin refs/heads/master | cut -f1)" != "$GITHUB_SHA" ]; then
+          exit 0
+        fi
 
         source tools/release/identity.sh
 
