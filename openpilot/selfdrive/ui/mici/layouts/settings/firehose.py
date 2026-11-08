@@ -11,8 +11,8 @@ from openpilot.selfdrive.ui.lib.api_helpers import get_token
 from openpilot.selfdrive.ui.ui_state import ui_state, device
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
 from openpilot.selfdrive.ui.mici.widgets.button import GreyBigButton
-from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.lib.multilang import tr, trn, tr_noop
+from openpilot.system.ui.lib.application import gui_app, FontWeight, TextAlignmentVertical
+from openpilot.system.ui.lib.multilang import tr, tr_noop
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.scroller import NavScroller
 
@@ -24,14 +24,6 @@ CARDS = [
   tr_noop("Connect it to a good USB-C adapter and Wi-Fi."),
   tr_noop("Firehose Mode can also work while you're driving if connected to a hotspot or unlimited SIM card."),
 ]
-FAQ_HEADER = tr_noop("frequently asked\nquestions")
-FAQ_ITEMS = [
-  tr_noop("Does it matter how or where I drive? Nope, just drive as you normally would."),
-  tr_noop("Do all of my segments get pulled? No, we selectively pull a subset of your segments."),
-  tr_noop("What's a good USB-C adapter? Any fast phone or laptop charger should be fine."),
-  tr_noop("Does it matter which software I run? Yes, only upstream openpilot (and some forks) can be used."),
-]
-
 
 class FirehoseLayoutBase(Widget):
   PARAM_KEY = "ApiCache_FirehoseStats"
@@ -69,11 +61,13 @@ class FirehoseLayoutBase(Widget):
       cloudlog.exception(f"Failed to decode firehose stats: {stats}")
       return 0
 
-  def _get_status(self) -> tuple[str, rl.Color]:
-    network_type = ui_state.sm["deviceState"].networkType
-    network_metered = ui_state.sm["deviceState"].networkMetered
+  @staticmethod
+  def _is_active() -> bool:
+    # connected to an unmetered network
+    return not ui_state.sm["deviceState"].networkMetered and ui_state.sm["deviceState"].networkType != 0
 
-    if not network_metered and network_type != 0:  # Not metered and connected
+  def _get_status(self) -> tuple[str, rl.Color]:
+    if self._is_active():
       return tr("ACTIVE"), self.GREEN
     else:
       return tr("INACTIVE: connect to an unmetered network"), self.RED
@@ -100,31 +94,41 @@ class FirehoseLayoutBase(Widget):
       time.sleep(self.UPDATE_INTERVAL)
 
 
+class SegmentCountCard(GreyBigButton):
+  def __init__(self):
+    super().__init__(tr("training segments:"), "0")
+    self._label.set_font_weight(FontWeight.DISPLAY_REGULAR)
+    self._sub_label.set_font_weight(FontWeight.BOLD)
+    self._sub_label.set_font_size(64)
+    self._sub_label.set_alignment_vertical(TextAlignmentVertical.BOTTOM)
+    self._sub_label.set_text_color(rl.WHITE)
+
+
 class FirehoseLayout(NavScroller, FirehoseLayoutBase):
   def __init__(self):
     super().__init__()
 
-    self._status_card = GreyBigButton("firehose mode", "", gui_app.texture("icons_mici/settings/firehose.png", 52, 62))
-    self._segments_card = GreyBigButton("", "")
+    self._active_icon = gui_app.texture("icons_mici/settings/green_firehose.png", 64, 64)
+    self._inactive_icon = gui_app.texture("icons_mici/settings/orange_firehose.png", 64, 64)
+    self._status_card = GreyBigButton("firehose mode", "", self._inactive_icon)
+    self._segments_card = SegmentCountCard()
     self._segments_card.set_visible(lambda: self._segment_count > 0)
 
     self._scroller.add_widgets([
       self._status_card,
       self._segments_card,
       *[GreyBigButton("", tr(text)) for text in CARDS],
-      GreyBigButton(tr(FAQ_HEADER), "", gui_app.texture("icons_mici/setup/green_info.png", 64, 64)),
-      *[GreyBigButton("", tr(text)) for text in FAQ_ITEMS],
     ])
 
   def _update_state(self):
     super()._update_state()
 
-    status_text, status_color = self._get_status()
+    active = self._is_active()
+    status_text = tr("active") if active else tr("inactive: connect to\nan unmetered network")
     if self._status_card.get_value() != status_text:
       self._status_card.set_value(status_text)
-      self._status_card._sub_label.set_text_color(status_color)
+      self._status_card.set_icon(self._active_icon if active else self._inactive_icon)
 
-    segments_text = trn("{} segment of your driving is in the training dataset so far.",
-                        "{} segments of your driving is in the training dataset so far.", self._segment_count).format(self._segment_count)
+    segments_text = f"{self._segment_count:,}"
     if self._segments_card.get_value() != segments_text:
       self._segments_card.set_value(segments_text)
