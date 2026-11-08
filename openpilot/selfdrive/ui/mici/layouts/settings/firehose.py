@@ -10,31 +10,20 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.ui.lib.api_helpers import get_token
 from openpilot.selfdrive.ui.ui_state import ui_state, device
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
-from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
-from openpilot.system.ui.lib.wrap_text import wrap_text
-from openpilot.system.ui.lib.scroll_panel2 import GuiScrollPanel2
-from openpilot.system.ui.lib.multilang import tr, trn, tr_noop
+from openpilot.selfdrive.ui.mici.widgets.button import GreyBigButton
+from openpilot.system.ui.lib.application import gui_app, FontWeight, TextAlignmentVertical
+from openpilot.system.ui.lib.multilang import tr, tr_noop
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.scroller import NavRawScrollPanel
+from openpilot.system.ui.widgets.scroller import NavScroller
 
-TITLE = tr_noop("Firehose Mode")
-DESCRIPTION = tr_noop(
-  "openpilot learns to drive by watching humans, like you, drive.\n\n"
-  + "Firehose Mode allows you to maximize your training data uploads to improve "
-  + "openpilot's driving models. More data means bigger models, which means better driving."
-)
-INSTRUCTIONS_INTRO = tr_noop(
-  "For maximum effectiveness, bring your device inside and connect to a good USB-C adapter and Wi-Fi weekly.\n\n"
-  + "Firehose Mode can also work while you're driving if connected to a hotspot or unlimited SIM card."
-)
-FAQ_HEADER = tr_noop("Frequently Asked Questions")
-FAQ_ITEMS = [
-  (tr_noop("Does it matter how or where I drive?"), tr_noop("Nope, just drive as you normally would.")),
-  (tr_noop("Do all of my segments get pulled in Firehose Mode?"), tr_noop("No, we selectively pull a subset of your segments.")),
-  (tr_noop("What's a good USB-C adapter?"), tr_noop("Any fast phone or laptop charger should be fine.")),
-  (tr_noop("Does it matter which software I run?"), tr_noop("Yes, only upstream openpilot (and particular forks) are able to be used for training.")),
+CARDS = [
+  tr_noop("openpilot learns to drive by watching humans, like you, drive."),
+  tr_noop("Firehose Mode maximizes your training data uploads to improve openpilot."),
+  tr_noop("More data means bigger models, which means better driving."),
+  tr_noop("For maximum effectiveness, bring your device inside weekly."),
+  tr_noop("Connect it to a good USB-C adapter and Wi-Fi."),
+  tr_noop("Firehose Mode can also work while you're driving if connected to a hotspot or unlimited SIM card."),
 ]
-
 
 class FirehoseLayoutBase(Widget):
   PARAM_KEY = "ApiCache_FirehoseStats"
@@ -50,9 +39,6 @@ class FirehoseLayoutBase(Widget):
     self._session = requests.Session()  # reuse session to reduce SSL handshake overhead
     self._segment_count = self._get_segment_count()
 
-    self._scroll_panel = GuiScrollPanel2(horizontal=False)
-    self._content_height = 0
-
     self._running = True
     self._update_thread = threading.Thread(target=self._update_loop, daemon=True)
     self._update_thread.start()
@@ -65,10 +51,6 @@ class FirehoseLayoutBase(Widget):
     except Exception:
       pass
 
-  def show_event(self):
-    super().show_event()
-    self._scroll_panel.set_offset(0)
-
   def _get_segment_count(self) -> int:
     stats = self._params.get(self.PARAM_KEY)
     if not stats:
@@ -79,121 +61,13 @@ class FirehoseLayoutBase(Widget):
       cloudlog.exception(f"Failed to decode firehose stats: {stats}")
       return 0
 
-  def _render(self, rect: rl.Rectangle):
-    # compute total content height for scrolling
-    content_height = self._measure_content_height(rect)
-    scroll_offset = self._scroll_panel.update(rect, content_height)
-
-    # start drawing with offset
-    x = rect.x + 40
-    y = rect.y + 40 + scroll_offset
-    w = rect.width - 80
-
-    # Title
-    title_text = tr(TITLE)
-    title_font = gui_app.font(FontWeight.BOLD)
-    title_size = 64
-    rl.draw_text_ex(title_font, title_text, rl.Vector2(x, y), title_size, 0, rl.WHITE)
-    y += int(title_size * FONT_SCALE) + 20
-
-    # Description
-    y = self._draw_wrapped_text(x, y, w, tr(DESCRIPTION), gui_app.font(FontWeight.ROMAN), 36, rl.WHITE)
-    y += 20
-
-    # Separator
-    rl.draw_rectangle_rec(rl.Rectangle(x, y, w, 2), self.GRAY)
-    y += 20
-
-    # Status
-    status_text, status_color = self._get_status()
-    y = self._draw_wrapped_text(x, y, w, status_text, gui_app.font(FontWeight.BOLD), 48, status_color)
-    y += 20
-
-    # Contribution count (if available)
-    if self._segment_count > 0:
-      contrib_text = trn("{} segment of your driving is in the training dataset so far.",
-                         "{} segments of your driving is in the training dataset so far.", self._segment_count).format(self._segment_count)
-      y = self._draw_wrapped_text(x, y, w, contrib_text, gui_app.font(FontWeight.BOLD), 42, rl.WHITE)
-      y += 20
-
-    # Separator
-    rl.draw_rectangle_rec(rl.Rectangle(x, y, w, 2), self.GRAY)
-    y += 20
-
-    # Instructions intro
-    y = self._draw_wrapped_text(x, y, w, tr(INSTRUCTIONS_INTRO), gui_app.font(FontWeight.ROMAN), 32, self.LIGHT_GRAY)
-    y += 20
-
-    # FAQ Header
-    y = self._draw_wrapped_text(x, y, w, tr(FAQ_HEADER), gui_app.font(FontWeight.BOLD), 44, rl.WHITE)
-    y += 20
-
-    # FAQ Items
-    for question, answer in FAQ_ITEMS:
-      y = self._draw_wrapped_text(x, y, w, tr(question), gui_app.font(FontWeight.BOLD), 32, self.LIGHT_GRAY)
-      y = self._draw_wrapped_text(x, y, w, tr(answer), gui_app.font(FontWeight.ROMAN), 32, self.LIGHT_GRAY)
-      y += 20
-
-  def _draw_wrapped_text(self, x, y, width, text, font, font_size, color):
-    wrapped = wrap_text(font, text, font_size, width)
-    for line in wrapped:
-      rl.draw_text_ex(font, line, rl.Vector2(x, y), font_size, 0, color)
-      y += int(font_size * FONT_SCALE)
-    return y
-
-  def _measure_content_height(self, rect: rl.Rectangle) -> int:
-    # Rough measurement using the same wrapping as rendering
-    w = int(rect.width - 80)
-    y = 40
-
-    # Title
-    title_size = 72
-    y += int(title_size * FONT_SCALE) + 20
-
-    # Description
-    desc_lines = wrap_text(gui_app.font(FontWeight.ROMAN), tr(DESCRIPTION), 36, w)
-    y += int(len(desc_lines) * 36 * FONT_SCALE) + 20
-
-    # Separator + Status
-    y += 2 + 20
-    status_text, _ = self._get_status()
-    status_lines = wrap_text(gui_app.font(FontWeight.BOLD), status_text, 48, w)
-    y += int(len(status_lines) * 48 * FONT_SCALE) + 20
-
-    # Contribution count
-    if self._segment_count > 0:
-      contrib_text = trn("{} segment of your driving is in the training dataset so far.",
-                         "{} segments of your driving is in the training dataset so far.", self._segment_count).format(self._segment_count)
-      contrib_lines = wrap_text(gui_app.font(FontWeight.BOLD), contrib_text, 42, w)
-      y += int(len(contrib_lines) * 42 * FONT_SCALE) + 20
-
-    # Separator + Instructions
-    y += 2 + 20
-
-    # Instructions intro
-    intro_lines = wrap_text(gui_app.font(FontWeight.ROMAN), tr(INSTRUCTIONS_INTRO), 32, w)
-    y += int(len(intro_lines) * 32 * FONT_SCALE) + 20
-
-    # FAQ Header
-    faq_header_lines = wrap_text(gui_app.font(FontWeight.BOLD), tr(FAQ_HEADER), 44, w)
-    y += int(len(faq_header_lines) * 44 * FONT_SCALE) + 20
-
-    # FAQ Items
-    for question, answer in FAQ_ITEMS:
-      q_lines = wrap_text(gui_app.font(FontWeight.BOLD), tr(question), 32, w)
-      y += int(len(q_lines) * 32 * FONT_SCALE)
-      a_lines = wrap_text(gui_app.font(FontWeight.ROMAN), tr(answer), 32, w)
-      y += int(len(a_lines) * 32 * FONT_SCALE) + 20
-
-    # bottom padding
-    y += 40
-    return y
+  @staticmethod
+  def _is_active() -> bool:
+    # connected to an unmetered network
+    return not ui_state.sm["deviceState"].networkMetered and ui_state.sm["deviceState"].networkType != 0
 
   def _get_status(self) -> tuple[str, rl.Color]:
-    network_type = ui_state.sm["deviceState"].networkType
-    network_metered = ui_state.sm["deviceState"].networkMetered
-
-    if not network_metered and network_type != 0:  # Not metered and connected
+    if self._is_active():
       return tr("ACTIVE"), self.GREEN
     else:
       return tr("INACTIVE: connect to an unmetered network"), self.RED
@@ -220,5 +94,61 @@ class FirehoseLayoutBase(Widget):
       time.sleep(self.UPDATE_INTERVAL)
 
 
-class FirehoseLayout(NavRawScrollPanel, FirehoseLayoutBase):
-  pass
+class SegmentCountCard(GreyBigButton):
+  def __init__(self):
+    super().__init__(tr("uploaded segments:"), "0")
+    self._label.set_font_weight(FontWeight.DISPLAY_REGULAR)
+    self._sub_label.set_font_weight(FontWeight.BOLD)
+    self._sub_label.set_font_size(64)
+    self._sub_label.set_alignment_vertical(TextAlignmentVertical.BOTTOM)
+    self._sub_label.set_text_color(rl.WHITE)
+
+
+class StatusCard(GreyBigButton):
+  ICON_SIZE = 32
+  ICON_SPACING = 14
+
+  def __init__(self):
+    super().__init__("firehose mode", "", gui_app.texture("icons_mici/settings/firehose.png", 52, 62))
+    self._check_icon = gui_app.texture("icons_mici/setup/driver_monitoring/dm_check.png", self.ICON_SIZE, self.ICON_SIZE)
+    self.active = False
+
+  def _draw_subtitle(self, rect: rl.Rectangle):
+    if not self.active:
+      super()._draw_subtitle(rect)
+      return
+
+    # check to the left of the status text
+    offset = self.ICON_SIZE + self.ICON_SPACING
+    text_rect = rl.Rectangle(rect.x + offset, rect.y, rect.width - offset, rect.height)
+    text_height = self._sub_label.get_content_height(int(text_rect.width))
+    icon_y = rect.y + rect.height - (text_height + self.ICON_SIZE) / 2
+    rl.draw_texture_v(self._check_icon, rl.Vector2(rect.x, icon_y), rl.Color(255, 255, 255, int(255 * 0.9)))
+    super()._draw_subtitle(text_rect)
+
+
+class FirehoseLayout(NavScroller, FirehoseLayoutBase):
+  def __init__(self):
+    super().__init__()
+
+    self._status_card = StatusCard()
+    self._segments_card = SegmentCountCard()
+    self._segments_card.set_visible(lambda: self._segment_count > 0)
+
+    self._scroller.add_widgets([
+      self._status_card,
+      self._segments_card,
+      *[GreyBigButton("", tr(text)) for text in CARDS],
+    ])
+
+  def _update_state(self):
+    super()._update_state()
+
+    self._status_card.active = self._is_active()
+    status_text = tr("active") if self._status_card.active else tr("connect to an\nunmetered network")
+    if self._status_card.get_value() != status_text:
+      self._status_card.set_value(status_text)
+
+    segments_text = f"{self._segment_count:,}"
+    if self._segments_card.get_value() != segments_text:
+      self._segments_card.set_value(segments_text)
