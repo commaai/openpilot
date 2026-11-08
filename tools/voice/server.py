@@ -23,13 +23,14 @@ PORT = int(os.environ.get('PORT', '8765'))
 WAKE = 'clanker'
 # whisper reads the last WIN samples every ASR_HOP, a query ends after END_GAP without new words, END_GAP_OPEN without an end of sentence
 ASR_HOP, WIN, RING = int(0.2 * 16000), 6 * 16000, 12 * 16000
-END_GAP, END_GAP_OPEN = int(0.3 * 16000), int(0.6 * 16000)
+# a question mark ends it soonest, measured on 34 cabin wake queries: 0.50 to 0.35 s median wait with the same cut-offs
+END_GAP, END_GAP_Q, END_GAP_OPEN = int(0.25 * 16000), int(0.2 * 16000), int(0.6 * 16000)
 # quiet time after which the llm is asked ahead of the end of the query
 SPEC_GAP = int(0.1 * 16000)
 # how long a bare wake word waits for the question, longest query
 # after a reply a question without the wake word is answered unless the llm finds it is not for us, alexa listens 5 s and google 8 s.
-# at 0.3, 8 of 10 short follow-ups pass ("what?", "why?") and 1 of 10 cabin lines does ("turn left here")
-BARE_WAIT, MAX_S, FOLLOWUP_S, FOLLOWUP_MIN = 1.5, 10.0, 10.0, 0.3
+# on 368 hand labeled drive and test lines: follow-ups 3 of 47 rejected (2 are a bare thanks), cabin talk 4 of 73 accepted, no made-up lines
+BARE_WAIT, MAX_S, FOLLOWUP_S, FOLLOWUP_MIN = 1.5, 10.0, 10.0, 0.5
 # forced wake word decode log prob that counts as a wake word
 FORCED_MIN, FORCED_GAIN = -0.25, 0.1
 
@@ -52,9 +53,9 @@ def find_wake(text: str):
     if len(w) >= 5 and _edits(w, WAKE) <= 2:
       return m
   return None
-# per device memory: the last questions and answers, across drives
+# per device memory: the last questions and answers, and a few lasting facts the llm keeps up to date, across drives
 MEM_DIR = os.environ.get('MEM_DIR', os.path.expanduser('~/.local/share/voiceserver/memory'))
-TURN_MAX = 10
+TURN_MAX, FACT_MAX = 10, 10
 SYSTEM = "You are clanker, the voice assistant in a car running openpilot. The driver is driving: answer in one or two short spoken sentences, no lists, no markdown, no reasoning. Never tell the driver to look at a phone or screen. If you lack live data, say so in a few words."
 
 whisper = WhisperModel(os.environ.get('WHISPER_MODEL', 'large-v3-turbo'), device='cuda', compute_type='float16', cpu_threads=2)
@@ -131,7 +132,7 @@ def load_mem(dongle: str) -> dict:
   try:
     return json.load(open(os.path.join(MEM_DIR, f'{dongle}.json')))
   except (OSError, ValueError):
-    return {'turns': []}
+    return {'turns': [], 'facts': []}
 
 
 def save_mem(dongle: str, mem: dict) -> None:
@@ -142,11 +143,36 @@ def save_mem(dongle: str, mem: dict) -> None:
   os.replace(path + '.tmp', path)
 
 
+FACTS_PROMPT = (f"You keep a short memory about the driver of a car for its voice assistant. Given the known facts and the latest exchange, "
+                f"return the updated facts as a JSON list of at most {FACT_MAX} short strings: lasting things like name, home, family, car, preferences, "
+                "plans, or anything the driver asked to remember. Drop facts the driver asks to forget. Return the list unchanged if nothing lasting was said. "
+                "Only the JSON list.")
+
+
+async def update_facts(dongle: str, query: str, reply: str) -> None:
+  # after the reply is out, off the critical path
+  mem = load_mem(dongle)
+  body = {'model': LLM_MODEL, 'max_tokens': 300, 'temperature': 0, 'chat_template_kwargs': {'thinking': False},
+          'messages': [{'role': 'system', 'content': FACTS_PROMPT},
+                       {'role': 'user', 'content': f"Facts: {json.dumps(mem.get('facts', []))}\nDriver: {query}\nAssistant: {reply}"}]}
+  try:
+    text = await _llm(session(), body, 10)
+    facts = json.loads(text[text.index('['):text.rindex(']') + 1])
+  except Exception as e:
+    log_event('memory_error', dongle=dongle, error=repr(e))
+    return
+  mem = load_mem(dongle)
+  mem['facts'] = [str(f) for f in facts][:FACT_MAX]
+  save_mem(dongle, mem)
+
+
 def remember(dongle: str, query: str, reply: str) -> None:
   if not dongle:
     return
-  turns = load_mem(dongle)['turns'] + [{'time': time.time(), 'q': query, 'a': reply}]
-  save_mem(dongle, {'turns': turns[-TURN_MAX:]})
+  mem = load_mem(dongle)
+  mem['turns'] = (mem['turns'] + [{'time': time.time(), 'q': query, 'a': reply}])[-TURN_MAX:]
+  save_mem(dongle, mem)
+  asyncio.create_task(update_facts(dongle, query, reply))
 
 
 async def _llm(session, body, timeout: float) -> str:
@@ -181,8 +207,10 @@ def ask(query: str, meta: dict) -> asyncio.Task:
 
 async def llm(session, query: str, mem: dict | None = None) -> str:
   # whole replies take ~0.4 s so they are not streamed, and a request that hangs gets a second one raced against it
-  msgs = [{'role': 'system', 'content': SYSTEM}]
-  for tn in (mem or {'turns': []})['turns']:
+  mem = mem or {'turns': []}
+  facts = mem.get('facts', [])
+  msgs = [{'role': 'system', 'content': SYSTEM + ('\n\nWhat you know about this driver:\n- ' + '\n- '.join(facts) if facts else '')}]
+  for tn in mem['turns']:
     msgs += [{'role': 'user', 'content': tn['q']}, {'role': 'assistant', 'content': tn['a']}]
   msgs.append({'role': 'user', 'content': query})
   body = {'model': LLM_MODEL, 'max_tokens': 400, 'temperature': 0.6, 'chat_template_kwargs': {'thinking': False}, 'messages': msgs}
@@ -323,9 +351,16 @@ async def rescue_wake(ws, ring, base, after, checked) -> int | None:
   return None
 
 
-DIRECTED_PROMPT = ("You decide if speech heard in a car is meant for clanker, the car's voice assistant. People in the car also talk to each other "
-                 "and on the phone, and the radio plays. Answer yes only if the latest sentence is a request or question the assistant should answer now. "
-                 "Answer only yes or no.")
+DIRECTED_PROMPT = ("You decide if speech heard in a car is meant for clanker, the car's voice assistant. A speech recognizer writes down everything the "
+                   'microphone hears: the driver talking to the assistant, people in the car talking to each other or on the phone, the radio and videos, the '
+                   "assistant's own voice, and in quiet or noise it makes up stock lines like \"Thank you.\", \"I'm sorry.\", \"Thanks for watching.\" or the same "
+                   'words over and over.\nAnswer yes if the latest sentence asks the assistant something or tells it to do something, or if it replies to the '
+                   "assistant's last reply: asks it to repeat or explain (\"Huh?\", \"Wait, what?\", \"Why is that?\", \"Repeat that\"), continues its topic (\"And "
+                   'Spain" after a reply about France), or answers a question it asked. A question mark is not needed.\nAnswer no if the sentence does not '
+                   "connect to the assistant's last reply and is not a request to the assistant: people talking to each other about cars, tech or anything else, "
+                   "their reactions to each other (\"cool\", \"wow\", \"that's funny\"), remarks or directions to passengers, short acknowledgments or thanks that "
+                   "need no answer (\"All right.\", \"Okay.\", \"Thank you.\"), phone calls, radio or video speech, made-up lines, or words from the assistant's own "
+                   'reply. With no recent reply, answer yes only for a clear question or request to an assistant.\nAnswer only yes or no.')
 
 
 async def directed(meta: dict, recent: str, sentence: str) -> float:
@@ -362,6 +397,7 @@ async def stream(reader, writer, meta):
   gated = False
   checked: dict[int, tuple[bool, int]] = {}
   scored: set[int] = set()
+  first = True
   spec = None
   rec, rec_t = None, 0.0
   # how far the audio lags real time on the network, and how stale it is when whisper reads it
@@ -438,7 +474,9 @@ async def stream(reader, writer, meta):
       last_asr = pos
       now = time.monotonic()
       link['stale_max'] = max(link['stale_max'], now - rx)
-      w0 = max(base, handled, pos - WIN)
+      # after a reconnect the device resends what it heard while the link was down, read all of it once
+      w0 = max(base, handled, pos - (RING if first else WIN))
+      first = False
       ws = await asyncio.to_thread(words, ring[w0 - base:].copy(), w0)
       t = {'eou': now, 'stt': time.monotonic()}
       link['asr'].append(t['stt'] - now)
@@ -506,7 +544,8 @@ async def stream(reader, writer, meta):
         spec.key, spec.t0 = key, time.monotonic()
         # a follow-up without the wake word is checked alongside, so the check adds no wait and never holds up whisper
         spec.check = asyncio.create_task(directed(meta, query, query)) if follow and gated and not find_wake(query) else None
-      if pos - last_end < (END_GAP if done else END_GAP_OPEN) and pos - start < MAX_S * 16000:
+      gap = END_GAP_OPEN if not done else END_GAP_Q if real[-1][0].strip().endswith('?') else END_GAP
+      if pos - last_end < gap and pos - start < MAX_S * 16000:
         continue
       text = ''.join(w for w, *_ in ws[max(i, 0):]).strip()
       t['gap'] = round((pos - last_end) / 16000, 2)
