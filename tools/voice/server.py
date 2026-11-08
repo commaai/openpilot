@@ -54,8 +54,6 @@ def find_wake(text: str):
 # per device memory: the last questions and answers, across drives
 MEM_DIR = os.environ.get('MEM_DIR', os.path.expanduser('~/.local/share/voiceserver/memory'))
 TURN_MAX = 10
-# wake word free mode: every sentence in the cabin is sent to the llm, so only for devices whose owner agreed
-WAKELESS = {d for d in os.environ.get('WAKELESS_DONGLES', '').split(',') if d}
 SYSTEM = "You are clanker, the voice assistant in a car running openpilot. The driver is driving: answer in one or two short spoken sentences, no lists, no markdown, no reasoning. Never tell the driver to look at a phone or screen. If you lack live data, say so in a few words."
 
 whisper = WhisperModel(os.environ.get('WHISPER_MODEL', 'large-v3-turbo'), device='cuda', compute_type='float16', cpu_threads=2)
@@ -441,8 +439,6 @@ async def stream(reader, writer, meta):
       if i is None:
         k = await rescue_wake(ws, ring, base, handled, checked)
         if k is None:
-          if meta.get('dongle_id') not in WAKELESS:
-            continue
           # the latest finished sentence, scored once
           real = [w for w in ws if not is_noise(w[0])]
           ends = [j for j, w in enumerate(ws[:-1]) if re.search(r'[.?!]$', w[0].strip())]
