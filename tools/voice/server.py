@@ -26,6 +26,9 @@ ASR_HOP, WIN, RING = int(0.2 * 16000), 6 * 16000, 12 * 16000
 # a question mark ends it soonest, whisper also writes a period at a pause mid-sentence so that waits longer.
 # on the 2026-11-08 drives 0.2/0.25/0.6 answered "I'm in San Diego." before "where are the garden centers"
 END_GAP, END_GAP_Q, END_GAP_OPEN = int(0.4 * 16000), int(0.3 * 16000), int(0.7 * 16000)
+# a sentence the llm finds unfinished ("I need something.") waits this long for the driver to go on
+# whisper only writes the next word a few hundred ms into it, so this covers a pause of about 1.5 s
+COMPLETE_MIN, UNFINISHED_GAP = 0.5, int(2.0 * 16000)
 # quiet time after which the llm is asked ahead of the end of the query
 SPEC_GAP = int(0.1 * 16000)
 # how long a bare wake word waits for the question, longest query
@@ -383,6 +386,29 @@ async def directed(meta: dict, recent: str, sentence: str) -> float | None:
   return round(float(yes / (yes + no + 1e-9)), 3)
 
 
+COMPLETE_PROMPT = ("A driver is talking to a car voice assistant. A speech recognizer wrote down what the driver said so far and may have added a period "
+                   "at a pause. Answer yes if this is a complete request or question the assistant can answer now, a short follow-up to its last reply "
+                   "counts as complete, no if the driver most likely paused mid-sentence and will go on. Answer only yes or no.")
+
+
+async def complete(meta: dict, query: str) -> float | None:
+  # probability the llm gives that the driver is done, None when it doesn't answer in time
+  mem = load_mem(meta['dongle_id']) if meta.get('dongle_id') else {'turns': []}
+  last = mem['turns'][-1] if mem['turns'] else None
+  prev = f"Assistant's last reply: {last['a']}\n" if last and time.time() - last['time'] < 120 else ''
+  body = {'model': LLM_MODEL, 'max_tokens': 1, 'temperature': 0, 'logprobs': True, 'top_logprobs': 10, 'chat_template_kwargs': {'thinking': False},
+          'messages': [{'role': 'system', 'content': COMPLETE_PROMPT}, {'role': 'user', 'content': f'{prev}Driver so far: {query}'}]}
+  try:
+    async with session().post(LLM_URL, json=body, timeout=aiohttp.ClientTimeout(total=2)) as r:
+      top = (await r.json())['choices'][0]['logprobs']['content'][0]['top_logprobs']
+  except Exception as e:
+    log_event('complete_error', error=repr(e))
+    return None
+  yes = sum(np.exp(t['logprob']) for t in top if t['token'].strip().lower() == 'yes')
+  no = sum(np.exp(t['logprob']) for t in top if t['token'].strip().lower() == 'no')
+  return round(float(yes / (yes + no + 1e-9)), 3)
+
+
 async def shadow(meta: dict, recent: str, sentence: str) -> None:
   # wake word free trial, log only: answering these replied to people talking to each other (4 of 49 in 5 min)
   log_event('wakeless', dongle=meta.get('dongle_id'), sentence=sentence, p_yes=await directed(meta, recent, sentence))
@@ -536,6 +562,7 @@ async def stream(reader, writer, meta):
         spec.cancel()
         if spec.check is not None:
           spec.check.cancel()
+        spec.complete.cancel()
         spec = None
       # whisper only ends a sentence with . ? or ! after a real pause, a comma or nothing means the driver may go on
       done = re.search(r'(?<!\.)[.?!]$', real[-1][0].strip()) if real else None
@@ -545,9 +572,22 @@ async def stream(reader, writer, meta):
         spec.key, spec.t0 = key, time.monotonic()
         # a follow-up without the wake word is checked alongside, so the check adds no wait and never holds up whisper
         spec.check = asyncio.create_task(directed(meta, query, query)) if follow and gated and not find_wake(query) else None
+        spec.complete = asyncio.create_task(complete(meta, query))
       gap = END_GAP_OPEN if not done else END_GAP_Q if real[-1][0].strip().endswith('?') else END_GAP
       if pos - last_end < gap and pos - start < MAX_S * 16000:
         continue
+      if spec is not None and pos - last_end < UNFINISHED_GAP and pos - start < MAX_S * 16000:
+        # people pause mid-thought and whisper writes a period there, an unfinished sentence gets more time.
+        # the check started with the early answer so it is mostly back by now, a stalled llm ends the turn as before
+        try:
+          p = await asyncio.wait_for(asyncio.shield(spec.complete), 0.5)
+        except Exception:
+          p = None
+        if p is not None and p < COMPLETE_MIN:
+          if not getattr(spec, 'waited', False):
+            spec.waited = True
+            log_event('unfinished', dongle=meta.get('dongle_id'), query=query, p_done=p)
+          continue
       text = ''.join(w for w, *_ in ws[max(i, 0):]).strip()
       t['gap'] = round((pos - last_end) / 16000, 2)
       if spec is not None:
