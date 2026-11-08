@@ -363,8 +363,8 @@ DIRECTED_PROMPT = ("You decide if speech heard in a car is meant for clanker, th
                    'reply. With no recent reply, answer yes only for a clear question or request to an assistant.\nAnswer only yes or no.')
 
 
-async def directed(meta: dict, recent: str, sentence: str) -> float:
-  # probability of the llm's yes, no answer in time is a no
+async def directed(meta: dict, recent: str, sentence: str) -> float | None:
+  # probability of the llm's yes, None when the llm doesn't answer in time
   mem = load_mem(meta['dongle_id']) if meta.get('dongle_id') else {'turns': []}
   last = mem['turns'][-1] if mem['turns'] else None
   prev = f"Assistant's last reply, {time.time() - last['time']:.0f} s ago: {last['a']}\n" if last and time.time() - last['time'] < 120 else ''
@@ -376,7 +376,7 @@ async def directed(meta: dict, recent: str, sentence: str) -> float:
       top = (await r.json())['choices'][0]['logprobs']['content'][0]['top_logprobs']
   except Exception as e:
     log_event('wakeless_error', error=repr(e))
-    return 0.
+    return None
   yes = sum(np.exp(t['logprob']) for t in top if t['token'].strip().lower() == 'yes')
   no = sum(np.exp(t['logprob']) for t in top if t['token'].strip().lower() == 'no')
   return round(float(yes / (yes + no + 1e-9)), 3)
@@ -554,6 +554,9 @@ async def stream(reader, writer, meta):
         t['spec_lead'], t['spec_ready'] = round(t['eou'] - spec.t0, 3), spec.done()
       if follow and gated and not find_wake(query):
         p = await (spec.check if spec is not None and spec.check is not None else directed(meta, text, query))
+        if p is None:
+          # the llm is stalled, a real question still gets its answer, whisper's made-up lines are short statements
+          p = 1. if query.strip().endswith('?') and len(query.split()) >= 3 else 0.
         log_event('followup', dongle=meta.get('dongle_id'), p_yes=p, query=query, answered=p >= FOLLOWUP_MIN)
         if p < FOLLOWUP_MIN:
           if spec is not None:
