@@ -27,8 +27,9 @@ END_GAP, END_GAP_OPEN = int(0.3 * 16000), int(0.6 * 16000)
 # quiet time after which the llm is asked ahead of the end of the query
 SPEC_GAP = int(0.1 * 16000)
 # how long a bare wake word waits for the question, longest query
-# after a reply a question without the wake word is answered when the llm says it is for us, alexa listens 5 s and google 8 s
-BARE_WAIT, MAX_S, FOLLOWUP_S = 1.5, 10.0, 10.0
+# after a reply a question without the wake word is answered unless the llm finds it is not for us, alexa listens 5 s and google 8 s.
+# at 0.3, 8 of 10 short follow-ups pass ("what?", "why?") and 1 of 10 cabin lines does ("turn left here")
+BARE_WAIT, MAX_S, FOLLOWUP_S, FOLLOWUP_MIN = 1.5, 10.0, 10.0, 0.3
 # forced wake word decode log prob that counts as a wake word
 FORCED_MIN, FORCED_GAIN = -0.25, 0.1
 
@@ -184,8 +185,7 @@ async def llm(session, query: str, mem: dict | None = None) -> str:
   for tn in (mem or {'turns': []})['turns']:
     msgs += [{'role': 'user', 'content': tn['q']}, {'role': 'assistant', 'content': tn['a']}]
   msgs.append({'role': 'user', 'content': query})
-  # the llm thinks before it answers and that counts against max_tokens
-  body = {'model': LLM_MODEL, 'max_tokens': 1000, 'temperature': 0.6, 'messages': msgs}
+  body = {'model': LLM_MODEL, 'max_tokens': 400, 'temperature': 0.6, 'chat_template_kwargs': {'thinking': False}, 'messages': msgs}
 
   async def one() -> str:
     text = (await _llm(session, body, 4)).strip()
@@ -328,24 +328,28 @@ DIRECTED_PROMPT = ("You decide if speech heard in a car is meant for clanker, th
                  "Answer only yes or no.")
 
 
-async def directed(meta: dict, recent: str, sentence: str) -> bool:
-  # the llm's yes or no, anything else or no answer in time is a no
+async def directed(meta: dict, recent: str, sentence: str) -> float:
+  # probability of the llm's yes, no answer in time is a no
   mem = load_mem(meta['dongle_id']) if meta.get('dongle_id') else {'turns': []}
   last = mem['turns'][-1] if mem['turns'] else None
   prev = f"Assistant's last reply, {time.time() - last['time']:.0f} s ago: {last['a']}\n" if last and time.time() - last['time'] < 120 else ''
-  body = {'model': LLM_MODEL, 'max_tokens': 300, 'temperature': 0,
+  body = {'model': LLM_MODEL, 'max_tokens': 1, 'temperature': 0, 'logprobs': True, 'top_logprobs': 10, 'chat_template_kwargs': {'thinking': False},
           'messages': [{'role': 'system', 'content': DIRECTED_PROMPT},
                        {'role': 'user', 'content': f'{prev}Recent speech: {recent}\nLatest sentence: {sentence}\nIs the latest sentence for the assistant?'}]}
   try:
-    return (await _llm(session(), body, 3)).strip().lower().startswith('yes')
+    async with session().post(LLM_URL, json=body, timeout=aiohttp.ClientTimeout(total=2)) as r:
+      top = (await r.json())['choices'][0]['logprobs']['content'][0]['top_logprobs']
   except Exception as e:
     log_event('wakeless_error', error=repr(e))
-    return False
+    return 0.
+  yes = sum(np.exp(t['logprob']) for t in top if t['token'].strip().lower() == 'yes')
+  no = sum(np.exp(t['logprob']) for t in top if t['token'].strip().lower() == 'no')
+  return round(float(yes / (yes + no + 1e-9)), 3)
 
 
 async def shadow(meta: dict, recent: str, sentence: str) -> None:
   # wake word free trial, log only: answering these replied to people talking to each other (4 of 49 in 5 min)
-  log_event('wakeless', dongle=meta.get('dongle_id'), sentence=sentence, directed=await directed(meta, recent, sentence))
+  log_event('wakeless', dongle=meta.get('dongle_id'), sentence=sentence, p_yes=await directed(meta, recent, sentence))
 
 
 async def stream(reader, writer, meta):
@@ -491,6 +495,8 @@ async def stream(reader, writer, meta):
       key = re.sub(r"[^a-z0-9' ]", '', query.lower()).split()
       if spec is not None and spec.key != key:
         spec.cancel()
+        if spec.check is not None:
+          spec.check.cancel()
         spec = None
       # whisper only ends a sentence with . ? or ! after a real pause, a comma or nothing means the driver may go on
       done = re.search(r'(?<!\.)[.?!]$', real[-1][0].strip()) if real else None
@@ -498,6 +504,8 @@ async def stream(reader, writer, meta):
         # ask the llm already, the query is most likely done and the answer is ready by the time it is confirmed
         spec = ask(query, meta)
         spec.key, spec.t0 = key, time.monotonic()
+        # a follow-up without the wake word is checked alongside, so the check adds no wait and never holds up whisper
+        spec.check = asyncio.create_task(directed(meta, query, query)) if follow and gated and not find_wake(query) else None
       if pos - last_end < (END_GAP if done else END_GAP_OPEN) and pos - start < MAX_S * 16000:
         continue
       text = ''.join(w for w, *_ in ws[max(i, 0):]).strip()
@@ -506,9 +514,9 @@ async def stream(reader, writer, meta):
         # how long before the end of the query the early answer was asked, and whether it is already done
         t['spec_lead'], t['spec_ready'] = round(t['eou'] - spec.t0, 3), spec.done()
       if follow and gated and not find_wake(query):
-        yes = await directed(meta, text, query)
-        log_event('followup', dongle=meta.get('dongle_id'), query=query, answered=yes)
-        if not yes:
+        p = await (spec.check if spec is not None and spec.check is not None else directed(meta, text, query))
+        log_event('followup', dongle=meta.get('dongle_id'), p_yes=p, query=query, answered=p >= FOLLOWUP_MIN)
+        if p < FOLLOWUP_MIN:
           if spec is not None:
             spec.cancel()
           # the window stays open, whisper often makes up a line from noise in it
