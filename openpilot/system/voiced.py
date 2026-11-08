@@ -20,7 +20,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.system.voice.kws import Kws, SR, WIN
 from openpilot.system.voice.opus import Encoder
 
-CONTEXT_SERVICES = ['gpsLocationExternal', 'gpsLocation', 'carState', 'selfdriveState', 'carParams', 'deviceState', 'navInstruction']
+CAR_SERVICES = ['carParams', 'carState', 'selfdriveState', 'radarState']
 
 State = log.VoiceAssistant.State
 
@@ -93,8 +93,6 @@ class Voiced:
     self.server = (host, int(port or 8781))
     self.kws = Kws(MODEL)
     self.pm = messaging.PubMaster(['voiceAssistant', 'voiceAudioData'])
-    self.sm = messaging.SubMaster(['gpsLocationExternal', 'gpsLocation', 'carState', 'selfdriveState', 'carParams', 'deviceState', 'navInstruction'],
-                                  ignore_alive=CONTEXT_SERVICES, ignore_valid=CONTEXT_SERVICES)
     self.ring: deque[np.ndarray] = deque(maxlen=int(SR * PREROLL_S) // HOP)
     self.pending = np.zeros(0, np.float32)
     self.buf = np.zeros(WIN, np.float32)
@@ -110,31 +108,6 @@ class Voiced:
     self.mic_level, self.out_t0 = 0., 0.
     self.reply_latency_ms = 0.
     self.out_lv: list[float] = []
-
-  def context(self) -> dict:
-    # what the assistant may want to know about the drive, sent with every query
-    sm, ctx = self.sm, {'unix_time': time.time(), 'tz': time.strftime('%z')}  # noqa: TID251 wall clock for the llm
-    gps = next((sm[s] for s in ('gpsLocationExternal', 'gpsLocation') if sm.recv_frame[s] > 0 and sm[s].hasFix), None)
-    if gps is not None:
-      ctx['gps'] = {'lat': round(gps.latitude, 5), 'lon': round(gps.longitude, 5), 'speed_mps': round(gps.speed, 1),
-                    'bearing_deg': round(gps.bearingDeg), 'accuracy_m': round(gps.horizontalAccuracy, 1)}
-    if sm.recv_frame['carState'] > 0:
-      cs = sm['carState']
-      ctx['car'] = {'speed_mps': round(cs.vEgo, 1), 'gear': str(cs.gearShifter), 'cruise_set_mps': round(cs.cruiseState.speed, 1),
-                    'left_blinker': cs.leftBlinker, 'right_blinker': cs.rightBlinker}
-    if sm.recv_frame['carParams'] > 0:
-      ctx.setdefault('car', {})['model'] = sm['carParams'].carFingerprint
-    if sm.recv_frame['selfdriveState'] > 0:
-      ss = sm['selfdriveState']
-      ctx['openpilot'] = {'engaged': ss.enabled, 'personality': str(ss.personality)}
-    if sm.recv_frame['navInstruction'] > 0:
-      ni = sm['navInstruction']
-      ctx['nav'] = {'next': f'{ni.maneuverPrimaryText} {ni.maneuverSecondaryText}'.strip(), 'next_in_m': round(ni.maneuverDistance),
-                    'remaining_m': round(ni.distanceRemaining), 'remaining_s': round(ni.timeRemaining)}
-    if sm.recv_frame['deviceState'] > 0:
-      ds = sm['deviceState']
-      ctx['device'] = {'max_temp_c': round(ds.maxTempC), 'network': str(ds.networkType)}
-    return ctx
 
   def publish(self) -> None:
     msg = messaging.new_message('voiceAssistant', valid=True)
@@ -199,7 +172,7 @@ class Voiced:
     self.publish()
     pre = np.concatenate(list(self.ring)) if wake else np.zeros(0, np.float32)
     s = socket.create_connection(self.server, timeout=5)
-    s.sendall(frame(1, json.dumps({'device': os.uname().nodename, 'score': float(self.score), 'verify': wake, 'context': self.context()}).encode()))
+    s.sendall(frame(1, json.dumps({'device': os.uname().nodename, 'score': float(self.score), 'verify': wake}).encode()))
     s.sendall(frame(2, to_pcm(pre)))
     self.query = {'sock': s, 't_wake': now, 'speech': False, 'last_voice': now, 'wake': wake}
     cloudlog.info(f"voiced: wake score {self.score:.3f} followup {not wake}")
@@ -261,7 +234,6 @@ class Voiced:
     audio = messaging.sub_sock('rawAudioData', conflate=False)
     last_pub = 0.
     while True:
-      self.sm.update(0)
       for m in messaging.drain_sock(audio, wait_for_one=True):
         self.pending = np.concatenate([self.pending, np.frombuffer(m.rawAudioData.data, np.int16).astype(np.float32) / 32768])
       while len(self.pending) >= HOP:
@@ -278,7 +250,6 @@ class Streamer(Voiced):
     host, _, port = server.partition(':')
     self.server = (host, int(port or 8443))
     self.pm = messaging.PubMaster(['voiceAssistant', 'voiceAudioData'])
-    self.sm = messaging.SubMaster(CONTEXT_SERVICES, ignore_alive=CONTEXT_SERVICES, ignore_valid=CONTEXT_SERVICES)
     self.state, self.score, self.transcript, self.reply = State.idle, 0., '', ''
     self.mute_until = 0.0
     self.sock: socket.socket | None = None
@@ -289,17 +260,33 @@ class Streamer(Voiced):
     self.mic_level, self.out_t0 = 0., 0.
     self.out_lv: list[float] = []
     self.dongle_id = Params().get("DongleId")
+    self.metric = Params().get_bool("IsMetric")
+    self.sm = messaging.SubMaster(CAR_SERVICES, ignore_alive=CAR_SERVICES, ignore_valid=CAR_SERVICES)
+    self.car_name = ''
     self.tls = ssl.create_default_context()
+
+  def car(self) -> dict:
+    # what the driver may ask about: which car, how fast, is openpilot driving, the car ahead
+    sm = self.sm
+    if not sm.recv_frame['carState']:
+      return {}
+    if not self.car_name and sm.recv_frame['carParams']:
+      from opendbc.car.values import PLATFORMS
+      p = PLATFORMS.get(sm['carParams'].carFingerprint)
+      self.car_name = p.config.car_docs[0].name if p and p.config.car_docs else sm['carParams'].carFingerprint
+    lead = sm['radarState'].leadOne
+    return {'name': self.car_name, 'speed': round(sm['carState'].vEgo, 1), 'engaged': sm['selfdriveState'].enabled, 'metric': self.metric,
+            'lead': [round(lead.dRel), round(lead.vLead, 1)] if sm.recv_frame['radarState'] and lead.present else None}
 
   def meta(self) -> bytes:
     try:
-      ctx = self.context()
+      car = self.car()
     except Exception:
       # missing car data must never stop the assistant
-      cloudlog.exception("voiced: context failed")
-      ctx = {}
+      cloudlog.exception("voiced: car state failed")
+      car = {}
     # the round trip goes along so the server can log the link
-    return frame(1, json.dumps({'stream': True, 'device': os.uname().nodename, 'context': ctx, 'rtt_ms': round(self.rtt_ms)}).encode())
+    return frame(1, json.dumps({'stream': True, 'rtt_ms': round(self.rtt_ms), 'car': car}).encode())
 
   def connect(self) -> None:
     raw = socket.create_connection(self.server, timeout=5)
@@ -427,7 +414,6 @@ class Streamer(Voiced):
           self.mic_level = level(np.frombuffer(m.rawAudioData.data, np.int16).astype(np.float32) / 32768)
         try:
           if now - last_meta > 1.0:
-            # keep gps and car state fresh for the next query
             s.sendall(self.meta())
             last_meta = now
           if now - last_ping > 1.0:

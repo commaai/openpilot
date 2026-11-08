@@ -10,7 +10,6 @@ import numpy as np
 from faster_whisper import WhisperModel
 from piper import PiperVoice, SynthesisConfig
 import aiohttp
-import reverse_geocoder
 import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -26,9 +25,10 @@ WAKE = 'clanker'
 ASR_HOP, WIN, RING = int(0.2 * 16000), 6 * 16000, 12 * 16000
 END_GAP, END_GAP_OPEN = int(0.3 * 16000), int(0.6 * 16000)
 # quiet time after which the llm is asked ahead of the end of the query
-SPEC_GAP = int(0.2 * 16000)
+SPEC_GAP = int(0.1 * 16000)
 # how long a bare wake word waits for the question, longest query
-BARE_WAIT, MAX_S, FOLLOWUP_S = 1.5, 10.0, 4.0
+# after a reply a question without the wake word counts when the llm is sure it is for us, alexa's follow-up mode also listens 5 s
+BARE_WAIT, MAX_S, FOLLOWUP_S, FOLLOWUP_MIN = 1.5, 10.0, 5.0, 0.9
 # forced wake word decode log prob that counts as a wake word
 FORCED_MIN, FORCED_GAIN = -0.25, 0.1
 
@@ -51,48 +51,21 @@ def find_wake(text: str):
     if len(w) >= 5 and _edits(w, WAKE) <= 2:
       return m
   return None
+# per device memory: the last questions and answers, across drives
+MEM_DIR = os.environ.get('MEM_DIR', os.path.expanduser('~/.local/share/voiceserver/memory'))
+TURN_MAX = 10
+# wake word free trial, log only, every sentence in the cabin is sent to the llm so only for devices whose owner agreed
+SHADOW = {d for d in os.environ.get('SHADOW_DONGLES', '').split(',') if d}
 SYSTEM = "You are clanker, the voice assistant in a car running openpilot. The driver is driving: answer in one or two short spoken sentences, no lists, no markdown, no reasoning. Never tell the driver to look at a phone or screen. If you lack live data, say so in a few words."
 
 whisper = WhisperModel(os.environ.get('WHISPER_MODEL', 'large-v3-turbo'), device='cuda', compute_type='float16', cpu_threads=2)
 whisper.transcribe(np.zeros(16000, np.float32))
 tts = PiperVoice.load(VOICE)
-reverse_geocoder.search((0.0, 0.0), mode=1)
 TTS_SR = tts.config.sample_rate
 HEDGE_S = 0.9
 # live streams skip audio whisper fell behind on, offline evals feed everything at once and need every hop
 SKIP_BACKLOG = True
 PCM_CHUNK = int(0.25 * TTS_SR) * 2
-
-
-def describe(ctx: dict) -> str:
-  # turn the device snapshot into a few facts the model can use, units the driver expects
-  out = []
-  if 'unix_time' in ctx:
-    # the car's clock offset, not the workstation's
-    tz = ctx.get('tz', '+0000')
-    off = (1 if tz[0] == '+' else -1) * (int(tz[1:3]) * 3600 + int(tz[3:5]) * 60)
-    out.append('local time: ' + time.strftime('%A %H:%M', time.gmtime(ctx['unix_time'] + off)))
-  g = ctx.get('gps')
-  if g:
-    p = reverse_geocoder.search((g['lat'], g['lon']), mode=1)[0]
-    out.append(f"position: {g['lat']}, {g['lon']} near {p['name']}, {p['admin1']}, {p['cc']}, heading {g['bearing_deg']} deg")
-  c = ctx.get('car', {})
-  if 'speed_mps' in c:
-    out.append(f"car speed: {c['speed_mps'] * 3.6:.0f} km/h ({c['speed_mps'] * 2.237:.0f} mph), gear {c.get('gear', '?')}")
-  if c.get('cruise_set_mps'):
-    out.append(f"cruise set: {c['cruise_set_mps'] * 3.6:.0f} km/h")
-  if 'model' in c:
-    out.append(f"car: {c['model']}")
-  op = ctx.get('openpilot')
-  if op:
-    out.append(f"openpilot engaged: {op['engaged']}, personality: {op['personality']}")
-  n = ctx.get('nav')
-  if n and n.get('next'):
-    out.append(f"navigation: next '{n['next']}' in {n['next_in_m']} m, {n['remaining_m'] / 1000:.1f} km and {n['remaining_s'] // 60} min to go")
-  d = ctx.get('device')
-  if d:
-    out.append(f"device temperature {d['max_temp_c']} C, network {d['network']}")
-  return '\n'.join(out)
 
 
 _authed: dict[tuple[str, str], float] = {}
@@ -101,6 +74,7 @@ _authed: dict[tuple[str, str], float] = {}
 async def authorized(meta: dict) -> bool:
   # the port is public through tailscale funnel, the device proves who it is with its own comma jwt
   dongle, token = meta.get('dongle_id', ''), meta.get('token', '')
+  print(json.dumps({'connect': dongle, 'device': meta.get('device')}), flush=True)
   if not re.fullmatch(r'[0-9a-f]{16}', dongle) or not token or (ALLOWED and dongle not in ALLOWED):
     return False
   if _authed.get((dongle, token), 0) > time.monotonic():
@@ -154,6 +128,41 @@ def strip_wake(text: str) -> str:
   return text[m.end():].lstrip(' ,.!?') if m else text
 
 
+def car_line(car: dict) -> str:
+  # the device sends raw values once a second, the newest go in front of the question
+  if not car:
+    return ''
+  k, unit, m, dunit = (3.6, 'km/h', 1, 'm') if car.get('metric') else (2.237, 'mph', 3.281, 'ft')
+  out = f"car: {re.sub(r' [0-9-]+$', '', car['name'])}, speed {car['speed'] * k:.0f} {unit}, openpilot {'engaged' if car['engaged'] else 'not engaged'}"
+  lead = car.get('lead')
+  if not lead:
+    return out + ', no lead car'
+  # the lead speed is absolute, 0 means it is standing
+  return out + f", lead car {lead[0] * m:.0f} {dunit} ahead" + (f" at {lead[1] * k:.0f} {unit}" if lead[1] > 0.5 else ', stopped')
+
+
+def load_mem(dongle: str) -> dict:
+  try:
+    return json.load(open(os.path.join(MEM_DIR, f'{dongle}.json')))
+  except (OSError, ValueError):
+    return {'turns': []}
+
+
+def save_mem(dongle: str, mem: dict) -> None:
+  os.makedirs(MEM_DIR, exist_ok=True)
+  path = os.path.join(MEM_DIR, f'{dongle}.json')
+  with open(path + '.tmp', 'w') as f:
+    json.dump(mem, f)
+  os.replace(path + '.tmp', path)
+
+
+def remember(dongle: str, query: str, reply: str) -> None:
+  if not dongle:
+    return
+  turns = load_mem(dongle)['turns'] + [{'time': time.time(), 'q': query, 'a': reply}]
+  save_mem(dongle, {'turns': turns[-TURN_MAX:]})
+
+
 async def _kimi(session, body, timeout: float) -> str:
   async with session.post(KIMI_URL, json=body, timeout=aiohttp.ClientTimeout(total=timeout)) as r:
     return (await r.json())['choices'][0]['message']['content'] or ''
@@ -162,18 +171,37 @@ async def _kimi(session, body, timeout: float) -> str:
 _session = None
 
 
-def ask(query: str, meta: dict) -> asyncio.Task:
+def session() -> aiohttp.ClientSession:
   global _session
   if _session is None:
     _session = aiohttp.ClientSession()
-  return asyncio.create_task(kimi(_session, query, describe(meta.get('context', {}))))
+  return _session
 
 
-async def kimi(session, query: str, ctx: str = '') -> str:
+def sentences(reply: str) -> list[str]:
+  return [s.strip() for s in re.split(r'(?<=[.!?])\s+(?=[A-Z0-9])', reply) if s.strip()]
+
+
+async def answer(query: str, meta: dict) -> tuple[str, bytes]:
+  # the first sentence is synthesized right away so a speculative answer is ready to play at the end of the query
+  reply = await kimi(session(), query, load_mem(meta['dongle_id']) if meta.get('dongle_id') else None, car_line(meta.get('car', {})))
+  first = sentences(reply)[:1]
+  return reply, await asyncio.to_thread(synth, first[0]) if first else b''
+
+
+def ask(query: str, meta: dict) -> asyncio.Task:
+  return asyncio.create_task(answer(query, meta))
+
+
+async def kimi(session, query: str, mem: dict | None = None, car: str = '') -> str:
   # whole replies take ~0.4 s so they are not streamed: kimi sometimes leaks its reasoning before a <|...|> marker,
   # and a request that hangs gets a second one raced against it
-  body = {'model': KIMI_MODEL, 'max_tokens': 400, 'temperature': 0.6, 'chat_template_kwargs': {'thinking': False},
-          'messages': [{'role': 'system', 'content': SYSTEM + ('\n\nLive data from the car, use it when relevant:\n' + ctx if ctx else '')}, {'role': 'user', 'content': query}]}
+  msgs = [{'role': 'system', 'content': SYSTEM}]
+  for tn in (mem or {'turns': []})['turns']:
+    msgs += [{'role': 'user', 'content': tn['q']}, {'role': 'assistant', 'content': tn['a']}]
+  # live car data last so the cached prefix holds
+  msgs.append({'role': 'user', 'content': f'({car})\n{query}' if car else query})
+  body = {'model': KIMI_MODEL, 'max_tokens': 400, 'temperature': 0.6, 'chat_template_kwargs': {'thinking': False}, 'messages': msgs}
 
   async def one() -> str:
     text = await _kimi(session, body, 4)
@@ -182,8 +210,9 @@ async def kimi(session, query: str, ctx: str = '') -> str:
       raise ValueError('empty reply')
     return text
 
+  # one hedge only, a slow kimi is mostly a busy kimi and more requests make that worse
   tasks = [asyncio.create_task(one())]
-  for hedge in (HEDGE_S, HEDGE_S, 2.0):
+  for hedge in (HEDGE_S, 3.0):
     done, _ = await asyncio.wait(tasks, timeout=hedge, return_when=asyncio.FIRST_COMPLETED)
     for d in done:
       tasks.remove(d)
@@ -223,13 +252,11 @@ async def respond(writer, text, meta, t, query='', bare=False, spec=None) -> str
     await writer.drain()
     return 'followup'
   writer.write(frame(12, json.dumps({'sample_rate': TTS_SR}).encode()))
-  reply = await (spec if spec is not None else ask(query, meta))
+  reply, first_pcm = await (spec if spec is not None else ask(query, meta))
   t['llm'] = time.monotonic()
   # speak sentence by sentence so the first one goes out while the rest is synthesized
-  for sent in re.split(r'(?<=[.!?])\s+(?=[A-Z0-9])', reply):
-    if not sent.strip():
-      continue
-    pcm_out = await asyncio.to_thread(synth, sent)
+  for k, sent in enumerate(sentences(reply)):
+    pcm_out = first_pcm if k == 0 else await asyncio.to_thread(synth, sent)
     t.setdefault('tts_first', time.monotonic())
     # the text goes right before its audio so the caption follows the voice
     writer.write(frame(12, json.dumps({'say': sent.strip()}).encode()))
@@ -237,12 +264,12 @@ async def respond(writer, text, meta, t, query='', bare=False, spec=None) -> str
     for i in range(0, len(pcm_out), PCM_CHUNK):
       writer.write(frame(11, pcm_out[i:i + PCM_CHUNK]))
       await writer.drain()
-  lat = {k: round(v - t['eou'], 3) if k != 'gap' else v for k, v in t.items() if k != 'eou'}
+  lat = {k: round(v - t['eou'], 3) if k not in ('gap', 'spec_lead', 'spec_ready') else v for k, v in t.items() if k != 'eou'}
   writer.write(frame(12, json.dumps({'reply': reply, 'latency': lat}).encode()))
   writer.write(frame(13, b'{}'))
   await writer.drain()
-  log_event('reply', id=rid, dongle=meta.get('dongle_id'), transcript=text, query=query, reply=reply, latency=lat,
-            context=meta.get('context', {}))
+  log_event('reply', id=rid, dongle=meta.get('dongle_id'), transcript=text, query=query, reply=reply, latency=lat, car=meta.get('car'))
+  remember(meta.get('dongle_id', ''), query, reply)
   return 'done'
 
 
@@ -313,13 +340,46 @@ async def rescue_wake(ws, ring, base, after, checked) -> int | None:
   return None
 
 
+SHADOW_PROMPT = ("You decide if speech heard in a car is meant for clanker, the car's voice assistant. People in the car also talk to each other "
+                 "and on the phone, and the radio plays. Answer yes only if the latest sentence is a request or question the assistant should answer now. "
+                 "Answer only yes or no.")
+
+
+async def directed(meta: dict, recent: str, sentence: str) -> float:
+  # probability the llm gives that the sentence is meant for the assistant
+  mem = load_mem(meta['dongle_id']) if meta.get('dongle_id') else {'turns': []}
+  last = mem['turns'][-1] if mem['turns'] else None
+  prev = f"Assistant's last reply, {time.time() - last['time']:.0f} s ago: {last['a']}\n" if last and time.time() - last['time'] < 120 else ''
+  body = {'model': KIMI_MODEL, 'max_tokens': 1, 'temperature': 0, 'logprobs': True, 'top_logprobs': 10, 'chat_template_kwargs': {'thinking': False},
+          'messages': [{'role': 'system', 'content': SHADOW_PROMPT},
+                       {'role': 'user', 'content': f'{prev}Recent speech: {recent}\nLatest sentence: {sentence}\nIs the latest sentence for the assistant?'}]}
+  async with session().post(KIMI_URL, json=body, timeout=aiohttp.ClientTimeout(total=5)) as r:
+    top = (await r.json())['choices'][0]['logprobs']['content'][0]['top_logprobs']
+  yes = sum(np.exp(t['logprob']) for t in top if t['token'].strip().lower() == 'yes')
+  no = sum(np.exp(t['logprob']) for t in top if t['token'].strip().lower() == 'no')
+  return round(float(yes / (yes + no + 1e-9)), 3)
+
+
+async def shadow(meta: dict, recent: str, sentence: str) -> None:
+  # wake word free trial: score every finished sentence without the wake word, log it, never answer
+  t0 = time.monotonic()
+  try:
+    p = await directed(meta, recent, sentence)
+    log_event('wakeless', dongle=meta.get('dongle_id'), p_yes=p, sentence=sentence, recent=recent, ms=round((time.monotonic() - t0) * 1000))
+  except Exception as e:
+    log_event('wakeless_error', error=repr(e))
+
+
 async def stream(reader, writer, meta):
   # the device streams the mic nonstop and whisper reads the last few seconds every ASR_HOP: a wake word that starts after
   # the last handled request opens a query, and the query is done once whisper hears no new words for END_GAP
   ring = np.zeros(0, np.float32)
   base = pos = handled = last_asr = 0
   followup_until, woke = -1, -1
+  # a follow-up after "Yes?" was asked for, one after a reply has to be meant for us
+  gated = False
   checked: dict[int, tuple[bool, int]] = {}
+  scored: set[int] = set()
   spec = None
   rec, rec_t = None, 0.0
   # how far the audio lags real time on the network, and how stale it is when whisper reads it
@@ -356,7 +416,7 @@ async def stream(reader, writer, meta):
         typ, payload = 2, opus.decode(payload)
       n = len(payload)
       if typ == 1:
-        # keep the auth fields and the last reply id, the device only refreshes its context
+        # keep the auth fields and the last reply id, the device only refreshes its link stats
         meta = {**meta, **json.loads(payload)}
         continue
       if typ == 5:
@@ -406,6 +466,17 @@ async def stream(reader, writer, meta):
       if i is None:
         k = await rescue_wake(ws, ring, base, handled, checked)
         if k is None:
+          if meta.get('dongle_id') not in SHADOW:
+            continue
+          # the latest finished sentence, scored once
+          real = [w for w in ws if not is_noise(w[0])]
+          ends = [j for j, w in enumerate(ws[:-1]) if re.search(r'[.?!]$', w[0].strip())]
+          sent = ws[ends[-1] + 1:] if ends else ws
+          if real and sent and re.search(r'(?<!\.)[.?!]$', ws[-1][0].strip()) and pos - real[-1][2] >= END_GAP and \
+             not any(ws[-1][2] // 4800 + d in scored for d in (-1, 0, 1)) and not is_noise(''.join(w for w, *_ in sent)):
+            # keyed by where the sentence ends, its start slides out of the window
+            scored.add(ws[-1][2] // 4800)
+            asyncio.create_task(shadow(meta, ''.join(w for w, *_ in ws).strip(), ''.join(w for w, *_ in sent).strip()))
           continue
         # the misheard word and anything glued to it become the wake word
         nxt = ws[k + 1:]
@@ -437,28 +508,48 @@ async def stream(reader, writer, meta):
           continue
         # a bare wake word and nothing after it, ask
         await respond(writer, ''.join(w for w, *_ in ws[max(i, 0):]).strip(), meta, t, bare=True)
-        followup_until, handled = pos + int(FOLLOWUP_S * 16000), pos
+        followup_until, handled, gated = pos + int(FOLLOWUP_S * 16000), pos, False
         ring, base = np.zeros(0, np.float32), pos
         continue
-      if spec is not None and spec.query != query:
+      # whisper flips punctuation and case between hops, the same words keep the early answer
+      key = re.sub(r"[^a-z0-9' ]", '', query.lower()).split()
+      if spec is not None and spec.key != key:
         spec.cancel()
         spec = None
-      if spec is None and pos - last_end >= SPEC_GAP:
-        # ask the llm already, the query is most likely done and the answer is ready by the time it is confirmed
-        spec = ask(query, meta)
-        spec.query = query
       # whisper only ends a sentence with . ? or ! after a real pause, a comma or nothing means the driver may go on
       done = re.search(r'(?<!\.)[.?!]$', real[-1][0].strip()) if real else None
+      if spec is None and (done or pos - last_end >= SPEC_GAP):
+        # ask the llm already, the query is most likely done and the answer is ready by the time it is confirmed
+        spec = ask(query, meta)
+        spec.key, spec.t0 = key, time.monotonic()
       if pos - last_end < (END_GAP if done else END_GAP_OPEN) and pos - start < MAX_S * 16000:
         continue
       text = ''.join(w for w, *_ in ws[max(i, 0):]).strip()
       t['gap'] = round((pos - last_end) / 16000, 2)
+      if spec is not None:
+        # how long before the end of the query the early answer was asked, and whether it is already done
+        t['spec_lead'], t['spec_ready'] = round(t['eou'] - spec.t0, 3), spec.done()
       followup_until = -1
+      if follow and gated:
+        try:
+          p = await directed(meta, text, query)
+        except Exception as e:
+          log_event('wakeless_error', error=repr(e))
+          p = 0.
+        log_event('followup', dongle=meta.get('dongle_id'), p_yes=p, query=query, answered=p >= FOLLOWUP_MIN)
+        if p < FOLLOWUP_MIN:
+          if spec is not None:
+            spec.cancel()
+          spec, handled = None, pos
+          ring, base = np.zeros(0, np.float32), pos
+          continue
       # the device stops streaming while it plays the reply, so it never hears itself
       await respond(writer, text, meta, t, query=query, spec=spec)
       spec = None
       handled = pos
       ring, base = np.zeros(0, np.float32), pos
+      # the device pauses the mic while it speaks, so the window starts when it listens again
+      followup_until, gated = pos + int(FOLLOWUP_S * 16000), True
   finally:
     reader_task.cancel()
 
