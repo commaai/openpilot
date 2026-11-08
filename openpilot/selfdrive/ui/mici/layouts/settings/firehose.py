@@ -111,17 +111,19 @@ class StatusCard(GreyBigButton):
   def __init__(self):
     super().__init__("firehose mode", "", gui_app.texture("icons_mici/settings/firehose.png", 52, 62))
     self._check_icon = gui_app.texture("icons_mici/setup/driver_monitoring/dm_check.png", self.ICON_SIZE, self.ICON_SIZE)
-    self._x_icon = gui_app.texture("icons_mici/setup/cancel.png", self.ICON_SIZE, self.ICON_SIZE)
     self.active = False
 
   def _draw_subtitle(self, rect: rl.Rectangle):
-    # check or X to the left of the status text
-    icon = self._check_icon if self.active else self._x_icon
+    if not self.active:
+      super()._draw_subtitle(rect)
+      return
+
+    # check to the left of the status text
     offset = self.ICON_SIZE + self.ICON_SPACING
     text_rect = rl.Rectangle(rect.x + offset, rect.y, rect.width - offset, rect.height)
     text_height = self._sub_label.get_content_height(int(text_rect.width))
-    icon_y = rect.y + rect.height - (text_height + icon.height) / 2
-    rl.draw_texture_v(icon, rl.Vector2(rect.x, icon_y), rl.Color(255, 255, 255, int(255 * 0.9)))
+    icon_y = rect.y + rect.height - (text_height + self.ICON_SIZE) / 2
+    rl.draw_texture_v(self._check_icon, rl.Vector2(rect.x, icon_y), rl.Color(255, 255, 255, int(255 * 0.9)))
     super()._draw_subtitle(text_rect)
 
 
@@ -143,7 +145,7 @@ class FirehoseLayout(NavScroller, FirehoseLayoutBase):
     super()._update_state()
 
     self._status_card.active = self._is_active()
-    status_text = tr("active") if self._status_card.active else tr("inactive: connect to\nan unmetered network")
+    status_text = tr("active") if self._status_card.active else tr("connect to an\nunmetered network")
     if self._status_card.get_value() != status_text:
       self._status_card.set_value(status_text)
 
