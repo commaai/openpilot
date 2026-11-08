@@ -458,6 +458,13 @@ def upload(objects):
       if existing[key] != size:
         raise RuntimeError(f"invalid bucket object {oid}: size {existing[key]}, expected {size}")
       continue
+    path = object_path(oid)
+    if not valid(path, size):
+      # e.g. pushing someone else's branch to a fork: there's nothing here to upload
+      print(f"lfs.py: skipping {oid}: not in {BUCKET} and not stored locally", file=sys.stderr)
+      continue
+    if hash_file(path) != oid:
+      raise RuntimeError(f"local sha256 mismatch for {oid}")
     pending[oid] = size
   if not pending:
     return
@@ -465,12 +472,6 @@ def upload(objects):
     from hf_xet import upload_files
   except ImportError:
     raise RuntimeError("Missing hf-xet: run 'uv sync' and activate .venv.") from None
-  for oid, size in pending.items():
-    path = object_path(oid)
-    if not valid(path, size):
-      raise RuntimeError(f"missing local LFS object {oid}")
-    if hash_file(path) != oid:
-      raise RuntimeError(f"local sha256 mismatch for {oid}")
   upload_xet(pending, upload_files)
   uploaded = object_info(pending)
   for oid, size in pending.items():
