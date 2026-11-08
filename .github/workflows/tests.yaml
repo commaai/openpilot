@@ -120,6 +120,8 @@ jobs:
       || fromJSON('["ubuntu-24.04"]') }}
     steps:
     - uses: actions/checkout@v7
+      with:
+        fetch-depth: 50  # to find the nearest ancestor with refs
     - run: ./tools/op.sh setup
     - name: Build openpilot
       run: scons
@@ -160,19 +162,18 @@ jobs:
       run: |
         git config user.name "GitHub Actions Bot"
         git config user.email "<>"
-        git fetch origin process-replay || true
-        git checkout process-replay 2>/dev/null || git checkout --orphan process-replay
+        git checkout --orphan process-replay-${{ github.sha }}
+        git rm -rf --quiet .
         cp ${{ github.workspace }}/openpilot/selfdrive/test/process_replay/fakedata/*.zst .
-        echo "${{ github.sha }}" > ref_commit
         git add .
-        git commit -m "process-replay refs for ${{ github.repository }}@${{ github.sha }}" || echo "No changes to commit"
+        git commit -m "process-replay refs for ${{ github.repository }}@${{ github.sha }}"
     - name: Push refs
       if: github.repository == 'commaai/openpilot' && github.ref == 'refs/heads/master'
       uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60
       with:
         timeout_minutes: 2
         max_attempts: 3
-        command: cd ${{ github.workspace }}/ci-artifacts && git push origin process-replay --force
+        command: cd ${{ github.workspace }}/ci-artifacts && git push origin process-replay-${{ github.sha }} --force
 
   simulator_driving:
     name: simulator driving

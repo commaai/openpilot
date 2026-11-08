@@ -79,6 +79,30 @@ jobs:
           ```
         labels: bot
 
+  prune_process_replay_refs:
+    name: prune process replay refs
+    runs-on: ubuntu-latest
+    if: >-
+      github.repository == 'commaai/openpilot' &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        fetch-depth: 500
+    - uses: actions/checkout@v7
+      with:
+        repository: commaai/ci-artifacts
+        ssh-key: ${{ secrets.CI_ARTIFACTS_DEPLOY_KEY }}
+        path: ci-artifacts
+    - name: delete refs older than the last 500 master commits
+      run: |
+        keep=$(git rev-list --first-parent HEAD | sed 's/^/process-replay-/')
+        cd ci-artifacts
+        stale=$(git ls-remote --heads origin 'process-replay-*' | sed 's|.*refs/heads/||' | grep -vxF -f <(echo "$keep") || true)
+        if [ -n "$stale" ]; then
+          git push origin --delete $stale
+        fi
+
   cleanup_closed_branches:
     if: github.repository == 'commaai/openpilot' && github.event_name == 'pull_request'
     runs-on: ubuntu-latest
