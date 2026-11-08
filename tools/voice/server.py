@@ -13,8 +13,8 @@ import aiohttp
 import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-KIMI_URL = os.environ['KIMI_URL']
-KIMI_MODEL = os.environ.get('KIMI_MODEL', '/models/kimi-k3')
+LLM_URL = os.environ['LLM_URL']
+LLM_MODEL = os.environ['LLM_MODEL']
 # comma dongle ids allowed to talk to this server, any registered comma device when unset
 ALLOWED = {d for d in os.environ.get('VOICE_DONGLES', '').split(',') if d}
 COMMA_API = 'https://api.commadotai.com'
@@ -27,9 +27,8 @@ END_GAP, END_GAP_OPEN = int(0.3 * 16000), int(0.6 * 16000)
 # quiet time after which the llm is asked ahead of the end of the query
 SPEC_GAP = int(0.1 * 16000)
 # how long a bare wake word waits for the question, longest query
-# after a reply a question without the wake word counts unless the llm finds it is not for us, alexa's follow-up mode also listens 5 s.
-# at 0.3, 8 of 10 short follow-ups pass ("what?", "why?") and 1 of 10 cabin lines does ("turn left here")
-BARE_WAIT, MAX_S, FOLLOWUP_S, FOLLOWUP_MIN = 1.5, 10.0, 5.0, 0.3
+# after a reply a question without the wake word is answered when the llm says it is for us, alexa listens 5 s and google 8 s
+BARE_WAIT, MAX_S, FOLLOWUP_S = 1.5, 10.0, 10.0
 # forced wake word decode log prob that counts as a wake word
 FORCED_MIN, FORCED_GAIN = -0.25, 0.1
 
@@ -55,8 +54,8 @@ def find_wake(text: str):
 # per device memory: the last questions and answers, across drives
 MEM_DIR = os.environ.get('MEM_DIR', os.path.expanduser('~/.local/share/voiceserver/memory'))
 TURN_MAX = 10
-# wake word free trial, log only, every sentence in the cabin is sent to the llm so only for devices whose owner agreed
-SHADOW = {d for d in os.environ.get('SHADOW_DONGLES', '').split(',') if d}
+# wake word free mode: every sentence in the cabin is sent to the llm, so only for devices whose owner agreed
+WAKELESS = {d for d in os.environ.get('WAKELESS_DONGLES', '').split(',') if d}
 SYSTEM = "You are clanker, the voice assistant in a car running openpilot. The driver is driving: answer in one or two short spoken sentences, no lists, no markdown, no reasoning. Never tell the driver to look at a phone or screen. If you lack live data, say so in a few words."
 
 whisper = WhisperModel(os.environ.get('WHISPER_MODEL', 'large-v3-turbo'), device='cuda', compute_type='float16', cpu_threads=2)
@@ -151,8 +150,8 @@ def remember(dongle: str, query: str, reply: str) -> None:
   save_mem(dongle, {'turns': turns[-TURN_MAX:]})
 
 
-async def _kimi(session, body, timeout: float) -> str:
-  async with session.post(KIMI_URL, json=body, timeout=aiohttp.ClientTimeout(total=timeout)) as r:
+async def _llm(session, body, timeout: float) -> str:
+  async with session.post(LLM_URL, json=body, timeout=aiohttp.ClientTimeout(total=timeout)) as r:
     return (await r.json())['choices'][0]['message']['content'] or ''
 
 
@@ -172,7 +171,7 @@ def sentences(reply: str) -> list[str]:
 
 async def answer(query: str, meta: dict) -> tuple[str, bytes]:
   # the first sentence is synthesized right away so a speculative answer is ready to play at the end of the query
-  reply = await kimi(session(), query, load_mem(meta['dongle_id']) if meta.get('dongle_id') else None)
+  reply = await llm(session(), query, load_mem(meta['dongle_id']) if meta.get('dongle_id') else None)
   first = sentences(reply)[:1]
   return reply, await asyncio.to_thread(synth, first[0]) if first else b''
 
@@ -181,23 +180,22 @@ def ask(query: str, meta: dict) -> asyncio.Task:
   return asyncio.create_task(answer(query, meta))
 
 
-async def kimi(session, query: str, mem: dict | None = None) -> str:
-  # whole replies take ~0.4 s so they are not streamed: kimi sometimes leaks its reasoning before a <|...|> marker,
-  # and a request that hangs gets a second one raced against it
+async def llm(session, query: str, mem: dict | None = None) -> str:
+  # whole replies take ~0.4 s so they are not streamed, and a request that hangs gets a second one raced against it
   msgs = [{'role': 'system', 'content': SYSTEM}]
   for tn in (mem or {'turns': []})['turns']:
     msgs += [{'role': 'user', 'content': tn['q']}, {'role': 'assistant', 'content': tn['a']}]
   msgs.append({'role': 'user', 'content': query})
-  body = {'model': KIMI_MODEL, 'max_tokens': 400, 'temperature': 0.6, 'chat_template_kwargs': {'thinking': False}, 'messages': msgs}
+  # the llm thinks before it answers and that counts against max_tokens
+  body = {'model': LLM_MODEL, 'max_tokens': 1000, 'temperature': 0.6, 'messages': msgs}
 
   async def one() -> str:
-    text = await _kimi(session, body, 4)
-    text = re.split(r'<\|[^|]*\|>', text)[-1].strip()
+    text = (await _llm(session, body, 4)).strip()
     if not text:
       raise ValueError('empty reply')
     return text
 
-  # one hedge only, a slow kimi is mostly a busy kimi and more requests make that worse
+  # one hedge only, a slow llm is mostly a busy llm and more requests make that worse
   tasks = [asyncio.create_task(one())]
   for hedge in (HEDGE_S, 3.0):
     done, _ = await asyncio.wait(tasks, timeout=hedge, return_when=asyncio.FIRST_COMPLETED)
@@ -327,34 +325,24 @@ async def rescue_wake(ws, ring, base, after, checked) -> int | None:
   return None
 
 
-SHADOW_PROMPT = ("You decide if speech heard in a car is meant for clanker, the car's voice assistant. People in the car also talk to each other "
+DIRECTED_PROMPT = ("You decide if speech heard in a car is meant for clanker, the car's voice assistant. People in the car also talk to each other "
                  "and on the phone, and the radio plays. Answer yes only if the latest sentence is a request or question the assistant should answer now. "
                  "Answer only yes or no.")
 
 
-async def directed(meta: dict, recent: str, sentence: str) -> float:
-  # probability the llm gives that the sentence is meant for the assistant
+async def directed(meta: dict, recent: str, sentence: str) -> bool:
+  # the llm's yes or no, anything else or no answer in time is a no
   mem = load_mem(meta['dongle_id']) if meta.get('dongle_id') else {'turns': []}
   last = mem['turns'][-1] if mem['turns'] else None
   prev = f"Assistant's last reply, {time.time() - last['time']:.0f} s ago: {last['a']}\n" if last and time.time() - last['time'] < 120 else ''
-  body = {'model': KIMI_MODEL, 'max_tokens': 1, 'temperature': 0, 'logprobs': True, 'top_logprobs': 10, 'chat_template_kwargs': {'thinking': False},
-          'messages': [{'role': 'system', 'content': SHADOW_PROMPT},
+  body = {'model': LLM_MODEL, 'max_tokens': 300, 'temperature': 0,
+          'messages': [{'role': 'system', 'content': DIRECTED_PROMPT},
                        {'role': 'user', 'content': f'{prev}Recent speech: {recent}\nLatest sentence: {sentence}\nIs the latest sentence for the assistant?'}]}
-  async with session().post(KIMI_URL, json=body, timeout=aiohttp.ClientTimeout(total=5)) as r:
-    top = (await r.json())['choices'][0]['logprobs']['content'][0]['top_logprobs']
-  yes = sum(np.exp(t['logprob']) for t in top if t['token'].strip().lower() == 'yes')
-  no = sum(np.exp(t['logprob']) for t in top if t['token'].strip().lower() == 'no')
-  return round(float(yes / (yes + no + 1e-9)), 3)
-
-
-async def shadow(meta: dict, recent: str, sentence: str) -> None:
-  # wake word free trial: score every finished sentence without the wake word, log it, never answer
-  t0 = time.monotonic()
   try:
-    p = await directed(meta, recent, sentence)
-    log_event('wakeless', dongle=meta.get('dongle_id'), p_yes=p, sentence=sentence, recent=recent, ms=round((time.monotonic() - t0) * 1000))
+    return (await _llm(session(), body, 3)).strip().lower().startswith('yes')
   except Exception as e:
     log_event('wakeless_error', error=repr(e))
+    return False
 
 
 async def stream(reader, writer, meta):
@@ -453,7 +441,7 @@ async def stream(reader, writer, meta):
       if i is None:
         k = await rescue_wake(ws, ring, base, handled, checked)
         if k is None:
-          if meta.get('dongle_id') not in SHADOW:
+          if meta.get('dongle_id') not in WAKELESS:
             continue
           # the latest finished sentence, scored once
           real = [w for w in ws if not is_noise(w[0])]
@@ -463,7 +451,16 @@ async def stream(reader, writer, meta):
              not any(ws[-1][2] // 4800 + d in scored for d in (-1, 0, 1)) and not is_noise(''.join(w for w, *_ in sent)):
             # keyed by where the sentence ends, its start slides out of the window
             scored.add(ws[-1][2] // 4800)
-            asyncio.create_task(shadow(meta, ''.join(w for w, *_ in ws).strip(), ''.join(w for w, *_ in sent).strip()))
+            sentence = ''.join(w for w, *_ in sent).strip()
+            yes = await directed(meta, ''.join(w for w, *_ in ws).strip(), sentence)
+            log_event('wakeless', dongle=meta.get('dongle_id'), sentence=sentence, answered=yes)
+            if not yes:
+              continue
+            t['gap'] = round((pos - real[-1][2]) / 16000, 2)
+            await respond(writer, sentence, meta, t, query=sentence)
+            handled = pos
+            ring, base = np.zeros(0, np.float32), pos
+            followup_until, gated = pos + int(FOLLOWUP_S * 16000), True
           continue
         # the misheard word and anything glued to it become the wake word
         nxt = ws[k + 1:]
@@ -516,20 +513,17 @@ async def stream(reader, writer, meta):
       if spec is not None:
         # how long before the end of the query the early answer was asked, and whether it is already done
         t['spec_lead'], t['spec_ready'] = round(t['eou'] - spec.t0, 3), spec.done()
-      followup_until = -1
       if follow and gated and not find_wake(query):
-        try:
-          p = await directed(meta, text, query)
-        except Exception as e:
-          log_event('wakeless_error', error=repr(e))
-          p = 0.
-        log_event('followup', dongle=meta.get('dongle_id'), p_yes=p, query=query, answered=p >= FOLLOWUP_MIN)
-        if p < FOLLOWUP_MIN:
+        yes = await directed(meta, text, query)
+        log_event('followup', dongle=meta.get('dongle_id'), query=query, answered=yes)
+        if not yes:
           if spec is not None:
             spec.cancel()
+          # the window stays open, whisper often makes up a line from noise in it
           spec, handled = None, pos
           ring, base = np.zeros(0, np.float32), pos
           continue
+      followup_until = -1
       # the device stops streaming while it plays the reply, so it never hears itself
       await respond(writer, text, meta, t, query=query, spec=spec)
       spec = None
