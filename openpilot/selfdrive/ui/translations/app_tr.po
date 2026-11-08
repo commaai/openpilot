@@ -120,7 +120,7 @@ msgstr "BAĞLAN"
 
 #: openpilot/system/ui/widgets/network.py
 msgid "CONNECTING..."
-msgstr "BAĞLAN"
+msgstr "BAĞLANIYOR..."
 
 #: openpilot/selfdrive/ui/layouts/settings/device.py
 msgid "Cabin Camera"
