@@ -34,6 +34,29 @@ CEREAL_SERVICES = [f for f in log.Event.schema.union_fields if f in SERVICE_LIST
                    and SERVICE_LIST[f].should_log and "encode" not in f.lower()]
 
 
+def _forensics(why):
+  import glob, sys, threading
+  def sh(c):
+    return subprocess.run(c, shell=True, capture_output=True, text=True).stdout
+  out = [f"FORENSIC ===== {why} ====="]
+  pfx = os.environ.get("OPENPILOT_PREFIX")
+  path = f"/tmp/{pfx}_visionipc_camerad"
+  out.append(f"prefix={pfx} expected={path} exists={os.path.exists(path)}")
+  out.append(f"tmp visionipc files: {glob.glob('/tmp/*visionipc_camerad*')}")
+  out.append(f"python pid={os.getpid()} threads={[t.name for t in threading.enumerate()]}")
+  out.append("native tasks: " + sh(f"for t in /proc/{os.getpid()}/task/*; do echo $(basename $t) $(cat $t/comm) $(cat $t/wchan); done | tr '\\n' ';'"))
+  out.append("ss listeners:\n" + sh("ss -xlp | grep -i visionipc"))
+  p = managed_processes["encoderd"].proc
+  if p is not None:
+    pid = p.pid
+    out.append(f"encoderd pid={pid} exitcode={p.exitcode}")
+    out.append(sh(f"cat /proc/{pid}/status | head -8; cat /proc/{pid}/cmdline | tr '\\0' ' '; echo; tr '\\0' '\\n' < /proc/{pid}/environ | grep -E 'PREFIX|MANAGER'"))
+    out.append(sh(f"for t in /proc/{pid}/task/*; do echo $(basename $t) $(cat $t/comm) $(cat $t/wchan) $(cat $t/syscall | cut -d' ' -f1); done"))
+    out.append(sh(f"ls -l /proc/{pid}/fd"))
+    out.append(sh(f"ss -xp | grep 'pid={pid},'"))
+  print("\n".join(out), file=sys.stderr, flush=True)
+
+
 class TestLoggerd(OpenpilotTestCase):
   def _get_latest_log_dir(self):
     log_dirs = sorted(Path(Paths.log_root()).iterdir(), key=lambda f: f.stat().st_mtime)
@@ -152,9 +175,15 @@ class TestLoggerd(OpenpilotTestCase):
         assert pm.wait_for_readers_to_update(state, timeout=5, dt=0.001)
 
       sm.update(100)  # wait for encode data publish
+      if n == 60 and sm.recv_frame['narrowRoadEncodeData'] == 0:
+        _forensics("no encode data after 60 frames")
 
+    if sm.recv_frame['narrowRoadEncodeData'] == 0:
+      _forensics("no encode data at end")
     managed_processes["loggerd"].stop()
-    managed_processes["encoderd"].stop()
+    ret = managed_processes["encoderd"].stop()
+    import sys
+    print(f"FORENSIC encoderd exit={ret} encode_frames={sm.recv_frame['narrowRoadEncodeData']}", file=sys.stderr, flush=True)
 
   def test_init_data_values(self):
     os.environ["CLEAN"] = random.choice(["0", "1"])

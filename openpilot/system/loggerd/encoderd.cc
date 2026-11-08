@@ -1,4 +1,7 @@
 #include <cassert>
+#include <cerrno>
+#include <cstring>
+#include <unistd.h>
 #ifdef __COMMA_HARDWARE__
 #include <exception>
 #include <stdexcept>
@@ -79,6 +82,8 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
   int cur_seg = 0;
   while (!do_exit) {
     if (!vipc_client.connect(false)) {
+      static std::atomic<int> fails = 0;
+      if (++fails % 100 == 1) fprintf(stderr, "FORENSIC encoderd %s connect fail %d errno=%d\n", cam_info.thread_name, (int)fails, errno);
       util::sleep_for(5);
       continue;
     }
@@ -87,6 +92,7 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
     if (encoders.empty()) {
       const VisionBuf &buf_info = vipc_client.buffers[0];
       LOGW("encoder %s init %zux%zu", cam_info.thread_name, buf_info.width, buf_info.height);
+      fprintf(stderr, "FORENSIC encoderd %s init %zux%zu\n", cam_info.thread_name, buf_info.width, buf_info.height);
       assert(buf_info.width > 0 && buf_info.height > 0);
 
       for (const auto &encoder_info : cam_info.encoder_infos) {
@@ -166,13 +172,21 @@ void encoderd_thread(const LogCameraInfo (&cameras)[N]) {
   EncoderdState s;
 
   std::set<VisionStreamType> streams;
+  int tries = 0;
+  const char *pfx = getenv("OPENPILOT_PREFIX");
+  fprintf(stderr, "FORENSIC encoderd start pid=%d prefix=%s\n", getpid(), pfx ? pfx : "(null)");
   while (!do_exit) {
     streams = VisionIpcClient::getAvailableStreams("camerad", false);
+    int err = errno;
+    ++tries;
     if (!streams.empty()) {
+      fprintf(stderr, "FORENSIC encoderd got %zu streams after %d tries\n", streams.size(), tries);
       break;
     }
+    if (tries % 10 == 1) fprintf(stderr, "FORENSIC encoderd no streams try=%d errno=%d (%s)\n", tries, err, strerror(err));
     util::sleep_for(100);
   }
+  fprintf(stderr, "FORENSIC encoderd stream loop done do_exit=%d tries=%d\n", (int)do_exit, tries);
 
   if (!streams.empty()) {
     std::vector<std::thread> encoder_threads;
@@ -189,6 +203,7 @@ void encoderd_thread(const LogCameraInfo (&cameras)[N]) {
 }
 
 int main(int argc, char* argv[]) {
+  setvbuf(stdout, NULL, _IOLBF, 0);
 #ifdef __COMMA_HARDWARE__
   if (argc > 1 && std::string(argv[1]) == "--clip") {
     if (argc < 6) {
@@ -237,5 +252,6 @@ int main(int argc, char* argv[]) {
   } else {
     encoderd_thread(cameras_logged);
   }
+  fprintf(stderr, "FORENSIC encoderd exiting normally\n");
   return 0;
 }

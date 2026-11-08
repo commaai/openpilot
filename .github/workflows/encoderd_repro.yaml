@@ -1,0 +1,48 @@
+name: encoderd repro
+
+on:
+  push:
+    branches:
+      - encoderd-flake-repro
+
+env:
+  CI: 1
+  PYTHONPATH: ${{ github.workspace }}
+  GIT_CONFIG_COUNT: 1
+  GIT_CONFIG_KEY_0: lfs.fetchexclude
+  GIT_CONFIG_VALUE_0: openpilot/selfdrive/modeld/models/big_driving_tinygrad.pkl
+
+jobs:
+  loop:
+    name: loop ${{ matrix.shard }}
+    runs-on: namespace-profile-amd64-8x16
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+    steps:
+    - uses: actions/checkout@v7
+    - run: ./tools/op.sh setup
+    - name: Build openpilot
+      run: scons
+    - name: env
+      run: nproc; ldd --version | head -1; uname -a; cat /etc/os-release | head -2; python3 --version
+    - name: Loop unit tests
+      timeout-minutes: 40
+      env:
+        RAYLIB_BACKEND: headless
+      run: |
+        fails=0
+        for i in $(seq 1 35); do
+          if ! tools/op.sh test > out_$i.txt 2>&1; then
+            fails=$((fails+1))
+            echo "=== iteration $i FAILED ==="
+            grep -E "FAILED|ERROR|passed" out_$i.txt
+            if grep -q "test_loggerd" out_$i.txt; then
+              sed -n '/FAILED openpilot.system.loggerd/,/slowest tests/p' out_$i.txt
+            fi
+          else
+            echo "iteration $i ok: $(tail -1 out_$i.txt)"
+          fi
+        done
+        echo "TOTAL suite failures: $fails"
