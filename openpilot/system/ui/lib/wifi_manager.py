@@ -166,7 +166,8 @@ class WifiManager:
       _wrap_router(self._router_main)
       self._conn_monitor = open_dbus_connection_blocking(bus="SYSTEM")  # used by state monitor thread
       self._nm = DBusAddress(NM_PATH, bus_name=NM, interface=NM_IFACE)
-    except FileNotFoundError:
+    except Exception:
+      # missing, or too slow to answer: AGNOS runs D-Bus in the background, which can be starved or out of memory
       cloudlog.exception("Failed to connect to system D-Bus")
       self._router_main = None
       self._conn_monitor = None
