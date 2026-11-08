@@ -20,8 +20,6 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.system.voice.kws import Kws, SR, WIN
 from openpilot.system.voice.opus import Encoder
 
-CAR_SERVICES = ['carParams', 'carState', 'selfdriveState', 'radarState']
-
 State = log.VoiceAssistant.State
 
 MODEL = os.path.join(BASEDIR, 'openpilot/system/voice/kws.npz')
@@ -260,33 +258,11 @@ class Streamer(Voiced):
     self.mic_level, self.out_t0 = 0., 0.
     self.out_lv: list[float] = []
     self.dongle_id = Params().get("DongleId")
-    self.metric = Params().get_bool("IsMetric")
-    self.sm = messaging.SubMaster(CAR_SERVICES, ignore_alive=CAR_SERVICES, ignore_valid=CAR_SERVICES)
-    self.car_name = ''
     self.tls = ssl.create_default_context()
 
-  def car(self) -> dict:
-    # what the driver may ask about: which car, how fast, is openpilot driving, the car ahead
-    sm = self.sm
-    if not sm.recv_frame['carState']:
-      return {}
-    if not self.car_name and sm.recv_frame['carParams']:
-      from opendbc.car.values import PLATFORMS
-      p = PLATFORMS.get(sm['carParams'].carFingerprint)
-      self.car_name = p.config.car_docs[0].name if p and p.config.car_docs else sm['carParams'].carFingerprint
-    lead = sm['radarState'].leadOne
-    return {'name': self.car_name, 'speed': round(sm['carState'].vEgo, 1), 'engaged': sm['selfdriveState'].enabled, 'metric': self.metric,
-            'lead': [round(lead.dRel), round(lead.vLead, 1)] if sm.recv_frame['radarState'] and lead.present else None}
-
   def meta(self) -> bytes:
-    try:
-      car = self.car()
-    except Exception:
-      # missing car data must never stop the assistant
-      cloudlog.exception("voiced: car state failed")
-      car = {}
     # the round trip goes along so the server can log the link
-    return frame(1, json.dumps({'stream': True, 'rtt_ms': round(self.rtt_ms), 'car': car}).encode())
+    return frame(1, json.dumps({'stream': True, 'rtt_ms': round(self.rtt_ms)}).encode())
 
   def connect(self) -> None:
     raw = socket.create_connection(self.server, timeout=5)
@@ -386,7 +362,6 @@ class Streamer(Voiced):
     audio = messaging.sub_sock('rawAudioData', conflate=False)
     last_pub = last_meta = last_try = last_ping = 0.
     while True:
-      self.sm.update(0)
       now = time.monotonic()
       if self.sock is not None and self.ping_sent is not None and now >= self.mute_until:
         # an unanswered ping shows as a growing round trip, too long and we reconnect

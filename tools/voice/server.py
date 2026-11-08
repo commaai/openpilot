@@ -27,8 +27,9 @@ END_GAP, END_GAP_OPEN = int(0.3 * 16000), int(0.6 * 16000)
 # quiet time after which the llm is asked ahead of the end of the query
 SPEC_GAP = int(0.1 * 16000)
 # how long a bare wake word waits for the question, longest query
-# after a reply a question without the wake word counts when the llm is sure it is for us, alexa's follow-up mode also listens 5 s
-BARE_WAIT, MAX_S, FOLLOWUP_S, FOLLOWUP_MIN = 1.5, 10.0, 5.0, 0.9
+# after a reply a question without the wake word counts unless the llm finds it is not for us, alexa's follow-up mode also listens 5 s.
+# at 0.3, 8 of 10 short follow-ups pass ("what?", "why?") and 1 of 10 cabin lines does ("turn left here")
+BARE_WAIT, MAX_S, FOLLOWUP_S, FOLLOWUP_MIN = 1.5, 10.0, 5.0, 0.3
 # forced wake word decode log prob that counts as a wake word
 FORCED_MIN, FORCED_GAIN = -0.25, 0.1
 
@@ -128,19 +129,6 @@ def strip_wake(text: str) -> str:
   return text[m.end():].lstrip(' ,.!?') if m else text
 
 
-def car_line(car: dict) -> str:
-  # the device sends raw values once a second, the newest go in front of the question
-  if not car:
-    return ''
-  k, unit, m, dunit = (3.6, 'km/h', 1, 'm') if car.get('metric') else (2.237, 'mph', 3.281, 'ft')
-  out = f"car: {re.sub(r' [0-9-]+$', '', car['name'])}, speed {car['speed'] * k:.0f} {unit}, openpilot {'engaged' if car['engaged'] else 'not engaged'}"
-  lead = car.get('lead')
-  if not lead:
-    return out + ', no lead car'
-  # the lead speed is absolute, 0 means it is standing
-  return out + f", lead car {lead[0] * m:.0f} {dunit} ahead" + (f" at {lead[1] * k:.0f} {unit}" if lead[1] > 0.5 else ', stopped')
-
-
 def load_mem(dongle: str) -> dict:
   try:
     return json.load(open(os.path.join(MEM_DIR, f'{dongle}.json')))
@@ -184,7 +172,7 @@ def sentences(reply: str) -> list[str]:
 
 async def answer(query: str, meta: dict) -> tuple[str, bytes]:
   # the first sentence is synthesized right away so a speculative answer is ready to play at the end of the query
-  reply = await kimi(session(), query, load_mem(meta['dongle_id']) if meta.get('dongle_id') else None, car_line(meta.get('car', {})))
+  reply = await kimi(session(), query, load_mem(meta['dongle_id']) if meta.get('dongle_id') else None)
   first = sentences(reply)[:1]
   return reply, await asyncio.to_thread(synth, first[0]) if first else b''
 
@@ -193,14 +181,13 @@ def ask(query: str, meta: dict) -> asyncio.Task:
   return asyncio.create_task(answer(query, meta))
 
 
-async def kimi(session, query: str, mem: dict | None = None, car: str = '') -> str:
+async def kimi(session, query: str, mem: dict | None = None) -> str:
   # whole replies take ~0.4 s so they are not streamed: kimi sometimes leaks its reasoning before a <|...|> marker,
   # and a request that hangs gets a second one raced against it
   msgs = [{'role': 'system', 'content': SYSTEM}]
   for tn in (mem or {'turns': []})['turns']:
     msgs += [{'role': 'user', 'content': tn['q']}, {'role': 'assistant', 'content': tn['a']}]
-  # live car data last so the cached prefix holds
-  msgs.append({'role': 'user', 'content': f'({car})\n{query}' if car else query})
+  msgs.append({'role': 'user', 'content': query})
   body = {'model': KIMI_MODEL, 'max_tokens': 400, 'temperature': 0.6, 'chat_template_kwargs': {'thinking': False}, 'messages': msgs}
 
   async def one() -> str:
@@ -268,7 +255,7 @@ async def respond(writer, text, meta, t, query='', bare=False, spec=None) -> str
   writer.write(frame(12, json.dumps({'reply': reply, 'latency': lat}).encode()))
   writer.write(frame(13, b'{}'))
   await writer.drain()
-  log_event('reply', id=rid, dongle=meta.get('dongle_id'), transcript=text, query=query, reply=reply, latency=lat, car=meta.get('car'))
+  log_event('reply', id=rid, dongle=meta.get('dongle_id'), transcript=text, query=query, reply=reply, latency=lat)
   remember(meta.get('dongle_id', ''), query, reply)
   return 'done'
 
@@ -530,7 +517,7 @@ async def stream(reader, writer, meta):
         # how long before the end of the query the early answer was asked, and whether it is already done
         t['spec_lead'], t['spec_ready'] = round(t['eou'] - spec.t0, 3), spec.done()
       followup_until = -1
-      if follow and gated:
+      if follow and gated and not find_wake(query):
         try:
           p = await directed(meta, text, query)
         except Exception as e:
