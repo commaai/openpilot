@@ -23,8 +23,9 @@ PORT = int(os.environ.get('PORT', '8765'))
 WAKE = 'clanker'
 # whisper reads the last WIN samples every ASR_HOP, a query ends after END_GAP without new words, END_GAP_OPEN without an end of sentence
 ASR_HOP, WIN, RING = int(0.2 * 16000), 6 * 16000, 12 * 16000
-# a question mark ends it soonest, measured on 34 cabin wake queries: 0.50 to 0.35 s median wait with the same cut-offs
-END_GAP, END_GAP_Q, END_GAP_OPEN = int(0.25 * 16000), int(0.2 * 16000), int(0.6 * 16000)
+# a question mark ends it soonest, whisper also writes a period at a pause mid-sentence so that waits longer.
+# on the 2026-11-08 drives 0.2/0.25/0.6 answered "I'm in San Diego." before "where are the garden centers"
+END_GAP, END_GAP_Q, END_GAP_OPEN = int(0.4 * 16000), int(0.3 * 16000), int(0.7 * 16000)
 # quiet time after which the llm is asked ahead of the end of the query
 SPEC_GAP = int(0.1 * 16000)
 # how long a bare wake word waits for the question, longest query
