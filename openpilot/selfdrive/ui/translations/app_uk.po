@@ -120,7 +120,7 @@ msgstr "ПІДКЛЮЧИТИ"
 
 #: openpilot/system/ui/widgets/network.py
 msgid "CONNECTING..."
-msgstr "ПІДКЛЮЧА..."
+msgstr "ПІДКЛЮЧАЮ..."
 
 #: openpilot/selfdrive/ui/layouts/settings/device.py
 msgid "Cabin Camera"
@@ -413,7 +413,7 @@ msgstr "ПОКАЖИ"
 
 #: openpilot/selfdrive/ui/widgets/prime.py
 msgid "PRIME FEATURES:"
-msgstr "XАРАКТЕРИСТИКИ PRIME:"
+msgstr "ХАРАКТЕРИСТИКИ PRIME:"
 
 #: openpilot/selfdrive/ui/layouts/settings/device.py
 msgid "Pair Device"
@@ -764,7 +764,7 @@ msgstr "оновлено, ніколи не перевірялось"
 
 #: openpilot/selfdrive/ui/layouts/settings/software.py
 msgid "up to date, last checked {}"
-msgstr "оновлено, перевірив {}"
+msgstr "оновлено, перевірено {}"
 
 #: openpilot/selfdrive/ui/layouts/settings/software.py
 msgid "update available"
@@ -787,14 +787,14 @@ msgstr[2] "{} днів тому"
 #: openpilot/selfdrive/ui/layouts/settings/software.py
 msgid "{} hour ago"
 msgid_plural "{} hours ago"
-msgstr[0] "{} година тому"
+msgstr[0] "{} годину тому"
 msgstr[1] "{} години тому"
 msgstr[2] "{} годин тому"
 
 #: openpilot/selfdrive/ui/layouts/settings/software.py
 msgid "{} minute ago"
 msgid_plural "{} minutes ago"
-msgstr[0] "{} хвилина тому"
+msgstr[0] "{} хвилину тому"
 msgstr[1] "{} хвилини тому"
 msgstr[2] "{} хвилин тому"
 
