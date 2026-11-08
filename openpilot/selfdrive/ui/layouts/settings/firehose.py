@@ -28,6 +28,11 @@ class FirehoseLayout(FirehoseLayoutBase):
   def __init__(self):
     super().__init__()
     self._scroll_panel = GuiScrollPanel()
+    self._content_height = 0
+
+  def show_event(self):
+    super().show_event()
+    self._scroll_panel.set_offset(0)
 
   def _render(self, rect: rl.Rectangle):
     # Calculate content dimensions
