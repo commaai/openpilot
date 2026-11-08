@@ -343,6 +343,11 @@ async def directed(meta: dict, recent: str, sentence: str) -> bool:
     return False
 
 
+async def shadow(meta: dict, recent: str, sentence: str) -> None:
+  # wake word free trial, log only: answering these replied to people talking to each other (4 of 49 in 5 min)
+  log_event('wakeless', dongle=meta.get('dongle_id'), sentence=sentence, directed=await directed(meta, recent, sentence))
+
+
 async def stream(reader, writer, meta):
   # the device streams the mic nonstop and whisper reads the last few seconds every ASR_HOP: a wake word that starts after
   # the last handled request opens a query, and the query is done once whisper hears no new words for END_GAP
@@ -447,16 +452,7 @@ async def stream(reader, writer, meta):
              not any(ws[-1][2] // 4800 + d in scored for d in (-1, 0, 1)) and not is_noise(''.join(w for w, *_ in sent)):
             # keyed by where the sentence ends, its start slides out of the window
             scored.add(ws[-1][2] // 4800)
-            sentence = ''.join(w for w, *_ in sent).strip()
-            yes = await directed(meta, ''.join(w for w, *_ in ws).strip(), sentence)
-            log_event('wakeless', dongle=meta.get('dongle_id'), sentence=sentence, answered=yes)
-            if not yes:
-              continue
-            t['gap'] = round((pos - real[-1][2]) / 16000, 2)
-            await respond(writer, sentence, meta, t, query=sentence)
-            handled = pos
-            ring, base = np.zeros(0, np.float32), pos
-            followup_until, gated = pos + int(FOLLOWUP_S * 16000), True
+            asyncio.create_task(shadow(meta, ''.join(w for w, *_ in ws).strip(), ''.join(w for w, *_ in sent).strip()))
           continue
         # the misheard word and anything glued to it become the wake word
         nxt = ws[k + 1:]
