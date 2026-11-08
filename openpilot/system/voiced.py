@@ -282,8 +282,10 @@ class Streamer(Voiced):
     auth = {'stream': True, 'dongle_id': self.dongle_id, 'token': Api(self.dongle_id).get_token(expiry_hours=24)}
     s.sendall(frame(1, json.dumps(auth).encode()))
     s.sendall(self.meta())
+    # opus like the live stream, raw audio is 8x bigger and on a weak uplink held up the pings until the watchdog reconnected again
     # list() copies the deque in one step, the main loop keeps appending to it while this thread connects
-    s.sendall(frame(2, b''.join(d for t, d in list(self.recent) if t >= self.last_pong)))
+    for pkt in self.encoder.encode(b''.join(d for t, d in list(self.recent) if t >= self.last_pong)):
+      s.sendall(frame(6, pkt))
     self.sock = s
     threading.Thread(target=self.recv_thread, args=(s,), daemon=True).start()
     cloudlog.info(f"voiced: streaming to {self.server}")
