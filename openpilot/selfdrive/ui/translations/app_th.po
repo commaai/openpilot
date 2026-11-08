@@ -74,7 +74,7 @@ msgstr "เห็นด้วย"
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Always-On Driver Monitoring"
-msgstr "การตรวจสอบไดรเวอร์ตลอดเวลา"
+msgstr "การตรวจสอบผู้ขับขี่ตลอดเวลา"
 
 #: openpilot/selfdrive/ui/layouts/settings/device.py
 msgid "Are you sure you want to power off?"
@@ -247,7 +247,7 @@ msgstr "เปิดใช้งานการปล่อยสัญญาณ
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Enable driver monitoring even when openpilot is not engaged."
-msgstr "เปิดใช้งานการตรวจสอบไดรเวอร์แม้ว่าจะไม่ได้ใช้งาน openpilot ก็ตาม"
+msgstr "เปิดใช้งานการตรวจสอบผู้ขับขี่แม้ว่าจะไม่ได้ใช้งาน openpilot ก็ตาม"
 
 #: openpilot/selfdrive/ui/layouts/settings/toggles.py
 msgid "Enable openpilot"
@@ -352,7 +352,7 @@ msgstr ""
 
 #: openpilot/selfdrive/ui/layouts/settings/developer.py
 msgid "Longitudinal Maneuver Mode"
-msgstr "โหมดการซ้อมรบตามยาว"
+msgstr "โหมดทดสอบการควบคุมตามยาว"
 
 #: openpilot/selfdrive/ui/onroad/hud_renderer.py
 msgid "MAX"
