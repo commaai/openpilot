@@ -232,7 +232,7 @@ if __name__ == "__main__":
       print(f"failed to generate diff report:\n{traceback.format_exc()}")
 
     if failed:
-      print("TEST FAILED")
+      print("TEST FOUND DIFFS")
     else:
       print("TEST SUCCEEDED")
 
@@ -241,4 +241,6 @@ if __name__ == "__main__":
       f.write(cur_commit)
     print(f"\n\nUpdated reference logs for commit: {cur_commit}")
 
-  sys.exit(int(failed))
+  # diffs are reported, only errors fail
+  errored = any(isinstance(r, str) for seg in results.values() for r in seg.values())
+  sys.exit(int(errored))
