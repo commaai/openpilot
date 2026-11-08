@@ -282,9 +282,9 @@ static inline int taps(float u, float lo, float hi, int n, int bilinear, int *a,
 
 // raylib's DrawTexturePro: source rect of src drawn into dest rect rotated around origin.
 // src is premultiplied RGBA, or an alpha mask when a8. negative source size flips
-void cr_blit(const uint8_t *src, int sw, int sh, int sstride, int a8, float sx, float sy, float sws, float shs,
+void cr_blit(const uint8_t *src, int sw, int sh, int sstride, int a8, float sx, float sy, float src_w, float src_h,
              float dx, float dy, float dw, float dh, float ox, float oy, float rotation, uint32_t tint, int bilinear) {
-  if (dw <= 0 || dh <= 0 || sws == 0 || shs == 0) return;
+  if (dw <= 0 || dh <= 0 || src_w == 0 || src_h == 0) return;
   uint32_t t = premultiply(tint);
   float cs = cosf(rotation * 0.01745329f), sn = sinf(rotation * 0.01745329f);
   // dest corners
@@ -300,10 +300,10 @@ void cr_blit(const uint8_t *src, int sw, int sh, int sstride, int a8, float sx, 
   int iy1 = MIN(px0(MAX(MAX(ys[0], ys[1]), MAX(ys[2], ys[3]))), T.y1);
   if (ix0 >= ix1 || iy0 >= iy1) return;
   // screen -> source texel: u = bu + x*u0x + y*u0y
-  float su = sws / dw, sv = shs / dh;
+  float su = src_w / dw, sv = src_h / dh;
   float u0x = cs * su, u0y = sn * su, v0x = -sn * sv, v0y = cs * sv;
-  float bu = (sws < 0 ? sx - sws : sx) + ox * su, bv = (shs < 0 ? sy - shs : sy) + oy * sv;
-  float hu = sx + fabsf(sws), hv = sy + fabsf(shs);
+  float bu = (src_w < 0 ? sx - src_w : sx) + ox * su, bv = (src_h < 0 ? sy - src_h : sy) + oy * sv;
+  float hu = sx + fabsf(src_w), hv = sy + fabsf(src_h);
   int xa, xb, ya, yb;
   uint32_t wx, wy;
   if (rotation == 0) {  // texel columns and rows are separable, and u increases along the row
