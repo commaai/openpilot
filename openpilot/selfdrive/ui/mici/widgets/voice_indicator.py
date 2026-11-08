@@ -48,6 +48,14 @@ class _Anim:
 
 
 _anim = _Anim()
+# the ping belongs to the driving view, not to home or settings drawn over it
+_frame = {'n': 0, 'onroad': -1}
+
+
+def onroad_shown(rect: rl.Rectangle) -> None:
+  # called by the onroad view each frame it draws, only counts when it fills the screen and isn't scrolled aside
+  if abs(rect.x) < 1:
+    _frame['onroad'] = _frame['n']
 
 
 def _source() -> tuple[int | None, float, str, str]:
@@ -158,6 +166,9 @@ def _draw_top(rect: rl.Rectangle) -> None:
     rtt = float(DEMO_RTT)
   elif ui_state.sm.alive["voiceAssistant"]:
     rtt = ui_state.sm["voiceAssistant"].serverRttMs
+  elif ui_state.started:
+    # voiced not heard from while driving, say so instead of hiding
+    rtt = 0.
   else:
     return
   # openpilot's own messages use the top of the screen
@@ -189,7 +200,9 @@ def draw_voice_indicator(rect: rl.Rectangle) -> None:
   elif not _anim.idle_since:
     _anim.idle_since = now
 
-  _draw_top(rect)
+  if _frame['onroad'] == _frame['n'] or DEMO is not None:
+    _draw_top(rect)
+  _frame['n'] += 1
   # nothing to show once the drive is over
   if not ui_state.started and DEMO is None:
     _anim.rows = ('', '')

@@ -35,6 +35,9 @@ SELF_MUTE_S = 0.7  # the speaker keeps playing after we stop sending
 OUT_CHUNK_S = 0.25
 # no ping answer for this long and the link is dead, cell links often drop without a reset
 LINK_TIMEOUT_S = 5.0
+# sent again after a reconnect, what the mic heard since the server last answered a ping, so a question asked while the
+# link was down still reaches the server and nothing it already heard is answered twice
+RESEND_S = 10.0
 LEVEL_HOP_S = 0.05
 SAMPLE_RATES = (16000, 22050, 24000, 48000)
 
@@ -258,6 +261,8 @@ class Streamer(Voiced):
     self.mic_level, self.out_t0 = 0., 0.
     self.out_lv: list[float] = []
     self.dongle_id = Params().get("DongleId")
+    self.recent: deque[tuple[float, bytes]] = deque(maxlen=int(RESEND_S * SR / 1600))
+    self.last_pong = 0.
     self.tls = ssl.create_default_context()
 
   def meta(self) -> bytes:
@@ -277,6 +282,8 @@ class Streamer(Voiced):
     auth = {'stream': True, 'dongle_id': self.dongle_id, 'token': Api(self.dongle_id).get_token(expiry_hours=24)}
     s.sendall(frame(1, json.dumps(auth).encode()))
     s.sendall(self.meta())
+    # list() copies the deque in one step, the main loop keeps appending to it while this thread connects
+    s.sendall(frame(2, b''.join(d for t, d in list(self.recent) if t >= self.last_pong)))
     self.sock = s
     threading.Thread(target=self.recv_thread, args=(s,), daemon=True).start()
     cloudlog.info(f"voiced: streaming to {self.server}")
@@ -347,7 +354,7 @@ class Streamer(Voiced):
             timing = {}
           self.mute_until = self.speak_until + SELF_MUTE_S
         elif t == 14:
-          self.rtt_ms, self.ping_sent = (now - struct.unpack('<d', p)[0]) * 1000, None
+          self.rtt_ms, self.ping_sent, self.last_pong = (now - struct.unpack('<d', p)[0]) * 1000, None, now
     except Exception:
       cloudlog.exception("voiced: stream closed")
       if self.state in (State.listening, State.thinking):
@@ -358,9 +365,16 @@ class Streamer(Voiced):
         self.sock = None
       self.mute_until, self.state, self.rtt_ms = 0.0, State.idle, 0.
 
+  def try_connect(self) -> None:
+    try:
+      self.connect()
+    except Exception:
+      cloudlog.warning(f"voiced: server {self.server} unreachable")
+
   def run(self) -> None:
     audio = messaging.sub_sock('rawAudioData', conflate=False)
     last_pub = last_meta = last_try = last_ping = 0.
+    connecting: threading.Thread | None = None
     while True:
       now = time.monotonic()
       if self.sock is not None and self.ping_sent is not None and now >= self.mute_until:
@@ -375,15 +389,17 @@ class Streamer(Voiced):
           except OSError:
             pass
           dead.close()
-      if self.sock is None and now - last_try > 2.0:
+      if self.sock is None and now - last_try > 2.0 and (connecting is None or not connecting.is_alive()):
+        # a connect can block for seconds on a dead link, the loop keeps publishing so the ui shows offline instead of freezing
         last_try = now
-        try:
-          self.connect()
-        except Exception:
-          cloudlog.warning(f"voiced: server {self.server} unreachable")
+        connecting = threading.Thread(target=self.try_connect, daemon=True)
+        connecting.start()
       for m in messaging.drain_sock(audio, wait_for_one=True):
         s = self.sock
-        if s is None or time.monotonic() < self.mute_until:
+        if time.monotonic() < self.mute_until:
+          continue
+        self.recent.append((time.monotonic(), m.rawAudioData.data))
+        if s is None:
           continue
         if self.state == State.listening:
           self.mic_level = level(np.frombuffer(m.rawAudioData.data, np.int16).astype(np.float32) / 32768)

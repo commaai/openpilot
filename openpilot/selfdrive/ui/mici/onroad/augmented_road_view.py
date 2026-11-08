@@ -19,6 +19,7 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.common.filter_simple import BounceFilter, FirstOrderFilter
 from openpilot.common.transformations.camera import DEVICE_CAMERAS, DeviceCameraConfig, view_frame_from_device_frame
 from openpilot.common.transformations.orientation import rot_from_euler
+from openpilot.selfdrive.ui.mici.widgets.voice_indicator import onroad_shown
 from enum import IntEnum
 
 OpState = log.SelfdriveState.OpenpilotState
@@ -205,6 +206,7 @@ class AugmentedRoadView(CameraView):
       super()._handle_mouse_release(mouse_pos)
 
   def _render(self, rect: rl.Rectangle):
+    onroad_shown(rect)
     # Draw text if not onroad
     if not ui_state.started:
       rl.draw_rectangle_rec(self.rect, rl.BLACK)
