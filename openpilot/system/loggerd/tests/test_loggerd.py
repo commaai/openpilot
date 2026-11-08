@@ -117,7 +117,7 @@ class TestLoggerd(OpenpilotTestCase):
       (VisionStreamType.VISION_STREAM_WIDE_ROAD, frame_spec, "wideRoadCameraState"),
     ]
 
-    # before the VisionIpcServer listener thread starts, it calls getenv() which races with setenv()
+    # set env before start_listener(), its thread calls getenv() which races with setenv()
     os.environ["LOGGERD_TEST"] = "1"
     os.environ["LOGGERD_SEGMENT_LENGTH"] = str(segment_length)
 
