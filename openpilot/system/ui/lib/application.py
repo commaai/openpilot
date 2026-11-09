@@ -56,11 +56,8 @@ if platform.system() == "Darwin":
 
 BURN_IN_MODE = "BURN_IN" in os.environ
 
-# the GPU is reserved for the driving model. scaling, recording and burn in mode draw with GL
-CPU_RENDERER = HARDWARE.get_device_type() in ('mici', 'tizi') and SCALE == 1.0 and not RECORD and not BURN_IN_MODE
-if CPU_RENDERER:
-  from openpilot.system.ui.lib import cpu_renderer
-  cpu_renderer.install()
+# raylib draws on the CPU on comma devices, so the GPU is free for the driving model
+CPU_RENDERER = rl.cpu.software
 
 BURN_IN_VERTEX_SHADER = GL_VERSION + """
 in vec3 vertexPosition;
@@ -293,8 +290,10 @@ class GuiApplication:
   def init_window(self, title: str, fps: int = _DEFAULT_FPS):
     with self._startup_profile_context():
       def _close(sig, frame):
-        self.close()
-        sys.exit(0)
+        # between frames: raylib can't draw once closed, and an exit raised inside one of its callbacks is dropped.
+        # a second signal ends it anyway
+        self.request_close()
+        signal.signal(sig, signal.SIG_DFL)
       signal.signal(signal.SIGINT, _close)
       signal.signal(signal.SIGTERM, _close)
       atexit.register(self.close)

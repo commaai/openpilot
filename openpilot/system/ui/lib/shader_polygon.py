@@ -1,4 +1,5 @@
 from array import array
+import functools
 import raylib_nb as rl
 import numpy as np
 from dataclasses import dataclass
@@ -195,17 +196,32 @@ def triangulate(pts: np.ndarray) -> list[tuple[float, float]]:
   return cast(list, np.array(tri_strip).tolist())
 
 
-def _gradient_colors(pts: np.ndarray, gradient: Gradient, origin_rect: rl.Rectangle) -> np.ndarray:
-  """FRAGMENT_SHADER's gradient evaluated at each point, y is measured from the bottom like gl_FragCoord"""
-  size = np.array([origin_rect.width, origin_rect.height])
-  start = np.array([origin_rect.x, origin_rect.y]) + np.array(gradient.start) * size
-  end = np.array([origin_rect.x, origin_rect.y]) + np.array(gradient.end) * size
-  p = np.column_stack([pts[:, 0], gui_app.height - pts[:, 1]])
-  d = start - end
-  t = np.clip((p - end) @ d / max(d @ d, 1e-6), 0.0, 1.0)
-  stops = np.clip(gradient.stops[:len(gradient.colors)], 0.0, 1.0)
-  colors = np.array([(c.r, c.g, c.b, c.a) for c in gradient.colors[:len(stops)]], dtype=np.float32)
-  return np.rint(np.column_stack([np.interp(t, stops, colors[:, i]) for i in range(4)])).astype(np.uint8)
+def _pack(color: rl.Color) -> int:
+  return color.r | color.g << 8 | color.b << 16 | color.a << 24
+
+
+@functools.lru_cache(maxsize=16)
+def _ramp(colors: tuple[tuple[int, int, int, int], ...], stops: tuple[float, ...]) -> np.ndarray:
+  """FRAGMENT_SHADER's gradient colors at 256 steps of t"""
+  t = np.linspace(0.0, 1.0, 256)
+  channels = np.array(colors, dtype=np.float32)
+  ramp = np.rint(np.column_stack([np.interp(t, stops, channels[:, i]) for i in range(4)])).astype(np.uint8)
+  return ramp.view(np.uint32).ravel()
+
+
+def _gradient_ramp(gradient: Gradient, origin_rect: rl.Rectangle) -> tuple[np.ndarray, float, float, float]:
+  """FRAGMENT_SHADER's gradient for rl.cpu.polygon: its ramp of colors, and t's coefficients in x and y.
+  t is measured with y from the bottom, like gl_FragCoord"""
+  start_x, start_y = origin_rect.x + gradient.start[0] * origin_rect.width, origin_rect.y + gradient.start[1] * origin_rect.height
+  end_x, end_y = origin_rect.x + gradient.end[0] * origin_rect.width, origin_rect.y + gradient.end[1] * origin_rect.height
+  dx, dy = start_x - end_x, start_y - end_y
+  length2 = max(dx * dx + dy * dy, 1e-6)
+  # t = ((x, height - y) - end) . (dx, dy) / length2
+  tx, ty, t0 = dx / length2, -dy / length2, (-end_x * dx + (gui_app.height - end_y) * dy) / length2
+
+  stops = tuple(min(max(float(s), 0.0), 1.0) for s in gradient.stops[:len(gradient.colors)])
+  colors = tuple((c.r, c.g, c.b, c.a) for c in gradient.colors[:len(stops)])
+  return _ramp(colors, stops), tx, ty, t0
 
 
 def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray,
@@ -219,16 +235,12 @@ def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray,
     return
 
   if CPU_RENDERER:
-    from openpilot.system.ui.lib.cpu_renderer import draw_triangle_strip_colors
-    # triangulate, vectorized
-    half = len(points) // 2
-    pts = np.asarray(points, dtype=np.float32)[:2 * half]
-    strip = np.empty_like(pts)
-    strip[0::2], strip[1::2] = pts[:half], pts[::-1][:half]
+    pts = np.ascontiguousarray(points, dtype=np.float32)
+    rl.cpu.target_raylib()
     if gradient is not None:
-      draw_triangle_strip_colors(strip, _gradient_colors(strip, gradient, origin_rect))
+      rl.cpu.polygon(pts, *_gradient_ramp(gradient, origin_rect))
     else:
-      rl.draw_triangle_strip(strip, len(strip), color)
+      rl.cpu.polygon(pts, np.array([_pack(color or rl.WHITE)], np.uint32))
     return
 
   # Initialize shader on-demand
