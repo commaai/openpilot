@@ -1,5 +1,4 @@
 """Utilities for reading real time clocks and keeping soft real time constraints."""
-import ctypes
 import gc
 import os
 import sys
@@ -16,8 +15,6 @@ DT_CTRL = 0.01  # controlsd
 DT_MDL = 0.05  # model
 DT_HW = 0.5  # hardwared and manager
 DT_DMON = 0.05  # driver monitoring
-
-MCL_CURRENT, MCL_FUTURE, MCL_ONFAULT = 1, 2, 4
 
 
 class Priority:
@@ -45,10 +42,6 @@ def config_realtime_process(cores: int | list[int], priority: int) -> None:
   gc.disable()
   if sys.platform == 'linux' and not PC:
     os.sched_setscheduler(0, os.SCHED_FIFO, os.sched_param(priority))
-    # a page fault on a file page waits for whoever has it locked, and that can be anything on the
-    # device, at any priority. keep what we use mapped, so we never fault on it again
-    if ctypes.CDLL(None, use_errno=True).mlockall(MCL_CURRENT | MCL_FUTURE | MCL_ONFAULT) != 0:
-      print(f"mlockall failed: {os.strerror(ctypes.get_errno())}")
   c = cores if isinstance(cores, list) else [cores, ]
   set_core_affinity(c)
 
