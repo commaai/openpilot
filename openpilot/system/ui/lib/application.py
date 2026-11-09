@@ -252,6 +252,7 @@ class GuiApplication:
     self._last_mouse_event: MouseEvent = MouseEvent(MousePos(0, 0), 0, False, False, False, 0.0)
 
     self._should_render = True
+    self._display_on = True
 
     # Debug variables
     self._mouse_history: deque[MousePosWithTime] = deque(maxlen=MOUSE_THREAD_RATE)
@@ -620,6 +621,11 @@ class GuiApplication:
         for mouse_event in self._mouse_events:
           if mouse_event.slot == 0:
             self._last_mouse_event = mouse_event
+
+        # only switch the display between frames, a frame drawn after turning it off turns it back on
+        if self._should_render != self._display_on:
+          self._display_on = self._should_render
+          HARDWARE.set_display_power(self._display_on)
 
         # Skip rendering when screen is off
         if not self._should_render:

@@ -385,7 +385,6 @@ class Device:
     if on != self._awake:
       self._awake = on
       cloudlog.debug(f"setting display power {int(on)}")
-      HARDWARE.set_display_power(on)
       gui_app.set_should_render(on)
 
 
