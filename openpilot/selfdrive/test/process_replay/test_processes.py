@@ -4,6 +4,7 @@ import concurrent.futures
 import os
 import sys
 import traceback
+import numpy as np
 from collections import defaultdict
 from tqdm import tqdm
 from typing import Any
@@ -100,6 +101,28 @@ def get_log_data(segment):
     return (segment, f.read())
 
 
+def test_accel_rms(lr_dat, new_log_path):
+  lr = LogReader.from_bytes(lr_dat)
+  cfg = next(cfg for cfg in CONFIGS if cfg.proc_name == 'plannerd')
+  log_msgs = replay_process(cfg, lr, disable_progress=True)
+  save_log(new_log_path, log_msgs)
+  start_time = next(m.logMonoTime for m in lr if m.which() == 'modelV2')
+
+  # The Corolla fixture is engaged in steady, clear-road highway cruising here.
+  window = [m for m in log_msgs if m.which() == 'longitudinalPlan' and
+            25 <= (m.longitudinalPlan.modelMonoTime - start_time) / 1e9 < 30]
+  if len(window) < 90 or not all(m.valid and m.longitudinalPlan.longitudinalPlanSource == 'cruise' for m in window):
+    return 'Missing valid cruise samples for the acceleration RMS check'
+
+  accel = np.array([m.longitudinalPlan.aTarget for m in window])
+  times = np.array([m.longitudinalPlan.modelMonoTime for m in window], dtype=np.int64) / 1e9
+  accel_rms = float(np.sqrt(np.mean((accel - np.mean(accel)) ** 2)))
+  jerk_rms = float(np.sqrt(np.mean((np.diff(accel) / np.diff(times)) ** 2)))
+  metrics = f'Cruise acceleration RMS (demeaned): {accel_rms:.5f} m/s² (limit 0.012); jerk RMS: {jerk_rms:.5f} m/s³ (limit 0.03)'
+  print(metrics, flush=True)
+  return [] if accel_rms < 0.012 and jerk_rms < 0.03 else metrics
+
+
 def test_process(cfg, lr, segment, ref_log_msgs, new_log_path, ignore_fields=None, ignore_msgs=None):
   if ignore_fields is None:
     ignore_fields = []
@@ -187,6 +210,13 @@ if __name__ == "__main__":
     for segment, lr in tqdm(p1, desc="Getting Logs", total=len(download_segments)):
       log_data[segment] = lr
 
+    rms_future = None
+    if 'plannerd' in tested_procs and 'TOYOTA3' in tested_cars:
+      rms_segment = next(seg for car, seg in segments if car == 'TOYOTA3')
+      rms_log_fn = os.path.join(FAKEDATA, f"{rms_segment}_plannerd_rms_{cur_commit}.zst".replace("|", "_"))
+      log_paths[rms_segment]['plannerd RMS'] = {'ref': 'fixed RMS limits', 'new': rms_log_fn}
+      rms_future = pool.submit(test_accel_rms, log_data[rms_segment], rms_log_fn)
+
     pool_args: Any = []
     for car_brand, segment in segments:
       if car_brand not in tested_cars:
@@ -219,6 +249,11 @@ if __name__ == "__main__":
     for (segment, proc, result, diff_data) in tqdm(p2, desc="Running Tests", total=len(pool_args)):
       results[segment][proc] = result
       diffs.append((segment, proc, diff_data))
+
+    if rms_future is not None:
+      rms_result = rms_future.result()
+      results[rms_segment]['plannerd RMS'] = rms_result
+      diffs.append((rms_segment, 'plannerd RMS', rms_result or None))
 
   diff_short, diff_long, failed = format_diff(results, log_paths, ref_commit)
   if not args.update_refs:
