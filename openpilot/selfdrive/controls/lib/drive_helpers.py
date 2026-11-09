@@ -66,6 +66,12 @@ def get_accel_from_plan_horizon(a_now, speeds, accels, x, y, x_stds, t_idxs, act
   # stop accelerating first if the plan slows down later
   return max(a_now, 0.0) * np.interp(-a_slow, [0.0, 0.3], [1.0, 0.0]) + min(a_now, a_slow)
 
+def get_accel_boost(action_accel, v_ego):
+  # the RL action speeds up slower than humans, more at higher speeds (fit on ~100 h of fleet data).
+  # it goes away as the action stops accelerating, so the speed it settles at stays the same
+  gain = np.interp(v_ego, [10.0, 20.0, 25.0], [0.2, 0.3, 0.42])
+  return gain * np.interp(action_accel, [0.2, 3.0], [0.0, 2.8])
+
 def get_lane_center_curvature(v_ego, plan_x, plan_y, lane_x, left_y, right_y, left_prob, right_prob):
   # the model sits ~0.3 m to the inside of curves. steer the planned path 2 s ahead halfway to the lane center
   dist = max(2.0 * v_ego, 10.0)

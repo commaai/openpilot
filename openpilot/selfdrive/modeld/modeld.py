@@ -36,8 +36,8 @@ from openpilot.common.transformations.camera import DEVICE_CAMERAS
 from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 from openpilot.common.transformations.model import get_warp_matrix
 from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
-from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_from_plan, get_accel_from_plan_horizon, get_lane_center_curvature, \
-                                                     should_stop, smooth_value, get_curvature_from_plan
+from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_boost, get_accel_from_plan, get_accel_from_plan_horizon, \
+                                                     get_lane_center_curvature, should_stop, smooth_value, get_curvature_from_plan
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_driving_model_data, fill_pose_msg, PublishState
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
@@ -60,6 +60,7 @@ def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.
   if action_accel is not None:
     # the plan is off-policy, so it drifts above the speed the road needs. keep its changes, but the action's level
     a_plan -= plan_offset.update(a_plan - action_accel)
+    a_plan += get_accel_boost(action_accel, v_ego)
   # long uses the whole plan to slow down early, also for models with an action
   desired_accel = get_accel_from_plan_horizon(a_plan,
                                               plan[:,Plan.VELOCITY][:,0],
