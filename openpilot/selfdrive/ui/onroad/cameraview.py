@@ -234,8 +234,10 @@ class CameraView(Widget):
 
     # Render with appropriate method
     if CPU_RENDERER:
-      from openpilot.system.ui.lib.cpu_renderer import draw_nv12
-      draw_nv12(self.frame, dst_rect, src_rect.width < 0, *self._cpu_color(), self._texture_needs_update)
+      curve, saturation = self._cpu_color()
+      rl.cpu.target_raylib()
+      rl.cpu.nv12(self.frame.data, self.frame.uv_offset, self.frame.stride, self.frame.width, self.frame.height, dst_rect,
+                  src_rect.width < 0, curve, round(saturation * 256), self._texture_needs_update)
       self._texture_needs_update = False
     elif USE_EGL:
       self._render_egl(src_rect, dst_rect)
