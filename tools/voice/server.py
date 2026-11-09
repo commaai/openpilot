@@ -37,6 +37,8 @@ SPEC_GAP = int(0.1 * 16000)
 BARE_WAIT, MAX_S, FOLLOWUP_S, FOLLOWUP_MIN = 1.5, 10.0, 10.0, 0.5
 # forced wake word decode log prob that counts as a wake word
 FORCED_MIN, FORCED_GAIN = -0.25, 0.1
+# on a 2026-11-09 drive all 8 rescued wakes were mid-conversation words like "lantern."
+RESCUE_PAUSE = int(0.3 * 16000)
 
 
 def _edits(a: str, b: str) -> int:
@@ -217,7 +219,8 @@ async def llm(session, query: str, mem: dict | None = None) -> str:
   for tn in mem['turns']:
     msgs += [{'role': 'user', 'content': tn['q']}, {'role': 'assistant', 'content': tn['a']}]
   msgs.append({'role': 'user', 'content': query})
-  body = {'model': LLM_MODEL, 'max_tokens': 400, 'temperature': 0.6, 'chat_template_kwargs': {'thinking': False}, 'messages': msgs}
+  # room for models that think before they answer, kimi stops long before
+  body = {'model': LLM_MODEL, 'max_tokens': 1000, 'temperature': 0.6, 'chat_template_kwargs': {'thinking': False}, 'messages': msgs}
 
   async def one() -> str:
     text = (await _llm(session, body, 4)).strip()
@@ -337,7 +340,8 @@ async def rescue_wake(ws, ring, base, after, checked) -> int | None:
   for k, (w, a, _) in enumerate(ws):
     # word times wobble a little between windows, key them to 0.3 s
     key = a // 4800
-    if a < after or not sounds_like_wake(ws, k):
+    # a wake word starts what the driver says, a sound-alike in the middle of a conversation is not one
+    if a < after or not sounds_like_wake(ws, k) or (k > 0 and a - ws[k - 1][2] < RESCUE_PAUSE):
       continue
     seen = [checked[j] for j in (key - 1, key, key + 1) if j in checked]
     if any(ok for ok, _ in seen):
@@ -367,23 +371,32 @@ DIRECTED_PROMPT = ("You decide if speech heard in a car is meant for clanker, th
                    'reply. With no recent reply, answer yes only for a clear question or request to an assistant.\nAnswer only yes or no.')
 
 
+async def yes_prob(system: str, user: str, kind: str) -> float | None:
+  # P(yes) from the logprobs, or the plain answer from models that think first and give none, None when nothing came in time
+  body = {'model': LLM_MODEL, 'max_tokens': 300, 'temperature': 0, 'logprobs': True, 'top_logprobs': 10, 'chat_template_kwargs': {'thinking': False},
+          'messages': [{'role': 'system', 'content': system}, {'role': 'user', 'content': user}]}
+  try:
+    async with session().post(LLM_URL, json=body, timeout=aiohttp.ClientTimeout(total=3)) as r:
+      c = (await r.json())['choices'][0]
+  except Exception as e:
+    log_event(kind, error=repr(e))
+    return None
+  lp = (c.get('logprobs') or {}).get('content')
+  if lp:
+    top = lp[0]['top_logprobs']
+    yes = sum(np.exp(t['logprob']) for t in top if t['token'].strip().lower() == 'yes')
+    no = sum(np.exp(t['logprob']) for t in top if t['token'].strip().lower() == 'no')
+    return round(float(yes / (yes + no + 1e-9)), 3)
+  text = (c['message'].get('content') or '').strip().lower()
+  return 1. if text.startswith('yes') else 0. if text.startswith('no') else None
+
+
 async def directed(meta: dict, recent: str, sentence: str) -> float | None:
-  # probability of the llm's yes, None when the llm doesn't answer in time
+  # probability the sentence is for the assistant
   mem = load_mem(meta['dongle_id']) if meta.get('dongle_id') else {'turns': []}
   last = mem['turns'][-1] if mem['turns'] else None
   prev = f"Assistant's last reply, {time.time() - last['time']:.0f} s ago: {last['a']}\n" if last and time.time() - last['time'] < 120 else ''
-  body = {'model': LLM_MODEL, 'max_tokens': 1, 'temperature': 0, 'logprobs': True, 'top_logprobs': 10, 'chat_template_kwargs': {'thinking': False},
-          'messages': [{'role': 'system', 'content': DIRECTED_PROMPT},
-                       {'role': 'user', 'content': f'{prev}Recent speech: {recent}\nLatest sentence: {sentence}\nIs the latest sentence for the assistant?'}]}
-  try:
-    async with session().post(LLM_URL, json=body, timeout=aiohttp.ClientTimeout(total=2)) as r:
-      top = (await r.json())['choices'][0]['logprobs']['content'][0]['top_logprobs']
-  except Exception as e:
-    log_event('wakeless_error', error=repr(e))
-    return None
-  yes = sum(np.exp(t['logprob']) for t in top if t['token'].strip().lower() == 'yes')
-  no = sum(np.exp(t['logprob']) for t in top if t['token'].strip().lower() == 'no')
-  return round(float(yes / (yes + no + 1e-9)), 3)
+  return await yes_prob(DIRECTED_PROMPT, f'{prev}Recent speech: {recent}\nLatest sentence: {sentence}\nIs the latest sentence for the assistant?', 'wakeless_error')
 
 
 COMPLETE_PROMPT = ("A driver is talking to a car voice assistant. A speech recognizer wrote down what the driver said so far and may have added a period "
@@ -392,21 +405,11 @@ COMPLETE_PROMPT = ("A driver is talking to a car voice assistant. A speech recog
 
 
 async def complete(meta: dict, query: str) -> float | None:
-  # probability the llm gives that the driver is done, None when it doesn't answer in time
+  # probability the driver is done
   mem = load_mem(meta['dongle_id']) if meta.get('dongle_id') else {'turns': []}
   last = mem['turns'][-1] if mem['turns'] else None
   prev = f"Assistant's last reply: {last['a']}\n" if last and time.time() - last['time'] < 120 else ''
-  body = {'model': LLM_MODEL, 'max_tokens': 1, 'temperature': 0, 'logprobs': True, 'top_logprobs': 10, 'chat_template_kwargs': {'thinking': False},
-          'messages': [{'role': 'system', 'content': COMPLETE_PROMPT}, {'role': 'user', 'content': f'{prev}Driver so far: {query}'}]}
-  try:
-    async with session().post(LLM_URL, json=body, timeout=aiohttp.ClientTimeout(total=2)) as r:
-      top = (await r.json())['choices'][0]['logprobs']['content'][0]['top_logprobs']
-  except Exception as e:
-    log_event('complete_error', error=repr(e))
-    return None
-  yes = sum(np.exp(t['logprob']) for t in top if t['token'].strip().lower() == 'yes')
-  no = sum(np.exp(t['logprob']) for t in top if t['token'].strip().lower() == 'no')
-  return round(float(yes / (yes + no + 1e-9)), 3)
+  return await yes_prob(COMPLETE_PROMPT, f'{prev}Driver so far: {query}', 'complete_error')
 
 
 async def shadow(meta: dict, recent: str, sentence: str) -> None:
