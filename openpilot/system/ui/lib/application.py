@@ -56,9 +56,8 @@ if platform.system() == "Darwin":
 
 BURN_IN_MODE = "BURN_IN" in os.environ
 
-# the GPU is reserved for the driving model. scaling, recording and burn in mode draw with GL, as does a zipapp without the library
-CPU_RENDERER = (HARDWARE.get_device_type() in ('mici', 'tizi') and Path(__file__).with_name("libcpu_renderer.so").is_file() and
-                SCALE == 1.0 and not RECORD and not BURN_IN_MODE)
+# the GPU is reserved for the driving model. scaling, recording and burn in mode draw with GL
+CPU_RENDERER = HARDWARE.get_device_type() in ('mici', 'tizi') and SCALE == 1.0 and not RECORD and not BURN_IN_MODE
 if CPU_RENDERER:
   from openpilot.system.ui.lib import cpu_renderer
   cpu_renderer.install()

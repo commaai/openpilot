@@ -1,19 +1,17 @@
 """raylib on the CPU, keeping the GPU free for the driving model.
 
-install() replaces the drawing functions of raylib_nb with a software rasterizer (cpu_renderer.c)
+install() replaces the drawing functions of raylib_nb with its software rasterizer (rl.cpu)
 that scans out through KMS. Structs, images and math still come from raylib.
 """
-import ctypes
 import os
 import socket
 import struct
 import time
-from collections import OrderedDict
+from collections import OrderedDict, deque
 from pathlib import Path
 
 import numpy as np
 import raylib_nb as rl
-from raylib_nb import _backend
 
 from openpilot.common.swaglog import cloudlog
 
@@ -24,43 +22,11 @@ TOUCH_DEVICE = "/dev/input/event2"
 DSPP_COLOR = ("SDE_DSPP_IGC_V3", "SDE_DSPP_PCC_V4", "SDE_DSPP_GC_V1")
 TEXT_LINE_SPACING = 2  # raylib's default
 
-F, I, U32, P = ctypes.c_float, ctypes.c_int, ctypes.c_uint32, ctypes.c_void_p
-
-
-class _Image(ctypes.Structure):
-  _fields_ = [("data", ctypes.POINTER(ctypes.c_uint8)), ("width", I), ("height", I), ("mipmaps", I), ("format", I)]
-
-
-class _GlyphInfo(ctypes.Structure):
-  _fields_ = [("value", I), ("offsetX", I), ("offsetY", I), ("advanceX", I), ("image", _Image)]
-
-
-_lib = ctypes.CDLL(str(Path(__file__).with_name("libcpu_renderer.so")))
-for name, args in {
-  "cr_target": [P, I, I, I], "cr_clip": [I, I, I, I], "cr_clear": [U32],
-  "cr_rect": [F, F, F, F, U32, U32, U32, U32], "cr_rounded_rect": [F, F, F, F, F, F, U32],
-  "cr_ring": [F, F, F, F, F, F, U32, U32], "cr_triangles": [P, I, P, I, I],
-  "cr_blit": [P, I, I, I, I, F, F, F, F, F, F, F, F, F, F, F, U32, I],
-  "cr_nv12": [P, P, I, I, I, F, F, F, F, I, P, I, I],
-  "cr_display_init": [I, I], "cr_display_target": [I, I], "cr_display_blob": [ctypes.c_char_p, P, U32],
-  "cr_display_present": [], "cr_display_close": [],
-}.items():
-  getattr(_lib, name).argtypes = args
-_lib.cr_display_target.restype = ctypes.POINTER(ctypes.c_uint8)
-
-# raylib's own font loading, exported by the raylib_nb extension
-_raylib = ctypes.CDLL(_backend.native.__file__)
-_raylib.LoadFontData.argtypes = [P, I, I, ctypes.POINTER(I), I, I, ctypes.POINTER(I)]
-_raylib.LoadFontData.restype = ctypes.POINTER(_GlyphInfo)
-_raylib.UnloadFontData.argtypes = [ctypes.POINTER(_GlyphInfo), I]
+cpu = rl.cpu
 
 
 def _pack(c) -> int:
   return c.r | (c.g << 8) | (c.b << 16) | (c.a << 24)
-
-
-def _ptr(a: np.ndarray) -> int:
-  return a.ctypes.data
 
 
 class _Font:
@@ -76,18 +42,8 @@ class _Font:
 
   def _load(self, size: int, codepoints: list[int]) -> list[tuple[int, int, tuple[np.ndarray, int, int]]]:
     """(codepoint, advance, (alpha bitmap, offset x, offset y)) of each glyph found in the font"""
-    count = I()
-    glyphs = _raylib.LoadFontData(self.data, len(self.data), size, (I * len(codepoints))(*codepoints), len(codepoints), 0,
-                                  ctypes.byref(count))
-    if not glyphs:
-      return []
-    ret = []
-    for g in glyphs[:count.value]:
-      img = g.image
-      a = np.ctypeslib.as_array(img.data, (img.height, img.width)).copy() if img.data and img.width else np.zeros((0, 0), np.uint8)
-      ret.append((g.value, g.advanceX, (a, g.offsetX, g.offsetY)))
-    _raylib.UnloadFontData(glyphs, count.value)
-    return ret
+    return [(cp, adv, (np.frombuffer(a, np.uint8).reshape(h, w), ox, oy))
+            for cp, adv, ox, oy, a, w, h in cpu.glyphs(self.data, size, codepoints)]
 
   def glyph(self, cp: int, size: int) -> tuple[np.ndarray, int, int]:
     """alpha bitmap of a codepoint rendered at size, and its offset from the pen"""
@@ -125,6 +81,7 @@ class _Renderer:
     self.drm_sock: socket.socket | None = None
     self.drm_fd = -1
     self.last_frame = self.frame_time = 0.0
+    self.frame_times: deque[float] = deque(maxlen=30)  # raylib averages the fps over 30 frames
     self.target_frame_time = 0.0
     # touch, as raylib's comma platform
     self.touch_fd = -1
@@ -146,7 +103,7 @@ class _Renderer:
   def init_window(self, width: int, height: int, title: str):
     self.last_frame = time.monotonic()
     self.fb = np.zeros((height, width, 4), np.uint8)
-    _lib.cr_target(_ptr(self.fb), width, height, width * 4)
+    cpu.target(self.fb, width, height, width * 4)
     if not os.path.exists("/dev/dri/card0"):
       return
     try:
@@ -159,18 +116,18 @@ class _Renderer:
       self.drm_sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
       self.drm_sock.connect("/tmp/drmfd.sock")  # magic hands out DRM master while this stays open
       fd = self.drm_fd = socket.recv_fds(self.drm_sock, 1, 1)[1][0]
-    ret = _lib.cr_display_init(fd, self.canonical_zero)
+    ret = cpu.display_init(fd, self.canonical_zero)
     if ret != 0:
       raise RuntimeError(f"failed to init display: {os.strerror(-ret)}")
     self.display = True
     # drawn straight into the buffer the display's rotator reads
-    if not (target := _lib.cr_display_target(width, height)):
+    if (target := cpu.display_target(width, height)) is None:
       raise RuntimeError(f"{width}x{height} window doesn't fit the display")
-    self.fb = np.ctypeslib.as_array(target, (height, width, 4))
-    _lib.cr_target(_ptr(self.fb), width, height, width * 4)
-    _lib.cr_display_present()  # the CRTC has to be on to take color correction
+    self.fb = np.frombuffer(target, np.uint8).reshape(height, width, 4)
+    cpu.target(self.fb, width, height, width * 4)
+    cpu.display_present()  # the CRTC has to be on to take color correction
     for name, blob in self._color_correction().items():
-      if (ret := _lib.cr_display_blob(name.encode(), blob, len(blob or b""))) != 0:
+      if (ret := cpu.display_blob(name, blob)) != 0:
         cloudlog.warning(f"cpu renderer: failed to set {name}: {os.strerror(-ret)}")
     self.touch_fd = os.open(TOUCH_DEVICE, os.O_RDONLY | os.O_NONBLOCK)
 
@@ -204,10 +161,10 @@ class _Renderer:
   def close_window(self):
     if self.display:
       for name in DSPP_COLOR:
-        _lib.cr_display_blob(name.encode(), None, 0)
+        cpu.display_blob(name, None)
       self.fb = self.fb.copy()  # the display's buffer goes away
-      _lib.cr_target(_ptr(self.fb), self.fb.shape[1], self.fb.shape[0], self.fb.shape[1] * 4)
-      _lib.cr_display_close()
+      cpu.display_close()
+      cpu.target(self.fb, self.fb.shape[1], self.fb.shape[0], self.fb.shape[1] * 4)
       self.display = False
     if self.drm_fd >= 0:
       os.close(self.drm_fd)
@@ -222,10 +179,11 @@ class _Renderer:
   def begin_drawing(self):
     now = time.monotonic()
     self.frame_time, self.last_frame = now - self.last_frame, now
+    self.frame_times.append(self.frame_time)
 
   def end_drawing(self):
     if self.display:
-      ret = _lib.cr_display_present()
+      ret = cpu.display_present()
       if ret != 0:
         cloudlog.warning(f"cpu renderer: failed to present: {os.strerror(-ret)}")
     # like raylib, sleep out the rest of the frame
@@ -283,7 +241,7 @@ class _Renderer:
 
   def fill(self, x, y, w, h, tl, tr, bl, br):
     x, y, w, h = self.rect(x, y, w, h)
-    _lib.cr_rect(x, y, x + w, y + h, _pack(tl), _pack(tr), _pack(bl), _pack(br))
+    cpu.rect(x, y, x + w, y + h, tl, tr, bl, br)
 
   def rounded(self, rec, roundness: float, thickness: float, color, outside: bool = False):
     x, y, w, h = self.rect(rec.x, rec.y, rec.width, rec.height)
@@ -291,12 +249,12 @@ class _Renderer:
     t = thickness * self.transform[1]
     if outside:
       x, y, w, h, radius = x - t, y - t, w + 2 * t, h + 2 * t, radius + t
-    _lib.cr_rounded_rect(x, y, w, h, radius, t, _pack(color))
+    cpu.rounded_rect(rl.Rectangle(x, y, w, h), radius, t, color)
 
   def ring(self, cx, cy, r0, r1, a0, a1, inner, outer):
     cx, cy = self.xy(cx, cy)
     s = self.transform[1]
-    _lib.cr_ring(cx, cy, r0 * s, r1 * s, min(a0, a1), max(a0, a1), _pack(inner), _pack(outer))
+    cpu.ring(rl.Vector2(cx, cy), r0 * s, r1 * s, min(a0, a1), max(a0, a1), inner, outer)
 
   def triangles(self, points, colors, mode: int):
     if not isinstance(points, np.ndarray):
@@ -305,7 +263,7 @@ class _Renderer:
     sx, sy, tx, ty = self.transform
     pts = np.ascontiguousarray(pts * (sx, sy) + (tx, ty), dtype=np.float32)
     cols = np.ascontiguousarray(colors, dtype=np.uint32)
-    _lib.cr_triangles(_ptr(pts), len(pts), _ptr(cols), len(cols), mode)
+    cpu.triangles(pts, cols, mode)
 
   def line(self, x0, y0, x1, y1, thick, color):
     d = np.array([x1 - x0, y1 - y0], dtype=np.float32)
@@ -328,9 +286,9 @@ class _Renderer:
 
   def blit(self, pixels: np.ndarray, a8: bool, src, dst, origin, rotation: float, tint, bilinear: bool):
     sx, sy, tx, ty = self.transform
-    _lib.cr_blit(_ptr(pixels), pixels.shape[1], pixels.shape[0], pixels.strides[0], a8,
-                 src.x, src.y, src.width, src.height, dst.x * sx + tx, dst.y * sy + ty, dst.width * sx, dst.height * sy,
-                 origin.x * sx, origin.y * sy, rotation, _pack(tint), bilinear)
+    cpu.blit(pixels, pixels.shape[1], pixels.shape[0], pixels.strides[0], a8, src,
+             rl.Rectangle(dst.x * sx + tx, dst.y * sy + ty, dst.width * sx, dst.height * sy), rl.Vector2(origin.x * sx, origin.y * sy),
+             rotation, tint, bilinear)
 
   def draw_texture_pro(self, texture, src, dst, origin, rotation, tint):
     if texture.id in self.textures:
@@ -449,10 +407,8 @@ _r = _Renderer()
 
 def draw_nv12(frame, dst, flip_x: bool, curve: np.ndarray, saturation: float, new_frame: bool):
   """draw a VisionIPC frame mixed with its luma by saturation and each channel mapped through curve, in place of a frame shader"""
-  data = np.frombuffer(frame.data, np.uint8)
-  x, y, w, h = _r.rect(dst.x, dst.y, dst.width, dst.height)
-  _lib.cr_nv12(_ptr(data), _ptr(data) + frame.uv_offset, frame.stride, frame.width, frame.height,
-               x, y, w, h, flip_x, _ptr(curve), round(saturation * 256), new_frame)
+  cpu.nv12(frame.data, frame.uv_offset, frame.stride, frame.width, frame.height, rl.Rectangle(*_r.rect(dst.x, dst.y, dst.width, dst.height)),
+           flip_x, curve, round(saturation * 256), new_frame)
 
 
 def draw_triangle_strip_colors(points: np.ndarray, colors: np.ndarray):
@@ -475,11 +431,11 @@ def install():
     "end_drawing": _r.end_drawing,
     "get_time": time.monotonic,
     "get_frame_time": lambda: _r.frame_time,
-    "get_fps": lambda: round(1 / _r.frame_time) if _r.frame_time else 0,
+    "get_fps": lambda: round(len(_r.frame_times) / sum(_r.frame_times)) if sum(_r.frame_times) else 0,
     "draw_fps": noop,
-    "clear_background": lambda color: _lib.cr_clear(_pack(color)),
-    "begin_scissor_mode": lambda x, y, w, h: _lib.cr_clip(x, y, x + w, y + h),
-    "end_scissor_mode": lambda: _lib.cr_clip(0, 0, _r.fb.shape[1], _r.fb.shape[0]),
+    "clear_background": cpu.clear,
+    "begin_scissor_mode": lambda x, y, w, h: cpu.clip(x, y, x + w, y + h),
+    "end_scissor_mode": lambda: cpu.clip(0, 0, _r.fb.shape[1], _r.fb.shape[0]),
     "rl_push_matrix": _r.push_matrix,
     "rl_pop_matrix": _r.pop_matrix,
     "rl_scalef": _r.scalef,
