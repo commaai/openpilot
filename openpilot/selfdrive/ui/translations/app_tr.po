@@ -135,7 +135,7 @@ msgstr "İptal"
 
 #: openpilot/system/ui/widgets/network.py
 msgid "Cellular Metered"
-msgstr "Ölçülü Hücresel"
+msgstr "Sayaçlı Hücresel"
 
 #: openpilot/selfdrive/ui/layouts/settings/device.py
 msgid "Change Language"
@@ -442,11 +442,11 @@ msgstr "Kapat"
 
 #: openpilot/system/ui/widgets/network.py
 msgid "Prevent large data uploads when on a metered Wi-Fi connection"
-msgstr "Ölçülü bir Wi‑Fi bağlantısındayken büyük veri yüklemelerini engelle"
+msgstr "Sayaçlı bir Wi‑Fi bağlantısındayken büyük veri yüklemelerini engelle"
 
 #: openpilot/system/ui/widgets/network.py
 msgid "Prevent large data uploads when on a metered cellular connection"
-msgstr "Ölçülü bir hücresel bağlantıdayken büyük veri yüklemelerini engelle"
+msgstr "Sayaçlı bir hücresel bağlantıdayken büyük veri yüklemelerini engelle"
 
 #: openpilot/selfdrive/ui/layouts/settings/device.py
 msgid "Preview the cabin camera to ensure that driver monitoring has good visibility. (vehicle must be off)"
@@ -654,7 +654,7 @@ msgstr "Wi‑Fi"
 
 #: openpilot/system/ui/widgets/network.py
 msgid "Wi-Fi Network Metered"
-msgstr "Ölçülü Wi‑Fi Ağı"
+msgstr "Sayaçlı Wi‑Fi Ağı"
 
 #: openpilot/system/ui/widgets/network.py
 msgid "Wrong password"
@@ -719,7 +719,7 @@ msgstr "sol"
 
 #: openpilot/system/ui/widgets/network.py
 msgid "metered"
-msgstr "ölçülü"
+msgstr "sayaçlı"
 
 #: openpilot/selfdrive/ui/layouts/settings/initial_cruise_speed.py
 #: openpilot/selfdrive/ui/onroad/hud_renderer.py
@@ -752,7 +752,7 @@ msgstr "sağ"
 
 #: openpilot/system/ui/widgets/network.py
 msgid "unmetered"
-msgstr "ölçüsüz"
+msgstr "sayaçsız"
 
 #: openpilot/selfdrive/ui/layouts/settings/device.py
 msgid "up"
