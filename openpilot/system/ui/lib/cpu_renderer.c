@@ -213,7 +213,7 @@ static void triangle(const float *a, const float *b, const float *c, uint32_t ca
       float wb = wy[k] * py + wc[k];
       if (wa[k] > 0) lo = MAX(lo, -wb / wa[k]);
       else if (wa[k] < 0) hi = MIN(hi, -wb / wa[k]);
-      else if (wb < 0) hi = lo;
+      else if (wb < 0 || (wb == 0 && wy[k] < 0)) hi = lo;  // centers on a bottom edge belong to the triangle below
     }
     int x0 = MAX(px0(lo), T.x0), x1 = MIN(px0(hi), T.x1);
     if (x0 >= x1) continue;
@@ -235,6 +235,7 @@ static void triangle(const float *a, const float *b, const float *c, uint32_t ca
 
 // triangles from n points: mode 0 = list, 1 = strip, 2 = fan. one color per point, or a single color
 void cr_triangles(const float *xy, int n, const uint32_t *colors, int ncolors, int mode) {
+  if (n < 3 || ncolors < 1) return;
   uint32_t c[n];
   for (int i = 0; i < n; i++) c[i] = premultiply(colors[ncolors == n ? i : 0]);
   for (int i = 2; i < n; i += mode == 0 ? 3 : 1) {
@@ -284,7 +285,7 @@ static inline int taps(float u, float lo, float hi, int n, int bilinear, int *a,
 // src is premultiplied RGBA, or an alpha mask when a8. negative source size flips
 void cr_blit(const uint8_t *src, int sw, int sh, int sstride, int a8, float sx, float sy, float src_w, float src_h,
              float dx, float dy, float dw, float dh, float ox, float oy, float rotation, uint32_t tint, int bilinear) {
-  if (dw <= 0 || dh <= 0 || src_w == 0 || src_h == 0) return;
+  if (dw <= 0 || dh <= 0 || src_w == 0 || src_h == 0 || sw <= 0 || sh <= 0) return;
   uint32_t t = premultiply(tint);
   float cs = cosf(rotation * 0.01745329f), sn = sinf(rotation * 0.01745329f);
   // dest corners
@@ -317,7 +318,8 @@ void cr_blit(const uint8_t *src, int sw, int sh, int sstride, int a8, float sx, 
         break;
       }
     }
-    int unscaled = !bilinear && n && cxa[n - 1] - cxa[0] == n - 1;
+    int unscaled = !bilinear;
+    for (int i = 1; i < n && unscaled; i++) unscaled = cxa[i] == cxa[0] + i;
     for (int iy = iy0; iy < iy1 && n; iy++) {
       if (!taps(bv + (iy + 0.5f - dy) * v0y, sy, hv, sh, bilinear, &ya, &yb, &wy)) continue;
       const uint8_t *s = src + (size_t)ya * sstride;
@@ -438,13 +440,13 @@ struct ion_buf {
 };
 
 static struct {
-  int fd, ion, rot;
+  int fd, own, ion, rot;  // the master fd from magic, and our own for the buffers so they go away with the process
   uint32_t crtc, connector;
   struct drm_mode_modeinfo mode;
   struct ion_buf target, panel[2];
-  uint32_t handle[2], fb[2];
+  uint32_t fb[2];
   int back, crtc_set;
-} D = {.fd = -1, .ion = -1, .rot = -1};
+} D = {.fd = -1, .own = -1, .ion = -1, .rot = -1};
 
 static int ion_alloc(struct ion_buf *b, size_t size, int cached) {
   struct ion_allocation_data alloc = {.len = size, .align = 4096, .heap_id_mask = 1 << ION_IOMMU_HEAP_ID,
@@ -475,7 +477,8 @@ static int rot_queue(int type, int index, const struct ion_buf *b) {
 
 static int rot_wait(int type) {
   struct v4l2_buffer buf = {.type = type, .memory = V4L2_MEMORY_USERPTR};
-  return ioctl(D.rot, VIDIOC_DQBUF, &buf) ? -errno : 0;
+  if (ioctl(D.rot, VIDIOC_DQBUF, &buf)) return -errno;
+  return buf.flags & V4L2_BUF_FLAG_ERROR ? -EIO : 0;
 }
 
 void cr_display_close(void);
@@ -498,6 +501,7 @@ int cr_display_init(int fd, int canonical_zero) {
   if (!D.connector) return -ENODEV;
   D.fd = fd;
   D.crtc = crtcs[0];
+  D.own = open("/dev/dri/card0", O_RDWR | O_CLOEXEC);
   D.ion = open("/dev/ion", O_RDWR);
   D.rot = open("/dev/video2", O_RDWR);  // sde_rotator, a v4l2 mem2mem device
   int pw = D.mode.hdisplay, ph = D.mode.vdisplay;
@@ -507,7 +511,9 @@ int cr_display_init(int fd, int canonical_zero) {
   struct v4l2_format out = {.type = V4L2_BUF_TYPE_VIDEO_CAPTURE, .fmt.pix = {.width = pw, .height = ph, .pixelformat = DRM_FORMAT_ABGR8888}};
   struct v4l2_requestbuffers reqs[2] = {{.count = 1, .type = V4L2_BUF_TYPE_VIDEO_OUTPUT, .memory = V4L2_MEMORY_USERPTR},
                                         {.count = 2, .type = V4L2_BUF_TYPE_VIDEO_CAPTURE, .memory = V4L2_MEMORY_USERPTR}};
-  int ret = D.ion < 0 || D.rot < 0 || ioctl(D.rot, VIDIOC_S_CTRL, &rotate) || ioctl(D.rot, VIDIOC_S_FMT, &in) ||
+  struct drm_auth auth;
+  int ret = D.own < 0 || ioctl(D.own, DRM_IOCTL_GET_MAGIC, &auth) || ioctl(fd, DRM_IOCTL_AUTH_MAGIC, &auth) ||
+            D.ion < 0 || D.rot < 0 || ioctl(D.rot, VIDIOC_S_CTRL, &rotate) || ioctl(D.rot, VIDIOC_S_FMT, &in) ||
             ioctl(D.rot, VIDIOC_S_FMT, &out) ? -errno : 0;
   if (!ret && in.fmt.pix.bytesperline != (uint32_t)ph * 4) ret = -EINVAL;
   // the target is read back while drawing, so it's cached and cleaned before each rotation
@@ -515,11 +521,10 @@ int cr_display_init(int fd, int canonical_zero) {
   for (int i = 0; i < 2 && !ret; i++) {
     ret = ion_alloc(&D.panel[i], out.fmt.pix.sizeimage, 0);
     struct drm_prime_handle prime = {.fd = D.panel[i].fd};
-    if (!ret && ioctl(fd, DRM_IOCTL_PRIME_FD_TO_HANDLE, &prime)) ret = -errno;
-    D.handle[i] = prime.handle;
+    if (!ret && ioctl(D.own, DRM_IOCTL_PRIME_FD_TO_HANDLE, &prime)) ret = -errno;
     struct drm_mode_fb_cmd2 fb = {.width = pw, .height = ph, .pixel_format = DRM_FORMAT_ABGR8888, .handles = {prime.handle},
                                   .pitches = {out.fmt.pix.bytesperline}};
-    if (!ret && ioctl(fd, DRM_IOCTL_MODE_ADDFB2, &fb)) ret = -errno;
+    if (!ret && ioctl(D.own, DRM_IOCTL_MODE_ADDFB2, &fb)) ret = -errno;
     D.fb[i] = fb.fb_id;
   }
   for (int i = 0; i < 2 && !ret; i++) {
@@ -565,7 +570,13 @@ int cr_display_present(void) {
   if (!ret) ret = rot_queue(V4L2_BUF_TYPE_VIDEO_CAPTURE, D.back, &D.panel[D.back]);
   if (!ret) ret = rot_wait(V4L2_BUF_TYPE_VIDEO_CAPTURE);
   if (!ret) ret = rot_wait(V4L2_BUF_TYPE_VIDEO_OUTPUT);
-  if (ret) return ret;
+  if (ret) {  // restarting the queues returns any buffers still in them
+    for (int type = V4L2_BUF_TYPE_VIDEO_CAPTURE; type <= V4L2_BUF_TYPE_VIDEO_OUTPUT; type++) {
+      ioctl(D.rot, VIDIOC_STREAMOFF, &type);
+      ioctl(D.rot, VIDIOC_STREAMON, &type);
+    }
+    return ret;
+  }
   // like raylib: flip, or set the CRTC again if another DRM client disabled it, then wait for the vblank
   uint32_t fb = D.fb[D.back];
   struct drm_mode_crtc_page_flip flip = {.crtc_id = D.crtc, .fb_id = fb};
@@ -583,15 +594,12 @@ int cr_display_present(void) {
 
 void cr_display_close(void) {
   if (D.rot >= 0) close(D.rot);
-  for (int i = 0; i < 2; i++) {
-    if (D.fb[i]) ioctl(D.fd, DRM_IOCTL_MODE_RMFB, &D.fb[i]);
-    if (D.handle[i]) ioctl(D.fd, DRM_IOCTL_GEM_CLOSE, &(struct drm_gem_close){.handle = D.handle[i]});
-    ion_free(&D.panel[i]);
-  }
+  if (D.own >= 0) close(D.own);  // and with it the framebuffers
+  for (int i = 0; i < 2; i++) ion_free(&D.panel[i]);
   ion_free(&D.target);
   if (D.ion >= 0) close(D.ion);
   memset(&D, 0, sizeof(D));
-  D.fd = D.ion = D.rot = -1;
+  D.fd = D.own = D.ion = D.rot = -1;
 }
 #else
 int cr_display_init(int fd, int canonical_zero) { return -ENODEV; }

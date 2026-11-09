@@ -21,12 +21,6 @@ from openpilot.common.hardware import HARDWARE, PC
 from openpilot.system.ui.lib.multilang import FONT_FALLBACK_LANGUAGES, TRANSLATIONS_DIR, multilang
 from openpilot.common.realtime import Ratekeeper
 
-# the GPU is reserved for the driving model
-CPU_RENDERER = HARDWARE.get_device_type() in ('mici', 'tizi')
-if CPU_RENDERER:
-  from openpilot.system.ui.lib import cpu_renderer
-  cpu_renderer.install()
-
 _DEFAULT_FPS = int(os.getenv("FPS", {'tizi': 20}.get(HARDWARE.get_device_type(), 60)))
 FPS_LOG_INTERVAL = 5  # Seconds between logging FPS drops
 FPS_DROP_THRESHOLD = 0.9  # FPS drop threshold for triggering a warning
@@ -61,6 +55,14 @@ if platform.system() == "Darwin":
   """
 
 BURN_IN_MODE = "BURN_IN" in os.environ
+
+# the GPU is reserved for the driving model. scaling, recording and burn in mode draw with GL, as does a zipapp without the library
+CPU_RENDERER = (HARDWARE.get_device_type() in ('mici', 'tizi') and Path(__file__).with_name("libcpu_renderer.so").is_file() and
+                SCALE == 1.0 and not RECORD and not BURN_IN_MODE)
+if CPU_RENDERER:
+  from openpilot.system.ui.lib import cpu_renderer
+  cpu_renderer.install()
+
 BURN_IN_VERTEX_SHADER = GL_VERSION + """
 in vec3 vertexPosition;
 in vec2 vertexTexCoord;
@@ -295,6 +297,7 @@ class GuiApplication:
         self.close()
         sys.exit(0)
       signal.signal(signal.SIGINT, _close)
+      signal.signal(signal.SIGTERM, _close)
       atexit.register(self.close)
 
       flags = rl.ConfigFlags.FLAG_MSAA_4X_HINT
