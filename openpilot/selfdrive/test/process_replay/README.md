@@ -7,9 +7,6 @@ If the test fails, make sure that you didn't unintentionally change anything. If
 Use `test_processes.py` to run the test locally.
 Log files are cached by default. Use `DISABLE_FILEREADER_CACHE='1' test_processes.py` to disable caching.
 
-The Corolla (`TOYOTA3`) log also checks acceleration variation and jerk RMS during steady highway cruising through `plannerd`.
-These limits are independent of the reference logs. Run this check with `test_processes.py --whitelist-procs plannerd --whitelist-cars TOYOTA3`.
-
 Currently the following processes are tested:
 
 * controlsd
