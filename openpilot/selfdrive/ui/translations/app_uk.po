@@ -147,7 +147,7 @@ msgstr "Зміна цього параметра призведе до пере�
 
 #: openpilot/selfdrive/ui/widgets/pairing_dialog.py
 msgid "Click \"add new device\" and scan the QR code on the right"
-msgstr "Натисніть «додати новий пристрій» і відскануйте QR-код праворуч."
+msgstr "Натисніть «add new device» і відскануйте QR-код праворуч."
 
 #: openpilot/selfdrive/ui/widgets/offroad_alerts.py
 msgid "Close"
@@ -578,7 +578,7 @@ msgstr "КЕРМУЙТЕ НЕГАЙНО"
 
 #: openpilot/selfdrive/ui/layouts/sidebar.py
 msgid "TEMP"
-msgstr "ТЕМП"
+msgstr "ТЕМПЕР."
 
 #: openpilot/selfdrive/ui/layouts/settings/software.py
 msgid "Target Branch"
