@@ -2,7 +2,7 @@ from openpilot.common.params import Params
 from openpilot.selfdrive.ui.widgets.ssh_key import ssh_key_item
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.list_view import toggle_item
+from openpilot.system.ui.widgets.list_view import multiple_button_item, toggle_item
 from openpilot.system.ui.widgets.scroller_tici import Scroller
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
 from openpilot.system.ui.lib.application import gui_app
@@ -90,6 +90,16 @@ class DeveloperLayout(Widget):
     )
     self._on_enable_ui_debug(self._params.get_bool("ShowDebugInfo"))
 
+    self._model_fidx = multiple_button_item(
+      lambda: tr("Model FIDX"),
+      lambda: tr("Future anchor time in seconds for the driving model. Default: 3. Changes apply immediately."),
+      buttons=[str(value) for value in range(1, 7)],
+      button_width=100,
+      selected_index=self._params.get("ModelFidx", return_default=True) - 1,
+      callback=lambda index: self._params.put("ModelFidx", index + 1, block=True),
+    )
+    self._model_fidx.action_item.set_enabled(lambda: not ui_state.engaged)
+
     self._scroller = Scroller([
       self._adb_toggle,
       self._ssh_toggle,
@@ -99,6 +109,7 @@ class DeveloperLayout(Widget):
       self._lat_maneuver_toggle,
       self._alpha_long_toggle,
       self._ui_debug_toggle,
+      self._model_fidx,
     ], line_separator=True, spacing=0)
 
     # Toggles should be not available to change in onroad state
@@ -114,6 +125,7 @@ class DeveloperLayout(Widget):
 
   def _update_toggles(self):
     ui_state.update_params()
+    self._model_fidx.action_item.set_selected_button(self._params.get("ModelFidx", return_default=True) - 1)
 
     # Hide non-release toggles on release builds
     # TODO: we can do an onroad cycle, but alpha long toggle requires a deinit function to re-enable radar and not fault

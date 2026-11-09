@@ -210,6 +210,8 @@ class ModelState:
     self.prev_desire[:] = inputs['desire_pulse']
     self.npy['traffic_convention'][:] = inputs['traffic_convention']
     self.npy['action_t'][:] = inputs['action_t']
+    if 'fidx' in self.npy:
+      self.npy['fidx'][:] = inputs['fidx']
 
     self.copy_inputs()
     self.input_queues['new_img'] = self.run_warp(**self.warp_inputs)
@@ -231,7 +233,9 @@ class ModelState:
     dummy_frames = {k: np.zeros(self.frame_copy_size, dtype=np.uint8) for k in self.vision_input_names}
     eye = np.eye(3, dtype=np.float32)
     dims = {'desire_pulse': ModelConstants.DESIRE_LEN, 'traffic_convention': 2, 'action_t': 2}
-    self.run(dummy_frames, dict.fromkeys(self.vision_input_names, eye), {k: np.zeros(v, dtype=np.float32) for k, v in dims.items()})
+    inputs = {k: np.zeros(v, dtype=np.float32) for k, v in dims.items()}
+    inputs['fidx'] = np.array([3.0], dtype=np.float32)
+    self.run(dummy_frames, dict.fromkeys(self.vision_input_names, eye), inputs)
     self.packed_input[:] = 0
     for key in self.state_pairs:
       self.input_queues[key].assign(0).realize()
@@ -326,6 +330,7 @@ def main(demo=False):
   frame_id = 0
   last_vipc_frame_id = 0
   run_count = 0
+  model_fidx = params.get("ModelFidx", return_default=True)
 
   model_transform_main = np.zeros((3, 3), dtype=np.float32)
   model_transform_extra = np.zeros((3, 3), dtype=np.float32)
@@ -410,6 +415,8 @@ def main(demo=False):
       frame_dropped_filter.x = 0.
       frames_dropped = 0.
     run_count = run_count + 1
+    if run_count % ModelConstants.MODEL_RUN_FREQ == 0:
+      model_fidx = params.get("ModelFidx", return_default=True)
 
     frame_drop_ratio = frames_dropped / (1 + frames_dropped)
 
@@ -423,6 +430,7 @@ def main(demo=False):
       'desire_pulse': vec_desire,
       'traffic_convention': traffic_convention,
       'action_t': np.array([lat_action_t, long_action_t], dtype=np.float32),
+      'fidx': np.array([model_fidx], dtype=np.float32),
     }
 
     mt1 = time.perf_counter()

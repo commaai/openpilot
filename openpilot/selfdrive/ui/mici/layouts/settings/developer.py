@@ -27,6 +27,18 @@ class AlphaLongConfirmPage(NavScroller):
     ])
 
 
+class ModelFidxSelectPage(NavScroller):
+  def __init__(self, on_select: Callable[[int], None]):
+    super().__init__()
+    current = ui_state.params.get("ModelFidx", return_default=True)
+    check_icon = gui_app.texture("icons_mici/settings/device/up_to_date.png", 64, 64)
+    for value in range(1, 7):
+      button = BigButton(f"{value} s", "default" if value == 3 else "", check_icon if value == current else None)
+      button.set_enabled(lambda: not ui_state.engaged)
+      button.set_click_callback(lambda v=value: self.dismiss(lambda: on_select(v)))
+      self._scroller.add_widgets([button])
+
+
 class DeveloperLayoutMici(NavScroller):
   def __init__(self):
     super().__init__()
@@ -88,6 +100,10 @@ class DeveloperLayoutMici(NavScroller):
     self._debug_mode_toggle = BigParamControl("ui debug mode", "ShowDebugInfo",
                                               toggle_callback=lambda checked: (gui_app.set_show_touches(checked), gui_app.set_show_fps(checked)),
                                               description="Show touch locations and the UI frame rate.")
+    self._model_fidx = BigButton("model FIDX", f'{ui_state.params.get("ModelFidx", return_default=True)} s',
+                                  description="Future anchor time in seconds for the driving model. Default: 3. Changes apply immediately.")
+    self._model_fidx.set_click_callback(lambda: gui_app.push_widget(ModelFidxSelectPage(self._on_model_fidx)))
+    self._model_fidx.set_enabled(lambda: not ui_state.engaged)
 
     self._scroller.add_widgets([
       self._adb_toggle,
@@ -99,6 +115,7 @@ class DeveloperLayoutMici(NavScroller):
       self._alpha_long_toggle,
       self._debug_mode_toggle,
       self._navigation_toggle,
+      self._model_fidx,
     ])
 
     # Toggle lists
@@ -145,6 +162,7 @@ class DeveloperLayoutMici(NavScroller):
 
   def _update_toggles(self):
     ui_state.update_params()
+    self._model_fidx.set_value(f'{ui_state.params.get("ModelFidx", return_default=True)} s')
 
     # CP gating
     if ui_state.CP is not None:
@@ -166,6 +184,10 @@ class DeveloperLayoutMici(NavScroller):
     # Refresh toggles from params to mirror external changes
     for key, item in self._refresh_toggles:
       item.set_checked(ui_state.params.get_bool(key))
+
+  def _on_model_fidx(self, value: int):
+    ui_state.params.put("ModelFidx", value, block=True)
+    self._model_fidx.set_value(f"{value} s")
 
   def _on_joystick_debug_mode(self, state: bool):
     ui_state.params.put_bool("JoystickDebugMode", state, block=True)
