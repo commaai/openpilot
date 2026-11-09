@@ -3,9 +3,6 @@ from pathlib import Path
 
 Import('env', 'arch', 'common')
 
-if arch != "Darwin":
-  env.SharedLibrary('#openpilot/system/ui/lib/cpu_renderer', ['#openpilot/system/ui/lib/cpu_renderer.c'], LIBS=['m'])
-
 if GetOption('extras') and arch == "comma_arm64":
   # build installers
   raylib_dir = Path(importlib.util.find_spec("raylib").submodule_search_locations[0]) / "install"
