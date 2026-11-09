@@ -3,6 +3,7 @@ from collections.abc import Callable, Mapping
 import base64
 import ctypes
 import gc
+import itertools
 from functools import cached_property
 import os
 os.environ['GMMU'] = '0' # for chestnut fast loading, noop for qcom
@@ -15,10 +16,14 @@ from tinygrad.tensor import Tensor
 from tinygrad.helpers import round_up
 from tinygrad.uop.ops import UOp
 import math
+import mmap
+import multiprocessing
+from multiprocessing.connection import wait
 import pickle
-import threading
+import signal
 import time
 import numpy as np
+from setproctitle import setproctitle
 import openpilot.cereal.messaging as messaging
 from openpilot.cereal import log
 from opendbc.car.structs import car
@@ -79,10 +84,9 @@ def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.
 
 
 class ChestnutGpuState:
-  # GPU metrics require modeld's GPU context
-  def __init__(self, pm: PubMaster, big: bool):
+  # GPU metrics require the big model's GPU context
+  def __init__(self, pm: PubMaster):
     self.pm = pm
-    self.big = big
     self.valid = True
     self.sends = 0
     self.metrics = {}
@@ -96,7 +100,7 @@ class ChestnutGpuState:
     msg = messaging.new_message('chestnutGpuState')
     state = msg.chestnutGpuState
     self.sends += 1
-    if self.big and "AMD" in Device._opened_devices and self.sends % 100 == 1:
+    if self.sends % 100 == 1:
       try:
         smu = Device["AMD"].iface.dev_impl.smu
         metrics_t = smu.smu_mod.SmuMetricsExternal_t
@@ -116,11 +120,10 @@ class ChestnutGpuState:
           cloudlog.exception("chestnut state read failed")
         self.valid = False
         self.metrics.clear()
-    if self.big:
-      for k, v in self.metrics.items():
-        setattr(state, k, v)
+    for k, v in self.metrics.items():
+      setattr(state, k, v)
 
-    msg.valid = not self.big or (self.valid and bool(self.metrics))
+    msg.valid = self.valid and bool(self.metrics)
     self.pm.send('chestnutGpuState', msg)
 
 
@@ -238,14 +241,61 @@ class ModelState:
     self.prev_desire[:] = 0
 
 
+def big_model_process(conn, frames: np.ndarray, cam_w: int, cam_h: int) -> None:
+  ctypes.CDLL(None).prctl(1, signal.SIGKILL)  # PR_SET_PDEATHSIG, die with modeld
+  setproctitle('bigmodeld')
+  cloudlog.bind(daemon='bigmodeld')
+  from tinygrad.runtime.ops_amd import AMDDevice
+  AMDDevice.wait_timeout_ms = 3000
+  try:
+    wait_for_chestnut()
+    model = ModelState(cam_w, cam_h, True)
+    model.warmup()
+    config_realtime_process(7, 54)
+    chestnut_state = ChestnutGpuState(PubMaster(["chestnutGpuState"]))
+    conn.send(True)
+    bufs = {name: frames[1] if 'big' in name else frames[0] for name in model.vision_input_names}
+    for i in itertools.count():
+      transforms, inputs = conn.recv()
+      send_chestnut = i % round(ModelConstants.MODEL_RUN_FREQ / SERVICE_LIST['chestnutGpuState'].frequency) == 0
+      conn.send(model.run(bufs, transforms, inputs, chestnut_state.send if send_chestnut else None))
+  except Exception:
+    cloudlog.exception("big model failed")
+    raise
+
+
+class BigModel:
+  def __init__(self, cam_w: int, cam_h: int, buffer_len: int):
+    self.frames = np.frombuffer(mmap.mmap(-1, 2 * buffer_len), dtype=np.uint8).reshape(2, buffer_len)
+    self.conn, self.child_conn = multiprocessing.Pipe()  # held so a dead child can't break the pipe
+    self.proc = multiprocessing.get_context('fork').Process(target=big_model_process, args=(self.child_conn, self.frames, cam_w, cam_h), daemon=True)
+    self.proc.start()
+
+  def recv(self, timeout: float):
+    return self.conn.recv() if self.conn in wait([self.conn, self.proc.sentinel], timeout) else None
+
+  def run(self, buf_main: VisionBuf, buf_extra: VisionBuf, transforms: dict[str, np.ndarray], inputs: dict[str, np.ndarray]):
+    self.frames[:] = np.frombuffer(buf_main.data, dtype=np.uint8), np.frombuffer(buf_extra.data, dtype=np.uint8)
+    self.conn.send((transforms, inputs))
+    return self.recv(0.1)
+
+
+def load_big_model(cam_w: int, cam_h: int, buffer_len: int) -> BigModel | None:
+  for i in range(2):
+    time.sleep(5 * i)  # a crank can cut chestnut power during the load
+    big_model = BigModel(cam_w, cam_h, buffer_len)
+    if big_model.recv(BIG_MODEL_TIMEOUT) is not None:
+      return big_model
+    cloudlog.error("big model load failed")
+    big_model.proc.kill()
+  return None
+
+
 def main(demo=False):
   cloudlog.warning("modeld init")
 
   # a cable is a chestnut on its way, unless a USB host is on it
   CHESTNUT = chestnut_compiled() and (chestnut_present() or (cable_connected() and not usb_host_connected()))
-  if CHESTNUT:
-    from tinygrad.runtime.ops_amd import AMDDevice
-    AMDDevice.wait_timeout_ms = 3000
   params = Params()
   params.put_bool("ChestnutLoading", CHESTNUT)
   params.remove("ChestnutActive")
@@ -279,47 +329,22 @@ def main(demo=False):
 
   st = time.monotonic()
   cloudlog.warning("loading model")
-  model = None
+  big_model = None
   if CHESTNUT:
-    big_model = None
-    def load_big():
-      nonlocal big_model
-      try:
-        wait_for_chestnut()
-        m = ModelState(cam_w, cam_h, True)
-        m.warmup()
-        big_model = m
-      except Exception:
-        cloudlog.exception("big model load failed")
-    loader = threading.Thread(target=load_big, daemon=True)
-    loader.start()
-    loader.join(BIG_MODEL_TIMEOUT)
-    model = big_model
-    if model is None and not params.get_bool("ChestnutRetry"):
-      # a crank can cut the chestnut power during the load, retry once with an onroad cycle
-      cloudlog.error("big model load failed, cycling onroad to retry")
-      params.put_bool("ChestnutRetry", True)
-      params.put_bool("OnroadCycleRequested", True)
-    else:
-      params.put_bool("ChestnutActive", model is not None)
-
-  small_model = ModelState(cam_w, cam_h, False) if model is None or CHESTNUT else None
-  if model is None:
-    model = small_model
+    big_model = load_big_model(cam_w, cam_h, vipc_client_main.buffer_len)  # fork before the small model opens the GPU
+    params.put_bool("ChestnutActive", big_model is not None)
+  model = ModelState(cam_w, cam_h, False)
   params.put_bool("ChestnutLoading", False)
   cloudlog.warning(f"models loaded in {time.monotonic() - st:.1f}s, modeld starting")
 
   config_realtime_process(7, 54)
 
   # messaging
-  pub_socks = ["modelV2", "drivingModelData", "cameraOdometry"] + (["chestnutGpuState"] if CHESTNUT else [])
-  pm = PubMaster(pub_socks)
+  pm = PubMaster(["modelV2", "drivingModelData", "cameraOdometry"])
   sm = SubMaster(["deviceState", "carState", "narrowRoadCameraState", "extrinsicsCalibration", "driverMonitoringState",
                   "carControl", "controlsState", "lateralDelay"])
 
   publish_state = PublishState()
-  params = Params()
-  chestnut_state = ChestnutGpuState(pm, model.chestnut) if CHESTNUT else None
 
   # setup filter to track dropped frames
   frame_dropped_filter = FirstOrderFilter(0., 10., 1. / ModelConstants.MODEL_RUN_FREQ)
@@ -426,51 +451,44 @@ def main(demo=False):
     }
 
     mt1 = time.perf_counter()
-    try:
-      send_chestnut = (chestnut_state is not None and
-                       run_count % round(ModelConstants.MODEL_RUN_FREQ / SERVICE_LIST['chestnutGpuState'].frequency) == 0)
-      model_output = model.run(bufs, transforms, inputs, chestnut_state.send if send_chestnut else None)
-    except Exception:
-      if not model.chestnut:
-        raise
-      # fallback to small model
-      cloudlog.exception("big model failed, fall back to small")
+    model_output = big_model.run(buf_main, buf_extra, transforms, inputs) if big_model else None
+    if big_model and model_output is None:
+      cloudlog.error("big model failed, fall back to small")
+      big_model.proc.kill()
+      big_model = None
       params.put_bool("ChestnutActive", False)
-      model = small_model
-      if chestnut_state is not None:
-        chestnut_state.big = False
       run_count = 0
-      model_output = None
+    if model_output is None:
+      model_output = model.run(bufs, transforms, inputs)
     mt2 = time.perf_counter()
     model_execution_time = mt2 - mt1
 
-    if model_output is not None:
-      modelv2_send = messaging.new_message('modelV2')
-      drivingdata_send = messaging.new_message('drivingModelData')
-      posenet_send = messaging.new_message('cameraOdometry')
+    modelv2_send = messaging.new_message('modelV2')
+    drivingdata_send = messaging.new_message('drivingModelData')
+    posenet_send = messaging.new_message('cameraOdometry')
 
-      if not sm['carControl'].latActive:
-        prev_action.desiredCurvature = sm['controlsState'].curvature
-      action = get_action_from_model(model_output, prev_action, lat_action_t, long_action_t, v_ego)
-      prev_action = action
-      fill_model_msg(modelv2_send, model_output, action,
-                     publish_state, meta_main.frame_id, meta_extra.frame_id, frame_id,
-                     frame_drop_ratio, meta_main.timestamp_eof, model_execution_time, extrinsics_calibration_seen)
-      modelv2_send.modelV2.big = model.chestnut
+    if not sm['carControl'].latActive:
+      prev_action.desiredCurvature = sm['controlsState'].curvature
+    action = get_action_from_model(model_output, prev_action, lat_action_t, long_action_t, v_ego)
+    prev_action = action
+    fill_model_msg(modelv2_send, model_output, action,
+                   publish_state, meta_main.frame_id, meta_extra.frame_id, frame_id,
+                   frame_drop_ratio, meta_main.timestamp_eof, model_execution_time, extrinsics_calibration_seen)
+    modelv2_send.modelV2.big = big_model is not None
 
-      desire_state = modelv2_send.modelV2.meta.desireState
-      l_lane_change_prob = desire_state[log.Desire.laneChangeLeft]
-      r_lane_change_prob = desire_state[log.Desire.laneChangeRight]
-      lane_change_prob = l_lane_change_prob + r_lane_change_prob
-      DH.update(sm['carState'], sm['carControl'].latActive, lane_change_prob)
-      modelv2_send.modelV2.meta.laneChangeState = DH.lane_change_state
-      modelv2_send.modelV2.meta.laneChangeDirection = DH.lane_change_direction
+    desire_state = modelv2_send.modelV2.meta.desireState
+    l_lane_change_prob = desire_state[log.Desire.laneChangeLeft]
+    r_lane_change_prob = desire_state[log.Desire.laneChangeRight]
+    lane_change_prob = l_lane_change_prob + r_lane_change_prob
+    DH.update(sm['carState'], sm['carControl'].latActive, lane_change_prob)
+    modelv2_send.modelV2.meta.laneChangeState = DH.lane_change_state
+    modelv2_send.modelV2.meta.laneChangeDirection = DH.lane_change_direction
 
-      fill_driving_model_data(drivingdata_send, modelv2_send)
-      fill_pose_msg(posenet_send, model_output, meta_main.frame_id, vipc_dropped_frames, meta_main.timestamp_eof, extrinsics_calibration_seen)
-      pm.send('modelV2', modelv2_send)
-      pm.send('drivingModelData', drivingdata_send)
-      pm.send('cameraOdometry', posenet_send)
+    fill_driving_model_data(drivingdata_send, modelv2_send)
+    fill_pose_msg(posenet_send, model_output, meta_main.frame_id, vipc_dropped_frames, meta_main.timestamp_eof, extrinsics_calibration_seen)
+    pm.send('modelV2', modelv2_send)
+    pm.send('drivingModelData', drivingdata_send)
+    pm.send('cameraOdometry', posenet_send)
     last_vipc_frame_id = meta_main.frame_id
 
 if __name__ == "__main__":

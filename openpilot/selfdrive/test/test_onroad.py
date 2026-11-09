@@ -534,6 +534,18 @@ class TestChestnutOnroad(OpenpilotTestCase):
     expected = 3 * SERVICE_LIST['modelV2'].frequency
     assert np.isclose(len(small_model_logs), expected, rtol=0.05, atol=2), f"small model: expected {expected}, got {len(small_model_logs)}"
 
+  @mock_messages(['deviceMotion'])
+  def test_big_model_crash(self):
+    with chestnut_models(['modelV2']), log_collector(['modelV2']) as (logs, _):
+      time.sleep(2)
+      subprocess.run(['pkill', '-SEGV', '-f', '^bigmodeld'], check=True)
+      time.sleep(3)
+
+    big = [m.modelV2.big for m in logs]
+    assert big[0] and not big[-1] and big.index(False) == big.count(True), "modeld didn't fall back to the small model"
+    assert np.max(np.diff([m.modelV2.frameId for m in logs])) <= 0.5 * SERVICE_LIST['modelV2'].frequency, "fall back took too long"
+    assert Params().get("ChestnutActive") is False
+
 
 @unittest.skipUnless(HARDWARE.get_device_type() == "mici", "requires MICI")
 class TestChestnutDrive(OpenpilotTestCase):

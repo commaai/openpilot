@@ -45,7 +45,7 @@ def chestnut_state_thread(end_event):
           if not msg.valid:
             handle.close()
             handle = None
-          msg.valid &= not sm.seen['chestnutGpuState'] or gpu_valid
+          msg.valid &= not sm.alive['chestnutGpuState'] or gpu_valid
           pm.send('chestnutState', msg)
         end_event.wait(1 / SERVICE_LIST['chestnutState'].frequency if handle is not None else 1.)
     finally:
