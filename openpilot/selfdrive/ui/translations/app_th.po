@@ -147,7 +147,7 @@ msgstr "การเปลี่ยนการตั้งค่านี้จ
 
 #: openpilot/selfdrive/ui/widgets/pairing_dialog.py
 msgid "Click \"add new device\" and scan the QR code on the right"
-msgstr "คลิก \"เพิ่มอุปกรณ์ใหม่\" และสแกนโค้ด QR ทางด้านขวา"
+msgstr "คลิก \"add new device\" และสแกนโค้ด QR ทางด้านขวา"
 
 #: openpilot/selfdrive/ui/widgets/offroad_alerts.py
 msgid "Close"

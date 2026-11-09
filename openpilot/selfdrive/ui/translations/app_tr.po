@@ -147,7 +147,7 @@ msgstr " Bu ayarı değiştirmek, araç çalışıyorsa openpilot'u yeniden baş
 
 #: openpilot/selfdrive/ui/widgets/pairing_dialog.py
 msgid "Click \"add new device\" and scan the QR code on the right"
-msgstr "\"yeni cihaz ekle\"ye tıklayın ve sağdaki QR kodunu tarayın"
+msgstr "\"add new device\" düğmesine tıklayın ve sağdaki QR kodunu tarayın"
 
 #: openpilot/selfdrive/ui/widgets/offroad_alerts.py
 msgid "Close"
