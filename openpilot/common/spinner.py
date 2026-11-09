@@ -29,11 +29,12 @@ class Spinner:
 
   def close(self):
     if self.spinner_proc is not None:
-      self.spinner_proc.kill()
+      self.spinner_proc.terminate()  # lets it restore the display
       try:
         self.spinner_proc.communicate(timeout=2.)
       except subprocess.TimeoutExpired:
-        print("WARNING: failed to kill spinner")
+        self.spinner_proc.kill()
+        print("WARNING: failed to stop spinner")
       self.spinner_proc = None
 
   def __del__(self):

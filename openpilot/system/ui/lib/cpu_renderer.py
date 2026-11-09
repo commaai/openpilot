@@ -35,7 +35,7 @@ class _GlyphInfo(ctypes.Structure):
   _fields_ = [("value", I), ("offsetX", I), ("offsetY", I), ("advanceX", I), ("image", _Image)]
 
 
-_lib = ctypes.PyDLL(str(Path(__file__).with_name("libcpu_renderer.so")))  # keeps the GIL, calls are short
+_lib = ctypes.CDLL(str(Path(__file__).with_name("libcpu_renderer.so")))
 for name, args in {
   "cr_target": [P, I, I, I], "cr_clip": [I, I, I, I], "cr_clear": [U32],
   "cr_rect": [F, F, F, F, U32, U32, U32, U32], "cr_rounded_rect": [F, F, F, F, F, F, U32],
@@ -67,8 +67,10 @@ class _Font:
   def __init__(self, path: str, size: int, codepoints: list[int]):
     self.data = Path(path).read_bytes()
     self.base_size = size
-    # base size metrics, used for layout exactly like raylib
-    self.advance = {cp: adv for cp, adv, _ in self._load(size, codepoints)}
+    # base size metrics, used for layout exactly like raylib. glyphs without an advance are measured with their offset
+    glyphs = self._load(size, codepoints)
+    self.advance = {cp: adv or a.shape[1] for cp, adv, (a, _, _) in glyphs}
+    self.measure = {cp: adv or a.shape[1] + ox for cp, adv, (a, ox, _) in glyphs}
     self.fallback = 63 if 63 in self.advance else next(iter(self.advance))
     self.bitmaps: dict[tuple[int, int], tuple[np.ndarray, int, int]] = {}
 
@@ -83,7 +85,7 @@ class _Font:
     for g in glyphs[:count.value]:
       img = g.image
       a = np.ctypeslib.as_array(img.data, (img.height, img.width)).copy() if img.data and img.width else np.zeros((0, 0), np.uint8)
-      ret.append((g.value, g.advanceX or img.width, (a, g.offsetX, g.offsetY)))
+      ret.append((g.value, g.advanceX, (a, g.offsetX, g.offsetY)))
     _raylib.UnloadFontData(glyphs, count.value)
     return ret
 
@@ -121,6 +123,7 @@ class _Renderer:
     self.transform_stack: list[tuple[float, float, float, float]] = []
     self.display = False
     self.drm_sock: socket.socket | None = None
+    self.drm_fd = -1
     self.last_frame = self.frame_time = 0.0
     self.target_frame_time = 0.0
     # touch, as raylib's comma platform
@@ -141,6 +144,7 @@ class _Renderer:
   # ***** window *****
 
   def init_window(self, width: int, height: int, title: str):
+    self.last_frame = time.monotonic()
     self.fb = np.zeros((height, width, 4), np.uint8)
     _lib.cr_target(_ptr(self.fb), width, height, width * 4)
     if not os.path.exists("/dev/dri/card0"):
@@ -154,7 +158,7 @@ class _Renderer:
     else:
       self.drm_sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
       self.drm_sock.connect("/tmp/drmfd.sock")  # magic hands out DRM master while this stays open
-      fd = socket.recv_fds(self.drm_sock, 1, 1)[1][0]
+      fd = self.drm_fd = socket.recv_fds(self.drm_sock, 1, 1)[1][0]
     ret = _lib.cr_display_init(fd, self.canonical_zero)
     if ret != 0:
       raise RuntimeError(f"failed to init display: {os.strerror(-ret)}")
@@ -164,6 +168,7 @@ class _Renderer:
       raise RuntimeError(f"{width}x{height} window doesn't fit the display")
     self.fb = np.ctypeslib.as_array(target, (height, width, 4))
     _lib.cr_target(_ptr(self.fb), width, height, width * 4)
+    _lib.cr_display_present()  # the CRTC has to be on to take color correction
     for name, blob in self._color_correction().items():
       if (ret := _lib.cr_display_blob(name.encode(), blob, len(blob or b""))) != 0:
         cloudlog.warning(f"cpu renderer: failed to set {name}: {os.strerror(-ret)}")
@@ -177,12 +182,13 @@ class _Renderer:
     for path in COLOR_CAL:
       try:
         gamma, *rest = struct.unpack("<13e", Path(path).read_bytes()[:26])
-        break
       except (OSError, struct.error):
-        pass
+        continue
+      ccm, gains = np.array(rest[:9]).reshape(3, 3), np.array(rest[9:])
+      if 0 < gamma < np.inf and np.isfinite(ccm).all() and np.isfinite(gains).all() and (gains > 0).all():
+        break
     else:
       return off
-    ccm, gains = np.array(rest[:9]).reshape(3, 3), np.array(rest[9:])
     # 256 entry 12 bit degamma and 1024 entry 10 bit gamma luts per channel, and a matrix in 1/32768 with a plane per output channel
     igc = np.round((np.arange(256) / 255) ** 2.2 * 4095).astype("<u4")
     gc = np.round((np.arange(1024) / 1023) ** (1 / gamma / 2.2) * 1023).astype("<u4")
@@ -203,6 +209,9 @@ class _Renderer:
       _lib.cr_target(_ptr(self.fb), self.fb.shape[1], self.fb.shape[0], self.fb.shape[1] * 4)
       _lib.cr_display_close()
       self.display = False
+    if self.drm_fd >= 0:
+      os.close(self.drm_fd)
+      self.drm_fd = -1
     if self.drm_sock is not None:
       self.drm_sock.close()
       self.drm_sock = None
@@ -232,10 +241,12 @@ class _Renderer:
         self.down[i] = self.reset_next[i] = False
     if self.touch_fd < 0:
       return
-    try:
-      data = os.read(self.touch_fd, 24 * 64)
-    except BlockingIOError:
-      return
+    data = b""
+    while True:
+      try:
+        data += os.read(self.touch_fd, 24 * 64)
+      except BlockingIOError:
+        break
     w, h = self.fb.shape[1], self.fb.shape[0]
     for _, _, etype, code, value in struct.iter_unpack("qqHHi", data):
       if etype == 0:  # EV_SYN
@@ -333,15 +344,13 @@ class _Renderer:
 
   def load_texture_from_image(self, image):
     w, h, fmt = image.width, image.height, image.format
-    texture = rl.Texture(self.new_id(), w, h, 1, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8)
+    texture = rl.Texture(self.new_id(), w, h, 1, fmt)
     self.textures[texture.id] = (np.zeros((h, w, 4), np.uint8), True)
     try:
       data = image.to_bytes(w * h * {1: 1, 2: 2, 4: 3, 7: 4}[fmt])
     except ValueError:
       return texture  # no pixels yet
-    texture.format = fmt
     self.update_texture(texture, data)
-    texture.format = rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8
     return texture
 
   def update_texture(self, texture, data):
@@ -378,7 +387,7 @@ class _Renderer:
       return rl.Vector2(0, 0)
     scale = font_size / f.base_size
     lines = text.split("\n")
-    width = max(sum(f.advance.get(ord(ch), f.advance[f.fallback]) for ch in line) for line in lines)
+    width = max(sum(f.measure.get(ord(ch), f.measure[f.fallback]) for ch in line) for line in lines)
     chars = max(len(line) for line in lines)
     return rl.Vector2(width * scale + (chars - 1) * spacing, font_size + (len(lines) - 1) * (font_size + TEXT_LINE_SPACING))
 
@@ -518,6 +527,8 @@ def install():
     "draw_texture_pro": _r.draw_texture_pro,
     "draw_texture_ex": lambda t, pos, rotation, scale, tint: _r.draw_texture_pro(
       t, rl.Rectangle(0, 0, t.width, t.height), rl.Rectangle(pos.x, pos.y, t.width * scale, t.height * scale), rl.Vector2(0, 0), rotation, tint),
+    "draw_texture": lambda t, x, y, tint: _r.draw_texture_pro(
+      t, rl.Rectangle(0, 0, t.width, t.height), rl.Rectangle(x, y, t.width, t.height), rl.Vector2(0, 0), 0, tint),
     "draw_texture_v": lambda t, pos, tint: _r.draw_texture_pro(
       t, rl.Rectangle(0, 0, t.width, t.height), rl.Rectangle(pos.x, pos.y, t.width, t.height), rl.Vector2(0, 0), 0, tint),
 
