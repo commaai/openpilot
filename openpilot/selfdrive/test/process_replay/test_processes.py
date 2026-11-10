@@ -88,10 +88,10 @@ def run_test_process(data):
   save_log(cur_log_fn, log_msgs)
   if ref_error is not None:
     return (segment, cfg.proc_name, ref_error, ref_error)
-  if isinstance(res, str) or ref_log_msgs is None:
-    return (segment, cfg.proc_name, res, res if isinstance(res, str) else None)
   try:
-    diff_data = diff_process(cfg, ref_log_msgs, log_msgs)
+    diff_data = res or None
+    if ref_log_msgs is not None:
+      diff_data = diff_process(cfg, ref_log_msgs, log_msgs)
   except Exception:
     diff_data = traceback.format_exc()
   return (segment, cfg.proc_name, res, diff_data)
