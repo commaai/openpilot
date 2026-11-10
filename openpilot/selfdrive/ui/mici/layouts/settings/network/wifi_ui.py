@@ -1,5 +1,5 @@
 import math
-from openpilot.system.ui.lib.scalar import interp
+from openpilot.common.numpy_fast import interp
 import raylib_nb as rl
 from collections.abc import Callable
 

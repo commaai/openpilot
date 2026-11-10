@@ -1,6 +1,6 @@
 from enum import IntEnum
 import raylib_nb as rl
-from openpilot.system.ui.lib.scalar import interp
+from openpilot.common.numpy_fast import interp
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, MouseEvent
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget

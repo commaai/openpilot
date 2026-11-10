@@ -1,5 +1,5 @@
 import raylib_nb as rl
-from openpilot.system.ui.lib.scalar import interp, clip
+from openpilot.common.numpy_fast import interp, clip
 from collections.abc import Callable, Sequence
 
 from openpilot.common.filter_simple import FirstOrderFilter, BounceFilter
