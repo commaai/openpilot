@@ -20,12 +20,14 @@ def main():
   longitudinal_planner = LongitudinalPlanner(CP)
   pm = messaging.PubMaster(['longitudinalPlan', 'driverAssistance'])
   gps = ['gpsLocationExternal', 'gpsLocation']
-  sm = messaging.SubMaster(['carControl', 'carState', 'controlsState', 'radarState', 'modelV2', 'selfdriveState'] + gps,
+  sm = messaging.SubMaster(['carControl', 'carState', 'controlsState', 'radarState', 'modelV2', 'selfdriveState', 'vehicleParameters'] + gps,
                            poll='modelV2', ignore_alive=gps, ignore_avg_freq=gps, ignore_valid=gps)
 
   while True:
     sm.update()
     if sm.updated['modelV2']:
+      if sm.frame % 20 == 0:
+        longitudinal_planner.fleet_mode = params.get_bool("FleetSpeedMode")
       longitudinal_planner.update(sm)
       longitudinal_planner.publish(sm, pm)
 

@@ -9,6 +9,7 @@ from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.controls.lib.accel_boost import AccelBoost
 from openpilot.selfdrive.controls.lib.convergence_boost import ConvergenceBoost
+from openpilot.selfdrive.controls.lib.curve_speed import CurveSpeed
 from openpilot.selfdrive.controls.lib.fleet_speed import FleetSpeedCap
 from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc, LongitudinalPlanSource
@@ -41,6 +42,8 @@ class LongitudinalPlanner:
     self.accel_boost = AccelBoost()
     self.fleet_speed = FleetSpeedCap()
     self.convergence_boost = ConvergenceBoost()
+    self.curve_speed = CurveSpeed(dt)
+    self.fleet_mode = True  # FleetSpeedMode param: fleet speed map + convergence boost, else curve speed (#39242)
 
     self.v_desired_filter = FirstOrderFilter(init_v, 2.0, self.dt)
     self.a_cruise = init_a
@@ -72,6 +75,7 @@ class LongitudinalPlanner:
       self.output_a_target = np.clip(sm['carState'].aEgo, ACCEL_MIN, ACCEL_MAX)
       self.a_cruise = self.output_a_target
       self.a_map = self.output_a_target
+      self.curve_speed.reset()
 
     # Prevent divergence, smooth in current v_ego
     self.v_desired_filter.x = max(0.0, self.v_desired_filter.update(v_ego))
@@ -108,14 +112,18 @@ class LongitudinalPlanner:
     self.a_cruise = get_cruise_accel(v_cruise, v_ego, self.a_cruise, self.output_a_target, self.dt)
     cruise_should_stop = should_stop(v_ego, self.a_cruise)
 
-    a_map_target = self.fleet_speed.update(sm, v_ego)
+    a_map_target = self.fleet_speed.update(sm, v_ego) if self.fleet_mode else self.fleet_speed.clear()
     a_map_target = ACCEL_MAX if a_map_target is None else a_map_target
     j_map = np.interp(v_ego, J_CRUISE_BP, J_CRUISE_VALS)
     self.a_map = float(np.clip(a_map_target, min(self.a_map, self.output_a_target) - j_map * self.dt, self.a_map + j_map * self.dt))
 
     output_a_target_e2e = self.accel_boost.update(sm, output_a_target_e2e, output_a_target_mpc, self.a_cruise)
-    v_target = min(v_cruise, self.fleet_speed.v_here) if np.isfinite(self.fleet_speed.v_here) else v_cruise
-    output_a_target_e2e = self.convergence_boost.update(sm, output_a_target_e2e, v_ego, v_target)
+    if self.fleet_mode:
+      v_target = min(v_cruise, self.fleet_speed.v_here) if np.isfinite(self.fleet_speed.v_here) else v_cruise
+      output_a_target_e2e = self.convergence_boost.update(sm, output_a_target_e2e, v_ego, v_target)
+    else:
+      self.convergence_boost.boost = 0.0
+      output_a_target_e2e = self.curve_speed.update(sm['modelV2'], sm['vehicleParameters'].roll, output_a_target_e2e)
 
     candidates = [(output_a_target_mpc, self.mpc.source, output_should_stop_mpc),
                   (self.a_cruise, LongitudinalPlanSource.cruise, cruise_should_stop),

@@ -79,6 +79,10 @@ class FleetSpeedCap:
         return g, age
     return None, 0.0
 
+  def clear(self):
+    self.v_here, self.v_target, self.gap_filled, self.last_v = np.nan, np.nan, False, np.nan
+    return None
+
   def update(self, sm, v_ego):
     # accel needed to be at or below the cap at every point of the model path, None when unconstrained
     self.v_here, self.v_target, self.gap_filled = np.nan, np.nan, False

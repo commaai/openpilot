@@ -41,6 +41,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"DriverLockoutCount", {CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON, INT, "0"}},
     {"AlphaLongitudinalEnabled", {PERSISTENT | DEVELOPMENT_ONLY, BOOL}},
     {"FirmwareQueryDone", {CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION | CLEAR_ON_OFFROAD_TRANSITION, BOOL}},
+    {"FleetSpeedMode", {PERSISTENT, BOOL, "1"}},
     {"ForcePowerDown", {PERSISTENT, BOOL}},
     {"GitBranch", {PERSISTENT, STRING}},
     {"GitCommit", {PERSISTENT, STRING}},

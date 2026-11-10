@@ -33,6 +33,10 @@ class TogglesLayoutMici(NavScroller):
                                  toggle_callback=restart_needed_callback,
                                  description="Record microphone audio while driving.\n" +
                                              "Audio is included in dashcam videos in comma connect.")
+    fleet_speed_toggle = BigParamControl("fleet speed map", "FleetSpeedMode",
+                                         description="On: cap speed with the fleet's human speed map and pull up to set speed when the road is clear.\n" +
+                                                     "Off: slow for curves from the driving model's plan only.\n" +
+                                                     "Change while disengaged.")
     enable_openpilot = BigParamControl("enable openpilot", "OpenpilotEnabledToggle", toggle_callback=restart_needed_callback,
                                        description="Enable to use openpilot driver assistance.\n" +
                                                    "Disable to use your car's stock driver assistance.")
@@ -42,6 +46,7 @@ class TogglesLayoutMici(NavScroller):
       self._initial_cruise_speed,
       is_metric_toggle,
       ldw_toggle,
+      fleet_speed_toggle,
       always_on_dm_toggle,
       record_front,
       record_mic,
@@ -52,6 +57,7 @@ class TogglesLayoutMici(NavScroller):
     self._refresh_toggles = (
       ("IsMetric", is_metric_toggle),
       ("IsLdwEnabled", ldw_toggle),
+      ("FleetSpeedMode", fleet_speed_toggle),
       ("AlwaysOnDM", always_on_dm_toggle),
       ("RecordFront", record_front),
       ("RecordAudio", record_mic),
@@ -59,6 +65,8 @@ class TogglesLayoutMici(NavScroller):
     )
 
     enable_openpilot.set_enabled(lambda: not ui_state.engaged)
+    fleet_speed_toggle.set_enabled(lambda: not ui_state.engaged)
+    fleet_speed_toggle.set_visible(lambda: ui_state.CP is None or ui_state.has_longitudinal_control)
     always_on_dm_toggle.set_enabled(not ui_state.params.get_bool("AlwaysOnDMLock"))
     record_front.set_enabled(False if ui_state.params.get_bool("RecordFrontLock") else (lambda: not ui_state.engaged))
     record_mic.set_enabled(lambda: not ui_state.engaged)
