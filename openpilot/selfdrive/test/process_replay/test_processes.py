@@ -4,18 +4,16 @@ import concurrent.futures
 import os
 import sys
 import traceback
-import numpy as np
-from collections import defaultdict, deque
+from collections import Counter, defaultdict
 from tqdm import tqdm
 from typing import Any
 from opendbc.car.car_helpers import interface_names, interfaces
 from openpilot.common.git import get_commit
-from openpilot.common.realtime import DT_MDL
 from openpilot.tools.lib.openpilotci import get_url
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
 from openpilot.selfdrive.test.process_replay.diff_report import diff_process, diff_report
-from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, replay_process, \
-                                                                   check_most_messages_valid, replay_process_with_name
+from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, replay_process
+from openpilot.selfdrive.test.process_replay.sanity_checks import PROCESS_CHECKS, check_outputs
 from openpilot.tools.lib.filereader import FileReader
 from openpilot.tools.lib.logreader import LogReader, save_log
 from openpilot.tools.lib.url_file import URLFile
@@ -76,96 +74,38 @@ EXCLUDED_PROCS = {"modeld", "dmonitoringmodeld"}
 
 def run_test_process(data):
   segment, cfg, args, cur_log_fn, ref_log_path, lr_dat = data
-  ref_error = None
+  checks = {}
+  ref_log_msgs, ref_error = None, None
+  if ref_log_path is not None:
+    try:
+      ref_log_msgs = list(LogReader(ref_log_path))
+    except Exception:
+      ref_error = f"Failed to load reference {ref_log_path}:\n{traceback.format_exc()}"
   try:
-    ref_log_msgs = list(LogReader(ref_log_path))
+    lr = LogReader.from_bytes(lr_dat)
+    log_msgs = replay_process(cfg, lr, disable_progress=True)
+    save_log(cur_log_fn, log_msgs)
+    checks = check_outputs(cfg, lr, log_msgs)
+    if ref_error is not None:
+      return (segment, cfg.proc_name, ref_error, ref_error, checks)
+    if ref_log_msgs is None:
+      return (segment, cfg.proc_name, [], None, checks)
+
+    res = compare_logs(ref_log_msgs, log_msgs, args.ignore_fields + cfg.ignore, args.ignore_msgs, cfg.tolerance)
+    try:
+      diff_data = diff_process(cfg, ref_log_msgs, log_msgs)
+    except Exception:
+      diff_data = traceback.format_exc()
+    return (segment, cfg.proc_name, res, diff_data, checks)
   except Exception:
-    # New routes have no ref yet, still replay and publish new refs.
-    ref_log_msgs = []
-    ref_error = f"Failed to load reference {ref_log_path}:\n{traceback.format_exc()}"
-  lr = LogReader.from_bytes(lr_dat)
-  res, log_msgs = test_process(cfg, lr, segment, ref_log_msgs, cur_log_fn, args.ignore_fields, args.ignore_msgs)
-  # save logs so we can update refs
-  save_log(cur_log_fn, log_msgs)
-  if ref_error is not None:
-    return (segment, cfg.proc_name, ref_error, ref_error)
-  try:
-    diff_data = diff_process(cfg, ref_log_msgs, log_msgs)
-  except Exception:
-    diff_data = traceback.format_exc()
-  return (segment, cfg.proc_name, res, diff_data)
+    error = traceback.format_exc()
+    return (segment, cfg.proc_name, error, error, checks)
 
 
 def get_log_data(segment):
   r, n = segment.rsplit("--", 1)
   with FileReader(get_url(r, n, "rlog.zst")) as f:
     return (segment, f.read())
-
-
-def test_accel_rms(lr_dat):
-  lr = LogReader.from_bytes(lr_dat)
-  CP = next(m.carParams for m in lr if m.which() == 'carParams')
-  if not CP.openpilotLongitudinalControl:
-    return 0
-
-  n = round(1 / DT_MDL)
-  window = deque(maxlen=4 * n)
-  state, checked = {}, 0
-  for m in replay_process_with_name('plannerd', lr, return_all_logs=True, disable_progress=True):
-    if m.which() in ('carState', 'carControl', 'controlsState', 'radarState'):
-      state[m.which()] = getattr(m, m.which())
-    elif m.which() == 'longitudinalPlan' and len(state) == 4:
-      cs, cc, controls, radar = (state[k] for k in ('carState', 'carControl', 'controlsState', 'radarState'))
-      plan = m.longitudinalPlan
-      if not (m.valid and cc.longActive and controls.longControlState == 'pid' and cs.vEgo > 20 and
-              plan.longitudinalPlanSource == 'cruise' and not (cs.gasPressed or cs.brakePressed or controls.forceDecel) and
-              not (radar.leadOne.present or radar.leadTwo.present)):
-        window.clear()
-        continue
-
-      window.append((plan.modelMonoTime / 1e9, cs.vCruise, plan.aTarget))
-      if len(window) < window.maxlen:
-        continue
-      times, cruise, accel = np.array(window).T
-      if np.ptp(cruise) > 0.01 or np.max(np.diff(times)) > 2 * DT_MDL:
-        continue
-
-      # Allow one second to settle, then remove slow acceleration changes with a one-second moving average.
-      times, accel = times[n:], accel[n:]
-      noise = accel[n//2:-n//2] - np.convolve(accel, np.ones(n + 1) / (n + 1), mode='valid')
-      accel_rms = np.sqrt(np.mean(noise ** 2))
-      jerk_rms = np.sqrt(np.mean((np.diff(noise) / np.diff(times[n//2:-n//2])) ** 2))
-      assert accel_rms < 0.012, f'{CP.carFingerprint}: {accel_rms=:.5f}'
-      assert jerk_rms < 0.03, f'{CP.carFingerprint}: {jerk_rms=:.5f}'
-      checked += 1
-  return checked
-
-
-def test_process(cfg, lr, segment, ref_log_msgs, new_log_path, ignore_fields=None, ignore_msgs=None):
-  if ignore_fields is None:
-    ignore_fields = []
-  if ignore_msgs is None:
-    ignore_msgs = []
-
-  try:
-    log_msgs = replay_process(cfg, lr, disable_progress=True)
-  except Exception as e:
-    raise Exception("failed on segment: " + segment) from e
-
-  if not check_most_messages_valid(log_msgs):
-    return f"Route did not have enough valid messages: {new_log_path}", log_msgs
-
-  # skip this check if the segment is using qcom gps
-  if cfg.proc_name != 'ubloxd' or any(m.which() in cfg.pubs for m in lr):
-    seen_msgs = {m.which() for m in log_msgs}
-    expected_msgs = set(cfg.subs)
-    if seen_msgs != expected_msgs:
-      return f"Expected messages: {expected_msgs}, but got: {seen_msgs}", log_msgs
-
-  try:
-    return compare_logs(ref_log_msgs, log_msgs, ignore_fields + cfg.ignore, ignore_msgs, cfg.tolerance), log_msgs
-  except Exception as e:
-    return str(e), log_msgs
 
 
 if __name__ == "__main__":
@@ -237,12 +177,14 @@ if __name__ == "__main__":
         if cfg.proc_name not in tested_procs:
           continue
 
-        # to speed things up, we only test all segments on card
-        if cfg.proc_name not in ('card', 'controlsd', 'lagd') and car_brand not in ('HYUNDAI', 'TOYOTA'):
+        compare = cfg.proc_name in ('card', 'controlsd', 'lagd') or car_brand in ('HYUNDAI', 'TOYOTA')
+        if not compare and cfg.proc_name not in PROCESS_CHECKS:
           continue
 
         cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.zst".replace("|", "_"))
-        if args.update_refs:  # reference logs will not exist if routes were just regenerated
+        if not compare:
+          ref_log_path = None
+        elif args.update_refs:  # reference logs will not exist if routes were just regenerated
           route, seg_num = segment.rsplit("--", 1)
           ref_log_path = get_url(route, seg_num, "rlog.zst")
         else:
@@ -251,21 +193,23 @@ if __name__ == "__main__":
 
         pool_args.append((segment, cfg, args, cur_log_fn, ref_log_path, log_data[segment]))
 
-        log_paths[segment][cfg.proc_name]['ref'] = ref_log_path
+        log_paths[segment][cfg.proc_name]['ref'] = ref_log_path or 'sanity checks only'
         log_paths[segment][cfg.proc_name]['new'] = cur_log_fn
 
     results: Any = defaultdict(dict)
     diffs: list = []
+    check_counts: Counter[str] = Counter()
     p2 = pool.map(run_test_process, pool_args)
-    for (segment, proc, result, diff_data) in tqdm(p2, desc="Running Tests", total=len(pool_args)):
+    for (segment, proc, result, diff_data, checks) in tqdm(p2, desc="Running Tests", total=len(pool_args)):
       results[segment][proc] = result
       diffs.append((segment, proc, diff_data))
+      check_counts.update(checks)
 
-    if 'plannerd' in tested_procs:
-      checked = sum(pool.map(test_accel_rms, log_data.values()))
-      print(f'Checked acceleration RMS in {checked} highway cruise windows')
-      if tested_cars == all_cars:
-        assert checked > 0, 'No highway cruise windows tested'
+  for name, count in check_counts.items():
+    print(f'{name}: {count} samples checked')
+  missing_coverage = [name for name, count in check_counts.items() if count == 0] if tested_cars == all_cars else []
+  if missing_coverage:
+    print(f'Sanity checks did not cover any samples: {missing_coverage}')
 
   diff_short, diff_long, failed = format_diff(results, log_paths, ref_commit)
   if not args.update_refs:
@@ -278,7 +222,7 @@ if __name__ == "__main__":
     except Exception:
       print(f"failed to generate diff report:\n{traceback.format_exc()}")
 
-    if failed:
+    if failed or missing_coverage:
       print("TEST FOUND DIFFS")
     else:
       print("TEST SUCCEEDED")
@@ -289,5 +233,5 @@ if __name__ == "__main__":
     print(f"\n\nUpdated reference logs for commit: {cur_commit}")
 
   # diffs are reported, only errors fail
-  errored = any(isinstance(r, str) for seg in results.values() for r in seg.values())
+  errored = any(isinstance(r, str) for seg in results.values() for r in seg.values()) or bool(missing_coverage)
   sys.exit(int(errored))
