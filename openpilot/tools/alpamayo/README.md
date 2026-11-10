@@ -53,6 +53,32 @@ Use `DEV=CUDA CUDA_VISIBLE_DEVICES=1` with `benchmark.py` to check the tinygrad 
 
 Reports preserve cold/warmup runs separately and include trajectories, reasoning text, generated-token counts, settings, and environment metadata. Native timings separate upload, vision, language prefill, reasoning, diffusion, and trajectory decoding. Model loading and preprocessing are recorded separately. Reference timing covers GPU-resident inference; it excludes input transfer and preprocessing. Greedy sampling makes text repeatable, but NumPy and PyTorch diffusion noise differ even with the same seed, so trajectories are not directly comparable unless noise is explicitly matched.
 
+### NVIDIA accelerated reference on RTX 5090
+
+`reference.py` defaults to NVIDIA's SDPA attention backend. `--attention eager` reproduces the initial reference below. Use NVIDIA's released `torch.compile`, CUDA graphs, and FlashAttention 2 acceleration with `--accel tuned`; this leaves the weights in BF16. Install the pinned FlashAttention wheel from [NVIDIA's acceleration guide](https://github.com/NVlabs/alpamayo2-edge/blob/02f55a7aeabc1a2b9f7a80445c08e40bddc89f5e/docs/acceleration.md) into the separate reference environment first.
+
+```bash
+# Select the intended GPU by its UUID from nvidia-smi.
+CUDA_VISIBLE_DEVICES="$ALPAMAYO_GPU_UUID" \
+  TORCHINDUCTOR_CACHE_DIR="$HOME/.cache/alpamayo2-edge/inductor" \
+  TRITON_CACHE_DIR="$HOME/.cache/alpamayo2-edge/triton" \
+  "$ALPAMAYO_PYTHON" openpilot/tools/alpamayo/reference.py \
+  --checkpoint /tmp/alpamayo2-edge-model --input /tmp/alpamayo-openpilot.npz \
+  --greedy --attention sdpa --accel tuned --warmup 3 --runs 10 \
+  --output /tmp/alpamayo-reference-tuned.json
+```
+
+On 2026-11-10, the same real two-camera sample (ten images, 2,026 prompt tokens, six generated tokens, ten diffusion steps) measured:
+
+| NVIDIA runtime | Median | p95 | Inferences/s |
+| --- | --- | --- | --- |
+| PyTorch SDPA | 268.10 ms | 268.75 ms | 3.73 |
+| PyTorch SDPA + `--accel tuned` | 138.87 ms | 140.19 ms | 7.20 |
+
+Each result uses ten measured runs after three warmups on RTX 5090 GPU 1, UUID `GPU-f7dbd668-2d4e-06e8-e258-c45142a5d370`. Before testing, this GPU had 8.1 GiB allocated and 6% utilization from existing workloads; GPU 0 was busy and was not used. The tuned run built three CUDA graphs in 41.58 seconds, with no skipped stages or eager fallbacks. The report records the physical GPU UUID and acceleration details. All measured outputs were finite and repeatable; with identical noise, the tuned/default mean waypoint difference was 3.7 mm (maximum 6.7 mm), and reasoning matched. These are inference timings for one replay sample, excluding CPU preprocessing and input transfer.
+
+NVIDIA's advertised Thor deployment uses a separate TensorRT/Edge-LLM FP8 recipe with speculative decoding and rolling image reuse. The BF16 results above use the public PyTorch accelerator and recompute all ten images every inference.
+
 Before trusting eGPU timings, check the connected firmware against `openpilot/system/hardware/chestnut/flash.py` and run tinygrad's existing USB integrity checks:
 
 ```bash

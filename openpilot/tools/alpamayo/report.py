@@ -1,5 +1,6 @@
 from datetime import datetime, UTC
 import importlib.metadata
+import os
 from pathlib import Path
 import platform
 import subprocess
@@ -7,7 +8,7 @@ import subprocess
 
 def environment():
   versions = {}
-  for package in ('torch', 'transformers', 'numpy', 'tinygrad'):
+  for package in ('torch', 'transformers', 'numpy', 'tinygrad', 'flash-attn', 'triton'):
     try:
       versions[package] = importlib.metadata.version(package)
     except importlib.metadata.PackageNotFoundError:
@@ -21,4 +22,5 @@ def environment():
       pass
   commit = subprocess.run(['git', '-C', str(Path(__file__).parent), 'rev-parse', 'HEAD'], capture_output=True, text=True)
   return {'recorded_at': datetime.now(UTC).isoformat(), 'python': platform.python_version(),
-          'packages': versions, 'openpilot_commit': commit.stdout.strip(), 'chestnut_usb': chestnuts}
+          'packages': versions, 'openpilot_commit': commit.stdout.strip(), 'chestnut_usb': chestnuts,
+          'runtime_environment': {key: os.environ[key] for key in ('DEV', 'CUDA_VISIBLE_DEVICES', 'TC_OPT', 'BEAM') if key in os.environ}}

@@ -23,20 +23,30 @@ def main():
   parser.add_argument('--runs', type=int, default=3)
   parser.add_argument('--warmup', type=int, default=2)
   parser.add_argument('--greedy', action='store_true')
-  parser.add_argument('--attention', choices=('eager', 'sdpa'), default='eager')
+  parser.add_argument('--attention', choices=('eager', 'sdpa', 'flash_attention_2'), default='sdpa')
+  parser.add_argument('--accel', choices=('off', 'compile', 'tuned'), default='off')
+  parser.add_argument('--accel-attention', choices=('auto', 'sdpa', 'fa3'), default='auto')
   parser.add_argument('--output', type=Path, required=True)
   args = parser.parse_args()
   assert args.runs > 0 and args.warmup >= 0
   torch.set_num_threads(8)
   model, _ = load_model(args.checkpoint, device=args.device, attn_implementation=args.attention)
+  acceleration = None
+  if args.accel != 'off':
+    from alpamayo2_edge.accel import AccelConfig, enable_acceleration
+    acceleration = enable_acceleration(model, AccelConfig(mode=args.accel, attention=args.accel_attention))
+    assert not acceleration.skipped, acceleration.skipped
   data = synthetic_sample(args.profile) if args.synthetic else load_sample(args.input)
   _, tokenizer, prepared = prepare(args.checkpoint, data, args.profile)
   prepared = to_device(prepared, device=args.device)
+  gpu = torch.cuda.get_device_properties(args.device)
   report = {'settings': {key: str(val) if isinstance(val, Path) else val for key, val in vars(args).items()},
-            'environment': environment(), 'device': torch.cuda.get_device_name(args.device), 'warmup': [], 'runs': []}
+            'environment': environment(), 'device': gpu.name, 'gpu_uuid': str(gpu.uuid),
+            'prompt_tokens': prepared['tokenized_data']['input_ids'].shape[1], 'warmup': [], 'runs': []}
   args.output.parent.mkdir(parents=True, exist_ok=True)
   with torch.inference_mode(), torch.autocast(device_type='cuda', dtype=torch.bfloat16):
     for i in range(args.warmup + args.runs):
+      print(f'Iteration {i + 1}/{args.warmup + args.runs}', flush=True)
       torch.manual_seed(0)
       torch.cuda.synchronize(args.device)
       started = time.perf_counter()
@@ -50,6 +60,8 @@ def main():
       result = {'inference_ms': elapsed, 'generated_tokens': len(tokens), 'reasoning': tokenizer.decode(tokens),
                 'xyz': xyz.cpu().float().tolist(), 'rot': rot.cpu().float().tolist()}
       report['warmup' if i < args.warmup else 'runs'].append(result)
+      if acceleration is not None:
+        report['acceleration'] = acceleration.describe()
       args.output.write_text(json.dumps(report, indent=2) + '\n')
       print(f'{i + 1}: {elapsed:.2f} ms, {len(tokens)} tokens', flush=True)
   totals = [r['inference_ms'] for r in report['runs']]
