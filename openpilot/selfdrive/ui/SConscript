@@ -11,7 +11,7 @@ if GetOption('extras') and arch == "comma_arm64":
   raylib_env['LIBPATH'] += [str(raylib_dir / "lib")]
   raylib_env['LINKFLAGS'].append('-Wl,-strip-debug')
 
-  raylib_libs = common + ["raylib_comma", "GLESv2", "EGL", "gbm", "drm"]
+  raylib_libs = common + ["raylib_comma", "drm"]
 
   release = "release3"
   installers = [

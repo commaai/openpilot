@@ -498,7 +498,7 @@ class GuiApplication:
     return image
 
   def _load_texture_from_image(self, image: rl.Image) -> rl.Texture:
-    """Send image to GPU and unload original image."""
+    """Make a texture from the image and unload the image."""
     texture = rl.load_texture_from_image(image)
     # Set texture filtering to smooth the result
     rl.set_texture_filter(texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
