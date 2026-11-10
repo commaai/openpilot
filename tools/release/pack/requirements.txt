@@ -1,7 +1,7 @@
 Nuitka==4.3.5
 ordered-set==4.1.0
 patchelf==0.17.2.4
-zstandard==0.25.0  # onefile compression
+zstandard==0.25.0
 
 # the apps' runtime dependencies, pinned to uv.lock
 # raylib is newer than uv.lock: the apps ship the CPU renderer, which only needs libdrm

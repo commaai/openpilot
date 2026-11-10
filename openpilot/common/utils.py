@@ -5,6 +5,7 @@ import contextlib
 import subprocess
 import time
 import functools
+import zstandard as zstd
 
 LOG_COMPRESSION_LEVEL = 10  # little benefit up to level 15. level ~17 is a small step change
 
@@ -124,7 +125,6 @@ def get_upload_stream(filepath: str, should_compress: bool) -> tuple[io.Buffered
 
   # Compress the file on the fly
   compressed_stream = io.BytesIO()
-  import zstandard as zstd  # lazy, so the standalone UI apps don't ship it
   compressor = zstd.ZstdCompressor(level=LOG_COMPRESSION_LEVEL)
 
   with open(filepath, "rb") as f:
