@@ -13,13 +13,19 @@ CONNECTION_RETRY_INTERVAL = 0.2  # seconds between connection attempts
 
 def color_curve(curve) -> np.ndarray:
   """a per channel curve as rl.cpu.nv12's lut, for channel values -512 to 767: they aren't clamped before the curve"""
+  values = (np.arange(1280) - 512) / 255
   with np.errstate(invalid="ignore"):
-    out = np.nan_to_num(curve((np.arange(1280) - 512) / 255), nan=0.0)
-  return np.round(np.clip(out, 0, 1) * 255).astype(np.uint8)
+    out = curve(values)
+  out = np.clip(np.nan_to_num(out, nan=0.0), 0, 1)
+  return np.round(out * 255).astype(np.uint8)
 
 
 # a gamma for the device's display
-FRAME_COLOR = (color_curve(lambda c: c ** (1 / 1.28)), 1.0)
+def _display_gamma(c):
+  return c ** (1 / 1.28)
+
+
+FRAME_COLOR = (color_curve(_display_gamma), 1.0)
 
 
 class CameraView(Widget):
