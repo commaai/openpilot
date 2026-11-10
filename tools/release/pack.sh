@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# builds AGNOS's setup, reset and updater into one standalone executable for this machine
+# builds AGNOS's setup, reset and updater into OUTPUT_DIR/agnos-apps/, a standalone folder for this machine
 set -euo pipefail
 
 OUT_DIR=$(realpath -m "${1:?usage: pack.sh OUTPUT_DIR}")
@@ -9,15 +9,12 @@ ROOT=$(realpath "$(dirname "$0")/../..")
 
 # openpilot's deps from uv.lock, without the submodules (tinygrad, msgq, ...)
 VENV=${XDG_CACHE_HOME:-$HOME/.cache}/openpilot-pack/venv
-export UV_PROJECT_ENVIRONMENT="$VENV" UV_LINK_MODE=copy
+export UV_PROJECT_ENVIRONMENT="$VENV"
 uv sync -q --project "$ROOT" --frozen --no-default-groups --no-install-project
 
 # the apps use raylib's CPU renderer, which only needs libdrm
 uv pip install -q --python "$VENV" comma-deps-raylib==6.0.0.1.post112 \
   Nuitka==4.3.5 ordered-set==4.1.0 patchelf==0.17.2.4
-
-# debug symbols are most of the wheels' size. UV_LINK_MODE=copy keeps uv's cache untouched
-find "$VENV/lib" -name '*.so*' -type f -exec strip --strip-unneeded {} + 2> /dev/null || true
 export PATH="$VENV/bin:$PATH"
 
 # build from a clean copy, without scons outputs
@@ -49,24 +46,29 @@ for ext in png ttf fnt json capnp mo po; do
 done
 
 # pycapnp's compiled extension imports asyncio, which nuitka can't see
-python -m nuitka --onefile --onefile-tempdir-spec="{CACHE_DIR}/agnos-apps" "${MAINS[@]}" \
+# not --onefile: it unpacks ~120MB on every boot, more than AGNOS's /home or /tmp hold
+python -m nuitka --standalone "${MAINS[@]}" \
   --lto=no --python-flag=isolated "${BACKENDS[@]}" --include-module=asyncio \
   "${DATA[@]}" \
   --output-dir="$SRC/build" --output-filename=agnos-apps
 
+DIST="$OUT_DIR/agnos-apps"
 mkdir -p "$OUT_DIR"
-mv "$SRC/build/agnos-apps" "$OUT_DIR/"
+rm -rf "$DIST"
+mv "$SRC/build/setup.dist" "$DIST"
+# debug symbols are most of the libraries' size
+find "$DIST" -name '*.so*' -type f -exec strip --strip-unneeded {} +
 
 for app in $APPS; do
-  ln -sfn agnos-apps "$OUT_DIR/$app"
+  ln -sfn agnos-apps "$DIST/$app"
 
   # smoke test, without the build's python
   status=0
-  env -i RAYLIB_BACKEND=headless LC_ALL=C HOME="$SRC" timeout 10 "$OUT_DIR/$app" /bin/false /nonexistent > "$SRC/$app.log" 2>&1 || status=$?
+  env -i RAYLIB_BACKEND=headless LC_ALL=C HOME="$SRC" timeout 10 "$DIST/$app" /bin/false /nonexistent > "$SRC/$app.log" 2>&1 || status=$?
   if [ "$status" -ne 124 ]; then
     cat "$SRC/$app.log"
     echo "$app exited with $status" >&2
     exit 1
   fi
 done
-echo "built $APPS in $OUT_DIR"
+echo "built $APPS in $DIST"
