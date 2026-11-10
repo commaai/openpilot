@@ -7,23 +7,22 @@ APPS="setup reset updater"
 
 ROOT=$(realpath "$(dirname "$0")/../..")
 
+# openpilot's deps from uv.lock, without the submodules (tinygrad, msgq, ...)
+VENV=${XDG_CACHE_HOME:-$HOME/.cache}/openpilot-pack/venv
+export UV_PROJECT_ENVIRONMENT="$VENV" UV_LINK_MODE=copy
+uv sync -q --project "$ROOT" --frozen --no-default-groups --no-install-project
+
+# the apps use raylib's CPU renderer, which only needs libdrm
+uv pip install -q --python "$VENV" comma-deps-raylib==6.0.0.1.post112 \
+  Nuitka==4.3.5 ordered-set==4.1.0 patchelf==0.17.2.4
+
+# debug symbols are most of the wheels' size. UV_LINK_MODE=copy keeps uv's cache untouched
+find "$VENV/lib" -name '*.so*' -type f -exec strip --strip-unneeded {} + 2> /dev/null || true
+export PATH="$VENV/bin:$PATH"
+
 # build from a clean copy, without scons outputs
 SRC=$(mktemp -d)
 trap 'rm -rf "$SRC"' EXIT
-
-# openpilot's deps from uv.lock, without the submodules (tinygrad, msgq, ...)
-# the apps use raylib's CPU renderer, which only needs libdrm
-uv export -q --project "$ROOT" --frozen --no-default-groups --no-emit-project --no-hashes \
-  | sed 's/^comma-deps-raylib==.*/comma-deps-raylib==6.0.0.1.post112/' > "$SRC/requirements.txt"
-printf '%s\n' Nuitka==4.3.5 ordered-set==4.1.0 patchelf==0.17.2.4 >> "$SRC/requirements.txt"
-VENV=${XDG_CACHE_HOME:-$HOME/.cache}/openpilot-pack/venv
-uv venv -q --allow-existing --managed-python -p "$(cat "$ROOT/.python-version")" "$VENV"
-VIRTUAL_ENV="$VENV" uv pip sync -q --link-mode=copy "$SRC/requirements.txt"
-# debug symbols are most of the wheels' size. --link-mode=copy keeps uv's cache untouched
-find "$VENV/lib" -name '*.so*' -type f -exec strip --strip-unneeded {} + 2> /dev/null || true
-PYTHON="$VENV/bin/python"
-export PATH="$VENV/bin:$PATH"  # patchelf
-
 tar -C "$ROOT" -cf - --exclude=__pycache__ --exclude='*.so' --exclude=openpilot/cereal/gen \
   --exclude=openpilot/selfdrive/assets/training --exclude=openpilot/selfdrive/modeld/models \
   --exclude=openpilot/common/hardware/comma/updater \
@@ -32,7 +31,7 @@ cd "$SRC"
 export PYTHONPATH="$SRC:$SRC/opendbc_repo"
 
 # raylib picks its backend at runtime. the comma one is only in arm64 wheels
-RAYLIB=$("$PYTHON" -c "import importlib.util, os; print(os.path.dirname(importlib.util.find_spec('raylib_nb').origin))")
+RAYLIB=$(python -c "import importlib.util, os; print(os.path.dirname(importlib.util.find_spec('raylib_nb').origin))")
 BACKENDS=(--include-module=raylib_nb._raylib_headless)
 if compgen -G "$RAYLIB/_raylib_comma.*so" > /dev/null; then
   # ship libdrm instead of using the OS's
@@ -50,7 +49,7 @@ for ext in png ttf fnt json capnp mo po; do
 done
 
 # pycapnp imports asyncio at runtime
-"$PYTHON" -m nuitka --onefile --onefile-tempdir-spec="{CACHE_DIR}/agnos-apps" "${MAINS[@]}" \
+python -m nuitka --onefile --onefile-tempdir-spec="{CACHE_DIR}/agnos-apps" "${MAINS[@]}" \
   --lto=no --python-flag=isolated "${BACKENDS[@]}" --include-module=asyncio \
   "${DATA[@]}" \
   --output-dir="$SRC/build" --output-filename=agnos-apps
