@@ -14,6 +14,7 @@ class EdgeModel:
     self.config = json.loads((Path(checkpoint) / 'config.json').read_text())
     index = json.loads((Path(checkpoint) / 'model.safetensors.index.json').read_text())['weight_map']
     self.weights, self.weight_scales = {}, {}
+    self.fp8_wmma = getattr(Device[Device.DEFAULT], 'arch', '') in ('gfx1200', 'gfx1201')
     loaded_bytes, last_report = 0, 0
     for shard in sorted(set(index.values())):
       for name, weight in safe_load(Path(checkpoint) / shard).items():
@@ -23,6 +24,9 @@ class EdgeModel:
           scale = (value.float().abs().max() / 448).clamp(min_=1e-12).realize()
           value = (value.float() / scale).clamp(-448, 448).cast(dtypes.fp8e4m3).realize()
           self.weight_scales[name] = scale
+        if self.fp8_wmma and value.dtype == dtypes.fp8e4m3 and name.startswith('vlm.') and name.endswith(('.mlp.fc1.weight', '.mlp.fc2.weight')):
+          from amd_gemm import pack, unpack
+          value = unpack(pack(value).realize())
         self.weights[name] = value
         self.synchronize()
         loaded_bytes += weight.nbytes()
@@ -32,7 +36,6 @@ class EdgeModel:
       print(f'Loaded {shard}', flush=True)
     self.dtype = dtype
     self.cuda_kernels = dtype == dtypes.bfloat16 and getattr(Device[Device.DEFAULT], 'arch', '').startswith('sm_')
-    self.fp8_wmma = getattr(Device[Device.DEFAULT], 'arch', '') in ('gfx1200', 'gfx1201')
     self.encode_jits = {}
     self.cache = None
     self.prompt_length = None
@@ -62,6 +65,9 @@ class EdgeModel:
              gemm(quantized, weight, (x_scale, scale), bias, (shape[0], shape[1], heads) if heads is not None else None))
         return y.reshape(*shape, weight.shape[0])
       if self.fp8_wmma and not single and USE_TC.value == 1 and (x.shape[0] % 16 == 0 or TC_OPT >= 2):
+        if x.shape[0] >= 128 and name.startswith('vlm.') and name.endswith(('.mlp.fc1', '.mlp.fc2')):
+          from amd_gemm import gemm
+          return gemm(quantized, weight, (x_scale, scale), bias, dtype=x.dtype).reshape(*shape, weight.shape[0])
         y = quantized.dot(weight.T, dtype=dtypes.float32)
       else:
         y = quantized.float().dot(weight.float().T)

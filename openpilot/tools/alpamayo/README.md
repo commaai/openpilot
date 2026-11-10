@@ -95,7 +95,7 @@ On 2026-11-10, a comma4 with Chestnut gfx1200, 8 GB VRAM, firmware `8516b768`, a
 | Inferences/s | 0.0153 | 0.1288 |
 | Total p95 | 65,509.74 ms | 7,803.47 ms |
 
-Stage and total times are medians. The scalar baseline at `b27d932dee` used three measured runs; FP8 WMMA used ten. Both used three warmups, the same prequantized FP8 weights and scales, and verified every uploaded checkpoint byte on the GPU. Timing includes input upload and CPU trajectory decoding, and excludes loading, preprocessing, compilation, graph capture, and garbage collection after warmup.
+Stage and total times are medians. The scalar baseline at `b27d932dee` used three measured runs; default FP8 WMMA at `48fae630c7` used ten. Both used three warmups, the same prequantized FP8 weights and scales, and verified every uploaded checkpoint byte on the GPU. Timing includes input upload and CPU trajectory decoding, and excludes loading, preprocessing, compilation, graph capture, and garbage collection after warmup.
 
 The earlier AMD implementation cast FP8 operands to FP32 before matrix multiplication, preventing FP8 matrix instructions. On gfx1200/gfx1201, multi-row linear layers now keep FP8 operands and request FP32 accumulation, allowing tinygrad to select WMMA. `TC_OPT=2` permits padding the 2,026-token prefill to the hardware tile size. Single-token decoding retains its scalar fallback; attention and KV caches remain BF16. The NVIDIA custom kernels are unchanged.
 
@@ -112,6 +112,28 @@ DEV=USB+AMD:LLVM GMMU=0 AM_POWER_LIMIT=100 TC_OPT=2 CACHEDB=/data/alpamayo-cache
 ```
 
 This command quantizes the original BF16 checkpoint during loading. The measured runs instead uploaded the same prequantized weights in bulk. The WMMA run used typed buffer views for each weight so kernels could be reused across layers without recompiling for each shard offset. Initialization timing and compilation cost differ; both paths use the same inference code.
+
+#### Packed feed-forward kernels
+
+The default WMMA kernels still read matrix operands inefficiently and chose small tiles for the 2,026-token prefill. `amd_gemm.py` uses 64-by-64 output tiles and packs operands into 16-by-16 fragments with contiguous loads across a wave. The vision and language feed-forward weights are packed once during loading; a logical view preserves access for single-token decoding. Activation packing is included in inference timing. The kernel accumulates in FP32 and fuses scaling, optional bias, and output conversion. It applies to feed-forward calls with at least 128 rows on gfx1200/gfx1201; NVIDIA execution is unchanged.
+
+On comma4 and Chestnut, five matrix checks covering both language feed-forward shapes, both vision feed-forward shapes, and partial tiles produced bit-identical BF16 outputs to default WMMA. A full language layer with released weights, 2,026 random input tokens, attention, and cache writes improved from 137.16 to 44.73 ms with bit-identical output. Its two feed-forward GPU kernels measured 0.877 and 0.842 ms in the layer profile.
+
+The full 10-second replay sample then completed ten measured runs after three warmups:
+
+| Stage | Default FP8 WMMA | Packed feed-forward kernels |
+| --- | --- | --- |
+| Input upload | 169.44 ms | 168.70 ms |
+| Vision | 1,830.66 ms | 1,635.56 ms |
+| Prefill | 3,766.50 ms | 1,229.02 ms |
+| Reasoning | 1,603.58 ms | 1,628.02 ms |
+| Diffusion | 377.70 ms | 380.41 ms |
+| CPU trajectory decode | 12.93 ms | 12.58 ms |
+| Total median | **7,761.87 ms** | **5,058.10 ms** |
+| Total p95 | 7,803.47 ms | 5,067.97 ms |
+| Inferences/s | 0.1288 | 0.1977 |
+
+Prefill improved by 3.06 times and total inference by 1.53 times. The workload, checkpoint bytes, precision, six reasoning tokens, ten diffusion steps, and timing boundaries are unchanged. Every measured reasoning string, trajectory, and rotation matrix exactly matched the default WMMA baseline and every other measured run. All outputs were finite. Vision, reasoning, and prefill attention now dominate; this remains below the 5 FPS target.
 
 ### NVIDIA accelerated reference on RTX 5090
 
