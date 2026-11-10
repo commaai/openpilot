@@ -24,7 +24,7 @@ class EdgeModel:
       print(f'Loaded {shard}', flush=True)
     self.dtype = dtype
     self.vision_jits = {}
-    self.language_jits = {}
+    self.prefill_jit = TinyJit(self._language)
     self.expert_jit = TinyJit(self.expert_step)
 
   def linear(self, x, name):
@@ -55,12 +55,15 @@ class EdgeModel:
     return (x + self.linear(h, f'{prefix}.mlp.fc2')).realize()
 
   def vision(self, pixels, positions):
+    key = pixels.shape
+    if key not in self.vision_jits:
+      self.vision_jits[key] = TinyJit(self._vision)
+    return self.vision_jits[key](pixels.clone().realize(), positions.clone().realize())
+
+  def _vision(self, pixels, positions):
     x = (self.linear(pixels, 'vlm.model.visual.embeddings.patch_embedding') + positions).realize()
     for i in range(self.config['vlm_config']['vision_config']['num_hidden_layers']):
-      key = (i, x.shape)
-      if key not in self.vision_jits:
-        self.vision_jits[key] = TinyJit(lambda h, i=i: self.vision_layer(h, i))
-      x = self.vision_jits[key](x)
+      x = self.vision_layer(x, i)
     x = self.norm(x, 'vlm.model.visual.post_layernorm')
     x = self.norm(x, 'vlm.model.projector.norm').reshape(-1, 4608)
     x = self.linear(x, 'vlm.model.projector.linear_fc1').gelu(approximate='none')
@@ -86,10 +89,9 @@ class EdgeModel:
     return (x + self.linear(h, f'{prefix}.mlp.fc2')).realize(), (k.realize(), v.realize())
 
   def language(self, x, cos, sin, caches=None):
-    key = (x.shape[1], 0 if caches is None else caches[0][0].shape[2])
-    if key not in self.language_jits:
-      self.language_jits[key] = TinyJit(self._language)
-    return self.language_jits[key](x, cos, sin, *([] if caches is None else [t for pair in caches for t in pair]))
+    if caches is None:
+      return self.prefill_jit(x, cos, sin)
+    return self._language(x, cos, sin, *[t for pair in caches for t in pair])
 
   def _language(self, x, cos, sin, *flat_cache):
     caches = [flat_cache[i:i+2] for i in range(0, len(flat_cache), 2)] if flat_cache else None
