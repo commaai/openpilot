@@ -58,7 +58,8 @@ class EdgeModel:
     key = pixels.shape
     if key not in self.vision_jits:
       self.vision_jits[key] = TinyJit(self._vision)
-    return self.vision_jits[key](pixels.clone().realize(), positions.clone().realize())
+    # Replay retains several batches; the JIT reuses its output buffer.
+    return self.vision_jits[key](pixels.clone().realize(), positions.clone().realize()).clone().realize()
 
   def _vision(self, pixels, positions):
     x = (self.linear(pixels, 'vlm.model.visual.embeddings.patch_embedding') + positions).realize()
