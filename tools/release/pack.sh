@@ -65,7 +65,7 @@ for app in $APPS; do
   # pycapnp imports asyncio at runtime, which Nuitka can't see. zstandard is only for building
   # onefile, the apps don't use it.
   "$PYTHON" -m nuitka "${MODE[@]}" \
-    --static-libpython=auto --lto=no --jobs="$(nproc)" --assume-yes-for-downloads \
+    --static-libpython=auto --lto=no --jobs="$(nproc)" --assume-yes-for-downloads --remove-output \
     --product-name="$app" --python-flag=no_site --python-flag=isolated \
     "${BACKENDS[@]}" --include-module=opendbc --include-module=asyncio \
     --nofollow-import-to=zstandard \
