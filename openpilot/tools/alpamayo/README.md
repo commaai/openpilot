@@ -1,6 +1,6 @@
 # Alpamayo 2 Edge replay and eGPU benchmark
 
-Offline prototype for [NVIDIA Alpamayo 2 Edge](https://github.com/NVlabs/alpamayo2-edge). The vision encoder, language model, and diffusion expert run in tinygrad on Chestnut. NVIDIA's Python package supplies CPU preprocessing, tokenization, and trajectory decoding. `reference.py` runs NVIDIA's PyTorch implementation on a CUDA GPU for comparison.
+Offline prototype for [NVIDIA Alpamayo 2 Edge](https://github.com/NVlabs/alpamayo2-edge). The vision encoder, language model, and diffusion expert run in tinygrad on NVIDIA GPUs or Chestnut. NVIDIA's Python package supplies CPU preprocessing, tokenization, and trajectory decoding. `reference.py` runs NVIDIA's PyTorch implementation on a CUDA GPU for comparison.
 
 This does not replace modeld or publish driving commands. Alpamayo predicts 64 poses over 6.4 seconds and has a different output contract from openpilot's model. The two-camera profile is also outside NVIDIA's released six-camera input specification; successful inference does not establish driving quality.
 
@@ -52,6 +52,21 @@ Use `DEV=CUDA CUDA_VISIBLE_DEVICES=1` with `benchmark.py` to check the tinygrad 
 `--usb-pcie` uses synchronous PCIe transfers for inputs, weights, and outputs, bypassing tinygrad's SRAM staging path. On the initial Chestnut setup, the standard path failed buffer-boundary checks even with firmware `8516b768` and a 5 Gb/s USB connection. The direct path passed random-data roundtrips and GPU arithmetic at those boundaries, but uploaded at only about 3.7 MB/s: allow roughly 24 minutes to load the full checkpoint. Its timings must be identified as using this workaround. Model kernels still execute on Chestnut.
 
 Reports preserve cold/warmup runs separately and include trajectories, reasoning text, generated-token counts, settings, and environment metadata. Native timings separate upload, vision, language prefill, reasoning, diffusion, and trajectory decoding. Model loading and preprocessing are recorded separately. Reference timing covers GPU-resident inference; it excludes input transfer and preprocessing. Greedy sampling makes text repeatable, but NumPy and PyTorch diffusion noise differ even with the same seed, so trajectories are not directly comparable unless noise is explicitly matched.
+
+### Native tinygrad FP8 on RTX 5090
+
+```bash
+DEV=NVK:0+NV:CUDA "$ALPAMAYO_PYTHON" openpilot/tools/alpamayo/benchmark.py \
+  --checkpoint /tmp/alpamayo2-edge-model --input /tmp/alpamayo-openpilot.npz \
+  --greedy --precision fp8 --vision-batch 10 --warmup 3 --runs 10 \
+  --output /tmp/alpamayo-tinygrad-fp8.json
+```
+
+On the benchmark machine, native `NVK:0` selects physical GPU 1, UUID `GPU-f7dbd668-2d4e-06e8-e258-c45142a5d370`. Native NV enumeration differs from `nvidia-smi`; the report records `nvidia_gpu_index`. This path was tested with CUDA 13.1, Triton 3.4.0, and the pinned tinygrad revision above.
+
+tinygrad owns model execution, buffers, fixed-capacity KV caches, and JIT replay. CUDA custom kernels handle E4M3 matrix multiplication, single-token decoding, normalization, and activation scaling. Triton compiles the fused BF16 attention kernel; tinygrad loads its binary and executes it through the native NV runtime. Model inference makes no PyTorch GPU calls. The CPU input and trajectory adapters still use NVIDIA's Python package.
+
+`--precision fp8` quantizes the same 504 aligned linear layers as the reference, with dynamic per-tensor activation scaling and FP32 accumulation. Attention and KV caches stay BF16. Input transfers, image-to-token assembly, prefill, decoding, and all ten diffusion steps use reusable graphs. Every inference recomputes all ten images; there is no image reuse or reasoning truncation. Each call overwrites its prompt cache and masks unused cache slots. KV state is only reused while generating that call's reasoning and trajectory.
 
 ### NVIDIA accelerated reference on RTX 5090
 
@@ -121,7 +136,7 @@ DEV=USB+AMD:LLVM GMMU=0 AM_POWER_LIMIT=100 "$ALPAMAYO_PYTHON" -m unittest \
   test.external.external_test_usb_asm24.TestUSBIntegrity.testRepeatedBatches -v
 ```
 
-Do not interpret timings from failed integrity checks or nonfinite predictions as model performance. The native implementation uses eager attention and growing KV caches; its timings measure this prototype, not an optimized Alpamayo deployment.
+Do not interpret timings from failed integrity checks or nonfinite predictions as model performance. Chestnut currently uses the portable attention implementation; the NVIDIA custom kernels do not accelerate the AMD eGPU.
 
 ## Initial results (2026-11-10)
 
@@ -134,6 +149,6 @@ For one real two-camera replay sample, greedy reasoning and ten diffusion steps:
 | RTX 5090, NVIDIA PyTorch reference | 327.16 ms median, three measured runs after two warmups |
 | RTX 5090, native tinygrad prototype | 9.51 s median, three measured runs after two warmups |
 
-The completed Chestnut run returned 64 finite poses and the same reasoning text as CUDA. With identical diffusion noise, its mean waypoint distance from the native CUDA output was 3.7 cm (maximum 12.3 cm). The final native implementation peaked at 6.48 GB of live buffers on CUDA for this input. These checks cover one replay sample, not driving quality. The internal GPU had other existing workloads.
+The completed Chestnut run returned 64 finite poses and the same reasoning text as CUDA. With identical diffusion noise, its mean waypoint distance from the native CUDA output was 3.7 cm (maximum 12.3 cm). That initial implementation peaked at 6.48 GB of live buffers on CUDA for this input. These checks cover one replay sample, not driving quality. The internal GPU had other existing workloads.
 
 To reproduce the completed cold-run path, add `--usb-pcie --warmup 0 --runs 1` to the native command. Repeated Chestnut inference still needs runtime debugging; the successful cold run does not establish a reliable real-time openpilot deployment.

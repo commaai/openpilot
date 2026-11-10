@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 from contextlib import contextmanager
+import gc
 import json
 import os
 from pathlib import Path
@@ -9,10 +10,11 @@ import time
 os.environ.setdefault('DEV', 'USB+AMD:LLVM')
 os.environ.setdefault('GMMU', '0')
 os.environ.setdefault('AM_POWER_LIMIT', '100')
+os.environ.setdefault('TC_OPT', '2')
 
 import numpy as np
 import torch
-from tinygrad import Device, Tensor, dtypes
+from tinygrad import Device, Tensor, TinyJit, dtypes
 from alpamayo2_edge.action_space import UnicycleAccelCurvatureCourseActionSpace
 from inputs import load_sample, native_inputs, prepare, rotary, synthetic_sample
 from model import EdgeModel
@@ -30,19 +32,6 @@ def timed(name, times, sync):
   print(f'{name}: {times[name]:.2f} ms', flush=True)
 
 
-def tensor(x, dtype=dtypes.bfloat16):
-  return upload(x, dtype)
-
-
-def greedy_token(logits, config):
-  logits = logits.reshape(-1)
-  ids = Tensor.arange(logits.shape[0])
-  allowed = (ids < config.traj_ids['history_id0']) | (ids >= config.traj_ids['history_id0'] + config.history_vocab_size)
-  allowed &= (ids < config.traj_ids['future_id0']) | (ids >= config.traj_ids['future_id0'] + config.future_vocab_size)
-  allowed &= ids != config.vlm_config.text_config.eos_token_id
-  return int(download(allowed.where(logits, -float('inf')).argmax()).item())
-
-
 def sample_token(logits, config, rng):
   logits = logits.astype(np.float64).reshape(-1)
   logits[config.traj_ids['history_id0']:config.traj_ids['history_id0'] + config.history_vocab_size] = -np.inf
@@ -57,63 +46,71 @@ def sample_token(logits, config, rng):
   return int(rng.choice(order[keep], p=probs[keep] / probs[keep].sum()))
 
 
-def run_native(model, args, config, tokenizer, prepared, packed, seed):
-  ids, positions, delta, vision_positions = packed
+class NativeInputs:
+  def __init__(self, args, config, prepared, packed):
+    ids, positions, delta, vision_positions = packed
+    arrays = [prepared['tokenized_data']['pixel_values'].numpy(), vision_positions, ids.astype(np.int32), *rotary(positions)]
+    for length in (args.max_tokens, args.max_tokens+64):
+      pos = np.arange(length) + ids.shape[1] + delta
+      arrays.extend(rotary(np.broadcast_to(pos, (3, 1, length))))
+    arrays.append(np.zeros((1, 64, 2), dtype=np.float32))
+    self.cpu = [Tensor(x, device='CPU').contiguous().realize() for x in arrays]
+    self.noise = np.frombuffer(self.cpu[-1]._buffer().as_memoryview(allow_zero_copy=True), dtype=np.float32).reshape(1, 64, 2)
+    types = [dtypes.bfloat16]*len(arrays)
+    types[2], types[-1] = dtypes.int32, dtypes.float32
+    self.upload_jit = TinyJit(lambda *xs: tuple(x.to(Device.DEFAULT).cast(dtype).contiguous().realize() for x, dtype in zip(xs, types, strict=True)))
+    grids = prepared['tokenized_data']['image_grid_thw'].numpy()
+    lengths = grids.prod(axis=1)
+    offsets = np.concatenate(([0], np.cumsum(lengths)))
+    batches, i = [], 0
+    while i < len(grids):
+      end = i+1
+      while end < len(grids) and np.array_equal(grids[i], grids[end]) and end-i < args.vision_batch:
+        end += 1
+      batches.append((int(offsets[i]), int(offsets[end]), end-i))
+      i = end
+    self.batches = tuple(batches)
+    image_indices = np.flatnonzero(ids[0] == config.vlm_config.image_token_id)
+    self.spans = tuple((int(span[0]), int(span[-1])+1) for span in np.split(image_indices, np.flatnonzero(np.diff(image_indices) != 1)+1))
+
+  def upload(self, noise):
+    self.noise[:] = noise
+    if int(os.getenv('ALPAMAYO_USB_PCIE', '0')):
+      types = [dtypes.bfloat16]*len(self.cpu)
+      types[2], types[-1] = dtypes.int32, dtypes.float32
+      return tuple(upload(x, dtype) for x, dtype in zip(self.cpu, types, strict=True))
+    return self.upload_jit(*self.cpu)
+
+
+def run_native(model, args, config, tokenizer, prepared, packed, seed, inputs=None):
+  if inputs is None:
+    inputs = NativeInputs(args, config, prepared, packed)
   times, generated = {}, []
   rng = np.random.default_rng(seed)
   start_total = time.perf_counter()
   with timed('input_upload', times, model.synchronize):
-    pixels = tensor(prepared['tokenized_data']['pixel_values'].numpy())
-    vpos = tensor(vision_positions)
+    pixels, vpos, ids, cos, sin, decode_cos, decode_sin, action_cos, action_sin, actions = inputs.upload(rng.standard_normal((1, 64, 2)))
   with timed('vision', times, model.synchronize):
-    grids = prepared['tokenized_data']['image_grid_thw'].numpy()
-    lengths = grids.prod(axis=1)
-    offsets = np.concatenate(([0], np.cumsum(lengths)))
-    image_features = []
-    # Batching adjacent equal-sized images avoids padding or cross-image attention.
-    i = 0
-    while i < len(grids):
-      end = i + 1
-      while end < len(grids) and np.array_equal(grids[i], grids[end]) and end - i < args.vision_batch:
-        end += 1
-      shape = (end - i, int(lengths[i]), -1)
-      image_features.append(model.vision(pixels[int(offsets[i]):int(offsets[end])].reshape(*shape),
-                                          vpos[int(offsets[i]):int(offsets[end])].reshape(*shape)))
-      i = end
-    features = Tensor.cat(*image_features, dim=0)
-    embedding = model.weights['vlm.model.language_model.embed_tokens.weight'][tensor(ids.astype(np.int32), dtypes.int32)]
-    # Replace whole image spans so no dynamic boolean indexing runs on the GPU.
-    chunks, cursor, feature_cursor = [], 0, 0
-    image_indices = np.flatnonzero(ids[0] == config.vlm_config.image_token_id)
-    for span in np.split(image_indices, np.flatnonzero(np.diff(image_indices) != 1) + 1):
-      begin, end = int(span[0]), int(span[-1]) + 1
-      chunks.extend((embedding[:, cursor:begin], features[feature_cursor:feature_cursor + end - begin].unsqueeze(0)))
-      cursor, feature_cursor = end, feature_cursor + end - begin
-    chunks.append(embedding[:, cursor:])
-    embedding = Tensor.cat(*chunks, dim=1).realize()
+    embedding = model.encode(pixels, vpos, ids, inputs.batches, inputs.spans)
   with timed('prefill', times, model.synchronize):
-    cos, sin = (tensor(x) for x in rotary(positions))
-    logits, cache = model.language(embedding, cos, sin)
+    logits = model.prefill(embedding, cos, sin, args.max_tokens)
   with timed('reasoning', times, model.synchronize):
     for step in range(args.max_tokens):
-      token = greedy_token(logits, config) if args.greedy else sample_token(download(logits), config, rng)
+      if args.greedy:
+        logits, token_tensor = model.greedy_decode(logits, decode_cos, decode_sin, ids.shape[1] + step, step)
+        token = int(download(token_tensor).item())
+      else:
+        token = sample_token(download(logits), config, rng)
+        cos, sin = (x[:, :, step:step+1].clone().realize() for x in (decode_cos, decode_sin))
+        x = model.weights['vlm.model.language_model.embed_tokens.weight'][token].reshape(1, 1, -1).clone().realize()
+        logits = model.decode(x, cos, sin, ids.shape[1] + step)
       generated.append(token)
-      pos = ids.shape[1] + step + delta
-      cos, sin = (tensor(x) for x in rotary(np.full((3, 1, 1), pos, dtype=np.int64)))
-      x = model.weights['vlm.model.language_model.embed_tokens.weight'][token].reshape(1, 1, -1).clone().realize()
-      logits, cache = model.language(x, cos, sin, cache)
       if token == config.traj_ids['future_start']:
         break
     else:
       raise RuntimeError(f'No trajectory anchor after {args.max_tokens} tokens: {tokenizer.decode(generated)}')
   with timed('diffusion', times, model.synchronize):
-    pos = np.arange(64) + ids.shape[1] + len(generated) + delta
-    cos, sin = (tensor(x) for x in rotary(np.broadcast_to(pos, (3, 1, 64))))
-    actions = tensor(rng.standard_normal((1, 64, 2)).astype(np.float32), dtypes.float32)
-    flat_cache = [x.contiguous().realize() for pair in cache for x in pair]
-    for step in range(args.diffusion_steps):
-      velocity = model.expert_jit(actions, tensor([step / args.diffusion_steps], dtypes.float32), cos, sin, *flat_cache)
-      actions = (actions + velocity / args.diffusion_steps).realize()
+    actions = model.trajectory(actions, action_cos, action_sin, ids.shape[1]+len(generated), args.diffusion_steps, len(generated))
     action_array = download(actions)
   with timed('trajectory_decode', times, model.synchronize):
     action_config = dict(config.expert_config.action_space_cfg)
@@ -129,7 +126,7 @@ def run_native(model, args, config, tokenizer, prepared, packed, seed):
 
 
 def main():
-  parser = argparse.ArgumentParser(description='Offline Alpamayo 2 Edge benchmark on Chestnut; does not publish controls.')
+  parser = argparse.ArgumentParser(description='Offline Alpamayo 2 Edge benchmark in tinygrad; does not publish controls.')
   parser.add_argument('--checkpoint', required=True)
   parser.add_argument('--profile', choices=('openpilot', 'nvidia'), default='openpilot')
   source = parser.add_mutually_exclusive_group(required=True)
@@ -141,6 +138,7 @@ def main():
   parser.add_argument('--diffusion-steps', type=int, default=10)
   parser.add_argument('--vision-batch', type=int, default=2)
   parser.add_argument('--greedy', action='store_true')
+  parser.add_argument('--precision', choices=('bf16', 'fp8'), default='bf16')
   parser.add_argument('--usb-pcie', action='store_true', help='Use slow synchronous PCIe transfers instead of tinygrad SRAM staging.')
   parser.add_argument('--output', required=True, type=Path)
   args = parser.parse_args()
@@ -152,20 +150,28 @@ def main():
   started = time.perf_counter()
   config, tokenizer, prepared = prepare(args.checkpoint, data, args.profile)
   packed = native_inputs(args.checkpoint, config, prepared)
+  inputs = NativeInputs(args, config, prepared, packed)
   preprocessing_ms = (time.perf_counter() - started) * 1000
   print(f'Input: {len(data["camera_indices"])} images, {packed[0].shape[1]} prompt tokens', flush=True)
   started = time.perf_counter()
-  model = EdgeModel(args.checkpoint)
+  model = EdgeModel(args.checkpoint, precision=args.precision)
   model.synchronize()
   dev = Device[Device.DEFAULT]
   report = {'settings': {key: str(val) if isinstance(val, Path) else val for key, val in vars(args).items()},
             'environment': environment(), 'device': Device.DEFAULT, 'arch': getattr(dev, 'arch', None),
+            'nvidia_gpu_index': getattr(getattr(dev, 'iface', None), 'gpu_minor', None),
+            'fp8_linear_layers': len(model.weight_scales),
+            'fp8_weights': sum(model.weights[name].numel() for name in model.weight_scales),
             'model_load_ms': (time.perf_counter() - started) * 1000, 'preprocessing_ms': preprocessing_ms,
             'prompt_tokens': packed[0].shape[1], 'warmup': [], 'runs': []}
   args.output.parent.mkdir(parents=True, exist_ok=True)
   for i in range(args.warmup + args.runs):
+    if i == args.warmup and args.warmup:
+      started = time.perf_counter()
+      gc.collect()
+      report['warmup_cleanup_ms'] = (time.perf_counter() - started) * 1000
     print(f'Iteration {i + 1}/{args.warmup + args.runs}', flush=True)
-    result = run_native(model, args, config, tokenizer, prepared, packed, seed=0)
+    result = run_native(model, args, config, tokenizer, prepared, packed, seed=0, inputs=inputs)
     report['warmup' if i < args.warmup else 'runs'].append(result)
     args.output.write_text(json.dumps(report, indent=2) + '\n')
   totals = [run['timings_ms']['total'] for run in report['runs']]
