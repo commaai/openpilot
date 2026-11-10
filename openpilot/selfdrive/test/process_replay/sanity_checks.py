@@ -10,7 +10,8 @@ def cruise_windows(inputs: LogIterable, outputs: LogIterable):
   services = ('carState', 'carControl', 'controlsState', 'radarState')
   msgs = [m for m in migrate_all(inputs) if m.which() in services]
   msgs += [m for m in outputs if m.which() == 'longitudinalPlan']
-  window = deque(maxlen=round(4 / DT_MDL))
+  window_size = round(4 / DT_MDL)
+  window = deque(maxlen=window_size)
   state = {}
   for m in sorted(msgs, key=lambda m: m.logMonoTime):
     if m.which() in services:
@@ -28,7 +29,7 @@ def cruise_windows(inputs: LogIterable, outputs: LogIterable):
       continue
 
     window.append((plan.modelMonoTime / 1e9, cs.vCruise, plan.aTarget))
-    if len(window) < window.maxlen:
+    if len(window) < window_size:
       continue
     times, cruise, accel = np.array(window).T
     if np.ptp(cruise) > 0.01 or np.max(np.diff(times)) > 2 * DT_MDL:
