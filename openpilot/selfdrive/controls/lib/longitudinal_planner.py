@@ -44,6 +44,7 @@ class LongitudinalPlanner:
     self.convergence_boost = ConvergenceBoost()
     self.curve_speed = CurveSpeed(dt)
     self.fleet_mode = True  # FleetSpeedMode param: fleet speed map + convergence boost, else curve speed (#39242)
+    self.prev_fleet_mode = True
 
     self.v_desired_filter = FirstOrderFilter(init_v, 2.0, self.dt)
     self.a_cruise = init_a
@@ -122,8 +123,11 @@ class LongitudinalPlanner:
       v_target = min(v_cruise, self.fleet_speed.v_here) if np.isfinite(self.fleet_speed.v_here) else v_cruise
       output_a_target_e2e = self.convergence_boost.update(sm, output_a_target_e2e, v_ego, v_target)
     else:
+      if self.prev_fleet_mode:
+        self.curve_speed.reset()
       self.convergence_boost.boost = 0.0
       output_a_target_e2e = self.curve_speed.update(sm['modelV2'], sm['vehicleParameters'].roll, output_a_target_e2e)
+    self.prev_fleet_mode = self.fleet_mode
 
     candidates = [(output_a_target_mpc, self.mpc.source, output_should_stop_mpc),
                   (self.a_cruise, LongitudinalPlanSource.cruise, cruise_should_stop),
