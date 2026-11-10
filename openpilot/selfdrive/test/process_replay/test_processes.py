@@ -5,11 +5,12 @@ import os
 import sys
 import traceback
 import numpy as np
-from collections import defaultdict
+from collections import defaultdict, deque
 from tqdm import tqdm
 from typing import Any
 from opendbc.car.car_helpers import interface_names, interfaces
 from openpilot.common.git import get_commit
+from openpilot.common.realtime import DT_MDL
 from openpilot.tools.lib.openpilotci import get_url
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
 from openpilot.selfdrive.test.process_replay.diff_report import diff_process, diff_report
@@ -103,21 +104,41 @@ def get_log_data(segment):
 
 def test_accel_rms(lr_dat):
   lr = LogReader.from_bytes(lr_dat)
-  log_msgs = replay_process_with_name('plannerd', lr, disable_progress=True)
-  start_time = next(m.logMonoTime for m in lr if m.which() == 'modelV2')
+  CP = next(m.carParams for m in lr if m.which() == 'carParams')
+  if not CP.openpilotLongitudinalControl:
+    return 0
 
-  # The Corolla fixture is engaged in steady, clear-road highway cruising here.
-  window = [m for m in log_msgs if m.which() == 'longitudinalPlan' and
-            25 <= (m.longitudinalPlan.modelMonoTime - start_time) / 1e9 < 30]
-  assert len(window) >= 90
-  assert all(m.valid and m.longitudinalPlan.longitudinalPlanSource == 'cruise' for m in window)
+  n = round(1 / DT_MDL)
+  window = deque(maxlen=4 * n)
+  state, checked = {}, 0
+  for m in replay_process_with_name('plannerd', lr, return_all_logs=True, disable_progress=True):
+    if m.which() in ('carState', 'carControl', 'controlsState', 'radarState'):
+      state[m.which()] = getattr(m, m.which())
+    elif m.which() == 'longitudinalPlan' and len(state) == 4:
+      cs, cc, controls, radar = (state[k] for k in ('carState', 'carControl', 'controlsState', 'radarState'))
+      plan = m.longitudinalPlan
+      if not (m.valid and cc.longActive and controls.longControlState == 'pid' and cs.vEgo > 20 and
+              plan.longitudinalPlanSource == 'cruise' and not (cs.gasPressed or cs.brakePressed or controls.forceDecel) and
+              not (radar.leadOne.present or radar.leadTwo.present)):
+        window.clear()
+        continue
 
-  accel = np.array([m.longitudinalPlan.aTarget for m in window])
-  times = np.array([m.longitudinalPlan.modelMonoTime for m in window], dtype=np.int64) / 1e9
-  accel_rms = np.std(accel)
-  jerk_rms = np.sqrt(np.mean((np.diff(accel) / np.diff(times)) ** 2))
-  assert accel_rms < 0.012, f'{accel_rms=:.5f}'
-  assert jerk_rms < 0.03, f'{jerk_rms=:.5f}'
+      window.append((plan.modelMonoTime / 1e9, cs.vCruise, plan.aTarget))
+      if len(window) < window.maxlen:
+        continue
+      times, cruise, accel = np.array(window).T
+      if np.ptp(cruise) > 0.01 or np.max(np.diff(times)) > 2 * DT_MDL:
+        continue
+
+      # Allow one second to settle, then remove slow acceleration changes with a one-second moving average.
+      times, accel = times[n:], accel[n:]
+      noise = accel[n//2:-n//2] - np.convolve(accel, np.ones(n + 1) / (n + 1), mode='valid')
+      accel_rms = np.sqrt(np.mean(noise ** 2))
+      jerk_rms = np.sqrt(np.mean((np.diff(noise) / np.diff(times[n//2:-n//2])) ** 2))
+      assert accel_rms < 0.012, f'{CP.carFingerprint}: {accel_rms=:.5f}'
+      assert jerk_rms < 0.03, f'{CP.carFingerprint}: {jerk_rms=:.5f}'
+      checked += 1
+  return checked
 
 
 def test_process(cfg, lr, segment, ref_log_msgs, new_log_path, ignore_fields=None, ignore_msgs=None):
@@ -240,9 +261,11 @@ if __name__ == "__main__":
       results[segment][proc] = result
       diffs.append((segment, proc, diff_data))
 
-    if 'plannerd' in tested_procs and 'TOYOTA3' in tested_cars:
-      segment = next(seg for car, seg in segments if car == 'TOYOTA3')
-      test_accel_rms(log_data[segment])
+    if 'plannerd' in tested_procs:
+      checked = sum(pool.map(test_accel_rms, log_data.values()))
+      print(f'Checked acceleration RMS in {checked} highway cruise windows')
+      if tested_cars == all_cars:
+        assert checked > 0, 'No highway cruise windows tested'
 
   diff_short, diff_long, failed = format_diff(results, log_paths, ref_commit)
   if not args.update_refs:
