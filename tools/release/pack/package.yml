@@ -1,8 +1,0 @@
-# Nuitka package configuration: ship native libraries the apps load at runtime
-# raylib's comma backend links libdrm, ship it instead of using the OS's
-- module-name: 'raylib_nb'
-  dlls:
-    - from_filenames:
-        relative_path: '.'
-        prefixes:
-          - 'libdrm'

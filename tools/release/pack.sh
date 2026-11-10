@@ -13,23 +13,28 @@ OUT_DIR=$(realpath -m "${1:?usage: pack.sh OUTPUT_DIR}")
 APPS="setup reset updater"
 
 ROOT=$(realpath "$(dirname "$0")/../..")
-PACK="$ROOT/tools/release/pack"
-
-# A dedicated environment: the apps get exactly the packages in requirements.txt. Imports of
-# anything else (e.g. tinygrad, behind a lazy import in ui_state) are left out of the build.
-VENV=${XDG_CACHE_HOME:-$HOME/.cache}/openpilot-pack/venv
-uv venv -q --allow-existing --managed-python -p "$(cat "$ROOT/.python-version")" "$VENV"
-VIRTUAL_ENV="$VENV" uv pip sync -q --link-mode=copy "$PACK/requirements.txt"
-# the wheels' libraries ship with debug symbols, which are most of their size. They're copies,
-# not links into uv's cache, so this only touches this environment.
-find "$VENV/lib" -name '*.so*' -type f -exec strip --strip-unneeded {} +
-PYTHON="$VENV/bin/python"
-export PATH="$VENV/bin:$PATH"  # patchelf
-pkg_dir() { "$PYTHON" -c "import importlib.util, os; print(os.path.dirname(importlib.util.find_spec('$1').origin))"; }
 
 # build from a copy, so the generated files and libraries don't mix with a scons build
 SRC=$(mktemp -d)
 trap 'rm -rf "$SRC"' EXIT
+
+# A dedicated environment with openpilot's own dependencies, pinned by uv.lock, without the
+# submodules (tinygrad, msgq, ...). Nuitka only bundles what the apps import, and leaves out
+# imports of anything not installed here, like tinygrad behind a lazy import in ui_state.
+# raylib is newer than uv.lock: the apps ship the CPU renderer, which only needs libdrm.
+uv export -q --project "$ROOT" --frozen --no-default-groups --no-emit-project --no-hashes \
+  | sed 's/^comma-deps-raylib==.*/comma-deps-raylib==6.0.0.1.post112/' > "$SRC/requirements.txt"
+printf '%s\n' Nuitka==4.3.5 ordered-set==4.1.0 patchelf==0.17.2.4 >> "$SRC/requirements.txt"
+VENV=${XDG_CACHE_HOME:-$HOME/.cache}/openpilot-pack/venv
+uv venv -q --allow-existing --managed-python -p "$(cat "$ROOT/.python-version")" "$VENV"
+VIRTUAL_ENV="$VENV" uv pip sync -q --link-mode=copy "$SRC/requirements.txt"
+# The wheels' libraries ship with debug symbols, which are most of their size. They're copies,
+# not links into uv's cache, so this only touches this environment. Some aren't ELF files
+# (ffmpeg ships linker scripts), strip skips those.
+find "$VENV/lib" -name '*.so*' -type f -exec strip --strip-unneeded {} + 2> /dev/null || true
+PYTHON="$VENV/bin/python"
+export PATH="$VENV/bin:$PATH"  # patchelf
+
 tar -C "$ROOT" -cf - --exclude=__pycache__ --exclude='*.so' --exclude=openpilot/cereal/gen \
   --exclude=openpilot/selfdrive/assets/training --exclude=openpilot/selfdrive/modeld/models \
   --exclude=openpilot/common/hardware/comma/updater \
@@ -39,35 +44,27 @@ export PYTHONPATH="$SRC:$SRC/opendbc_repo"
 
 # raylib_nb picks its backend at runtime. Ship the comma one (only in arm64 wheels) and headless.
 # The desktop one needs OpenGL and X11, which the devices don't have.
-# The comma backend links libdrm, ship it alongside, see package.yml
-RAYLIB=$(pkg_dir raylib_nb)
+RAYLIB=$("$PYTHON" -c "import importlib.util, os; print(os.path.dirname(importlib.util.find_spec('raylib_nb').origin))")
 BACKENDS=(--include-module=raylib_nb._raylib_headless)
 if compgen -G "$RAYLIB/_raylib_comma.*so" > /dev/null; then
-  BACKENDS+=(--include-module=raylib_nb._raylib_comma)
-  cp -L "$(ldconfig -p | awk '/libdrm.so.2 /{print $NF; exit}')" "$RAYLIB/"
+  # the comma backend links libdrm, ship it next to the backend instead of using the OS's
+  LIBDRM=$(ldconfig -p | awk '/libdrm.so.2 /{print $NF; exit}')
+  BACKENDS+=(--include-module=raylib_nb._raylib_comma "--include-data-files=$LIBDRM=raylib_nb/libdrm.so.2")
 fi
-
-# the data files pack.py used to ship
-DATA=()
-while IFS= read -r f; do
-  DATA+=("--include-data-files=$f=${f#opendbc_repo/}")
-done < <(find openpilot opendbc_repo/opendbc/car -type f \
-           \( -name '*.png' -o -name '*.ttf' -o -name '*.capnp' -o -name '*.json' -o -name '*.fnt' -o -name '*.mo' -o -name '*.po' \) \
-           -not -path 'openpilot/selfdrive/assets/training/*' -not -path '*/tests/*' | sort)
 
 MAINS=()
 for app in $APPS; do
   MAINS+=("--main=openpilot/system/ui/$app.py")
 done
+DATA=()
+for ext in png ttf fnt json capnp mo po; do
+  DATA+=("--include-package-data=openpilot:*.$ext" "--include-package-data=opendbc.car:*.$ext")
+done
 
-# pycapnp imports asyncio at runtime, which Nuitka can't see.
 # The executable unpacks into a persistent cache, not into /tmp on every start. It checks the
-# cache on every start.
-"$PYTHON" -m nuitka --onefile "--onefile-tempdir-spec={CACHE_DIR}/{PRODUCT}" "${MAINS[@]}" \
-  --static-libpython=auto --lto=no --jobs="$(nproc)" --assume-yes-for-downloads --remove-output \
-  --product-name=agnos-apps --python-flag=no_site --python-flag=isolated \
-  "${BACKENDS[@]}" --include-module=opendbc --include-module=asyncio \
-  --user-package-configuration-file="$PACK/package.yml" \
+# cache on every start. pycapnp imports asyncio at runtime, which Nuitka can't see.
+"$PYTHON" -m nuitka --onefile --onefile-tempdir-spec="{CACHE_DIR}/agnos-apps" "${MAINS[@]}" \
+  --lto=no --python-flag=isolated "${BACKENDS[@]}" --include-module=asyncio \
   "${DATA[@]}" \
   --output-dir="$SRC/build" --output-filename=agnos-apps
 
