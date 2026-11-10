@@ -1,6 +1,6 @@
 from enum import IntEnum
 import raylib_nb as rl
-from openpilot.common.numpy_fast import interp
+import numpy as np
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, MouseEvent
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
@@ -119,7 +119,7 @@ class IconKey(Key):
     self._icon = gui_app.texture(icon, *size)
 
   def _render(self, _):
-    scale = interp(self._size_filter.x, [CHAR_FONT_SIZE, CHAR_NEAR_FONT_SIZE], [1, 1.5])
+    scale = np.interp(self._size_filter.x, [CHAR_FONT_SIZE, CHAR_NEAR_FONT_SIZE], [1, 1.5])
 
     if self._vertical_align == "center":
       dest_rec = rl.Rectangle(self._rect.x + (self._rect.width - self._icon.width * scale) / 2,
@@ -359,7 +359,7 @@ class MiciKeyboard(Widget):
         elif key == self._closest_key[0]:
           # push key up with a max and inward so user can see key easier
           key_y = max(key_y - 120, 40)
-          key_x += interp(key_x, [self._rect.x, self._rect.x + self._rect.width], [100, -100])
+          key_x += np.interp(key_x, [self._rect.x, self._rect.x + self._rect.width], [100, -100])
           key.set_alpha(1.0)
           key.set_font_size(SELECTED_CHAR_FONT_SIZE)
 
@@ -382,14 +382,14 @@ class MiciKeyboard(Widget):
           uy = dy * inv
 
           # NOTE: hardcode to 20 to get entire keyboard to move
-          push_pixels = interp(distance_from_selected_key, [0, 250], [20, 0])
+          push_pixels = np.interp(distance_from_selected_key, [0, 250], [20, 0])
           key_x += ux * push_pixels
           key_y += uy * push_pixels
 
           # TODO: slow enough to use an approximation or nah? also caching might work
-          font_size = interp(distance_from_selected_key, [0, 150], [CHAR_NEAR_FONT_SIZE, CHAR_FONT_SIZE])
+          font_size = np.interp(distance_from_selected_key, [0, 150], [CHAR_NEAR_FONT_SIZE, CHAR_FONT_SIZE])
 
-          key_alpha = interp(distance_from_selected_key, [0, 100], [1.0, 0.35])
+          key_alpha = np.interp(distance_from_selected_key, [0, 100], [1.0, 0.35])
           key.set_alpha(key_alpha)
           key.set_font_size(font_size)
 

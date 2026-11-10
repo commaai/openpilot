@@ -6,6 +6,7 @@ zstandard==0.25.0  # onefile compression
 # the apps' runtime dependencies, pinned to uv.lock
 # raylib is newer than uv.lock: the apps ship the CPU renderer, which only needs libdrm
 comma-deps-raylib==6.0.0.1.post112
+numpy==2.5.3
 pycapnp==2.1.0
 jeepney==0.9.0
 setproctitle==1.3.7

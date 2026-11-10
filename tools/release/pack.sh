@@ -12,7 +12,7 @@ ONEFILE=0
 if [ "${1:-}" = --onefile ]; then ONEFILE=1; shift; fi
 OUT_DIR=$(realpath -m "${1:?usage: pack.sh [--onefile] OUTPUT_DIR}")
 APPS="setup reset updater"
-MAX_COMPILED_MODULES=300
+MAX_COMPILED_MODULES=400
 
 ROOT=$(realpath "$(dirname "$0")/../..")
 PACK="$ROOT/tools/release/pack"
@@ -78,6 +78,8 @@ for app in $APPS; do
     mv "$SRC/build/$app" "$OUT_DIR/$app"
   else
     mv "$SRC/build/$app.dist" "$OUT_DIR/$app.dist"
+    # the wheels' libraries ship with debug symbols, which are most of their size
+    find "$OUT_DIR/$app.dist" -name '*.so*' -type f -exec strip --strip-unneeded {} +
   fi
 done
 
