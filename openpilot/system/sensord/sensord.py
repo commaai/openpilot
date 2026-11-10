@@ -92,7 +92,8 @@ def polling_loop(sensor: Sensor, service: str, event: threading.Event) -> None:
     rk.keep_time()
 
 def main() -> None:
-  config_realtime_process([1, ], 1)
+  # with its IRQ, and off the cores AGNOS keeps for everything but openpilot
+  config_realtime_process([2, ], 1)
 
   sensors_cfg = [
     (LSM6DS3_Accel(I2C_BUS_IMU), "accelerometer", True),

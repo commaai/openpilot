@@ -612,6 +612,7 @@ struct PandaState @0xa7649e2575e4591e {
     interruptRateSoundDma @27;
     mpu @28;
     timer @29;
+    safetyRedundancy @30;
     # Update max fault type in pandad when adding faults
   }
 

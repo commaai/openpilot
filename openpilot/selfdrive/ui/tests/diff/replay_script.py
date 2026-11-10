@@ -345,7 +345,7 @@ def build_mici_script(pm: PubMaster, main_layout, script: Script) -> None:
     lambda: scroll_through_cases(network_cases),
     lambda: scroll_through_cases(device_cases),
     lambda: script.wait(WAIT_SHORT),  # pairing
-    lambda: run_actions(lambda: swipe_up(height * 3), lambda: swipe_down(height * 3)),  # firehose (scroll down and back up)
+    lambda: run_actions(lambda: swipe_left(width * 3), lambda: swipe_right(width * 3)),  # firehose (scroll through cards and back)
     lambda: scroll_through_cases(developer_cases),
   ]
 

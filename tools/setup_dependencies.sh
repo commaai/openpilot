@@ -123,7 +123,7 @@ function install_python_deps() {
   uv self update || true
 
   echo "installing python packages..."
-  uv sync --frozen --all-extras
+  UV_PROJECT_ENVIRONMENT="$ROOT/.venv" uv sync --frozen --all-extras
   source .venv/bin/activate
 }
 

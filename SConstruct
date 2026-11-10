@@ -6,6 +6,8 @@ import platform
 import shlex
 import importlib
 import numpy as np
+import nanobind
+import eigen
 
 import SCons.Errors
 from SCons.Defaults import _stripixes
@@ -147,10 +149,9 @@ env = Environment(
     [x.LIB_DIR for x in pkgs],
   ],
   RPATH=[ffmpeg.LIB_DIR],
-  CYTHONCFILESUFFIX=".cpp",
   COMPILATIONDB_USE_ABSPATH=True,
   REDNOSE_ROOT="#rednose_repo",
-  tools=["default", "cython", "compilation_db", "rednose_filter"],
+  tools=["default", "compilation_db", "rednose_filter"],
   toolpath=["#rednose_repo/site_scons/site_tools"],
 )
 # SCons' Darwin linker tool doesn't define the variables used to expand RPATH.
@@ -216,6 +217,20 @@ else:
 
 np_version = SCons.Script.Value(np.__version__)
 Export('envCython', 'np_version')
+
+# ********** nanobind build environment **********
+envNanobind = env.Clone(LIBS=[])
+nanobind_dir = os.path.dirname(nanobind.__file__)
+envNanobind.Append(CPPPATH=[sysconfig.get_paths()['include'], nanobind.include_dir(), os.path.join(nanobind_dir, "ext", "robin_map", "include"),
+                            os.path.join(eigen.INCLUDE_DIR, "eigen3")],
+                   CCFLAGS=["-fvisibility=hidden"])
+envNanobind["CCFLAGS"] = [f for f in envNanobind["CCFLAGS"] if not f.startswith("-Wshadow")]
+envNanobind["NANOBIND_SOURCE"] = os.path.join(nanobind_dir, "src", "nb_combined.cpp")
+if arch == "Darwin":
+  envNanobind["LINKFLAGS"] = env["LINKFLAGS"] + ["-bundle", "-undefined", "dynamic_lookup"]
+else:
+  envNanobind["LINKFLAGS"] = ["-pthread", "-shared"]
+Export('envNanobind')
 
 Export('env', 'arch', 'acados', 'ffmpeg_libs')
 
