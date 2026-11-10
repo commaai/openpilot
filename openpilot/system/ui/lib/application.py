@@ -5,9 +5,9 @@ import queue
 import time
 import signal
 import sys
+import numpy as np
 import raylib_nb as rl
 import threading
-import platform
 import subprocess
 from contextlib import contextmanager
 from collections.abc import Callable
@@ -45,46 +45,12 @@ RECORD_BITRATE = os.getenv("RECORD_BITRATE", "")  # Target bitrate e.g. "2000k" 
 RECORD_SPEED = int(os.getenv("RECORD_SPEED", "1"))  # Speed multiplier
 OFFSCREEN = os.getenv("OFFSCREEN") == "1"  # Disable FPS limiting for fast offline rendering
 
-GL_VERSION = """
-#version 300 es
-precision highp float;
-"""
-if platform.system() == "Darwin":
-  GL_VERSION = """
-    #version 330 core
-  """
-
 BURN_IN_MODE = "BURN_IN" in os.environ
+# a pixel's burn-in risk by its blue, from green to yellow to red
+_burn_in = np.arange(256) / 255
+BURN_IN_COLORS = np.round(np.column_stack([np.clip(_burn_in * 2, 0, 1), 1 - np.clip((_burn_in - 0.5) * 2, 0, 1),
+                                           np.zeros(256), np.ones(256)]) * 255).astype(np.uint8)
 
-# raylib draws on the CPU on comma devices, so the GPU is free for the driving model
-CPU_RENDERER = rl.cpu.software
-
-BURN_IN_VERTEX_SHADER = GL_VERSION + """
-in vec3 vertexPosition;
-in vec2 vertexTexCoord;
-uniform mat4 mvp;
-out vec2 fragTexCoord;
-void main() {
-  fragTexCoord = vertexTexCoord;
-  gl_Position = mvp * vec4(vertexPosition, 1.0);
-}
-"""
-BURN_IN_FRAGMENT_SHADER = GL_VERSION + """
-in vec2 fragTexCoord;
-uniform sampler2D texture0;
-out vec4 fragColor;
-void main() {
-  vec4 sampled = texture(texture0, fragTexCoord);
-  float intensity = sampled.b;
-  // Map blue intensity to green -> yellow -> red to highlight burn-in risk.
-  vec3 start = vec3(0.0, 1.0, 0.0);
-  vec3 middle = vec3(1.0, 1.0, 0.0);
-  vec3 end = vec3(1.0, 0.0, 0.0);
-  vec3 gradient = mix(start, middle, clamp(intensity * 2.0, 0.0, 1.0));
-  gradient = mix(gradient, end, clamp((intensity - 0.5) * 2.0, 0.0, 1.0));
-  fragColor = vec4(gradient, sampled.a);
-}
-"""
 
 DEFAULT_TEXT_SIZE = 60
 DEFAULT_TEXT_COLOR = rl.Color(255, 255, 255, int(255 * 0.9))
@@ -236,8 +202,6 @@ class GuiApplication:
     self._scaled_width += self._scaled_width % 2
     self._scaled_height += self._scaled_height % 2
 
-    self._render_texture: rl.RenderTexture | None = None
-    self._burn_in_shader: rl.Shader | None = None
     self._ffmpeg_proc: subprocess.Popen | None = None
     self._ffmpeg_queue: queue.Queue | None = None
     self._ffmpeg_thread: threading.Thread | None = None
@@ -298,19 +262,13 @@ class GuiApplication:
       signal.signal(signal.SIGTERM, _close)
       atexit.register(self.close)
 
-      flags = rl.ConfigFlags.FLAG_MSAA_4X_HINT
       if ENABLE_VSYNC:
-        flags |= rl.ConfigFlags.FLAG_VSYNC_HINT
-      rl.set_config_flags(flags)
+        rl.set_config_flags(rl.ConfigFlags.FLAG_VSYNC_HINT)
 
       rl.init_window(self._scaled_width, self._scaled_height, title)
 
-      needs_render_texture = self._scale != 1.0 or BURN_IN_MODE or RECORD
       if self._scale != 1.0:
         rl.set_mouse_scale(1 / self._scale, 1 / self._scale)
-      if needs_render_texture:
-        self._render_texture = rl.load_render_texture(self._scaled_width, self._scaled_height)
-        rl.set_texture_filter(self._render_texture.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
 
       if RECORD:
         output_fps = fps * RECORD_SPEED
@@ -320,10 +278,10 @@ class GuiApplication:
           '-nostats',               # Suppress encoding progress
           '-f', 'rawvideo',         # Input format
           '-pix_fmt', 'rgba',       # Input pixel format
-          '-s', f'{self._scaled_width}x{self._scaled_height}',  # Input resolution
+          '-s', 'x'.join(map(str, rl.cpu.screen().shape[1::-1])),  # Input resolution
           '-r', str(fps),           # Input frame rate
           '-i', 'pipe:0',           # Input from stdin
-          '-vf', 'vflip,format=yuv420p',  # Flip vertically and convert to yuv420p
+          '-vf', 'vflip,format=yuv420p',  # The screen's rows are bottom up: flip vertically and convert to yuv420p
           '-r', str(output_fps),    # Output frame rate (for speed multiplier)
           '-c:v', 'libx264',
           '-preset', 'veryfast',
@@ -351,8 +309,6 @@ class GuiApplication:
       self._load_fonts()
       self._patch_text_functions()
       self._patch_scissor_mode()
-      if BURN_IN_MODE and self._burn_in_shader is None:
-        self._burn_in_shader = rl.load_shader_from_memory(BURN_IN_VERTEX_SHADER, BURN_IN_FRAGMENT_SHADER)
 
       if not PC:
         self._mouse.start()
@@ -583,14 +539,6 @@ class GuiApplication:
       rl.unload_font(font)
     self._fallback_fonts = {}
 
-    if self._render_texture is not None:
-      rl.unload_render_texture(self._render_texture)
-      self._render_texture = None
-
-    if self._burn_in_shader:
-      rl.unload_shader(self._burn_in_shader)
-      self._burn_in_shader = None
-
     if not PC:
       self._mouse.stop()
 
@@ -636,12 +584,8 @@ class GuiApplication:
           yield False, 0.0, 0.0
           continue
 
-        if self._render_texture:
-          rl.begin_texture_mode(self._render_texture)
-          rl.clear_background(rl.BLACK)
-        else:
-          rl.begin_drawing()
-          rl.clear_background(rl.BLACK)
+        rl.begin_drawing()
+        rl.clear_background(rl.BLACK)
 
         if self._scale != 1.0:
           rl.rl_push_matrix()
@@ -662,20 +606,12 @@ class GuiApplication:
         if self._scale != 1.0:
           rl.rl_pop_matrix()
 
-        if self._render_texture:
-          rl.end_texture_mode()
-          rl.begin_drawing()
-          rl.clear_background(rl.BLACK)
-          src_rect = rl.Rectangle(0, 0, float(self._scaled_width), -float(self._scaled_height))
-          dst_rect = rl.Rectangle(0, 0, float(self._scaled_width), float(self._scaled_height))
-          texture = self._render_texture.texture
-          if texture:
-            if BURN_IN_MODE and self._burn_in_shader:
-              rl.begin_shader_mode(self._burn_in_shader)
-              rl.draw_texture_pro(texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
-              rl.end_shader_mode()
-            else:
-              rl.draw_texture_pro(texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
+        if RECORD:
+          self._ffmpeg_queue.put(rl.cpu.screen().tobytes())  # Async write via background thread
+
+        if BURN_IN_MODE:
+          screen = rl.cpu.screen()
+          screen[:] = BURN_IN_COLORS[screen[..., 2]]
 
         if self._show_fps:
           rl.draw_fps(10, 10)
@@ -687,13 +623,6 @@ class GuiApplication:
           self._draw_grid()
 
         rl.end_drawing()
-
-        if RECORD:
-          image = rl.load_image_from_texture(self._render_texture.texture)
-          data_size = image.width * image.height * 4
-          data = image.to_bytes(data_size)
-          self._ffmpeg_queue.put(data)  # Async write via background thread
-          rl.unload_image(image)
 
         self._monitor_fps()
         self._frame += 1
@@ -715,8 +644,7 @@ class GuiApplication:
       with as_file(FONT_DIR) as fspath:
         font = rl.load_font_ex((fspath / NOTO_FONTS[language]).as_posix(), 48,
                                codepoints, len(codepoints))
-      rl.gen_texture_mipmaps(font.texture)
-      rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_TRILINEAR)
+      rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
       self._fallback_fonts[language] = font
     return self._fallback_fonts[language]
 
@@ -743,8 +671,7 @@ class GuiApplication:
         font = rl.load_font_ex((fspath / font_weight_file).as_posix(), 16 if unifont else 200,
                                codepoints, len(codepoints))
         if font_weight_file != FontWeight.UNIFONT:
-          rl.gen_texture_mipmaps(font.texture)
-          rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_TRILINEAR)
+          rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
         self._fonts[font_weight_file] = font
     if multilang.requires_font_fallback():
       self.fallback_font()

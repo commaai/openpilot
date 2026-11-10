@@ -31,7 +31,6 @@ ANGLE_SCALE = 5.0
 
 def ui_thread():
   # Get monitor info before creating window
-  rl.set_config_flags(rl.ConfigFlags.FLAG_MSAA_4X_HINT)
   rl.init_window(1, 1, "")
   max_height = rl.get_monitor_height(0)
   rl.close_window()
@@ -49,7 +48,6 @@ def ui_thread():
     write_y = 970
 
   rl.set_trace_log_level(rl.TraceLogLevel.LOG_ERROR)
-  rl.set_config_flags(rl.ConfigFlags.FLAG_MSAA_4X_HINT)
   rl.init_window(size[0], size[1], "openpilot debug UI")
   rl.set_target_fps(60)
 
