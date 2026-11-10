@@ -34,14 +34,21 @@ def tensor(x, dtype=dtypes.bfloat16):
   return upload(x, dtype)
 
 
-def sample_token(logits, config, rng, greedy):
+def greedy_token(logits, config):
+  logits = logits.reshape(-1)
+  ids = Tensor.arange(logits.shape[0])
+  allowed = (ids < config.traj_ids['history_id0']) | (ids >= config.traj_ids['history_id0'] + config.history_vocab_size)
+  allowed &= (ids < config.traj_ids['future_id0']) | (ids >= config.traj_ids['future_id0'] + config.future_vocab_size)
+  allowed &= ids != config.vlm_config.text_config.eos_token_id
+  return int(download(allowed.where(logits, -float('inf')).argmax()).item())
+
+
+def sample_token(logits, config, rng):
   logits = logits.astype(np.float64).reshape(-1)
   logits[config.traj_ids['history_id0']:config.traj_ids['history_id0'] + config.history_vocab_size] = -np.inf
   logits[config.traj_ids['future_id0']:config.traj_ids['future_id0'] + config.future_vocab_size] = -np.inf
   logits[config.vlm_config.text_config.eos_token_id] = -np.inf
   assert np.isfinite(logits).any() and not np.isnan(logits).any()
-  if greedy:
-    return int(logits.argmax())
   logits /= 0.6
   order = np.argsort(-logits)
   probs = np.exp(logits[order] - np.max(logits))
@@ -89,7 +96,7 @@ def run_native(model, args, config, tokenizer, prepared, packed, seed):
     logits, cache = model.language(embedding, cos, sin)
   with timed('reasoning', times, model.synchronize):
     for step in range(args.max_tokens):
-      token = sample_token(download(logits), config, rng, args.greedy)
+      token = greedy_token(logits, config) if args.greedy else sample_token(download(logits), config, rng)
       generated.append(token)
       pos = ids.shape[1] + step + delta
       cos, sin = (tensor(x) for x in rotary(np.full((3, 1, 1), pos, dtype=np.int64)))
@@ -134,8 +141,11 @@ def main():
   parser.add_argument('--diffusion-steps', type=int, default=10)
   parser.add_argument('--vision-batch', type=int, default=2)
   parser.add_argument('--greedy', action='store_true')
+  parser.add_argument('--usb-pcie', action='store_true', help='Use slow synchronous PCIe transfers instead of tinygrad SRAM staging.')
   parser.add_argument('--output', required=True, type=Path)
   args = parser.parse_args()
+  if args.usb_pcie:
+    os.environ['ALPAMAYO_USB_PCIE'] = '1'
   assert args.runs > 0 and args.warmup >= 0 and args.diffusion_steps > 0 and args.vision_batch > 0
   torch.set_num_threads(8)
   data = synthetic_sample(args.profile) if args.synthetic else load_sample(args.input)

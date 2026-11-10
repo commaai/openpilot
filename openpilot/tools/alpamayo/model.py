@@ -12,10 +12,15 @@ class EdgeModel:
     self.config = json.loads((Path(checkpoint) / 'config.json').read_text())
     index = json.loads((Path(checkpoint) / 'model.safetensors.index.json').read_text())['weight_map']
     self.weights = {}
+    loaded_bytes, last_report = 0, 0
     for shard in sorted(set(index.values())):
       for name, weight in safe_load(Path(checkpoint) / shard).items():
         self.weights[name] = upload(weight, dtype)
         self.synchronize()
+        loaded_bytes += weight.nbytes()
+        if loaded_bytes - last_report >= 128_000_000:
+          print(f'Loaded {loaded_bytes / 1e9:.2f} GB of weights', flush=True)
+          last_report = loaded_bytes
       print(f'Loaded {shard}', flush=True)
     self.dtype = dtype
     self.vision_jits = {}
