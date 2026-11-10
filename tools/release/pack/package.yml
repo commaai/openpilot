@@ -1,6 +1,14 @@
-# Nuitka package configuration: ship the native Params library next to params.py
+# Nuitka package configuration: ship native libraries the apps load at runtime
 - module-name: 'openpilot.common.params'
   dlls:
     - from_filenames:
         prefixes:
           - 'libparams_c'
+
+# raylib's comma backend links libdrm, ship it instead of using the OS's
+- module-name: 'raylib_nb'
+  dlls:
+    - from_filenames:
+        relative_path: '.'
+        prefixes:
+          - 'libdrm'

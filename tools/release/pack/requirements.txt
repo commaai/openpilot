@@ -1,11 +1,13 @@
 Nuitka==4.3.5
 ordered-set==4.1.0
+patchelf==0.17.2.4
 zstandard==0.25.0
 
 # the apps' runtime dependencies, pinned to uv.lock
 # raylib is newer than uv.lock: the apps ship the CPU renderer, which only needs libdrm
 comma-deps-raylib==6.0.0.1.post112
 comma-deps-json11==20170411.0.post103
+comma-deps-capnproto==1.0.1.post103
 pycapnp==2.1.0
 jeepney==0.9.0
 setproctitle==1.3.7
