@@ -48,7 +48,7 @@ for ext in png ttf fnt json capnp mo po; do
   DATA+=("--include-package-data=openpilot:*.$ext" "--include-package-data=opendbc.car:*.$ext")
 done
 
-# pycapnp imports asyncio at runtime
+# pycapnp's compiled extension imports asyncio, which nuitka can't see
 python -m nuitka --onefile --onefile-tempdir-spec="{CACHE_DIR}/agnos-apps" "${MAINS[@]}" \
   --lto=no --python-flag=isolated "${BACKENDS[@]}" --include-module=asyncio \
   "${DATA[@]}" \
