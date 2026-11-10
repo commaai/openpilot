@@ -68,6 +68,17 @@ tinygrad owns model execution, buffers, fixed-capacity KV caches, and JIT replay
 
 `--precision fp8` quantizes the same 504 aligned linear layers as the reference, with dynamic per-tensor activation scaling and FP32 accumulation. Attention and KV caches stay BF16. Input transfers, image-to-token assembly, prefill, decoding, and all ten diffusion steps use reusable graphs. Every inference recomputes all ten images; there is no image reuse or reasoning truncation. Each call overwrites its prompt cache and masks unused cache slots. KV state is only reused while generating that call's reasoning and trajectory.
 
+Measured on 2026-11-10 using the same two replay samples as the NVIDIA reference below:
+
+| Replay time | Generated tokens | Median | p95 | Inferences/s |
+| --- | --- | --- | --- | --- |
+| 10 seconds | 6 | 183.34 ms | 184.33 ms | 5.45 |
+| 20 seconds | 20 | 242.51 ms | 244.11 ms | 4.12 |
+
+Each result uses ten measured runs after three warmups on physical GPU 1. Native timing includes input transfer and CPU trajectory decoding; preprocessing, weight loading, graph capture, and one garbage collection after warmup are recorded separately. The short sample is 4.83 times faster than the earlier 885.99 ms BF16 tinygrad baseline with fixed caches. It remains slower than the 96.51/129.80 ms NVIDIA FP8 reference, whose timing excludes input transfer.
+
+All measured trajectories were finite and repeatable. Validation alternated both samples through one model, replaced contents of existing CPU input buffers, and changed the generation limit from 256 to 64 tokens without changing the resulting trajectory. Both reasoning texts matched NVIDIA's reference. With identical diffusion noise, native BF16 versus NVIDIA BF16 mean/max waypoint distances were 0.017/0.049 m and 0.036/0.095 m; native FP8 versus NVIDIA FP8 distances were 0.122/0.402 m and 0.180/0.560 m, respectively, over the 6.4-second horizon. These are numerical comparisons on two replay samples.
+
 ### NVIDIA accelerated reference on RTX 5090
 
 `reference.py` defaults to NVIDIA's SDPA attention backend. `--attention eager` reproduces the initial reference below. Use NVIDIA's released `torch.compile`, CUDA graphs, and FlashAttention 2 acceleration with `--accel tuned`; this leaves the weights in BF16. Install the pinned FlashAttention wheel from [NVIDIA's acceleration guide](https://github.com/NVlabs/alpamayo2-edge/blob/02f55a7aeabc1a2b9f7a80445c08e40bddc89f5e/docs/acceleration.md) into the separate reference environment first.
