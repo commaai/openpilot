@@ -79,35 +79,39 @@ Each result uses ten measured runs after three warmups on physical GPU 1. Native
 
 All measured trajectories were finite and repeatable. Validation alternated both samples through one model, replaced contents of existing CPU input buffers, and changed the generation limit from 256 to 64 tokens without changing the resulting trajectory. Both reasoning texts matched NVIDIA's reference. With identical diffusion noise, native BF16 versus NVIDIA BF16 mean/max waypoint distances were 0.017/0.049 m and 0.036/0.095 m; native FP8 versus NVIDIA FP8 distances were 0.122/0.402 m and 0.180/0.560 m, respectively, over the 6.4-second horizon. These are numerical comparisons on two replay samples.
 
-### Comma4 and Chestnut baseline
+### Comma4 and Chestnut FP8
 
-On 2026-11-10, a comma4 with Chestnut gfx1200, 8 GB VRAM, firmware `8516b768`, a direct 5 Gb/s USB connection, and a 100 W power limit completed three measured runs after three warmups. The input was the same 10-second replay sample: two cameras, ten images, 2,026 prompt tokens, six generated tokens, and ten diffusion steps.
+On 2026-11-10, a comma4 with Chestnut gfx1200, 8 GB VRAM, firmware `8516b768`, a direct 5 Gb/s USB connection, and a 100 W power limit completed the same 10-second replay sample: two cameras, ten images, 2,026 prompt tokens, six generated tokens, and ten diffusion steps.
 
-| Stage | Median |
-| --- | --- |
-| Input upload | 166.07 ms |
-| Vision | 7,810.55 ms |
-| Prefill | 55,114.21 ms |
-| Reasoning | 1,657.56 ms |
-| Diffusion | 714.25 ms |
-| CPU trajectory decode | 12.69 ms |
-| Total | **65,503.29 ms (0.0153 inferences/s)** |
+| Stage | Previous scalar FP32 multiplication | FP8 WMMA |
+| --- | --- | --- |
+| Input upload | 166.07 ms | 169.44 ms |
+| Vision | 7,810.55 ms | 1,830.66 ms |
+| Prefill | 55,114.21 ms | 3,766.50 ms |
+| Reasoning | 1,657.56 ms | 1,603.58 ms |
+| Diffusion | 714.25 ms | 377.70 ms |
+| CPU trajectory decode | 12.69 ms | 12.93 ms |
+| Total | **65,503.29 ms** | **7,761.87 ms** |
+| Inferences/s | 0.0153 | 0.1288 |
+| Total p95 | 65,509.74 ms | 7,803.47 ms |
 
-Total p95 was 65,509.74 ms. Loading, preprocessing, and graph capture are excluded. Every output exactly matched the initial complete comma4 inference. The checkpoint used byte-verified prequantized FP8 weights and scales to reduce transfer and loading costs.
+Stage and total times are medians. The scalar baseline at `b27d932dee` used three measured runs; FP8 WMMA used ten. Both used three warmups, the same prequantized FP8 weights and scales, and verified every uploaded checkpoint byte on the GPU. Timing includes input upload and CPU trajectory decoding, and excludes loading, preprocessing, compilation, graph capture, and garbage collection after warmup.
 
-This portable AMD path uses FP8 storage and activation quantization, but its linear layers currently cast operands to FP32 before matrix multiplication. The measured kernels do not use FP8 WMMA instructions. This is a baseline for the current implementation; it does not establish the eGPU's FP8 performance or meet the 5 FPS target.
+The earlier AMD implementation cast FP8 operands to FP32 before matrix multiplication, preventing FP8 matrix instructions. On gfx1200/gfx1201, multi-row linear layers now keep FP8 operands and request FP32 accumulation, allowing tinygrad to select WMMA. `TC_OPT=2` permits padding the 2,026-token prefill to the hardware tile size. Single-token decoding retains its scalar fallback; attention and KV caches remain BF16. The NVIDIA custom kernels are unchanged.
 
-The runtime fix submits compute before USB copy staging, which can otherwise block while waiting for computation that has not yet been submitted. The original combined input upload/cast graph passed five runs with changing inputs and exact array comparisons. All seven existing USB integrity tests also passed. Prefill needs a longer GPU wait limit because its warm execution exceeds the default 30 seconds:
+This reduced total latency by 8.44 times and prefill by 14.63 times. All ten measured outputs were finite and identical to each other, with the same reasoning as the scalar baseline. With identical diffusion noise, mean/max waypoint displacement from that baseline was 0.0166/0.0360 m across 64 poses. This is one replay sample; 0.129 inferences/s remains below the 5 FPS target.
+
+The runtime fix submits compute before USB copy staging, which can otherwise block while waiting for computation that has not yet been submitted. The combined input upload/cast graph passed five runs with changing inputs and exact array comparisons. All seven existing USB integrity tests also passed. Keep the compiler cache on `/data`: comma4's small `/home` overlay filled during compilation. The longer GPU wait limit also covers cold execution and graph capture:
 
 ```bash
-DEV=USB+AMD:LLVM GMMU=0 AM_POWER_LIMIT=100 TC_OPT=2 \
+DEV=USB+AMD:LLVM GMMU=0 AM_POWER_LIMIT=100 TC_OPT=2 CACHEDB=/data/alpamayo-cache/cache.db \
   "$ALPAMAYO_PYTHON" openpilot/tools/alpamayo/benchmark.py \
   --checkpoint /tmp/alpamayo2-edge-model --input /tmp/alpamayo-openpilot.npz \
   --precision fp8 --vision-batch 10 --greedy --gpu-timeout-ms 300000 \
-  --warmup 3 --runs 3 --output /tmp/alpamayo-comma4.json
+  --warmup 3 --runs 10 --output /tmp/alpamayo-comma4.json
 ```
 
-This command quantizes the original BF16 checkpoint during loading. The measured run instead uploaded the same prequantized weights in bulk and verified every byte on the GPU; initialization timing and compilation cost differ. Both paths use the same inference code. The runtime change is limited to USB queue submission and does not change the NVIDIA kernels.
+This command quantizes the original BF16 checkpoint during loading. The measured runs instead uploaded the same prequantized weights in bulk. The WMMA run used typed buffer views for each weight so kernels could be reused across layers without recompiling for each shard offset. Initialization timing and compilation cost differ; both paths use the same inference code.
 
 ### NVIDIA accelerated reference on RTX 5090
 
@@ -192,4 +196,4 @@ For one real two-camera replay sample, greedy reasoning and ten diffusion steps:
 
 The completed Chestnut run returned 64 finite poses and the same reasoning text as CUDA. With identical diffusion noise, its mean waypoint distance from the native CUDA output was 3.7 cm (maximum 12.3 cm). That initial implementation peaked at 6.48 GB of live buffers on CUDA for this input. These checks cover one replay sample, not driving quality. The internal GPU had other existing workloads.
 
-To reproduce the completed cold-run path, add `--usb-pcie --warmup 0 --runs 1` to the native command. Repeated Chestnut inference still needs runtime debugging; the successful cold run does not establish a reliable real-time openpilot deployment.
+To reproduce the initial cold-run path, add `--usb-pcie --warmup 0 --runs 1` to the native command. The later comma4 results above supersede these initial transfer and repeat-inference failures; real-time inference remains unresolved.

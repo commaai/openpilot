@@ -3,6 +3,7 @@ import math
 from pathlib import Path
 
 from tinygrad import Device, Tensor, TinyJit, dtypes
+from tinygrad.helpers import USE_TC, TC_OPT
 from tinygrad.nn.state import safe_load
 from tinygrad.uop.ops import UOp
 from runtime import upload
@@ -31,6 +32,7 @@ class EdgeModel:
       print(f'Loaded {shard}', flush=True)
     self.dtype = dtype
     self.cuda_kernels = dtype == dtypes.bfloat16 and getattr(Device[Device.DEFAULT], 'arch', '').startswith('sm_')
+    self.fp8_wmma = getattr(Device[Device.DEFAULT], 'arch', '') in ('gfx1200', 'gfx1201')
     self.encode_jits = {}
     self.cache = None
     self.prompt_length = None
@@ -59,7 +61,11 @@ class EdgeModel:
         y = (gemv(quantized, weight, (x_scale, scale), bias) if single else
              gemm(quantized, weight, (x_scale, scale), bias, (shape[0], shape[1], heads) if heads is not None else None))
         return y.reshape(*shape, weight.shape[0])
-      y = quantized.float().dot(weight.float().T) * (x_scale * scale)
+      if self.fp8_wmma and not single and USE_TC.value == 1 and (x.shape[0] % 16 == 0 or TC_OPT >= 2):
+        y = quantized.dot(weight.T, dtype=dtypes.float32)
+      else:
+        y = quantized.float().dot(weight.float().T)
+      y = y * (x_scale * scale)
       if bias is not None:
         y = y + bias.float()
       return y.cast(x.dtype).reshape(*shape, weight.shape[0])
