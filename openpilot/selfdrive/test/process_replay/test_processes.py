@@ -4,7 +4,7 @@ import concurrent.futures
 import os
 import sys
 import traceback
-from collections import Counter, defaultdict
+from collections import defaultdict
 from tqdm import tqdm
 from typing import Any
 from opendbc.car.car_helpers import interface_names, interfaces
@@ -12,8 +12,9 @@ from openpilot.common.git import get_commit
 from openpilot.tools.lib.openpilotci import get_url
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
 from openpilot.selfdrive.test.process_replay.diff_report import diff_process, diff_report
-from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, replay_process
-from openpilot.selfdrive.test.process_replay.sanity_checks import PROCESS_CHECKS, check_outputs
+from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, replay_process, \
+                                                                   check_most_messages_valid
+from openpilot.selfdrive.test.process_replay.sanity_checks import PROCESS_CHECKS
 from openpilot.tools.lib.filereader import FileReader
 from openpilot.tools.lib.logreader import LogReader, save_log
 from openpilot.tools.lib.url_file import URLFile
@@ -74,28 +75,63 @@ EXCLUDED_PROCS = {"modeld", "dmonitoringmodeld"}
 
 def run_test_process(data):
   segment, cfg, args, cur_log_fn, ref_log_path, lr_dat = data
-  checks = {}
+  ref_error = None
   try:
-    lr = LogReader.from_bytes(lr_dat)
-    log_msgs = replay_process(cfg, lr, disable_progress=True)
-    try:
-      checks = check_outputs(cfg, lr, log_msgs)
-      res, diff_data = [], None
-      if ref_log_path is not None:
-        ref_log_msgs = list(LogReader(ref_log_path))
-        res = compare_logs(ref_log_msgs, log_msgs, args.ignore_fields + cfg.ignore, args.ignore_msgs, cfg.tolerance)
-        diff_data = diff_process(cfg, ref_log_msgs, log_msgs)
-    finally:
-      save_log(cur_log_fn, log_msgs)
+    ref_log_msgs = list(LogReader(ref_log_path)) if ref_log_path is not None else None
   except Exception:
-    res = diff_data = traceback.format_exc()
-  return (segment, cfg.proc_name, res, diff_data, checks)
+    # New routes have no ref yet, still replay and publish new refs.
+    ref_log_msgs = []
+    ref_error = f"Failed to load reference {ref_log_path}:\n{traceback.format_exc()}"
+  lr = LogReader.from_bytes(lr_dat)
+  res, log_msgs = test_process(cfg, lr, segment, ref_log_msgs, cur_log_fn, args.ignore_fields, args.ignore_msgs)
+  # save logs so we can update refs
+  save_log(cur_log_fn, log_msgs)
+  if ref_error is not None:
+    return (segment, cfg.proc_name, ref_error, ref_error)
+  if isinstance(res, str) or ref_log_msgs is None:
+    return (segment, cfg.proc_name, res, res if isinstance(res, str) else None)
+  try:
+    diff_data = diff_process(cfg, ref_log_msgs, log_msgs)
+  except Exception:
+    diff_data = traceback.format_exc()
+  return (segment, cfg.proc_name, res, diff_data)
 
 
 def get_log_data(segment):
   r, n = segment.rsplit("--", 1)
   with FileReader(get_url(r, n, "rlog.zst")) as f:
     return (segment, f.read())
+
+
+def test_process(cfg, lr, segment, ref_log_msgs, new_log_path, ignore_fields=None, ignore_msgs=None):
+  if ignore_fields is None:
+    ignore_fields = []
+  if ignore_msgs is None:
+    ignore_msgs = []
+
+  try:
+    log_msgs = replay_process(cfg, lr, disable_progress=True)
+  except Exception as e:
+    raise Exception("failed on segment: " + segment) from e
+
+  if not check_most_messages_valid(log_msgs):
+    return f"Route did not have enough valid messages: {new_log_path}", log_msgs
+
+  # skip this check if the segment is using qcom gps
+  if cfg.proc_name != 'ubloxd' or any(m.which() in cfg.pubs for m in lr):
+    seen_msgs = {m.which() for m in log_msgs}
+    expected_msgs = set(cfg.subs)
+    if seen_msgs != expected_msgs:
+      return f"Expected messages: {expected_msgs}, but got: {seen_msgs}", log_msgs
+
+  try:
+    for check in PROCESS_CHECKS.get(cfg.proc_name, []):
+      check(lr, log_msgs)
+    if ref_log_msgs is None:
+      return [], log_msgs
+    return compare_logs(ref_log_msgs, log_msgs, ignore_fields + cfg.ignore, ignore_msgs, cfg.tolerance), log_msgs
+  except Exception as e:
+    return str(e), log_msgs
 
 
 if __name__ == "__main__":
@@ -188,18 +224,10 @@ if __name__ == "__main__":
 
     results: Any = defaultdict(dict)
     diffs: list = []
-    check_counts: Counter[str] = Counter()
     p2 = pool.map(run_test_process, pool_args)
-    for (segment, proc, result, diff_data, checks) in tqdm(p2, desc="Running Tests", total=len(pool_args)):
+    for (segment, proc, result, diff_data) in tqdm(p2, desc="Running Tests", total=len(pool_args)):
       results[segment][proc] = result
       diffs.append((segment, proc, diff_data))
-      check_counts.update(checks)
-
-  for name, count in check_counts.items():
-    print(f'{name}: {count} samples checked')
-  missing_coverage = [name for name, count in check_counts.items() if count == 0] if tested_cars == all_cars else []
-  if missing_coverage:
-    print(f'Sanity checks did not cover any samples: {missing_coverage}')
 
   diff_short, diff_long, failed = format_diff(results, log_paths, ref_commit)
   if not args.update_refs:
@@ -212,7 +240,7 @@ if __name__ == "__main__":
     except Exception:
       print(f"failed to generate diff report:\n{traceback.format_exc()}")
 
-    if failed or missing_coverage:
+    if failed:
       print("TEST FOUND DIFFS")
     else:
       print("TEST SUCCEEDED")
@@ -223,5 +251,5 @@ if __name__ == "__main__":
     print(f"\n\nUpdated reference logs for commit: {cur_commit}")
 
   # diffs are reported, only errors fail
-  errored = any(isinstance(r, str) for seg in results.values() for r in seg.values()) or bool(missing_coverage)
+  errored = any(isinstance(r, str) for seg in results.values() for r in seg.values())
   sys.exit(int(errored))

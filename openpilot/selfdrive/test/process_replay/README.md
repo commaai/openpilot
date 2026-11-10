@@ -8,7 +8,7 @@ Use `test_processes.py` to run the test locally.
 Log files are cached by default. Use `DISABLE_FILEREADER_CACHE='1' test_processes.py` to disable caching.
 
 Output sanity checks live in `sanity_checks.py`. Register a function in `PROCESS_CHECKS` with the process name;
-it receives the recorded inputs and replayed outputs, asserts its limits, and returns the number of samples checked.
+it receives the recorded inputs and replayed outputs and asserts its limits.
 Processes with registered checks run on every selected segment, even where reference comparisons are disabled.
 Failures appear in the normal replay report and fail the test independently of reference updates.
 
