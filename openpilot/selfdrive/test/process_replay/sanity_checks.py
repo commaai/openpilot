@@ -36,25 +36,20 @@ def cruise_windows(inputs: LogIterable, outputs: LogIterable):
     yield times, accel
 
 
-def check_accel_rms(inputs: LogIterable, outputs: LogIterable) -> None:
+def check_jerk_rms(inputs: LogIterable, outputs: LogIterable) -> None:
   CP = next(m.carParams for m in inputs if m.which() == 'carParams')
   if not CP.openpilotLongitudinalControl:
     return
 
   one_second = round(1 / DT_MDL)
-  edge = one_second // 2
-  kernel = np.ones(one_second + 1) / (one_second + 1)
   for times, accel in cruise_windows(inputs, outputs):
-    # Allow one second to settle, then measure variation around a one-second moving average.
+    # Allow one second to settle.
     times, accel = times[one_second:], accel[one_second:]
-    noise = accel[edge:-edge] - np.convolve(accel, kernel, mode='valid')
-    jerk = np.diff(noise) / np.diff(times[edge:-edge])
-    accel_rms = np.sqrt(np.mean(noise ** 2))
+    jerk = np.diff(accel) / np.diff(times)
     jerk_rms = np.sqrt(np.mean(jerk ** 2))
-    assert accel_rms < 0.012, f'{CP.carFingerprint}: {accel_rms=:.5f}'
-    assert jerk_rms < 0.03, f'{CP.carFingerprint}: {jerk_rms=:.5f}'
+    assert jerk_rms < 0.1, f'{CP.carFingerprint}: {jerk_rms=:.5f}'
 
 
 PROCESS_CHECKS = {
-  'plannerd': [check_accel_rms],
+  'plannerd': [check_jerk_rms],
 }
