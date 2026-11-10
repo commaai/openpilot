@@ -19,7 +19,7 @@ uv pip install --python "$ALPAMAYO_PYTHON" requests zstandard pycapnp==2.1.0
   --revision b92b6aa326bd3e2235db28f248ad5a30b5890e64 --local-dir /tmp/alpamayo2-edge-model
 ```
 
-Initialize openpilot's submodules and build its native dependencies before packing a replay. Use the repository's pinned tinygrad revision (`ec91b74b5b6b0fc924b72d3f27689679ca2438b9` at the initial benchmark). The BF16 checkpoint contains about 5.3 GB of weights; execution also needs memory for activations, attention caches, and JIT captures.
+Initialize openpilot's submodules and build its native dependencies before packing a replay. Use the repository's pinned tinygrad revision. This branch pins `89846dcfb383a98ee01cfec3bba440ae7dcf9b1e` from commaai's `alpamayo-egpu-runtime` branch to fix USB graph submission; the earlier 5090 measurements used its parent, `ec91b74b5b6b0fc924b72d3f27689679ca2438b9`. The BF16 checkpoint contains about 5.3 GB of weights; execution also needs memory for activations, attention caches, and JIT captures.
 
 ## Pack an openpilot segment
 
@@ -78,6 +78,36 @@ Measured on 2026-11-10 using the same two replay samples as the NVIDIA reference
 Each result uses ten measured runs after three warmups on physical GPU 1. Native timing includes input transfer and CPU trajectory decoding; preprocessing, weight loading, graph capture, and one garbage collection after warmup are recorded separately. The short sample is 4.83 times faster than the earlier 885.99 ms BF16 tinygrad baseline with fixed caches. It remains slower than the 96.51/129.80 ms NVIDIA FP8 reference, whose timing excludes input transfer.
 
 All measured trajectories were finite and repeatable. Validation alternated both samples through one model, replaced contents of existing CPU input buffers, and changed the generation limit from 256 to 64 tokens without changing the resulting trajectory. Both reasoning texts matched NVIDIA's reference. With identical diffusion noise, native BF16 versus NVIDIA BF16 mean/max waypoint distances were 0.017/0.049 m and 0.036/0.095 m; native FP8 versus NVIDIA FP8 distances were 0.122/0.402 m and 0.180/0.560 m, respectively, over the 6.4-second horizon. These are numerical comparisons on two replay samples.
+
+### Comma4 and Chestnut baseline
+
+On 2026-11-10, a comma4 with Chestnut gfx1200, 8 GB VRAM, firmware `8516b768`, a direct 5 Gb/s USB connection, and a 100 W power limit completed three measured runs after three warmups. The input was the same 10-second replay sample: two cameras, ten images, 2,026 prompt tokens, six generated tokens, and ten diffusion steps.
+
+| Stage | Median |
+| --- | --- |
+| Input upload | 166.07 ms |
+| Vision | 7,810.55 ms |
+| Prefill | 55,114.21 ms |
+| Reasoning | 1,657.56 ms |
+| Diffusion | 714.25 ms |
+| CPU trajectory decode | 12.69 ms |
+| Total | **65,503.29 ms (0.0153 inferences/s)** |
+
+Total p95 was 65,509.74 ms. Loading, preprocessing, and graph capture are excluded. Every output exactly matched the initial complete comma4 inference. The checkpoint used byte-verified prequantized FP8 weights and scales to reduce transfer and loading costs.
+
+This portable AMD path uses FP8 storage and activation quantization, but its linear layers currently cast operands to FP32 before matrix multiplication. The measured kernels do not use FP8 WMMA instructions. This is a baseline for the current implementation; it does not establish the eGPU's FP8 performance or meet the 5 FPS target.
+
+The runtime fix submits compute before USB copy staging, which can otherwise block while waiting for computation that has not yet been submitted. The original combined input upload/cast graph passed five runs with changing inputs and exact array comparisons. All seven existing USB integrity tests also passed. Prefill needs a longer GPU wait limit because its warm execution exceeds the default 30 seconds:
+
+```bash
+DEV=USB+AMD:LLVM GMMU=0 AM_POWER_LIMIT=100 TC_OPT=2 \
+  "$ALPAMAYO_PYTHON" openpilot/tools/alpamayo/benchmark.py \
+  --checkpoint /tmp/alpamayo2-edge-model --input /tmp/alpamayo-openpilot.npz \
+  --precision fp8 --vision-batch 10 --greedy --gpu-timeout-ms 300000 \
+  --warmup 3 --runs 3 --output /tmp/alpamayo-comma4.json
+```
+
+This command quantizes the original BF16 checkpoint during loading. The measured run instead uploaded the same prequantized weights in bulk and verified every byte on the GPU; initialization timing and compilation cost differ. Both paths use the same inference code. The runtime change is limited to USB queue submission and does not change the NVIDIA kernels.
 
 ### NVIDIA accelerated reference on RTX 5090
 

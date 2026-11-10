@@ -15,6 +15,7 @@ os.environ.setdefault('TC_OPT', '2')
 import numpy as np
 import torch
 from tinygrad import Device, Tensor, TinyJit, dtypes
+from tinygrad.device import Compiled
 from alpamayo2_edge.action_space import UnicycleAccelCurvatureCourseActionSpace
 from inputs import load_sample, native_inputs, prepare, rotary, synthetic_sample
 from model import EdgeModel
@@ -137,6 +138,7 @@ def main():
   parser.add_argument('--max-tokens', type=int, default=256)
   parser.add_argument('--diffusion-steps', type=int, default=10)
   parser.add_argument('--vision-batch', type=int, default=2)
+  parser.add_argument('--gpu-timeout-ms', type=int, default=30000)
   parser.add_argument('--greedy', action='store_true')
   parser.add_argument('--precision', choices=('bf16', 'fp8'), default='bf16')
   parser.add_argument('--usb-pcie', action='store_true', help='Use slow synchronous PCIe transfers instead of tinygrad SRAM staging.')
@@ -144,7 +146,8 @@ def main():
   args = parser.parse_args()
   if args.usb_pcie:
     os.environ['ALPAMAYO_USB_PCIE'] = '1'
-  assert args.runs > 0 and args.warmup >= 0 and args.diffusion_steps > 0 and args.vision_batch > 0
+  assert args.runs > 0 and args.warmup >= 0 and args.diffusion_steps > 0 and args.vision_batch > 0 and args.gpu_timeout_ms > 0
+  Compiled.wait_timeout_ms = args.gpu_timeout_ms
   torch.set_num_threads(8)
   data = synthetic_sample(args.profile) if args.synthetic else load_sample(args.input)
   started = time.perf_counter()
