@@ -8,7 +8,7 @@ import subprocess
 
 def environment():
   versions = {}
-  for package in ('torch', 'transformers', 'numpy', 'tinygrad', 'flash-attn', 'triton'):
+  for package in ('torch', 'transformers', 'numpy', 'tinygrad', 'flash-attn', 'triton', 'torchao'):
     try:
       versions[package] = importlib.metadata.version(package)
     except importlib.metadata.PackageNotFoundError:

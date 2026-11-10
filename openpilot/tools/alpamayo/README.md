@@ -79,6 +79,39 @@ Each result uses ten measured runs after three warmups on RTX 5090 GPU 1, UUID `
 
 NVIDIA's advertised Thor deployment uses a separate TensorRT/Edge-LLM FP8 recipe with speculative decoding and rolling image reuse. The BF16 results above use the public PyTorch accelerator and recompute all ten images every inference.
 
+### FP8 reference
+
+`--precision fp8` applies TorchAO W8A8 quantization before NVIDIA's accelerator compiles the model. The 504 aligned linear layers (2.37 billion weights) use E4M3 FP8 weights and dynamically scaled FP8 activations. Attention and KV caches remain BF16; embeddings, normalization, and the two unaligned action projections retain their original precision. Linear inputs honor BF16 autocast so TorchAO does not propagate FP32 intermediates through the quantized layers.
+
+Use TorchAO 0.13.0 with the pinned PyTorch 2.8 environment above:
+
+```bash
+uv pip install --python "$ALPAMAYO_PYTHON" --no-deps torchao==0.13.0
+CUDA_VISIBLE_DEVICES="$ALPAMAYO_GPU_UUID" \
+  TORCHINDUCTOR_CACHE_DIR="$HOME/.cache/alpamayo2-edge/inductor" \
+  TRITON_CACHE_DIR="$HOME/.cache/alpamayo2-edge/triton" \
+  "$ALPAMAYO_PYTHON" openpilot/tools/alpamayo/reference.py \
+  --checkpoint /tmp/alpamayo2-edge-model --input /tmp/alpamayo-openpilot.npz \
+  --greedy --precision fp8 --attention flash_attention_2 --accel tuned --compile-vision \
+  --warmup 3 --runs 10 --trace /tmp/alpamayo-fp8-trace.json \
+  --output /tmp/alpamayo-fp8.json
+```
+
+`--compile-vision` also compiles the vision encoder layers and projector; NVIDIA's accelerator handles language prefill, decoding, and the diffusion expert. `--trace` profiles one additional inference after the timed runs and records the observed FP8 CUDA kernel names. Compilation, graph capture, and profiling are excluded from steady-state latency. This is a PyTorch/TorchAO FP8 runtime, separate from NVIDIA's TensorRT deployment and the native tinygrad prototype.
+
+Matched measurements on the same RTX 5090 GPU 1, with FlashAttention 2 and compiled vision enabled for both precisions:
+
+| Replay time | Generated tokens | Precision | Median | p95 | Inferences/s |
+| --- | --- | --- | --- | --- | --- |
+| 10 seconds | 6 | BF16 | 117.05 ms | 118.90 ms | 8.54 |
+| 10 seconds | 6 | FP8 | 96.51 ms | 96.63 ms | 10.36 |
+| 20 seconds | 20 | BF16 | 158.31 ms | 161.75 ms | 6.32 |
+| 20 seconds | 20 | FP8 | 129.80 ms | 129.87 ms | 7.70 |
+
+Both samples come from `0eb6c3999e01ba0f/00000009--85cc17e716/54`, with two cameras, five frames per camera, 2,026 prompt tokens, and ten diffusion steps. Each measurement uses three warmups and ten timed runs. The GPU trace confirms E4M3 tensor-core GEMMs with BF16 outputs; all three NVIDIA CUDA graphs ran without fallbacks. Every repeated output was finite and identical within its configuration. Latency includes trajectory decoding but excludes preprocessing and input transfer. Longer reasoning keeps the second sample below 10 Hz.
+
+BF16 and FP8 produced identical reasoning on both samples. With identical diffusion noise, the mean/max waypoint differences were 0.188/0.598 m at 10 seconds and 0.378/1.142 m at 20 seconds across the 6.4-second prediction horizon. This limited comparison does not establish driving accuracy. FP8 improved throughput by 21–22% relative to BF16 with the same compilation settings; the earlier 138.87 ms BF16 result also lacked compiled vision.
+
 Before trusting eGPU timings, check the connected firmware against `openpilot/system/hardware/chestnut/flash.py` and run tinygrad's existing USB integrity checks:
 
 ```bash
