@@ -75,31 +75,21 @@ EXCLUDED_PROCS = {"modeld", "dmonitoringmodeld"}
 def run_test_process(data):
   segment, cfg, args, cur_log_fn, ref_log_path, lr_dat = data
   checks = {}
-  ref_log_msgs, ref_error = None, None
-  if ref_log_path is not None:
-    try:
-      ref_log_msgs = list(LogReader(ref_log_path))
-    except Exception:
-      ref_error = f"Failed to load reference {ref_log_path}:\n{traceback.format_exc()}"
   try:
     lr = LogReader.from_bytes(lr_dat)
     log_msgs = replay_process(cfg, lr, disable_progress=True)
-    save_log(cur_log_fn, log_msgs)
-    checks = check_outputs(cfg, lr, log_msgs)
-    if ref_error is not None:
-      return (segment, cfg.proc_name, ref_error, ref_error, checks)
-    if ref_log_msgs is None:
-      return (segment, cfg.proc_name, [], None, checks)
-
-    res = compare_logs(ref_log_msgs, log_msgs, args.ignore_fields + cfg.ignore, args.ignore_msgs, cfg.tolerance)
     try:
-      diff_data = diff_process(cfg, ref_log_msgs, log_msgs)
-    except Exception:
-      diff_data = traceback.format_exc()
-    return (segment, cfg.proc_name, res, diff_data, checks)
+      checks = check_outputs(cfg, lr, log_msgs)
+      res, diff_data = [], None
+      if ref_log_path is not None:
+        ref_log_msgs = list(LogReader(ref_log_path))
+        res = compare_logs(ref_log_msgs, log_msgs, args.ignore_fields + cfg.ignore, args.ignore_msgs, cfg.tolerance)
+        diff_data = diff_process(cfg, ref_log_msgs, log_msgs)
+    finally:
+      save_log(cur_log_fn, log_msgs)
   except Exception:
-    error = traceback.format_exc()
-    return (segment, cfg.proc_name, error, error, checks)
+    res = diff_data = traceback.format_exc()
+  return (segment, cfg.proc_name, res, diff_data, checks)
 
 
 def get_log_data(segment):
@@ -177,12 +167,12 @@ if __name__ == "__main__":
         if cfg.proc_name not in tested_procs:
           continue
 
-        compare = cfg.proc_name in ('card', 'controlsd', 'lagd') or car_brand in ('HYUNDAI', 'TOYOTA')
-        if not compare and cfg.proc_name not in PROCESS_CHECKS:
+        compare_ref = cfg.proc_name in ('card', 'controlsd', 'lagd') or car_brand in ('HYUNDAI', 'TOYOTA')
+        if not compare_ref and cfg.proc_name not in PROCESS_CHECKS:
           continue
 
         cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.zst".replace("|", "_"))
-        if not compare:
+        if not compare_ref:
           ref_log_path = None
         elif args.update_refs:  # reference logs will not exist if routes were just regenerated
           route, seg_num = segment.rsplit("--", 1)
