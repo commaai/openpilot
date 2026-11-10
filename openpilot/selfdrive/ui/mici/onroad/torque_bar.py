@@ -105,7 +105,7 @@ def arc_bar_pts(r_mid: float, thickness: float,
 
   span = max(1e-3, a1_deg - a0_deg)
 
-  # pick arc segment count from arc length, clamp to shader points[] budget
+  # pick arc segment count from arc length, clamp to the max_points budget
   arc_len = r_mid * math.radians(span)
   arc_segs = max(6, int(arc_len / px_per_seg))
   max_arc = (max_points - (4 * cap_segs + 3)) // 2

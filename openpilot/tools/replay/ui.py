@@ -137,7 +137,7 @@ def ui_thread():
     rl.begin_drawing()
     rl.clear_background(rl.Color(64, 64, 64, 255))
 
-    # Render camera (NV12->RGB on GPU via shader)
+    # Render camera
     if camera_view.frame:
       cam_h = 640.0 * camera_view.frame.height / camera_view.frame.width
     else:
