@@ -27,29 +27,12 @@ STRENGTH_ICONS = [
 ]
 
 
-class PanelType(IntEnum):
-  WIFI = 0
-  ADVANCED = 1
-
-
 class UIState(IntEnum):
   IDLE = 0
   CONNECTING = 1
   NEEDS_AUTH = 2
   SHOW_FORGET_CONFIRM = 3
   FORGETTING = 4
-
-
-class NavButton(Widget):
-  def __init__(self, text: str):
-    super().__init__()
-    self.text = text
-    self.set_rect(rl.Rectangle(0, 0, 400, 100))
-
-  def _render(self, _):
-    color = rl.Color(74, 74, 74, 255) if self.is_pressed else rl.Color(57, 57, 57, 255)
-    rl.draw_rectangle_rounded(self._rect, 0.6, 10, color)
-    gui_label(self.rect, self.text, font_size=60, alignment=TextAlignment.CENTER)
 
 
 class WifiManagerUI(Widget):

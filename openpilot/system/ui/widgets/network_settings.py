@@ -1,4 +1,3 @@
-from openpilot.system.ui.widgets.network import WifiManagerUI
 from enum import IntEnum
 
 import raylib_nb as rl
@@ -9,33 +8,13 @@ from openpilot.system.ui.widgets import DialogResult, Widget
 from openpilot.system.ui.widgets.keyboard import Keyboard
 from openpilot.system.ui.widgets.label import gui_label
 from openpilot.system.ui.widgets.scroller_tici import Scroller
+from openpilot.system.ui.widgets.network import MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH, WifiManagerUI
 from openpilot.system.ui.widgets.list_view import ButtonAction, ListItem, MultipleButtonAction, ToggleAction, button_item, text_item
-
-NM_DEVICE_STATE_NEED_AUTH = 60
-MIN_PASSWORD_LENGTH = 8
-MAX_PASSWORD_LENGTH = 64
-ITEM_HEIGHT = 160
-ICON_SIZE = 50
-
-STRENGTH_ICONS = [
-  "icons/wifi_strength_low.png",
-  "icons/wifi_strength_medium.png",
-  "icons/wifi_strength_high.png",
-  "icons/wifi_strength_full.png",
-]
 
 
 class PanelType(IntEnum):
   WIFI = 0
   ADVANCED = 1
-
-
-class UIState(IntEnum):
-  IDLE = 0
-  CONNECTING = 1
-  NEEDS_AUTH = 2
-  SHOW_FORGET_CONFIRM = 3
-  FORGETTING = 4
 
 
 class NavButton(Widget):

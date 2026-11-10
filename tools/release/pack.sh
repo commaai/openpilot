@@ -5,7 +5,7 @@
 #   tools/release/pack.sh [--onefile] OUTPUT_DIR
 #
 # Builds for this machine. Comma devices need arm64, so run it on a device or another arm64 machine.
-# Needs uv and a C++ compiler. The output needs at least the glibc of the machine it's built on.
+# Needs uv and a C compiler. The output needs at least the glibc of the machine it's built on.
 set -euo pipefail
 
 ONEFILE=0
@@ -19,8 +19,8 @@ PACK="$ROOT/tools/release/pack"
 
 # a dedicated environment, so the apps only get the packages pinned in requirements.txt
 VENV=${XDG_CACHE_HOME:-$HOME/.cache}/openpilot-pack/venv
-uv venv -q --allow-existing -p 3.12 "$VENV"
-VIRTUAL_ENV="$VENV" uv pip install -q -r "$PACK/requirements.txt"
+uv venv -q --allow-existing --managed-python -p "$(cat "$ROOT/.python-version")" "$VENV"
+VIRTUAL_ENV="$VENV" uv pip sync -q "$PACK/requirements.txt"
 PYTHON="$VENV/bin/python"
 export PATH="$VENV/bin:$PATH"  # patchelf
 pkg_dir() { "$PYTHON" -c "import importlib.util, os; print(os.path.dirname(importlib.util.find_spec('$1').origin))"; }
@@ -34,18 +34,6 @@ tar -C "$ROOT" -cf - --exclude=__pycache__ --exclude='*.so' --exclude=openpilot/
   openpilot opendbc_repo/opendbc | tar -C "$SRC" -xf -
 cd "$SRC"
 export PYTHONPATH="$SRC:$SRC/opendbc_repo"
-
-# the native half of Params, from the same sources as params_python in openpilot/common/SConscript
-CAPNP=$(pkg_dir capnproto)/install
-JSON11=$(pkg_dir json11)/install
-mkdir -p openpilot/cereal/gen/cpp
-PATH="$CAPNP/bin:$PATH" capnp compile --src-prefix=openpilot/cereal --src-prefix=opendbc_repo/opendbc/car \
-  -Iopenpilot/cereal -Iopendbc_repo/opendbc/car -oc++:openpilot/cereal/gen/cpp \
-  openpilot/cereal/{log,custom,deprecated}.capnp opendbc_repo/opendbc/car/car.capnp
-"${CXX:-c++}" -std=c++20 -O2 -fPIC -shared -D__COMMA_HARDWARE__=1 \
-  -I. -Iopenpilot -Iopenpilot/cereal/gen/cpp -I"$CAPNP/include" -I"$JSON11/include" \
-  openpilot/common/{params_c,params,swaglog,util}.cc -L"$JSON11/lib" -ljson11 -pthread \
-  -o openpilot/common/libparams_c.so
 
 # raylib_nb picks its backend at runtime. Ship the comma one (only in arm64 wheels) and headless.
 # The desktop one needs OpenGL and X11, which the devices don't have.
@@ -67,19 +55,20 @@ done < <(find openpilot opendbc_repo/opendbc/car -type f \
 
 MODE=(--standalone)
 if [ "$ONEFILE" = 1 ]; then
-  # unpack once per build into a persistent cache, not into /tmp on every start
-  HASH=$(find openpilot opendbc_repo/opendbc -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -c1-16)
-  MODE=(--onefile "--onefile-tempdir-spec={CACHE_DIR}/openpilot-ui/{PRODUCT}-$HASH")
+  # unpack into a persistent cache, not into /tmp on every start. Nuitka checks it on every start.
+  MODE=(--onefile "--onefile-tempdir-spec={CACHE_DIR}/openpilot-ui/{PRODUCT}")
 fi
 
 mkdir -p "$OUT_DIR"
 for app in $APPS; do
   rm -rf "${OUT_DIR:?}/$app" "${OUT_DIR:?}/$app.dist"
-  # pycapnp imports asyncio at runtime, which Nuitka can't see
+  # pycapnp imports asyncio at runtime, which Nuitka can't see. zstandard is only for building
+  # onefile, the apps don't use it.
   "$PYTHON" -m nuitka "${MODE[@]}" \
     --static-libpython=auto --lto=no --jobs="$(nproc)" --assume-yes-for-downloads \
     --product-name="$app" --python-flag=no_site --python-flag=isolated \
     "${BACKENDS[@]}" --include-module=opendbc --include-module=asyncio \
+    --nofollow-import-to=zstandard \
     --user-package-configuration-file="$PACK/package.yml" \
     "${DATA[@]}" \
     --report="$OUT_DIR/$app-report.xml" \
