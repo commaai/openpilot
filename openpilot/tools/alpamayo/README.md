@@ -63,3 +63,18 @@ DEV=USB+AMD:LLVM GMMU=0 AM_POWER_LIMIT=100 "$ALPAMAYO_PYTHON" -m unittest \
 ```
 
 Do not interpret timings from failed integrity checks or nonfinite predictions as model performance. The native implementation uses eager attention and growing KV caches; its timings measure this prototype, not an optimized Alpamayo deployment.
+
+## Initial results (2026-11-10)
+
+For one real two-camera replay sample, greedy reasoning and ten diffusion steps:
+
+| Runtime | Result |
+| --- | --- |
+| Chestnut gfx1200, 8 GB, direct PCIe | First complete inference: 158.55 s, including initial compilation; checkpoint load: 23.56 min |
+| Chestnut repeat | Second warmup timed out during language prefill; no steady-state result |
+| RTX 5090, NVIDIA PyTorch reference | 327.16 ms median, three measured runs after two warmups |
+| RTX 5090, native tinygrad prototype | 9.51 s median, three measured runs after two warmups |
+
+The completed Chestnut run returned 64 finite poses and the same reasoning text as CUDA. With identical diffusion noise, its mean waypoint distance from the native CUDA output was 3.7 cm (maximum 12.3 cm). The final native implementation peaked at 6.48 GB of live buffers on CUDA for this input. These checks cover one replay sample, not driving quality. The internal GPU had other existing workloads.
+
+To reproduce the completed cold-run path, add `--usb-pcie --warmup 0 --runs 1` to the native command. Repeated Chestnut inference still needs runtime debugging; the successful cold run does not establish a reliable real-time openpilot deployment.

@@ -120,7 +120,7 @@ def run_native(model, args, config, tokenizer, prepared, packed, seed):
     action_config.pop('_target_')
     action_space = UnicycleAccelCurvatureCourseActionSpace(**action_config)
     with torch.no_grad():
-      xyz, rot = action_space.action_to_traj(torch.from_numpy(action_array), prepared['ego_history_xyz'][:, 0], prepared['ego_history_rot'][:, 0])
+      xyz, rot = action_space.action_to_traj(torch.from_numpy(action_array.copy()), prepared['ego_history_xyz'][:, 0], prepared['ego_history_rot'][:, 0])
     assert xyz.shape == (1, 64, 3) and rot.shape == (1, 64, 3, 3)
     assert torch.isfinite(xyz).all() and torch.isfinite(rot).all()
   times['total'] = (time.perf_counter() - start_total) * 1000
