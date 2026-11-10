@@ -8,6 +8,7 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.controls.lib.accel_boost import AccelBoost
+from openpilot.selfdrive.controls.lib.fleet_speed import FleetSpeedCap
 from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc, LongitudinalPlanSource
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import T_IDXS as T_IDXS_MPC
@@ -37,9 +38,11 @@ class LongitudinalPlanner:
     self.fcw = False
     self.dt = dt
     self.accel_boost = AccelBoost()
+    self.fleet_speed = FleetSpeedCap()
 
     self.v_desired_filter = FirstOrderFilter(init_v, 2.0, self.dt)
     self.a_cruise = init_a
+    self.a_map = init_a
     self.output_a_target = init_a
     self.output_should_stop = False
 
@@ -66,6 +69,7 @@ class LongitudinalPlanner:
       self.v_desired_filter.x = v_ego
       self.output_a_target = np.clip(sm['carState'].aEgo, ACCEL_MIN, ACCEL_MAX)
       self.a_cruise = self.output_a_target
+      self.a_map = self.output_a_target
 
     # Prevent divergence, smooth in current v_ego
     self.v_desired_filter.x = max(0.0, self.v_desired_filter.update(v_ego))
@@ -102,11 +106,17 @@ class LongitudinalPlanner:
     self.a_cruise = get_cruise_accel(v_cruise, v_ego, self.a_cruise, self.output_a_target, self.dt)
     cruise_should_stop = should_stop(v_ego, self.a_cruise)
 
+    a_map_target = self.fleet_speed.update(sm, v_ego)
+    a_map_target = ACCEL_MAX if a_map_target is None else a_map_target
+    j_map = np.interp(v_ego, J_CRUISE_BP, J_CRUISE_VALS)
+    self.a_map = float(np.clip(a_map_target, min(self.a_map, self.output_a_target) - j_map * self.dt, self.a_map + j_map * self.dt))
+
     output_a_target_e2e = self.accel_boost.update(sm, output_a_target_e2e, output_a_target_mpc, self.a_cruise)
 
     candidates = [(output_a_target_mpc, self.mpc.source, output_should_stop_mpc),
                   (self.a_cruise, LongitudinalPlanSource.cruise, cruise_should_stop),
-                  (output_a_target_e2e, LongitudinalPlanSource.e2e, output_should_stop_e2e)]
+                  (output_a_target_e2e, LongitudinalPlanSource.e2e, output_should_stop_e2e),
+                  (self.a_map, LongitudinalPlanSource.fleetSpeed, False)]
 
     output_a_target, self.mpc.source, _ = min(candidates, key=lambda c: c[0])
     self.output_should_stop = any(should_stop for _, _, should_stop in candidates)
@@ -130,6 +140,9 @@ class LongitudinalPlanner:
 
     longitudinalPlan.hasLead = sm['radarState'].leadOne.present
     longitudinalPlan.longitudinalPlanSource = self.mpc.source
+    longitudinalPlan.fleetSpeed = float(np.nan_to_num(self.fleet_speed.v_here))
+    longitudinalPlan.fleetSpeedTarget = float(np.nan_to_num(self.fleet_speed.v_target))
+    longitudinalPlan.fleetSpeedGapFilled = self.fleet_speed.gap_filled
     longitudinalPlan.fcw = self.fcw
 
     longitudinalPlan.aTarget = float(self.output_a_target)

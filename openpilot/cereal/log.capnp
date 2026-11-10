@@ -1246,6 +1246,9 @@ struct LongitudinalPlan @0xe00b5b3eba12876c {
   allowThrottle @38: Bool;
   allowBrake @39: Bool;
   accelBoost @40 :Float32;
+  fleetSpeed @41 :Float32;
+  fleetSpeedTarget @42 :Float32;
+  fleetSpeedGapFilled @43 :Bool;
 
 
   solverExecutionTime @35 :Float32;
@@ -1256,6 +1259,7 @@ struct LongitudinalPlan @0xe00b5b3eba12876c {
     lead1 @2;
     lead2 @3;
     e2e @4;
+    fleetSpeed @5;
   }
 
 

@@ -1,6 +1,7 @@
 import raylib_nb as rl
 from dataclasses import dataclass
 from openpilot.common.constants import CV
+from openpilot.selfdrive.ui.onroad.fleet_speed_sign import draw_fleet_speed_sign
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.multilang import tr
@@ -101,6 +102,7 @@ class HudRenderer(Widget):
 
     if self.is_cruise_available:
       self._draw_set_speed(rect)
+    draw_fleet_speed_sign(rect.x + 60 + (UI_CONFIG.set_speed_width_imperial - 140) / 2, rect.y + 45 + UI_CONFIG.set_speed_height + 24, 140, 170)
 
     self._draw_current_speed(rect)
 

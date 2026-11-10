@@ -3,6 +3,7 @@ import raylib_nb as rl
 from dataclasses import dataclass
 from openpilot.common.constants import CV
 from openpilot.selfdrive.ui.mici.onroad.torque_bar import TorqueBar
+from openpilot.selfdrive.ui.onroad.fleet_speed_sign import draw_fleet_speed_sign
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus, ChestnutState
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.multilang import tr
@@ -182,6 +183,7 @@ class HudRenderer(Widget):
       self._draw_set_speed(rect)
 
     self._draw_model_source(rect)
+    draw_fleet_speed_sign(rect.x + rect.width - 100, rect.y + 20, 80, 100)
 
     self._draw_steering_wheel(rect)
 
