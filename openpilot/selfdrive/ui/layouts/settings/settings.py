@@ -12,7 +12,7 @@ from openpilot.system.ui.lib.multilang import tr, tr_noop
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wifi_manager import WifiManager
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.network import NetworkUI
+from openpilot.system.ui.widgets.network_settings import NetworkUI
 
 # Constants
 SIDEBAR_WIDTH = 500

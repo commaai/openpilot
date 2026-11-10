@@ -7,14 +7,15 @@ import uuid
 import socket
 import logging
 import traceback
-import numpy as np
 from threading import local
 from collections import OrderedDict
 from contextlib import contextmanager
 
 
 def json_handler(obj):
-  if isinstance(obj, np.bool_):
+  # obj can only be a numpy type if numpy is already loaded
+  np = sys.modules.get('numpy')
+  if np is not None and isinstance(obj, np.bool_):
     return bool(obj)
   # if isinstance(obj, (datetime.date, datetime.time)):
   #   return obj.isoformat()

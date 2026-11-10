@@ -1,0 +1,6 @@
+# Nuitka package configuration: ship the native Params library next to params.py
+- module-name: 'openpilot.common.params'
+  dlls:
+    - from_filenames:
+        prefixes:
+          - 'libparams_c'

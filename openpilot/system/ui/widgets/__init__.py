@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import abc
+import sys
 import time
 import raylib_nb as rl
 from enum import IntEnum
@@ -13,17 +14,16 @@ class DeviceLike(Protocol):
   def awake(self) -> bool: ...
 
 
-def _get_device() -> DeviceLike:
-  try:
-    from openpilot.selfdrive.ui.ui_state import device
-    return device
-  except (ImportError, OSError):
-    class Device:
-      awake = True
-    return Device()
+class _Device:
+  # Use ui_state's device only if the full UI already loaded it. Importing it here would pull the
+  # whole openpilot stack into the standalone setup, reset and updater apps.
+  @property
+  def awake(self) -> bool:
+    ui_state = sys.modules.get("openpilot.selfdrive.ui.ui_state")
+    return ui_state.device.awake if ui_state is not None else True
 
 
-device = _get_device()
+device: DeviceLike = _Device()
 
 W = TypeVar('W', bound='Widget')
 

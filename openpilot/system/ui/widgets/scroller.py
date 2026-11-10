@@ -1,5 +1,5 @@
 import raylib_nb as rl
-import numpy as np
+from openpilot.system.ui.lib.scalar import interp, clip
 from collections.abc import Callable, Sequence
 
 from openpilot.common.filter_simple import FirstOrderFilter, BounceFilter
@@ -42,7 +42,7 @@ class ScrollIndicator(Widget):
 
   def _render(self, _, /):
     # scale indicator width based on content size
-    indicator_w = float(np.interp(self._content_size, [1000, 3000], [300, 100]))
+    indicator_w = float(interp(self._content_size, [1000, 3000], [300, 100]))
 
     # position based on scroll ratio
     slide_range = self._viewport.width - indicator_w
@@ -294,16 +294,16 @@ class _Scroller(Widget):
       if DO_JELLO:
         if self._horizontal:
           cx = self._rect.x + self._rect.width / 2
-          jello_offset = self._scroll_offset - np.interp(x + item.rect.width / 2,
+          jello_offset = self._scroll_offset - interp(x + item.rect.width / 2,
                                                          [self._rect.x, cx, self._rect.x + self._rect.width],
                                                          [self._item_pos_filter.x, self._scroll_offset, self._item_pos_filter.x])
-          x -= np.clip(jello_offset, -20, 20)
+          x -= clip(jello_offset, -20, 20)
         else:
           cy = self._rect.y + self._rect.height / 2
-          jello_offset = self._scroll_offset - np.interp(y + item.rect.height / 2,
+          jello_offset = self._scroll_offset - interp(y + item.rect.height / 2,
                                                          [self._rect.y, cy, self._rect.y + self._rect.height],
                                                          [self._item_pos_filter.x, self._scroll_offset, self._item_pos_filter.x])
-          y -= np.clip(jello_offset, -20, 20)
+          y -= clip(jello_offset, -20, 20)
 
       # Animate moves if needed
       x, y = self._do_move_animation(item, x, y)

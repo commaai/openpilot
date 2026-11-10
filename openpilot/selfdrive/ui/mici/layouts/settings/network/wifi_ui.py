@@ -1,5 +1,5 @@
 import math
-import numpy as np
+from openpilot.system.ui.lib.scalar import interp
 import raylib_nb as rl
 from collections.abc import Callable
 
@@ -31,7 +31,7 @@ class LoadingAnimation(Widget):
     for i in range(3):
       x = base_x + (i - 1) * self.SPACING
       y = int(base_y + min(math.sin((rl.get_time() - i * 0.2) * 4) * self.Y_MAG, 0))
-      alpha = int(np.interp(base_y - y, [0, self.Y_MAG], [255 * 0.45, 255 * 0.9]))
+      alpha = int(interp(base_y - y, [0, self.Y_MAG], [255 * 0.45, 255 * 0.9]))
       rl.draw_circle(x, y, self.RADIUS, rl.Color(255, 255, 255, alpha))
 
 
