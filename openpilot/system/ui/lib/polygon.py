@@ -27,19 +27,27 @@ def _ramp(colors: tuple[tuple[int, int, int, int], ...], stops: tuple[float, ...
   """the gradient's colors at 256 steps of t"""
   t = np.linspace(0.0, 1.0, 256)
   channels = np.array(colors, dtype=np.float32)
-  ramp = np.rint(np.column_stack([np.interp(t, stops, channels[:, i]) for i in range(4)])).astype(np.uint8)
+  ramp = np.empty((256, 4), dtype=np.uint8)
+  for i in range(4):
+    ramp[:, i] = np.rint(np.interp(t, stops, channels[:, i]))
   return ramp.view(np.uint32).ravel()
 
 
 def _gradient_ramp(gradient: Gradient, origin_rect: rl.Rectangle) -> tuple[np.ndarray, float, float, float]:
   """the gradient for rl.cpu.polygon: its ramp of colors, and t's coefficients in x and y.
   t measures y from the bottom of the screen, like the GL shader the UI's gradients were made with"""
-  start_x, start_y = origin_rect.x + gradient.start[0] * origin_rect.width, origin_rect.y + gradient.start[1] * origin_rect.height
-  end_x, end_y = origin_rect.x + gradient.end[0] * origin_rect.width, origin_rect.y + gradient.end[1] * origin_rect.height
-  dx, dy = start_x - end_x, start_y - end_y
+  start_x = origin_rect.x + gradient.start[0] * origin_rect.width
+  start_y = origin_rect.y + gradient.start[1] * origin_rect.height
+  end_x = origin_rect.x + gradient.end[0] * origin_rect.width
+  end_y = origin_rect.y + gradient.end[1] * origin_rect.height
+  dx = start_x - end_x
+  dy = start_y - end_y
   length2 = max(dx * dx + dy * dy, 1e-6)
+
   # t = ((x, height - y) - end) . (dx, dy) / length2
-  tx, ty, t0 = dx / length2, -dy / length2, (-end_x * dx + (gui_app.height - end_y) * dy) / length2
+  tx = dx / length2
+  ty = -dy / length2
+  t0 = (-end_x * dx + (gui_app.height - end_y) * dy) / length2
 
   stops = tuple(min(max(float(s), 0.0), 1.0) for s in gradient.stops[:len(gradient.colors)])
   colors = tuple((c.r, c.g, c.b, c.a) for c in gradient.colors[:len(stops)])

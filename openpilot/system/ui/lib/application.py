@@ -47,9 +47,17 @@ OFFSCREEN = os.getenv("OFFSCREEN") == "1"  # Disable FPS limiting for fast offli
 
 BURN_IN_MODE = "BURN_IN" in os.environ
 # a pixel's burn-in risk by its blue, from green to yellow to red
-_burn_in = np.arange(256) / 255
-BURN_IN_COLORS = np.round(np.column_stack([np.clip(_burn_in * 2, 0, 1), 1 - np.clip((_burn_in - 0.5) * 2, 0, 1),
-                                           np.zeros(256), np.ones(256)]) * 255).astype(np.uint8)
+def _burn_in_colors() -> np.ndarray:
+  """each blue value's color: red rising from 0 to 0.5, then green falling from 0.5 to 1"""
+  value = np.arange(256) / 255
+  colors = np.zeros((256, 4))
+  colors[:, 0] = np.clip(value * 2, 0, 1)
+  colors[:, 1] = 1 - np.clip((value - 0.5) * 2, 0, 1)
+  colors[:, 3] = 1
+  return np.round(colors * 255).astype(np.uint8)
+
+
+BURN_IN_COLORS = _burn_in_colors()
 
 
 DEFAULT_TEXT_SIZE = 60
