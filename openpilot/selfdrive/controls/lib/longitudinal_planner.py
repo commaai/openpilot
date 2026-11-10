@@ -113,10 +113,14 @@ class LongitudinalPlanner:
     self.a_cruise = get_cruise_accel(v_cruise, v_ego, self.a_cruise, self.output_a_target, self.dt)
     cruise_should_stop = should_stop(v_ego, self.a_cruise)
 
-    a_map_target = self.fleet_speed.update(sm, v_ego) if self.fleet_mode else self.fleet_speed.clear()
-    a_map_target = ACCEL_MAX if a_map_target is None else a_map_target
-    j_map = np.interp(v_ego, J_CRUISE_BP, J_CRUISE_VALS)
-    self.a_map = float(np.clip(a_map_target, min(self.a_map, self.output_a_target) - j_map * self.dt, self.a_map + j_map * self.dt))
+    if self.fleet_mode:
+      a_map_target = self.fleet_speed.update(sm, v_ego)
+      a_map_target = ACCEL_MAX if a_map_target is None else a_map_target
+      j_map = np.interp(v_ego, J_CRUISE_BP, J_CRUISE_VALS)
+      self.a_map = float(np.clip(a_map_target, min(self.a_map, self.output_a_target) - j_map * self.dt, self.a_map + j_map * self.dt))
+    else:
+      self.fleet_speed.clear()
+      self.a_map = ACCEL_MAX
 
     output_a_target_e2e = self.accel_boost.update(sm, output_a_target_e2e, output_a_target_mpc, self.a_cruise)
     if self.fleet_mode:
@@ -131,8 +135,9 @@ class LongitudinalPlanner:
 
     candidates = [(output_a_target_mpc, self.mpc.source, output_should_stop_mpc),
                   (self.a_cruise, LongitudinalPlanSource.cruise, cruise_should_stop),
-                  (output_a_target_e2e, LongitudinalPlanSource.e2e, output_should_stop_e2e),
-                  (self.a_map, LongitudinalPlanSource.fleetSpeed, False)]
+                  (output_a_target_e2e, LongitudinalPlanSource.e2e, output_should_stop_e2e)]
+    if self.fleet_mode:
+      candidates.append((self.a_map, LongitudinalPlanSource.fleetSpeed, False))
 
     output_a_target, self.mpc.source, _ = min(candidates, key=lambda c: c[0])
     self.output_should_stop = any(should_stop for _, _, should_stop in candidates)
