@@ -31,12 +31,17 @@ RAYLIB_MODULES = ('pyray', 'raylib', 'raylib_nb', 'cffi', '_cffi_backend', 'pycp
 BOOTSTRAP = """
 import importlib
 import shutil
+import signal
 import sys
 import tempfile
 import zipfile
 from pathlib import Path
 
+def terminate(signum, frame):
+  raise SystemExit(128 + signum)
+
 with tempfile.TemporaryDirectory(prefix='openpilot-zipapp-') as tmp:
+  signal.signal(signal.SIGTERM, terminate)
   with zipfile.ZipFile(__loader__.archive) as archive:
     for member in archive.infolist():
       path = Path(member.filename)
