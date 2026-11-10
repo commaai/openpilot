@@ -9,7 +9,7 @@ Log files are cached by default. Use `DISABLE_FILEREADER_CACHE='1' test_processe
 
 Output sanity checks live in `sanity_checks.py`. Register a function in `PROCESS_CHECKS` with the process name;
 it receives the recorded inputs and replayed outputs and asserts its limits.
-Processes with registered checks run on every selected segment, even where reference comparisons are disabled.
+Checks run alongside the normal reference comparisons.
 Failures appear in the normal replay report and fail the test independently of reference updates.
 
 Currently the following processes are tested:

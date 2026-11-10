@@ -77,7 +77,7 @@ def run_test_process(data):
   segment, cfg, args, cur_log_fn, ref_log_path, lr_dat = data
   ref_error = None
   try:
-    ref_log_msgs = list(LogReader(ref_log_path)) if ref_log_path is not None else None
+    ref_log_msgs = list(LogReader(ref_log_path))
   except Exception:
     # New routes have no ref yet, still replay and publish new refs.
     ref_log_msgs = []
@@ -89,9 +89,7 @@ def run_test_process(data):
   if ref_error is not None:
     return (segment, cfg.proc_name, ref_error, ref_error)
   try:
-    diff_data = res or None
-    if ref_log_msgs is not None:
-      diff_data = diff_process(cfg, ref_log_msgs, log_msgs)
+    diff_data = diff_process(cfg, ref_log_msgs, log_msgs)
   except Exception:
     diff_data = traceback.format_exc()
   return (segment, cfg.proc_name, res, diff_data)
@@ -127,8 +125,6 @@ def test_process(cfg, lr, segment, ref_log_msgs, new_log_path, ignore_fields=Non
   try:
     for check in PROCESS_CHECKS.get(cfg.proc_name, []):
       check(lr, log_msgs)
-    if ref_log_msgs is None:
-      return [], log_msgs
     return compare_logs(ref_log_msgs, log_msgs, ignore_fields + cfg.ignore, ignore_msgs, cfg.tolerance), log_msgs
   except Exception as e:
     return str(e), log_msgs
@@ -203,14 +199,12 @@ if __name__ == "__main__":
         if cfg.proc_name not in tested_procs:
           continue
 
-        compare_ref = cfg.proc_name in ('card', 'controlsd', 'lagd') or car_brand in ('HYUNDAI', 'TOYOTA')
-        if not compare_ref and cfg.proc_name not in PROCESS_CHECKS:
+        # Limit the other processes to two representative segments.
+        if cfg.proc_name not in ('card', 'controlsd', 'lagd', 'plannerd') and car_brand not in ('HYUNDAI', 'TOYOTA'):
           continue
 
         cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.zst".replace("|", "_"))
-        if not compare_ref:
-          ref_log_path = None
-        elif args.update_refs:  # reference logs will not exist if routes were just regenerated
+        if args.update_refs:  # reference logs will not exist if routes were just regenerated
           route, seg_num = segment.rsplit("--", 1)
           ref_log_path = get_url(route, seg_num, "rlog.zst")
         else:
@@ -219,7 +213,7 @@ if __name__ == "__main__":
 
         pool_args.append((segment, cfg, args, cur_log_fn, ref_log_path, log_data[segment]))
 
-        log_paths[segment][cfg.proc_name]['ref'] = ref_log_path or 'sanity checks only'
+        log_paths[segment][cfg.proc_name]['ref'] = ref_log_path
         log_paths[segment][cfg.proc_name]['new'] = cur_log_fn
 
     results: Any = defaultdict(dict)
