@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
-# Builds the setup, reset and updater UIs that ship in AGNOS into standalone executables
-# with Nuitka. They bundle their own Python, raylib and dependencies.
+# Builds the setup, reset and updater UIs that ship in AGNOS into one standalone executable
+# with Nuitka. It bundles its own Python, raylib and dependencies, and runs the app it's
+# invoked as: OUTPUT_DIR/openpilot-ui.dist/{setup,reset,updater} are symlinks to it.
 #
 #   tools/release/pack.sh [--onefile] OUTPUT_DIR
+#
+# --onefile packs it into the single file OUTPUT_DIR/openpilot-ui instead.
 #
 # Builds for this machine. Comma devices need arm64, so run it on a device or another arm64 machine.
 # Needs uv and a C compiler. The output needs at least the glibc of the machine it's built on.
@@ -59,48 +62,54 @@ if [ "$ONEFILE" = 1 ]; then
   MODE=(--onefile "--onefile-tempdir-spec={CACHE_DIR}/openpilot-ui/{PRODUCT}")
 fi
 
-mkdir -p "$OUT_DIR"
+MAINS=()
 for app in $APPS; do
-  rm -rf "${OUT_DIR:?}/$app" "${OUT_DIR:?}/$app.dist"
-  # pycapnp imports asyncio at runtime, which Nuitka can't see. zstandard is only for building
-  # onefile, the apps don't use it.
-  "$PYTHON" -m nuitka "${MODE[@]}" \
-    --static-libpython=auto --lto=no --jobs="$(nproc)" --assume-yes-for-downloads --remove-output \
-    --product-name="$app" --python-flag=no_site --python-flag=isolated \
-    "${BACKENDS[@]}" --include-module=opendbc --include-module=asyncio \
-    --nofollow-import-to=zstandard \
-    --user-package-configuration-file="$PACK/package.yml" \
-    "${DATA[@]}" \
-    --report="$OUT_DIR/$app-report.xml" \
-    --output-dir="$SRC/build" --output-filename="$app" \
-    "openpilot/system/ui/$app.py"
-  if [ "$ONEFILE" = 1 ]; then
-    mv "$SRC/build/$app" "$OUT_DIR/$app"
-  else
-    mv "$SRC/build/$app.dist" "$OUT_DIR/$app.dist"
-    # the wheels' libraries ship with debug symbols, which are most of their size
-    find "$OUT_DIR/$app.dist" -name '*.so*' -type f -exec strip --strip-unneeded {} +
-  fi
+  MAINS+=("--main=openpilot/system/ui/$app.py")
 done
 
-cd "$OUT_DIR"
+# pycapnp imports asyncio at runtime, which Nuitka can't see. zstandard is only for building
+# onefile, the apps don't use it.
+"$PYTHON" -m nuitka "${MODE[@]}" "${MAINS[@]}" \
+  --static-libpython=auto --lto=no --jobs="$(nproc)" --assume-yes-for-downloads --remove-output \
+  --product-name=openpilot-ui --python-flag=no_site --python-flag=isolated \
+  "${BACKENDS[@]}" --include-module=opendbc --include-module=asyncio \
+  --nofollow-import-to=zstandard \
+  --user-package-configuration-file="$PACK/package.yml" \
+  "${DATA[@]}" \
+  --report="$SRC/report.xml" \
+  --output-dir="$SRC/build" --output-filename=openpilot-ui --output-folder-name=openpilot-ui.dist
+
+# Nuitka compiles everything the apps can import, so keep their import graph small
+n=$(grep -c '<module [^>]*kind="CompiledPython' "$SRC/report.xml" || true)
+echo "$n compiled modules"
+if [ "$n" -gt "$MAX_COMPILED_MODULES" ]; then
+  echo "compiled $n modules (max $MAX_COMPILED_MODULES), check what the apps import" >&2
+  exit 1
+fi
+
+if [ "$ONEFILE" = 1 ]; then
+  DIST="$OUT_DIR"
+  mkdir -p "$DIST"
+  mv "$SRC/build/openpilot-ui" "$DIST/"
+else
+  DIST="$OUT_DIR/openpilot-ui.dist"
+  rm -rf "$DIST"
+  mkdir -p "$OUT_DIR"
+  mv "$SRC/build/openpilot-ui.dist" "$DIST"
+  # the wheels' libraries ship with debug symbols, which are most of their size
+  find "$DIST" -name '*.so*' -type f -exec strip --strip-unneeded {} +
+fi
+
 for app in $APPS; do
-  # Nuitka compiles everything the apps can import, so keep their import graph small
-  n=$(grep -c '<module [^>]*kind="CompiledPython' "$app-report.xml" || true)
-  echo "$app: $n compiled modules"
-  if [ "$n" -gt "$MAX_COMPILED_MODULES" ]; then
-    echo "$app compiles $n modules (max $MAX_COMPILED_MODULES), check what it imports" >&2
-    exit 1
-  fi
+  ln -sfn openpilot-ui "$DIST/$app"
 
   # the apps must start without the build's Python or environment
-  bin="$app.dist/$app"; [ "$ONEFILE" = 1 ] && bin="$app"
   status=0
-  env -i RAYLIB_BACKEND=headless LC_ALL=C HOME="$SRC" timeout 10 "./$bin" /bin/false /nonexistent > "$SRC/$app.log" 2>&1 || status=$?
+  env -i RAYLIB_BACKEND=headless LC_ALL=C HOME="$SRC" timeout 10 "$DIST/$app" /bin/false /nonexistent > "$SRC/$app.log" 2>&1 || status=$?
   if [ "$status" -ne 124 ]; then
     cat "$SRC/$app.log"
     echo "$app exited with $status" >&2
     exit 1
   fi
 done
-echo "built $APPS in $OUT_DIR"
+echo "built $APPS in $DIST"
