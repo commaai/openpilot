@@ -8,6 +8,7 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.controls.lib.accel_boost import AccelBoost
+from openpilot.selfdrive.controls.lib.convergence_boost import ConvergenceBoost
 from openpilot.selfdrive.controls.lib.fleet_speed import FleetSpeedCap
 from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc, LongitudinalPlanSource
@@ -39,6 +40,7 @@ class LongitudinalPlanner:
     self.dt = dt
     self.accel_boost = AccelBoost()
     self.fleet_speed = FleetSpeedCap()
+    self.convergence_boost = ConvergenceBoost()
 
     self.v_desired_filter = FirstOrderFilter(init_v, 2.0, self.dt)
     self.a_cruise = init_a
@@ -112,6 +114,8 @@ class LongitudinalPlanner:
     self.a_map = float(np.clip(a_map_target, min(self.a_map, self.output_a_target) - j_map * self.dt, self.a_map + j_map * self.dt))
 
     output_a_target_e2e = self.accel_boost.update(sm, output_a_target_e2e, output_a_target_mpc, self.a_cruise)
+    v_target = min(v_cruise, self.fleet_speed.v_here) if np.isfinite(self.fleet_speed.v_here) else v_cruise
+    output_a_target_e2e = self.convergence_boost.update(sm, output_a_target_e2e, v_ego, v_target)
 
     candidates = [(output_a_target_mpc, self.mpc.source, output_should_stop_mpc),
                   (self.a_cruise, LongitudinalPlanSource.cruise, cruise_should_stop),
@@ -143,6 +147,7 @@ class LongitudinalPlanner:
     longitudinalPlan.fleetSpeed = float(np.nan_to_num(self.fleet_speed.v_here))
     longitudinalPlan.fleetSpeedTarget = float(np.nan_to_num(self.fleet_speed.v_target))
     longitudinalPlan.fleetSpeedGapFilled = self.fleet_speed.gap_filled
+    longitudinalPlan.convergenceBoost = self.convergence_boost.boost
     longitudinalPlan.fcw = self.fcw
 
     longitudinalPlan.aTarget = float(self.output_a_target)

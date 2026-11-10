@@ -1249,6 +1249,7 @@ struct LongitudinalPlan @0xe00b5b3eba12876c {
   fleetSpeed @41 :Float32;
   fleetSpeedTarget @42 :Float32;
   fleetSpeedGapFilled @43 :Bool;
+  convergenceBoost @44 :Float32;
 
 
   solverExecutionTime @35 :Float32;
