@@ -8,7 +8,6 @@ from openpilot.cereal import log, messaging
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import Ratekeeper
-from openpilot.common.utils import retry
 from openpilot.common.swaglog import cloudlog
 
 from openpilot.system import micd
@@ -160,7 +159,6 @@ class Soundd:
     volume = ((weighted_db - AMBIENT_DB) / DB_SCALE) * (MAX_VOLUME - MIN_VOLUME) + MIN_VOLUME
     return math.pow(VOLUME_BASE, (np.clip(volume, MIN_VOLUME, MAX_VOLUME) - 1))
 
-  @retry(attempts=10, delay=3)
   def get_stream(self, sd):
     # reload sounddevice to reinitialize portaudio
     sd._terminate()
@@ -168,13 +166,15 @@ class Soundd:
     return sd.OutputStream(channels=1, samplerate=SAMPLE_RATE, callback=self.callback, blocksize=SAMPLE_BUFFER)
 
   def soundd_thread(self):
-    # sounddevice must be imported after forking processes
-    import sounddevice as sd
-    micd.patch_sounddevice(sd)
+    # Import also initializes PortAudio, so it belongs inside the lock.
+    with micd.audio_init_lock():
+      import sounddevice as sd
+      micd.patch_sounddevice(sd)
+      stream = self.get_stream(sd)
 
     sm = messaging.SubMaster(['selfdriveState', 'soundPressure'])
 
-    with self.get_stream(sd) as stream:
+    with stream:
       rk = Ratekeeper(20)
 
       cloudlog.info(f"soundd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}, {stream.blocksize=}")

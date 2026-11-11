@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 import numpy as np
+from contextlib import contextmanager
+import fcntl
 from functools import cache
 import threading
 
 from openpilot.cereal import messaging
 from openpilot.common.realtime import Ratekeeper
-from openpilot.common.utils import retry
 from openpilot.common.swaglog import cloudlog
 
 RATE = 10
@@ -13,6 +14,15 @@ FFT_SAMPLES = 1600 # 100ms
 REFERENCE_SPL = 2e-5  # newtons/m^2
 SAMPLE_RATE = 16000
 SAMPLE_BUFFER = 800  # 50ms
+
+
+@contextmanager
+def audio_init_lock():
+  # PortAudio probes both playback and capture during import/initialization.
+  # Concurrent probes can see EBUSY and permanently cache a missing default device.
+  with open('/tmp/audio-init.lock', 'a') as lock:
+    fcntl.flock(lock, fcntl.LOCK_EX)
+    yield
 
 
 def patch_sounddevice(sd):
@@ -102,7 +112,6 @@ class Mic:
 
         self.measurements = self.measurements[FFT_SAMPLES:]
 
-  @retry(attempts=10, delay=3)
   def get_stream(self, sd):
     # reload sounddevice to reinitialize portaudio
     sd._terminate()
@@ -110,11 +119,13 @@ class Mic:
     return sd.InputStream(channels=1, samplerate=SAMPLE_RATE, callback=self.callback, blocksize=SAMPLE_BUFFER)
 
   def micd_thread(self):
-    # sounddevice must be imported after forking processes
-    import sounddevice as sd
-    patch_sounddevice(sd)
+    # Import also initializes PortAudio, so it belongs inside the lock.
+    with audio_init_lock():
+      import sounddevice as sd
+      patch_sounddevice(sd)
+      stream = self.get_stream(sd)
 
-    with self.get_stream(sd) as stream:
+    with stream:
       cloudlog.info(f"micd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}, {stream.blocksize=}")
       while True:
         self.update()
