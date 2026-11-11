@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# builds AGNOS's setup, reset and updater into OUTPUT_DIR/agnos-apps/, a standalone folder for this machine
+# builds AGNOS's setup, reset and updater for this machine into
+#   OUTPUT_DIR/agnos-apps/: a standalone folder, for AGNOS
+#   OUTPUT_DIR/updater: a single file, for openpilot to update AGNOS with
 set -euo pipefail
 
 OUT_DIR=$(realpath -m "${1:?usage: pack.sh OUTPUT_DIR}")
@@ -45,10 +47,13 @@ for ext in png ttf fnt json capnp mo po; do
   DATA+=("--include-package-data=openpilot:*.$ext" "--include-package-data=opendbc.car:*.$ext")
 done
 
+# nuitka's zstd takes ~1GB per job, and comma devices have ~4GB
+JOBS=$(awk -v cpus="$(nproc)" '/MemAvailable/ { jobs = int($2 / 1500000); print (jobs < 1 ? 1 : (jobs > cpus ? cpus : jobs)) }' /proc/meminfo)
+
 # pycapnp's compiled extension imports asyncio, which nuitka can't see
-# not --onefile: it unpacks ~120MB on every boot, more than AGNOS's /home or /tmp hold
-python -m nuitka --standalone "${MAINS[@]}" \
-  --lto=no --python-flag=isolated "${BACKENDS[@]}" --include-module=asyncio \
+# the single file unpacks to /data, since AGNOS's /home and /tmp are too small. later runs reuse it
+python -m nuitka --onefile --onefile-tempdir-spec=/data/tmp/agnos-apps "${MAINS[@]}" \
+  --jobs="$JOBS" --lto=no --python-flag=isolated "${BACKENDS[@]}" --include-module=asyncio \
   "${DATA[@]}" \
   --output-dir="$SRC/build" --output-filename=agnos-apps
 
@@ -56,6 +61,8 @@ DIST="$OUT_DIR/agnos-apps"
 mkdir -p "$OUT_DIR"
 rm -rf "$DIST"
 mv "$SRC/build/setup.dist" "$DIST"
+mv "$DIST/agnos-apps.bin" "$DIST/agnos-apps"
+cp "$SRC/build/agnos-apps" "$OUT_DIR/updater"
 # debug symbols are most of the libraries' size
 find "$DIST" -name '*.so*' -type f -exec strip --strip-unneeded {} +
 
@@ -71,4 +78,4 @@ for app in $APPS; do
     exit 1
   fi
 done
-echo "built $APPS in $DIST"
+echo "built $APPS in $DIST, and $OUT_DIR/updater"
