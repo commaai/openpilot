@@ -365,9 +365,6 @@ def hardware_thread(end_event, hw_queue) -> None:
 
     startup_conditions["not_flashing_chestnut"] = not chestnut.flashing
 
-    # ensure device is fully booted
-    startup_conditions["device_booted"] = startup_conditions.get("device_booted", False) or HARDWARE.booted()
-
     # if the temperature enters the danger zone, go offroad to cool down
     onroad_conditions["device_temp_good"] = thermal_status < ThermalStatus.critical
     extra_text = f"{offroad_comp_temp:.1f}C"
