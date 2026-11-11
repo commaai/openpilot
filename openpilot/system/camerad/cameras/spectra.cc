@@ -1517,13 +1517,20 @@ bool SpectraCamera::processFrame(int buf_idx, uint64_t request_id, uint64_t ife_
     return false;
   }
 
+  auto frame_id = frame_counter.update(timestamp, camera_sync_data[cc.camera_num].timestamp);
+  if (!frame_id) {
+    LOGE("camera %d invalid SOF timestamp %lu", cc.camera_num, timestamp);
+    clearAndRequeue(request_id + 1);
+    return false;
+  }
+
   // in IFE_PROCESSED mode, we can't know the true EOF, so recover it with sensor readout time
   uint64_t timestamp_eof = timestamp + sensor->readout_time_ns;
 
   // Update buffer and frame data
   buf.cur_buf_idx = buf_idx;
   buf.cur_frame_data = {
-    .frame_id = (uint32_t)(ife_frame_id - camera_sync_data[cc.camera_num].frame_id_offset),
+    .frame_id = *frame_id,
     .request_id = (uint32_t)request_id,
     .timestamp_sof = timestamp,
     .timestamp_eof = timestamp_eof,

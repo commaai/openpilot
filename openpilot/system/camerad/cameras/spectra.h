@@ -12,6 +12,7 @@
 #include "common/util.h"
 #include "common/swaglog.h"
 #include "system/camerad/cameras/hw.h"
+#include "system/camerad/cameras/frame_id.h"
 #include "system/camerad/cameras/camera_common.h"
 #include "system/camerad/sensors/sensor.h"
 
@@ -208,6 +209,7 @@ public:
   uint64_t last_valid_request_id = 0;
   uint64_t last_requeue_ts = 0;
   uint64_t last_valid_ife_frame_id = 0;
+  CameraFrameCounter frame_counter;
   int invalid_request_count = 0;
   bool skip_expected = true;
 
