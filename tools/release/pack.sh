@@ -24,7 +24,7 @@ SRC=$(mktemp -d)
 trap 'rm -rf "$SRC"' EXIT
 tar -C "$ROOT" -cf - --exclude=__pycache__ --exclude='*.so' --exclude=openpilot/cereal/gen \
   --exclude=openpilot/selfdrive/assets/training --exclude=openpilot/selfdrive/modeld/models \
-  --exclude=openpilot/common/hardware/comma/updater --exclude=openpilot/common/hardware/comma/updater.tar.xz \
+  --exclude=openpilot/common/hardware/comma/updater \
   openpilot opendbc_repo/opendbc | tar -C "$SRC" -xf -
 cd "$SRC"
 export PYTHONPATH="$SRC:$SRC/opendbc_repo"

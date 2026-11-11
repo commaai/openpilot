@@ -1,24 +1,3 @@
-#!/bin/sh
-set -eu
-HERE=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-PAYLOAD="$HERE/updater.tar.xz"
-# /data has room for the shared runtime; /tmp and /home are small tmpfs mounts.
-CACHE=/data/tmp/agnos-updater
-HASH=$(sha256sum "$PAYLOAD")
-HASH=${HASH%% *}
-DIST="$CACHE/$HASH/agnos-apps"
-mkdir -p -m 700 "$CACHE"
-if [ ! -x "$DIST/updater" ]; then
-  TEMP=$(mktemp -d "$CACHE/.unpack.XXXXXX")
-  trap 'rm -rf "$TEMP"' EXIT
-  trap 'exit 143' TERM
-  trap 'exit 130' INT
-  tar -xJf "$PAYLOAD" -C "$TEMP"
-  test -x "$TEMP/agnos-apps/updater"
-  if ! mv -T "$TEMP" "$CACHE/$HASH" 2>/dev/null; then
-    test -x "$DIST/updater"
-  fi
-  rm -rf "$TEMP"
-  trap - EXIT TERM INT
-fi
-exec "$DIST/updater" "$@"
+version https://git-lfs.github.com/spec/v1
+oid sha256:a3a58a0e24d79aadd1f83302bf1af2868f925d5069eed21792da8551b6a4b8cb
+size 39848624

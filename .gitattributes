@@ -12,4 +12,4 @@ openpilot/selfdrive/modeld/models/big_*_tinygrad.pkl filter=lfs diff=lfs merge=l
 *.wav filter=lfs diff=lfs merge=lfs -text
 
 openpilot/selfdrive/car/tests/test_models_segs.txt filter=lfs diff=lfs merge=lfs -text
-openpilot/common/hardware/comma/updater.tar.xz filter=lfs diff=lfs merge=lfs -text
+openpilot/common/hardware/comma/updater filter=lfs diff=lfs merge=lfs -text
