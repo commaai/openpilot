@@ -340,7 +340,7 @@ class Updater:
       if dt_uptime_onroad > HOURS_NO_CONNECTIVITY_MAX and dt_route_count > ROUTES_NO_CONNECTIVITY_MAX:
         set_offroad_alert("Offroad_ConnectivityNeeded", True)
       elif dt_uptime_onroad > HOURS_NO_CONNECTIVITY_PROMPT and dt_route_count > ROUTES_NO_CONNECTIVITY_PROMPT:
-        remaining = max(HOURS_NO_CONNECTIVITY_MAX - dt_uptime_onroad, 1)
+        remaining = max(HOURS_NO_CONNECTIVITY_MAX - int(dt_uptime_onroad), 1)
         set_offroad_alert("Offroad_ConnectivityNeededPrompt", True, extra_text=f"{remaining} hour{'' if remaining == 1 else 's'}.")
 
   def check_for_update(self) -> None:
