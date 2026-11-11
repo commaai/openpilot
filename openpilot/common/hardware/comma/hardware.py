@@ -344,6 +344,9 @@ class HardwareComma(HardwareBase):
       return 0
 
   def initialize_hardware(self):
+    if self.amplifier is not None:
+      self.amplifier.initialize_configuration()
+
     # Allow hardwared to write engagement status to kmsg
     subprocess.run("sudo chmod a+w /dev/kmsg", shell=True)
 
