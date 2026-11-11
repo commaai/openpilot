@@ -48,7 +48,7 @@ def _warp_reduce(value, maximum=False):
   return value
 
 
-def _softmax(out, scores):
+def _softmax(out, scores, packed=True):
   batch, heads, rows, columns = scores.shape
   row = UOp.range(batch*heads*rows, 0, AxisType.GLOBAL)
   wave, lane = UOp.range(4, 1, AxisType.LOCAL), UOp.range(32, -1, AxisType.WARP)
@@ -66,9 +66,12 @@ def _softmax(out, scores):
   inv = sum(sums.after(sums_store).index(i) for i in range(4)).reciprocal()
   # Write the layout consumed by the next WMMA, including zero probabilities for padded keys.
   def index(c):
+    if not packed:
+      return row*columns+c
     return (((row//rows)*(round_up(rows, 16)//16)+(row%rows)//16)*(round_up(columns, 16)//16)+c//16)*256 + \
            (c%16//4)*64 + (row%rows%16)*4 + c%4
-  stores = [out.flatten().index(index(c).valid(c < round_up(columns, 16))).store((e*inv).cast(out.dtype)) for c, e in zip(cols, exps, strict=True)]
+  stores = [out.flatten().index(index(c).valid(c < (round_up(columns, 16) if packed else columns))).store((e*inv).cast(out.dtype))
+            for c, e in zip(cols, exps, strict=True)]
   return UOp.group(*stores).end(row, wave, lane).sink(arg=KernelInfo(name='alpamayo_attention_softmax', opts_to_apply=()))
 
 

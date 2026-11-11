@@ -65,6 +65,10 @@ class EdgeModel:
         y = (gemv(quantized, weight, (x_scale, scale), bias) if single else
              gemm(quantized, weight, (x_scale, scale), bias, (shape[0], shape[1], heads) if heads is not None else None))
         return y.reshape(*shape, weight.shape[0])
+      if single and self.fp8_wmma and weight.shape[1] % 128 == 0 and isinstance(Device[x.device].renderer, AMDLLVMRenderer):
+        from amd_decode import gemv
+        packed = name.startswith('vlm.') and ('.mlp.' in name or '.self_attn.' in name)
+        return gemv(quantized, weight, (x_scale, scale), bias, packed=packed, dtype=x.dtype).reshape(*shape, weight.shape[0])
       if self.fp8_wmma and not single and USE_TC.value == 1 and (x.shape[0] % 16 == 0 or TC_OPT >= 2):
         if x.shape[0] >= 128 and name.startswith('vlm.') and ('.mlp.' in name or '.self_attn.' in name):
           from amd_gemm import gemm
@@ -95,6 +99,10 @@ class EdgeModel:
     if self.cuda_kernels:
       from kernels import attention
       return attention(q, k, v, mask, causal)
+    if (self.fp8_wmma and q.dtype == dtypes.bfloat16 and q.shape[2:] == (1, 128) and mask is not None and not causal
+        and isinstance(k.shape[2], int) and mask.numel() == k.shape[2] and isinstance(Device[q.device].renderer, AMDLLVMRenderer)):
+      from amd_decode import attention
+      return attention(q, k, v, mask)
     if (self.fp8_wmma and USE_TC.value == 1 and q.dtype == dtypes.bfloat16 and q.shape[2] >= 128 and mask is None
         and isinstance(Device[q.device].renderer, AMDLLVMRenderer)):
       from amd_attention import attention
@@ -164,7 +172,7 @@ class EdgeModel:
     if cache_pos is not None:
       store = cache[:, :, :, cache_pos:cache_pos + x.shape[1]].uop.store(Tensor.stack(k, v).uop)
       assigned = Tensor(cache.uop.after(store))
-      end = cache.shape[3] if self.cuda_kernels and not isinstance(cache_pos, int) else cache_pos + x.shape[1]
+      end = cache.shape[3] if (self.cuda_kernels or self.fp8_wmma) and not isinstance(cache_pos, int) else cache_pos + x.shape[1]
       k, v = (assigned[i, :, :, :end] for i in range(2))
     elif cache is not None:
       k, v = (old.cat(new, dim=2) for old, new in zip(cache, (k, v), strict=True))
@@ -216,7 +224,7 @@ class EdgeModel:
     length = x.shape[1]
     if isinstance(past, int) and past == 0:
       mask = None
-    elif self.cuda_kernels:
+    elif self.cuda_kernels or self.fp8_wmma:
       mask = (Tensor.arange(self.cache[0].shape[3]) > past).where(-math.inf, 0)
     else:
       mask = (Tensor.arange(past + length).reshape(1, -1) > Tensor.arange(past, past + length).reshape(-1, 1)).where(-math.inf, 0)

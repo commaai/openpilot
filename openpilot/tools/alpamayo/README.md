@@ -97,7 +97,7 @@ On 2026-11-10, a comma4 with Chestnut gfx1200, 8 GB VRAM, firmware `8516b768`, a
 
 Stage and total times are medians. The scalar baseline at `b27d932dee` used three measured runs; default FP8 WMMA at `48fae630c7` used ten. Both used three warmups, the same prequantized FP8 weights and scales, and verified every uploaded checkpoint byte on the GPU. Timing includes input upload and CPU trajectory decoding, and excludes loading, preprocessing, compilation, graph capture, and garbage collection after warmup.
 
-The earlier AMD implementation cast FP8 operands to FP32 before matrix multiplication, preventing FP8 matrix instructions. On gfx1200/gfx1201, multi-row linear layers now keep FP8 operands and request FP32 accumulation, allowing tinygrad to select WMMA. `TC_OPT=2` permits padding the 2,026-token prefill to the hardware tile size. Single-token decoding retains its scalar fallback; attention and KV caches remain BF16. The NVIDIA custom kernels are unchanged.
+The earlier AMD implementation cast FP8 operands to FP32 before matrix multiplication, preventing FP8 matrix instructions. On gfx1200/gfx1201, multi-row linear layers now keep FP8 operands and request FP32 accumulation, allowing tinygrad to select WMMA. `TC_OPT=2` permits padding the 2,026-token prefill to the hardware tile size. That initial WMMA change left single-token decoding on its scalar fallback; attention and KV caches remain BF16. The NVIDIA custom kernels are unchanged.
 
 This reduced total latency by 8.44 times and prefill by 14.63 times. All ten measured outputs were finite and identical to each other, with the same reasoning as the scalar baseline. With identical diffusion noise, mean/max waypoint displacement from that baseline was 0.0166/0.0360 m across 64 poses. This is one replay sample; 0.129 inferences/s remains below the 5 FPS target.
 
@@ -139,7 +139,7 @@ At `0b8c76d4d4`, prefill improved by 3.06 times and total inference by 1.53 time
 
 `amd_attention.py` uses BF16 WMMA for both attention matrix multiplies, with 64-by-64 output tiles and packed operands. Grouped KV heads are indexed without repeating their buffers. A fused row softmax writes probabilities directly in the layout consumed by the second multiply. Scores and probabilities retain BF16 rounding, with FP32 accumulation and softmax reductions. The score matrix is still materialized. The packed FP8 linear kernels also handle vision and language Q/K/V and output projections.
 
-The attention path applies to BF16 inputs with at least 128 query rows on gfx1200/gfx1201 using the AMD LLVM renderer, with tensor cores enabled and no explicit mask. Single-token decoding, diffusion, and explicitly masked attention retain the portable path. NVIDIA execution is unchanged.
+The attention path applies to BF16 inputs with at least 128 query rows on gfx1200/gfx1201 using the AMD LLVM renderer, with tensor cores enabled and no explicit mask. At `08b0693922`, single-token decoding, diffusion, and explicitly masked attention retained the portable path. NVIDIA execution is unchanged.
 
 Kernel checks covered batched inputs, grouped KV heads, partial tiles, causal and noncausal attention, and changing inputs during JIT replay. A complete language layer with released weights and 2,026 random input tokens improved from 45.02 to 10.00 ms. Its maximum/mean absolute output differences were 0.00390625/0.00000265 relative to the previous implementation.
 
@@ -157,7 +157,31 @@ The same comma4 and Chestnut replay benchmark completed three warmups and ten me
 | Total p95 | 5,067.97 ms | 2,853.72 ms |
 | Inferences/s | 0.1977 | 0.3515 |
 
-Prefill improved by 4.96 times, vision by 4.27 times, and total inference by 1.78 times. Checkpoint bytes, precision, input, six reasoning tokens, ten diffusion steps, and timing boundaries were unchanged. All measured outputs were finite and identical to each other, and reasoning matched the previous implementation. With identical diffusion noise, mean/max waypoint displacement from that implementation was 0.0548/0.2041 m over 64 poses across the 6.4-second horizon. The changed attention reduction order is not bit-identical; this comparison covers one replay sample. Reasoning now accounts for about 58% of latency. The 0.3515 inferences/s result remains below the 5 FPS target.
+Prefill improved by 4.96 times, vision by 4.27 times, and total inference by 1.78 times. Checkpoint bytes, precision, input, six reasoning tokens, ten diffusion steps, and timing boundaries were unchanged. All measured outputs were finite and identical to each other, and reasoning matched the previous implementation. With identical diffusion noise, mean/max waypoint displacement from that implementation was 0.0548/0.2041 m over 64 poses across the 6.4-second horizon. The changed attention reduction order is not bit-identical; this comparison covers one replay sample. Reasoning accounted for about 58% of latency in that revision.
+
+#### Single-token decoding
+
+`amd_decode.py` adds matrix-vector kernels that read the existing packed FP8 weights, plus a row-major variant for the vocabulary head. Both accumulate in FP32 and fuse scaling, bias, and output conversion. Their explicit inputs prevent activation quantization and scale reductions from being recomputed inside the multiply. This also accelerates the vocabulary head at the end of prefill.
+
+AMD decoding now reads a fixed-capacity KV cache and masks unused slots, avoiding reductions with a changing key dimension. Specialized single-query BF16 attention uses a row softmax and divides the value reduction into 128-key chunks. The final reduction accumulates those chunks in FP32. These kernels use the AMD LLVM renderer on gfx1200/gfx1201; the GEMV path requires widths divisible by 128, and the attention path handles 128-wide heads with a shared key mask. NVIDIA execution and the diffusion path are unchanged.
+
+Twenty GEMV checks covered five shapes, packed and row-major weights, bias, changing inputs and scales during JIT replay, and zero inputs. All outputs were bit-identical to the previous FP32-accumulating implementation after BF16 conversion. Ten attention checks covered batched grouped KV heads, partial tiles, changing cache masks, and zero/constant inputs; maximum absolute error was 0.001953125. Masked future cache entries were filled with large values to check that they could not affect the result.
+
+The same comma4 and Chestnut replay completed three warmups and ten measured inferences:
+
+| Stage | Tiled attention and packed projections | Specialized decoding |
+| --- | --- | --- |
+| Input upload | 169.16 ms | 168.88 ms |
+| Vision | 382.86 ms | 381.06 ms |
+| Prefill | 247.79 ms | 227.55 ms |
+| Reasoning | 1,643.00 ms | 157.21 ms |
+| Diffusion | 382.92 ms | 383.51 ms |
+| CPU trajectory decode | 13.12 ms | 12.96 ms |
+| Total median | **2,844.98 ms** | **1,336.07 ms** |
+| Total p95 | 2,853.72 ms | 1,341.62 ms |
+| Inferences/s | 0.3515 | 0.7485 |
+
+Reasoning improved by 10.45 times and total inference by 2.13 times. The input, checkpoint bytes, precision, six reasoning tokens, ten diffusion steps, and timing boundaries were unchanged. Every measured output was finite and identical to the other repeats, and reasoning matched the previous implementation. With identical noise, mean/max waypoint displacement was 0.00912/0.02753 m across 64 poses. This is one replay sample. Vision and diffusion now account for about 57% of latency; 0.7485 inferences/s remains below the 5 FPS target.
 
 ### NVIDIA accelerated reference on RTX 5090
 
@@ -227,7 +251,7 @@ DEV=USB+AMD:LLVM GMMU=0 AM_POWER_LIMIT=100 "$ALPAMAYO_PYTHON" -m unittest \
   test.external.external_test_usb_asm24.TestUSBIntegrity.testRepeatedBatches -v
 ```
 
-Do not interpret timings from failed integrity checks or nonfinite predictions as model performance. Chestnut uses the AMD kernels described above for vision and prefill attention, with portable fallbacks for other calls; the NVIDIA custom kernels do not accelerate the AMD eGPU.
+Do not interpret timings from failed integrity checks or nonfinite predictions as model performance. Chestnut uses the AMD kernels described above for vision, prefill, and single-token decoding, with portable fallbacks for other calls; the NVIDIA custom kernels do not accelerate the AMD eGPU.
 
 ## Initial results (2026-11-10)
 
