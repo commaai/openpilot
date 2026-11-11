@@ -55,6 +55,7 @@ testing = [
   "coverage",   # line coverage
   "ty",         # type checking
   "ruff",       # linting
+  "oxlint",     # JS linting
   "codespell",  # spellcheck
 ]
 
