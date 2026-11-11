@@ -24,7 +24,7 @@ SRC=$(mktemp -d)
 trap 'rm -rf "$SRC"' EXIT
 tar -C "$ROOT" -cf - --exclude=__pycache__ --exclude='*.so' --exclude=openpilot/cereal/gen \
   --exclude=openpilot/selfdrive/assets/training --exclude=openpilot/selfdrive/modeld/models \
-  --exclude=openpilot/common/hardware/comma/updater \
+  --exclude=openpilot/common/hardware/comma/updater --exclude=openpilot/common/hardware/comma/updater.tar.xz \
   openpilot opendbc_repo/opendbc | tar -C "$SRC" -xf -
 cd "$SRC"
 export PYTHONPATH="$SRC:$SRC/opendbc_repo"
@@ -43,7 +43,7 @@ for app in $APPS; do
   MAINS+=("--main=openpilot/system/ui/$app.py")
 done
 DATA=()
-for ext in png ttf fnt json capnp mo po; do
+for ext in png ttf otf fnt json capnp mo po; do
   DATA+=("--include-package-data=openpilot:*.$ext" "--include-package-data=opendbc.car:*.$ext")
 done
 
