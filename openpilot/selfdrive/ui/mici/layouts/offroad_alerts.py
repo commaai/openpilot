@@ -9,11 +9,15 @@ from dataclasses import dataclass
 from enum import IntEnum
 from openpilot.common.params import Params
 from openpilot.common.realtime import drop_realtime
+from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.selfdrived.alertmanager import OFFROAD_ALERTS
+from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.selfdrive.ui.mici.widgets.button import GreyBigButton, BigPillButton
+from openpilot.selfdrive.ui.mici.widgets.qr import QR
 from openpilot.common.hardware import HARDWARE
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import UnifiedLabel
-from openpilot.system.ui.widgets.scroller import Scroller
+from openpilot.system.ui.widgets.scroller import NavScroller, Scroller
 from openpilot.system.ui.lib.application import gui_app, FontWeight, TextAlignment, TextAlignmentVertical
 from openpilot.system.ui.lib.multilang import tr
 
@@ -199,6 +203,49 @@ class AlertItem(Widget):
     rl.draw_texture_ex(self._icon, rl.Vector2(icon_x, icon_y), 0.0, 1.0, rl.WHITE)
 
 
+class NotificationItem(Widget):
+  def __init__(self, notification: dict):
+    super().__init__()
+    self.alert_data = AlertData(key="", text="", severity=notification.get("severity", 0), visible=True)
+    self.notification = notification
+    self.icon = gui_app.texture(notification["icon"], AlertItem.ICON_SIZE, AlertItem.ICON_SIZE)
+    self._image = gui_app.texture(notification["image"])
+    self._menu = notification["menu"]
+    self._bg = gui_app.texture("icons_mici/offroad_alerts/medium_alert.png", AlertItem.ALERT_WIDTH, AlertItem.ALERT_HEIGHT_MED)
+    self._bg_pressed = gui_app.texture("icons_mici/offroad_alerts/medium_alert_pressed.png", AlertItem.ALERT_WIDTH, AlertItem.ALERT_HEIGHT_MED)
+    if self._menu:
+      self.set_click_callback(self._show_menu)
+    self.set_rect(rl.Rectangle(0, 0, AlertItem.ALERT_WIDTH, AlertItem.ALERT_HEIGHT_MED))
+
+  def _show_menu(self):
+    scroller = NavScroller()
+
+    def dismiss():
+      scroller.dismiss()
+      ui_state.notifications.dismiss(self.notification["id"])
+
+    for card in self._menu:
+      if "qr" in card:
+        scroller._scroller.add_widget(QR(card["qr"]))
+      elif "title" in card:
+        icon = gui_app.texture("icons_mici/setup/small_slider/slider_arrow.png", 64, 56, flip_x=True) if card.get("icon") == "arrow" else None
+        scroller._scroller.add_widget(GreyBigButton(card["title"], card["text"], icon))
+      elif card["button"] == "dismiss":
+        button = BigPillButton("dismiss")
+        button.set_click_callback(dismiss)
+        scroller._scroller.add_widget(button)
+      else:
+        cloudlog.warning(f"Unknown notification menu card: {card}")
+    gui_app.push_widget(scroller)
+
+  def _render(self, _):
+    rl.draw_texture_ex(self._bg_pressed if self.is_pressed else self._bg, rl.Vector2(self._rect.x, self._rect.y), 0.0, 1.0, rl.WHITE)
+    image_pos = rl.Vector2(self._rect.x + (self._rect.width - self._image.width) / 2, self._rect.y + (self._rect.height - self._image.height) / 2)
+    rl.draw_texture_ex(self._image, image_pos, 0.0, 1.0, rl.WHITE)
+    icon_pos = rl.Vector2(self._rect.x + self._rect.width - AlertItem.ALERT_PADDING - self.icon.width, self._rect.y + AlertItem.ALERT_PADDING)
+    rl.draw_texture_ex(self.icon, icon_pos, 0.0, 1.0, rl.WHITE)
+
+
 class MiciOffroadAlerts(Scroller):
   """Offroad alerts layout with vertical scrolling."""
 
@@ -208,6 +255,8 @@ class MiciOffroadAlerts(Scroller):
     self.params = Params()
     self.sorted_alerts: list[AlertData] = []
     self.alert_items: list[AlertItem] = []
+    self._notifications: list[dict] = []
+    self._notification_items: list[NotificationItem] = []
 
     # Create empty state label
     self._empty_label = UnifiedLabel(tr("no alerts"), 65, FontWeight.DISPLAY, rl.WHITE,
@@ -223,10 +272,10 @@ class MiciOffroadAlerts(Scroller):
     self._params_thread.start()
 
   def active_alerts(self) -> int:
-    return sum(alert.visible for alert in self.sorted_alerts)
+    return sum(alert.visible for alert in self.sorted_alerts) + len(self._notification_items)
 
   def highest_severity_icon(self) -> rl.Texture | None:
-    item = max((item for item in self.alert_items if item.alert_data.visible),
+    item = max((item for item in self._notification_items + self.alert_items if item.alert_data.visible),
                key=lambda item: (item.alert_data.severity, bool(item.alert_data.icon)), default=None)
     return item.icon if item is not None else None
 
@@ -264,6 +313,9 @@ class MiciOffroadAlerts(Scroller):
       self._pending_params = ({"UpdaterNewDescription": self.params.get("UpdaterNewDescription")} |
                               {alert_data.key: self.params.get(alert_data.key) for alert_data in self.sorted_alerts})
       time.sleep(REFRESH_INTERVAL)
+
+  def _sort_items(self):
+    self._scroller.items.sort(key=lambda w: -w.alert_data.severity)
 
   def _refresh(self, pending_params: dict) -> int:
     """Refresh alerts from params and return active count."""
@@ -319,12 +371,26 @@ class MiciOffroadAlerts(Scroller):
     for alert_item in self.alert_items:
       alert_item.update_alert_data(alert_item.alert_data)
 
-    self._scroller.items.sort(key=lambda w: -w.alert_data.severity)
+    self._sort_items()
 
     return active_count
 
+  def _refresh_notifications(self):
+    notifications = ui_state.notifications.active
+    if notifications == self._notifications:
+      return
+    self._notifications = notifications
+
+    for item in self._notification_items:
+      self._scroller.items.remove(item)
+    self._notification_items = [NotificationItem(n) for n in notifications]
+    self._scroller.add_widgets(self._notification_items)
+    self._sort_items()
+
   def _update_state(self):
     """Periodically refresh alerts."""
+    self._refresh_notifications()
+
     # Refresh alerts when thread updates params
     pending_params = self._pending_params
     if pending_params is not None:
