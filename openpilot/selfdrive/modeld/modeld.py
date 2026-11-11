@@ -234,7 +234,9 @@ class ModelState:
     self.run(dummy_frames, dict.fromkeys(self.vision_input_names, eye), {k: np.zeros(v, dtype=np.float32) for k, v in dims.items()})
     self.packed_input[:] = 0
     for key in self.state_pairs:
-      self.input_queues[key].assign(0).realize()
+      # copy from host instead of assign(0), so nothing is compiled at runtime
+      buf = self.input_queues[key]._buffer()
+      buf.copy_from(Tensor(np.zeros(buf.nbytes, dtype=np.uint8), device='NPY')._buffer())
     self.prev_desire[:] = 0
 
 
