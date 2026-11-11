@@ -20,6 +20,7 @@ ASSET_KEYS = ("icon", "image")  # sha256 of a png, replaced with the path of the
 class Notifications:
   FETCH_INTERVAL = 30.0  # seconds between API calls
   API_TIMEOUT = 10.0  # seconds for API requests
+  SLEEP_INTERVAL = 0.5  # seconds between checks for waking up or going offroad
 
   def __init__(self):
     self._params = Params()
@@ -80,7 +81,9 @@ class Notifications:
           self._fetch_notifications()
         except Exception as e:
           cloudlog.error(f"Failed to fetch notifications: {e}")
-      time.sleep(self.FETCH_INTERVAL)
+        time.sleep(self.FETCH_INTERVAL)
+      else:
+        time.sleep(self.SLEEP_INTERVAL)
 
   def start(self) -> None:
     if self._thread and self._thread.is_alive():

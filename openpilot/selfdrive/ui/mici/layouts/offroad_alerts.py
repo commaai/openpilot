@@ -206,7 +206,7 @@ class AlertItem(Widget):
 class NotificationItem(Widget):
   def __init__(self, notification: dict):
     super().__init__()
-    self.alert_data = AlertData(key="", text="", severity=0, visible=True)
+    self.alert_data = AlertData(key="", text="", severity=notification.get("severity", 0), visible=True)
     self.notification = notification
     self.icon = gui_app.texture(notification["icon"], AlertItem.ICON_SIZE, AlertItem.ICON_SIZE)
     self._image = gui_app.texture(notification["image"])
