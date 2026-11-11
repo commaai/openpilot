@@ -14,7 +14,7 @@ from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
 from openpilot.selfdrive.ui.lib.api_helpers import get_token
 
 ASSETS_ROOT = os.path.join(Paths.comma_home() if PC else "/data", "notifications")
-ASSET_KEYS = ("icon", "image")  # urls, replaced with the path of the downloaded file
+ASSET_KEYS = ("icon", "image")  # sha256 of a png, replaced with the path of the saved file
 
 
 class Notifications:
@@ -29,11 +29,14 @@ class Notifications:
 
     self._thread = None
 
-  def _fetch_asset(self, url: str) -> str:
-    path = os.path.join(ASSETS_ROOT, hashlib.sha256(url.encode()).hexdigest() + ".png")
+  def _save_asset(self, dongle_id: str, sha256: str) -> str:
+    path = os.path.join(ASSETS_ROOT, sha256 + ".png")
     if not os.path.exists(path):
-      resp = self._session.get(url, timeout=self.API_TIMEOUT)
+      resp = api_get(f"v1/devices/{dongle_id}/notifications/assets/{sha256}", timeout=self.API_TIMEOUT,
+                     access_token=get_token(dongle_id), session=self._session)
       resp.raise_for_status()
+      if hashlib.sha256(resp.content).hexdigest() != sha256:
+        raise ValueError(f"notification asset {sha256} doesn't match its hash")
       with open(path + ".tmp", "wb") as f:
         f.write(resp.content)
       os.replace(path + ".tmp", path)
@@ -44,11 +47,14 @@ class Notifications:
     if not dongle_id or dongle_id == UNREGISTERED_DONGLE_ID:
       return
 
+    # 304 if it matches the ETag of the last one. images are by sha256, only the ones not saved yet are downloaded
     resp = api_get(f"v1/devices/{dongle_id}/notifications", timeout=self.API_TIMEOUT, access_token=get_token(dongle_id), session=self._session)
+    if resp.status_code == 304:
+      return
     resp.raise_for_status()
 
     os.makedirs(ASSETS_ROOT, exist_ok=True)
-    notifications = [n | {key: self._fetch_asset(n[key]) for key in ASSET_KEYS if key in n} for n in resp.json()]
+    notifications = [n | {key: self._save_asset(dongle_id, n[key]) for key in ASSET_KEYS if key in n} for n in resp.json()]
     with self._lock:
       # the ones the user dismissed stay dismissed
       dismissed = {n["id"] for n in self._notifications if n["dismissed"]}
@@ -60,6 +66,10 @@ class Notifications:
     for fn in os.listdir(ASSETS_ROOT):
       if os.path.join(ASSETS_ROOT, fn) not in used:
         os.remove(os.path.join(ASSETS_ROOT, fn))
+
+    # only once it's all saved, so a failure above fetches it again next time
+    if "ETag" in resp.headers:
+      self._session.headers["If-None-Match"] = resp.headers["ETag"]
 
   def _worker_thread(self) -> None:
     drop_realtime()
