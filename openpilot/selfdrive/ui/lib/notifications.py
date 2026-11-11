@@ -9,6 +9,7 @@ from openpilot.common.hardware import PC
 from openpilot.common.hardware.hw import Paths
 from openpilot.common.params import Params
 from openpilot.common.realtime import drop_realtime
+from openpilot.common.swaglog import cloudlog
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
 from openpilot.selfdrive.ui.lib.api_helpers import get_token
 
@@ -17,16 +18,13 @@ ASSET_KEYS = ("icon", "image")  # urls, replaced with the path of the downloaded
 
 
 class Notifications:
-  """Keeps the notifications from the server in a param, with their images downloaded. The comma four gets an "icon", "image" and "menu",
-  the 3X only an "image"."""
   FETCH_INTERVAL = 30.0  # seconds between API calls
   API_TIMEOUT = 10.0  # seconds for API requests
-  SLEEP_INTERVAL = 0.5  # seconds to sleep between checks in the worker thread
 
   def __init__(self):
     self._params = Params()
-    self._session = requests.Session()  # reuse session to reduce SSL handshake overhead
-    self._lock = threading.Lock()  # the worker thread and dismiss() both change the notifications
+    self._session = requests.Session()
+    self._lock = threading.Lock()
     self._notifications: list[dict] = self._params.get("Notifications") or []
 
     self._thread = None
@@ -66,18 +64,13 @@ class Notifications:
   def _worker_thread(self) -> None:
     drop_realtime()
     from openpilot.selfdrive.ui.ui_state import ui_state, device
-    next_fetch = 0.
     while True:
-      # like PrimeState only while offroad and awake. right away on start, when the device wakes up and when it goes offroad
-      if ui_state.started or not device._awake:
-        next_fetch = 0.
-      elif time.monotonic() >= next_fetch:
-        next_fetch = time.monotonic() + self.FETCH_INTERVAL
+      if not ui_state.started and device._awake:
         try:
           self._fetch_notifications()
-        except Exception:
-          pass  # e.g. the endpoint isn't deployed yet, try again next time
-      time.sleep(self.SLEEP_INTERVAL)
+        except Exception as e:
+          cloudlog.error(f"Failed to fetch notifications: {e}")
+      time.sleep(self.FETCH_INTERVAL)
 
   def start(self) -> None:
     if self._thread and self._thread.is_alive():
