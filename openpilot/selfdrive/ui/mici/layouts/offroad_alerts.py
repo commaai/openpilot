@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from enum import IntEnum
 from openpilot.common.params import Params
 from openpilot.common.realtime import drop_realtime
+from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.selfdrived.alertmanager import OFFROAD_ALERTS
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.mici.widgets.button import GreyBigButton
@@ -217,24 +218,31 @@ class NotificationItem(Widget):
     self.set_rect(rl.Rectangle(0, 0, AlertItem.ALERT_WIDTH, AlertItem.ALERT_HEIGHT_MED))
 
   def _show_menu(self):
+    gui_app.push_widget(NotificationMenu(self.notification["id"], self._menu))
+
+
+class NotificationMenu(NavScroller):
+  def __init__(self, notification_id: str, menu: list[dict]):
+    super().__init__()
     from openpilot.system.ui.mici_setup import BigPillButton
-    scroller = NavScroller()
+    self._notification_id = notification_id
 
-    def dismiss():
-      scroller.dismiss()
-      ui_state.notifications.dismiss(self.notification["id"])
-
-    for card in self._menu:
+    for card in menu:
       if "qr" in card:
-        scroller._scroller.add_widget(QR(card["qr"]))
+        self._scroller.add_widget(QR(card["qr"]))
       elif "title" in card:
         icon = gui_app.texture("icons_mici/setup/small_slider/slider_arrow.png", 64, 56, flip_x=True) if card.get("icon") == "arrow" else None
-        scroller._scroller.add_widget(GreyBigButton(card["title"], card["text"], icon))
+        self._scroller.add_widget(GreyBigButton(card["title"], card["text"], icon))
       elif card["button"] == "dismiss":
         button = BigPillButton("dismiss")
-        button.set_click_callback(dismiss)
-        scroller._scroller.add_widget(button)
-    gui_app.push_widget(scroller)
+        button.set_click_callback(self._dismiss)
+        self._scroller.add_widget(button)
+      else:
+        cloudlog.warning(f"Unknown notification menu card: {card}")
+
+  def _dismiss(self):
+    self.dismiss()
+    ui_state.notifications.dismiss(self._notification_id)
 
   def _render(self, _):
     rl.draw_texture_ex(self._bg_pressed if self.is_pressed else self._bg, rl.Vector2(self._rect.x, self._rect.y), 0.0, 1.0, rl.WHITE)

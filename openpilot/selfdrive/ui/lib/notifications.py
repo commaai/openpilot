@@ -65,7 +65,7 @@ class Notifications:
     drop_realtime()
     from openpilot.selfdrive.ui.ui_state import ui_state, device
     while True:
-      if not ui_state.started and device._awake:
+      if not ui_state.started and device.awake:
         try:
           self._fetch_notifications()
         except Exception as e:
