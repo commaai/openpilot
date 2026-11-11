@@ -15,6 +15,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 LLM_URL = os.environ['LLM_URL']
 LLM_MODEL = os.environ['LLM_MODEL']
+# a second llm takes over the request when the first doesn't answer in time, kimi stalled for hours two days in a row
+LLMS = [(LLM_URL, LLM_MODEL)] + ([(os.environ['FALLBACK_URL'], os.environ['FALLBACK_MODEL'])] if os.environ.get('FALLBACK_URL') else [])
 # comma dongle ids allowed to talk to this server, any registered comma device when unset
 ALLOWED = {d for d in os.environ.get('VOICE_DONGLES', '').split(',') if d}
 COMMA_API = 'https://api.commadotai.com'
@@ -35,10 +37,6 @@ SPEC_GAP = int(0.1 * 16000)
 # after a reply a question without the wake word is answered unless the llm finds it is not for us, alexa listens 5 s and google 8 s.
 # on 368 hand labeled drive and test lines: follow-ups 3 of 47 rejected (2 are a bare thanks), cabin talk 4 of 73 accepted, no made-up lines
 BARE_WAIT, MAX_S, FOLLOWUP_S, FOLLOWUP_MIN = 1.5, 10.0, 10.0, 0.5
-# forced wake word decode log prob that counts as a wake word
-FORCED_MIN, FORCED_GAIN = -0.25, 0.1
-# on a 2026-11-09 drive all 8 rescued wakes were mid-conversation words like "lantern."
-RESCUE_PAUSE = int(0.3 * 16000)
 
 
 def _edits(a: str, b: str) -> int:
@@ -162,7 +160,7 @@ async def update_facts(dongle: str, query: str, reply: str) -> None:
           'messages': [{'role': 'system', 'content': FACTS_PROMPT},
                        {'role': 'user', 'content': f"Facts: {json.dumps(mem.get('facts', []))}\nDriver: {query}\nAssistant: {reply}"}]}
   try:
-    text = await _llm(session(), body, 10)
+    text = await _llm(session(), LLM_URL, body, 10)
     facts = json.loads(text[text.index('['):text.rindex(']') + 1])
   except Exception as e:
     log_event('memory_error', dongle=dongle, error=repr(e))
@@ -181,8 +179,8 @@ def remember(dongle: str, query: str, reply: str) -> None:
   asyncio.create_task(update_facts(dongle, query, reply))
 
 
-async def _llm(session, body, timeout: float) -> str:
-  async with session.post(LLM_URL, json=body, timeout=aiohttp.ClientTimeout(total=timeout)) as r:
+async def _llm(session, url: str, body, timeout: float) -> str:
+  async with session.post(url, json=body, timeout=aiohttp.ClientTimeout(total=timeout)) as r:
     return (await r.json())['choices'][0]['message']['content'] or ''
 
 
@@ -219,18 +217,19 @@ async def llm(session, query: str, mem: dict | None = None) -> str:
   for tn in mem['turns']:
     msgs += [{'role': 'user', 'content': tn['q']}, {'role': 'assistant', 'content': tn['a']}]
   msgs.append({'role': 'user', 'content': query})
-  # room for models that think before they answer, kimi stops long before
-  body = {'model': LLM_MODEL, 'max_tokens': 1000, 'temperature': 0.6, 'chat_template_kwargs': {'thinking': False}, 'messages': msgs}
-
-  async def one() -> str:
-    text = (await _llm(session, body, 4)).strip()
+  async def one(k: int) -> str:
+    # room for models that think before they answer, kimi stops long before
+    url, model = LLMS[k]
+    body = {'model': model, 'max_tokens': 1000, 'temperature': 0.6, 'chat_template_kwargs': {'thinking': False}, 'messages': msgs}
+    text = (await _llm(session, url, body, 4)).strip()
     if not text:
       raise ValueError('empty reply')
     return text
 
   # one hedge only, a slow llm is mostly a busy llm and more requests make that worse
-  tasks = [asyncio.create_task(one())]
-  for hedge in (HEDGE_S, 3.0):
+  # the one hedge goes to the second llm when there is one
+  tasks = [asyncio.create_task(one(0))]
+  for n, hedge in enumerate((HEDGE_S, 3.0), 1):
     done, _ = await asyncio.wait(tasks, timeout=hedge, return_when=asyncio.FIRST_COMPLETED)
     for d in done:
       tasks.remove(d)
@@ -240,7 +239,7 @@ async def llm(session, query: str, mem: dict | None = None) -> str:
         for o in tasks:
           o.cancel()
         return d.result()
-    tasks.append(asyncio.create_task(one()))
+    tasks.append(asyncio.create_task(one(min(n, len(LLMS) - 1))))
   for o in tasks:
     o.cancel()
   log_event('llm_error', error='timeout', query=query)
@@ -318,47 +317,6 @@ def wake_at(ws: list[tuple[str, int, int]], after: int) -> int | None:
   return hits[-1] if hits else None
 
 
-def sounds_like_wake(ws: list[tuple[str, int, int]], k: int) -> bool:
-  w = re.sub(r"[^a-z]", '', ws[k][0].lower())
-  nxt = re.sub(r"[^a-z]", '', ws[k + 1][0].lower()) if k + 1 < len(ws) else ''
-  return len(w) >= 3 and (_edits(w, WAKE) <= 4 or _edits(w + nxt, WAKE) <= 3)
-
-
-def forced_wake(pcm: np.ndarray) -> bool:
-  # made to start with the wake word, whisper is much surer of a real one (-0.3 -> -0.02) and not of 'thank you' or clear radio speech
-  pcm = pcm / (np.abs(pcm).max() + 1e-6) * 0.9
-  lp = []
-  for prefix in ('Clanker,', None):
-    segs, _ = whisper.transcribe(pcm, language='en', beam_size=1, vad_filter=False, condition_on_previous_text=False, prefix=prefix, without_timestamps=True)
-    segs = list(segs)
-    lp.append(float(np.mean([g.avg_logprob for g in segs])) if segs else -9.0)
-  return lp[0] > FORCED_MIN and lp[0] - lp[1] > FORCED_GAIN
-
-
-async def rescue_wake(ws, ring, base, after, checked) -> int | None:
-  # whisper hears a quick 'clanker' as 'thank you' or 'clint' depending on what follows, check once per word with the wake word forced
-  for k, (w, a, _) in enumerate(ws):
-    # word times wobble a little between windows, key them to 0.3 s
-    key = a // 4800
-    # a wake word starts what the driver says, a sound-alike in the middle of a conversation is not one
-    if a < after or not sounds_like_wake(ws, k) or (k > 0 and a - ws[k - 1][2] < RESCUE_PAUSE):
-      continue
-    seen = [checked[j] for j in (key - 1, key, key + 1) if j in checked]
-    if any(ok for ok, _ in seen):
-      return k
-    # a no only holds for the audio it saw, check again once more words came in
-    if seen and max(end for _, end in seen) >= ws[-1][2] - 4800:
-      continue
-    ok = await asyncio.to_thread(forced_wake, ring[max(0, a - base - 4800):].copy())
-    if not ok and key not in checked and not all(is_noise(x) for x, *_ in ws):
-      # sounded like the wake word but whisper was not sure, where to look for misses
-      log_event('near_miss', word=w.strip(), text=''.join(x for x, *_ in ws).strip())
-    checked[key] = (ok, ws[-1][2])
-    if ok:
-      return k
-  return None
-
-
 DIRECTED_PROMPT = ("You decide if speech heard in a car is meant for clanker, the car's voice assistant. A speech recognizer writes down everything the "
                    'microphone hears: the driver talking to the assistant, people in the car talking to each other or on the phone, the radio and videos, the '
                    "assistant's own voice, and in quiet or noise it makes up stock lines like \"Thank you.\", \"I'm sorry.\", \"Thanks for watching.\" or the same "
@@ -372,14 +330,17 @@ DIRECTED_PROMPT = ("You decide if speech heard in a car is meant for clanker, th
 
 
 async def yes_prob(system: str, user: str, kind: str) -> float | None:
-  # P(yes) from the logprobs, or the plain answer from models that think first and give none, None when nothing came in time
-  body = {'model': LLM_MODEL, 'max_tokens': 300, 'temperature': 0, 'logprobs': True, 'top_logprobs': 10, 'chat_template_kwargs': {'thinking': False},
-          'messages': [{'role': 'system', 'content': system}, {'role': 'user', 'content': user}]}
-  try:
-    async with session().post(LLM_URL, json=body, timeout=aiohttp.ClientTimeout(total=3)) as r:
-      c = (await r.json())['choices'][0]
-  except Exception as e:
-    log_event(kind, error=repr(e))
+  # P(yes) from the logprobs, or the plain answer from models that think first and give none, None when no llm answered in time
+  for (url, model), timeout in zip(LLMS, (1.5, 3.0)):
+    body = {'model': model, 'max_tokens': 300, 'temperature': 0, 'logprobs': True, 'top_logprobs': 10, 'chat_template_kwargs': {'thinking': False},
+            'messages': [{'role': 'system', 'content': system}, {'role': 'user', 'content': user}]}
+    try:
+      async with session().post(url, json=body, timeout=aiohttp.ClientTimeout(total=timeout)) as r:
+        c = (await r.json())['choices'][0]
+      break
+    except Exception as e:
+      log_event(kind, error=repr(e), model=model)
+  else:
     return None
   lp = (c.get('logprobs') or {}).get('content')
   if lp:
@@ -412,11 +373,6 @@ async def complete(meta: dict, query: str) -> float | None:
   return await yes_prob(COMPLETE_PROMPT, f'{prev}Driver so far: {query}', 'complete_error')
 
 
-async def shadow(meta: dict, recent: str, sentence: str) -> None:
-  # wake word free trial, log only: answering these replied to people talking to each other (4 of 49 in 5 min)
-  log_event('wakeless', dongle=meta.get('dongle_id'), sentence=sentence, p_yes=await directed(meta, recent, sentence))
-
-
 async def stream(reader, writer, meta):
   # the device streams the mic nonstop and whisper reads the last few seconds every ASR_HOP: a wake word that starts after
   # the last handled request opens a query, and the query is done once whisper hears no new words for END_GAP
@@ -425,8 +381,6 @@ async def stream(reader, writer, meta):
   followup_until, woke = -1, -1
   # a follow-up after "Yes?" was asked for, one after a reply has to be meant for us
   gated = False
-  checked: dict[int, tuple[bool, int]] = {}
-  scored: set[int] = set()
   first = True
   spec = None
   rec, rec_t = None, 0.0
@@ -512,32 +466,14 @@ async def stream(reader, writer, meta):
       link['asr'].append(t['stt'] - now)
       follow = pos < followup_until
       i = -1 if follow else wake_at(ws, handled)
-      k_rescued = i is None
       if i is None:
-        k = await rescue_wake(ws, ring, base, handled, checked)
-        if k is None:
-          # the latest finished sentence, scored once
-          real = [w for w in ws if not is_noise(w[0])]
-          ends = [j for j, w in enumerate(ws[:-1]) if re.search(r'[.?!]$', w[0].strip())]
-          sent = ws[ends[-1] + 1:] if ends else ws
-          if real and sent and re.search(r'(?<!\.)[.?!]$', ws[-1][0].strip()) and pos - real[-1][2] >= END_GAP and \
-             not any(ws[-1][2] // 4800 + d in scored for d in (-1, 0, 1)) and not is_noise(''.join(w for w, *_ in sent)):
-            # keyed by where the sentence ends, its start slides out of the window
-            scored.add(ws[-1][2] // 4800)
-            asyncio.create_task(shadow(meta, ''.join(w for w, *_ in ws).strip(), ''.join(w for w, *_ in sent).strip()))
-          continue
-        # the misheard word and anything glued to it become the wake word
-        nxt = ws[k + 1:]
-        if nxt and is_noise(nxt[0][0]):
-          nxt = nxt[1:]
-        ws = ws[:k] + [(' Clanker,', ws[k][1], ws[k][2])] + nxt
-        i = k
+        continue
       if not follow and woke < handled:
         # chime and duck the fan while the driver is still talking
         woke = pos
         writer.write(frame(10, json.dumps({'wake': True}).encode()))
         await writer.drain()
-        log_event('wake', dongle=meta.get('dongle_id'), word=ws[i][0].strip() if i >= 0 else '', rescued=k_rescued,
+        log_event('wake', dongle=meta.get('dongle_id'), word=ws[i][0].strip() if i >= 0 else '',
                   detect_delay=round((pos - ws[i][2]) / 16000, 2) if i >= 0 else None)
       rest = ws[i + 1:]
       query = ''.join(w for w, *_ in rest).strip()
@@ -599,8 +535,8 @@ async def stream(reader, writer, meta):
       if follow and gated and not find_wake(query):
         p = await (spec.check if spec is not None and spec.check is not None else directed(meta, text, query))
         if p is None:
-          # the llm is stalled, a real question still gets its answer, whisper's made-up lines are short statements
-          p = 1. if query.strip().endswith('?') and len(query.split()) >= 3 else 0.
+          # no llm answered, a passenger's question is not worth the risk
+          p = 0.
         log_event('followup', dongle=meta.get('dongle_id'), p_yes=p, query=query, answered=p >= FOLLOWUP_MIN)
         if p < FOLLOWUP_MIN:
           if spec is not None:
