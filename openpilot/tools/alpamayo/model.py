@@ -5,6 +5,7 @@ from pathlib import Path
 from tinygrad import Device, Tensor, TinyJit, dtypes
 from tinygrad.helpers import USE_TC, TC_OPT
 from tinygrad.nn.state import safe_load
+from tinygrad.renderer.llvmir import AMDLLVMRenderer
 from tinygrad.uop.ops import UOp
 from runtime import upload
 
@@ -24,7 +25,7 @@ class EdgeModel:
           scale = (value.float().abs().max() / 448).clamp(min_=1e-12).realize()
           value = (value.float() / scale).clamp(-448, 448).cast(dtypes.fp8e4m3).realize()
           self.weight_scales[name] = scale
-        if self.fp8_wmma and value.dtype == dtypes.fp8e4m3 and name.startswith('vlm.') and name.endswith(('.mlp.fc1.weight', '.mlp.fc2.weight')):
+        if self.fp8_wmma and value.dtype == dtypes.fp8e4m3 and name.startswith('vlm.') and ('.mlp.' in name or '.self_attn.' in name):
           from amd_gemm import pack, unpack
           value = unpack(pack(value).realize())
         self.weights[name] = value
@@ -65,7 +66,7 @@ class EdgeModel:
              gemm(quantized, weight, (x_scale, scale), bias, (shape[0], shape[1], heads) if heads is not None else None))
         return y.reshape(*shape, weight.shape[0])
       if self.fp8_wmma and not single and USE_TC.value == 1 and (x.shape[0] % 16 == 0 or TC_OPT >= 2):
-        if x.shape[0] >= 128 and name.startswith('vlm.') and name.endswith(('.mlp.fc1', '.mlp.fc2')):
+        if x.shape[0] >= 128 and name.startswith('vlm.') and ('.mlp.' in name or '.self_attn.' in name):
           from amd_gemm import gemm
           return gemm(quantized, weight, (x_scale, scale), bias, dtype=x.dtype).reshape(*shape, weight.shape[0])
         y = quantized.dot(weight.T, dtype=dtypes.float32)
@@ -94,6 +95,10 @@ class EdgeModel:
     if self.cuda_kernels:
       from kernels import attention
       return attention(q, k, v, mask, causal)
+    if (self.fp8_wmma and USE_TC.value == 1 and q.dtype == dtypes.bfloat16 and q.shape[2] >= 128 and mask is None
+        and isinstance(Device[q.device].renderer, AMDLLVMRenderer)):
+      from amd_attention import attention
+      return attention(q, k, v, causal)
     if q.shape[1] != k.shape[1]:
       k, v = (t.repeat_interleave(q.shape[1] // k.shape[1], dim=1) for t in (k, v))
     scores = (q.matmul(k.transpose(-2, -1)) * (q.shape[-1] ** -0.5)).float()

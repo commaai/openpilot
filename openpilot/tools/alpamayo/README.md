@@ -133,7 +133,31 @@ The full 10-second replay sample then completed ten measured runs after three wa
 | Total p95 | 7,803.47 ms | 5,067.97 ms |
 | Inferences/s | 0.1288 | 0.1977 |
 
-Prefill improved by 3.06 times and total inference by 1.53 times. The workload, checkpoint bytes, precision, six reasoning tokens, ten diffusion steps, and timing boundaries are unchanged. Every measured reasoning string, trajectory, and rotation matrix exactly matched the default WMMA baseline and every other measured run. All outputs were finite. Vision, reasoning, and prefill attention now dominate; this remains below the 5 FPS target.
+At `0b8c76d4d4`, prefill improved by 3.06 times and total inference by 1.53 times. The workload, checkpoint bytes, precision, six reasoning tokens, ten diffusion steps, and timing boundaries were unchanged. Every measured reasoning string, trajectory, and rotation matrix exactly matched the default WMMA baseline and every other measured run. All outputs were finite.
+
+#### Tiled attention and packed projections
+
+`amd_attention.py` uses BF16 WMMA for both attention matrix multiplies, with 64-by-64 output tiles and packed operands. Grouped KV heads are indexed without repeating their buffers. A fused row softmax writes probabilities directly in the layout consumed by the second multiply. Scores and probabilities retain BF16 rounding, with FP32 accumulation and softmax reductions. The score matrix is still materialized. The packed FP8 linear kernels also handle vision and language Q/K/V and output projections.
+
+The attention path applies to BF16 inputs with at least 128 query rows on gfx1200/gfx1201 using the AMD LLVM renderer, with tensor cores enabled and no explicit mask. Single-token decoding, diffusion, and explicitly masked attention retain the portable path. NVIDIA execution is unchanged.
+
+Kernel checks covered batched inputs, grouped KV heads, partial tiles, causal and noncausal attention, and changing inputs during JIT replay. A complete language layer with released weights and 2,026 random input tokens improved from 45.02 to 10.00 ms. Its maximum/mean absolute output differences were 0.00390625/0.00000265 relative to the previous implementation.
+
+The same comma4 and Chestnut replay benchmark completed three warmups and ten measured inferences:
+
+| Stage | Packed feed-forward kernels | Tiled attention and packed projections |
+| --- | --- | --- |
+| Input upload | 168.70 ms | 169.16 ms |
+| Vision | 1,635.56 ms | 382.86 ms |
+| Prefill | 1,229.02 ms | 247.79 ms |
+| Reasoning | 1,628.02 ms | 1,643.00 ms |
+| Diffusion | 380.41 ms | 382.92 ms |
+| CPU trajectory decode | 12.58 ms | 13.12 ms |
+| Total median | **5,058.10 ms** | **2,844.98 ms** |
+| Total p95 | 5,067.97 ms | 2,853.72 ms |
+| Inferences/s | 0.1977 | 0.3515 |
+
+Prefill improved by 4.96 times, vision by 4.27 times, and total inference by 1.78 times. Checkpoint bytes, precision, input, six reasoning tokens, ten diffusion steps, and timing boundaries were unchanged. All measured outputs were finite and identical to each other, and reasoning matched the previous implementation. With identical diffusion noise, mean/max waypoint displacement from that implementation was 0.0548/0.2041 m over 64 poses across the 6.4-second horizon. The changed attention reduction order is not bit-identical; this comparison covers one replay sample. Reasoning now accounts for about 58% of latency. The 0.3515 inferences/s result remains below the 5 FPS target.
 
 ### NVIDIA accelerated reference on RTX 5090
 
@@ -203,7 +227,7 @@ DEV=USB+AMD:LLVM GMMU=0 AM_POWER_LIMIT=100 "$ALPAMAYO_PYTHON" -m unittest \
   test.external.external_test_usb_asm24.TestUSBIntegrity.testRepeatedBatches -v
 ```
 
-Do not interpret timings from failed integrity checks or nonfinite predictions as model performance. Chestnut currently uses the portable attention implementation; the NVIDIA custom kernels do not accelerate the AMD eGPU.
+Do not interpret timings from failed integrity checks or nonfinite predictions as model performance. Chestnut uses the AMD kernels described above for vision and prefill attention, with portable fallbacks for other calls; the NVIDIA custom kernels do not accelerate the AMD eGPU.
 
 ## Initial results (2026-11-10)
 
