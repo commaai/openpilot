@@ -17,6 +17,20 @@ LLM_URL = os.environ['LLM_URL']
 LLM_MODEL = os.environ['LLM_MODEL']
 # a second llm takes over the request when the first doesn't answer in time, kimi stalled for hours two days in a row
 LLMS = [(LLM_URL, LLM_MODEL)] + ([(os.environ['FALLBACK_URL'], os.environ['FALLBACK_MODEL'])] if os.environ.get('FALLBACK_URL') else [])
+# after the first llm stalls the second one goes first for a while, so a long outage doesn't add the first one's timeout to every request
+PRIMARY_REST_S = 60.
+_primary_down = 0.
+
+
+def llm_order() -> list[int]:
+  return [1, 0] if len(LLMS) > 1 and time.monotonic() < _primary_down else list(range(len(LLMS)))
+
+
+def primary_failed() -> None:
+  global _primary_down
+  if len(LLMS) > 1 and time.monotonic() >= _primary_down:
+    log_event('llm_switch', model=LLMS[1][1], seconds=PRIMARY_REST_S)
+  _primary_down = time.monotonic() + PRIMARY_REST_S
 # comma dongle ids allowed to talk to this server, any registered comma device when unset
 ALLOWED = {d for d in os.environ.get('VOICE_DONGLES', '').split(',') if d}
 COMMA_API = 'https://api.commadotai.com'
@@ -60,6 +74,8 @@ def find_wake(text: str):
 # per device memory: the last questions and answers, and a few lasting facts the llm keeps up to date, across drives
 MEM_DIR = os.environ.get('MEM_DIR', os.path.expanduser('~/.local/share/voiceserver/memory'))
 TURN_MAX, FACT_MAX = 10, 10
+# older turns are another conversation, the model took a talk about someone from two days earlier as being about the driver
+TURN_KEEP_S = 30 * 60
 SYSTEM = "You are clanker, the voice assistant in a car running openpilot. The driver is driving: answer in one or two short spoken sentences, no lists, no markdown, no reasoning. Never tell the driver to look at a phone or screen. If you lack live data, say so in a few words."
 
 whisper = WhisperModel(os.environ.get('WHISPER_MODEL', 'large-v3-turbo'), device='cuda', compute_type='float16', cpu_threads=2)
@@ -215,31 +231,48 @@ async def llm(session, query: str, mem: dict | None = None) -> str:
   facts = mem.get('facts', [])
   msgs = [{'role': 'system', 'content': SYSTEM + ('\n\nWhat you know about this driver:\n- ' + '\n- '.join(facts) if facts else '')}]
   for tn in mem['turns']:
-    msgs += [{'role': 'user', 'content': tn['q']}, {'role': 'assistant', 'content': tn['a']}]
+    if time.time() - tn['time'] < TURN_KEEP_S:
+      msgs += [{'role': 'user', 'content': tn['q']}, {'role': 'assistant', 'content': tn['a']}]
   msgs.append({'role': 'user', 'content': query})
   async def one(k: int) -> str:
     # room for models that think before they answer, kimi stops long before
     url, model = LLMS[k]
     body = {'model': model, 'max_tokens': 1000, 'temperature': 0.6, 'chat_template_kwargs': {'thinking': False}, 'messages': msgs}
-    text = (await _llm(session, url, body, 4)).strip()
-    if not text:
-      raise ValueError('empty reply')
+    try:
+      text = (await _llm(session, url, body, 4 if k == 0 else 6)).strip()
+      if not text:
+        raise ValueError('empty reply')
+    except Exception:
+      if k == 0:
+        primary_failed()
+      raise
     return text
 
   # one hedge only, a slow llm is mostly a busy llm and more requests make that worse
   # the one hedge goes to the second llm when there is one
-  tasks = [asyncio.create_task(one(0))]
-  for n, hedge in enumerate((HEDGE_S, 3.0), 1):
-    done, _ = await asyncio.wait(tasks, timeout=hedge, return_when=asyncio.FIRST_COMPLETED)
+  # the spare goes out after HEDGE_S or as soon as the first one fails, then whichever answers first wins
+  order = llm_order()
+  deadline, hedge_at = time.monotonic() + HEDGE_S + 5.0, time.monotonic() + HEDGE_S
+  spare = order[1:] or order[:1]
+  tasks: dict[asyncio.Task, int] = {asyncio.create_task(one(order[0])): order[0]}
+  while time.monotonic() < deadline:
+    if spare and (time.monotonic() >= hedge_at or not tasks):
+      k = spare.pop(0)
+      tasks[asyncio.create_task(one(k))] = k
+    if not tasks:
+      break
+    done, _ = await asyncio.wait(tasks, timeout=max(0.01, (hedge_at if spare else deadline) - time.monotonic()), return_when=asyncio.FIRST_COMPLETED)
     for d in done:
-      tasks.remove(d)
+      k = tasks.pop(d)
       if d.cancelled() or d.exception() is not None:
         log_event('llm_error', error='cancelled' if d.cancelled() else repr(d.exception()))
-      else:
-        for o in tasks:
-          o.cancel()
-        return d.result()
-    tasks.append(asyncio.create_task(one(min(n, len(LLMS) - 1))))
+        continue
+      for o in tasks:
+        o.cancel()
+      if k != 0 and order[0] == 0:
+        # the second llm had to step in
+        primary_failed()
+      return d.result()
   for o in tasks:
     o.cancel()
   log_event('llm_error', error='timeout', query=query)
@@ -331,7 +364,8 @@ DIRECTED_PROMPT = ("You decide if speech heard in a car is meant for clanker, th
 
 async def yes_prob(system: str, user: str, kind: str) -> float | None:
   # P(yes) from the logprobs, or the plain answer from models that think first and give none, None when no llm answered in time
-  for (url, model), timeout in zip(LLMS, (1.5, 3.0)):
+  for k in llm_order():
+    (url, model), timeout = LLMS[k], 1.5 if k == 0 else 5.0
     body = {'model': model, 'max_tokens': 300, 'temperature': 0, 'logprobs': True, 'top_logprobs': 10, 'chat_template_kwargs': {'thinking': False},
             'messages': [{'role': 'system', 'content': system}, {'role': 'user', 'content': user}]}
     try:
@@ -340,6 +374,8 @@ async def yes_prob(system: str, user: str, kind: str) -> float | None:
       break
     except Exception as e:
       log_event(kind, error=repr(e), model=model)
+      if k == 0:
+        primary_failed()
   else:
     return None
   lp = (c.get('logprobs') or {}).get('content')
