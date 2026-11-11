@@ -20,9 +20,10 @@ uv pip install -q --python "$VENV" comma-deps-raylib==6.0.0.1.post112 \
 export PATH="$VENV/bin:$PATH"
 
 # build from a clean copy, without scons outputs
+# materialize data aliases so onefile cleanup does not encounter dangling links
 SRC=$(mktemp -d)
 trap 'rm -rf "$SRC"' EXIT
-tar -C "$ROOT" -cf - --exclude=__pycache__ --exclude='*.so' --exclude=openpilot/cereal/gen \
+tar -h -C "$ROOT" -cf - --exclude=__pycache__ --exclude='*.so' --exclude=openpilot/cereal/gen \
   --exclude=openpilot/selfdrive/assets/training --exclude=openpilot/selfdrive/modeld/models \
   --exclude=openpilot/common/hardware/comma/updater \
   openpilot opendbc_repo/opendbc | tar -C "$SRC" -xf -
@@ -43,7 +44,7 @@ for app in $APPS; do
   MAINS+=("--main=openpilot/system/ui/$app.py")
 done
 DATA=()
-for ext in png ttf fnt json capnp mo po; do
+for ext in png ttf otf fnt json capnp mo po; do
   DATA+=("--include-package-data=openpilot:*.$ext" "--include-package-data=opendbc.car:*.$ext")
 done
 
@@ -51,8 +52,8 @@ done
 JOBS=$(awk -v cpus="$(nproc)" '/MemAvailable/ { jobs = int($2 / 1500000); print (jobs < 1 ? 1 : (jobs > cpus ? cpus : jobs)) }' /proc/meminfo)
 
 # pycapnp's compiled extension imports asyncio, which nuitka can't see
-# the single file unpacks to /data, since AGNOS's /home and /tmp are too small. later runs reuse it
-python -m nuitka --onefile --onefile-tempdir-spec=/data/tmp/agnos-apps "${MAINS[@]}" \
+# each launch unpacks separately in /data; AGNOS's /home and /tmp are too small
+python -m nuitka --onefile '--onefile-tempdir-spec=/data/tmp/agnos-apps_{PID}_{TIME_US}_{RANDOM}' "${MAINS[@]}" \
   --jobs="$JOBS" --lto=no --python-flag=isolated "${BACKENDS[@]}" --include-module=asyncio \
   "${DATA[@]}" \
   --output-dir="$SRC/build" --output-filename=agnos-apps

@@ -55,7 +55,7 @@ class TrainingGuide(Widget):
     self._image_paths = [os.path.join(BASEDIR, "openpilot/selfdrive/assets/training", fn) for fn in paths]
 
   def _preload_thread(self):
-    # PNG loading is slow in raylib, so we preload in a thread and upload to GPU in main thread
+    # PNG loading is slow in raylib, so we preload in a thread and make textures in the main thread
     # We've already loaded the first image on init
     for path in self._image_paths[1:]:
       self._image_objs.append(gui_app._load_image_from_path(path))

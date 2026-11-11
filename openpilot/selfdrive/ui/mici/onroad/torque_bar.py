@@ -9,7 +9,7 @@ from opendbc.car import ACCELERATION_DUE_TO_GRAVITY
 from openpilot.selfdrive.ui.mici.onroad import blend_colors
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.lib.shader_polygon import draw_polygon, Gradient
+from openpilot.system.ui.lib.polygon import draw_polygon, Gradient
 from openpilot.system.ui.widgets import Widget
 from openpilot.common.filter_simple import FirstOrderFilter
 
@@ -105,7 +105,7 @@ def arc_bar_pts(r_mid: float, thickness: float,
 
   span = max(1e-3, a1_deg - a0_deg)
 
-  # pick arc segment count from arc length, clamp to shader points[] budget
+  # pick arc segment count from arc length, clamp to the max_points budget
   arc_len = r_mid * math.radians(span)
   arc_segs = max(6, int(arc_len / px_per_seg))
   max_arc = (max_points - (4 * cap_segs + 3)) // 2
