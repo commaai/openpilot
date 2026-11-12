@@ -72,6 +72,13 @@ def get_accel_boost(action_accel, v_ego):
   gain = np.interp(v_ego, [10.0, 20.0, 25.0], [0.2, 0.3, 0.42])
   return gain * np.interp(action_accel, [0.2, 3.0], [0.0, 2.8])
 
+def get_turn_softening(curvature, v_ego):
+  # the model turns in too sharp in slow turns at intersections and in lower-mid speed curves.
+  # take 10% off past 1.5 m/s^2 of lat accel, the model still closes the loop so the turn gets done
+  lat_accel = abs(curvature) * v_ego ** 2
+  softening = 0.1 * np.interp(lat_accel, [1.0, 2.0], [0.0, 1.0]) * np.interp(v_ego, [2.5, 4.0, 13.0, 17.0], [0.0, 1.0, 1.0, 0.0])
+  return curvature * (1.0 - softening)
+
 def get_lane_center_curvature(v_ego, plan_x, plan_y, lane_x, left_y, right_y, left_prob, right_prob):
   # the model sits ~0.3 m to the inside of curves. steer the planned path 2 s ahead halfway to the lane center
   dist = max(2.0 * v_ego, 10.0)

@@ -37,7 +37,8 @@ from openpilot.system.camerad.cameras.nv12_info import get_nv12_info
 from openpilot.common.transformations.model import get_warp_matrix
 from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
 from openpilot.selfdrive.controls.lib.drive_helpers import get_accel_boost, get_accel_from_plan, get_accel_from_plan_horizon, \
-                                                     get_lane_center_curvature, should_stop, smooth_value, get_curvature_from_plan
+                                                     get_lane_center_curvature, get_turn_softening, should_stop, smooth_value, \
+                                                     get_curvature_from_plan
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_driving_model_data, fill_pose_msg, PublishState
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
@@ -77,7 +78,7 @@ def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.
                                                 v_ego,
                                                 lat_action_t)
   else:
-    desired_curvature = model_output['action'][0,0] / (max(2.5, v_ego))**2
+    desired_curvature = get_turn_softening(model_output['action'][0,0] / (max(2.5, v_ego))**2, v_ego)
   lane_lines, lane_probs = model_output['lane_lines'][0,:,:,0], model_output['lane_lines_prob'][0,1::2]
   # off during lane changes, it would pull back to the old lane. the filter fades it out and back in
   lane_center = 0.0 if lane_change else get_lane_center_curvature(v_ego, plan[:,Plan.POSITION][:,0], plan[:,Plan.POSITION][:,1],
