@@ -182,7 +182,7 @@ jobs:
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16"]')
       || fromJSON('["ubuntu-24.04"]') }}
-    if: false  # FIXME: Started to timeout recently
+    if: false  # FIXME: the driving model only runs at ~2 Hz on CPU
     steps:
     - uses: actions/checkout@v7
     - run: ./tools/op.sh setup
@@ -190,10 +190,7 @@ jobs:
       run: scons
     - name: Driving test
       timeout-minutes: 2
-      env:
-        # MetaDrive renders offscreen through panda3d's EGL pipe on llvmpipe
-        EGL_PLATFORM: surfaceless
-      run: python openpilot/tools/sim/tests/test_metadrive_bridge.py
+      run: python openpilot/tools/sim/tests/test_sim.py
 
   create_ui_report:
     name: Create UI Report
