@@ -58,7 +58,7 @@ int device_config(int fd, int32_t session_handle, int32_t dev_handle, uint64_t p
 int device_control(int fd, int op_code, int session_handle, int dev_handle);
 int do_cam_control(int fd, int op_code, void *handle, int size);
 void *alloc_w_mmu_hdl(int video0_fd, int len, uint32_t *handle, int align = 8, int flags = CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
-                      int mmu_hdl = 0, int mmu_hdl2 = 0);
+                      int mmu_hdl = -1, int mmu_hdl2 = -1);
 void release(int video0_fd, uint32_t handle);
 
 class MemoryManager {
@@ -111,7 +111,7 @@ public:
     }
   }
 
-  void init(SpectraMaster *m, int s, int a, bool shared_access, int mmu_hdl = 0, int mmu_hdl2 = 0, int count = 1) {
+  void init(SpectraMaster *m, int s, int a, bool shared_access, int mmu_hdl = -1, int mmu_hdl2 = -1, int count = 1) {
     free();  // a reopened camera allocates again
     video_fd = m->video0_fd;
     size = s;
