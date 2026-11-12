@@ -65,7 +65,7 @@ if __name__ == "__main__":
   parser.add_argument('--max-seconds', type=float, default=None,
                       help='Maximum seconds of messages to process (default: all)')
   parser.add_argument('--headless', action='store_true',
-                      help='Run in headless mode without GPU (for CI/testing)')
+                      help='Run without a window (for CI/testing)')
   args = parser.parse_args()
 
   print(f"Loading log from {args.route}...")
@@ -77,7 +77,7 @@ if __name__ == "__main__":
   if args.max_seconds:
     message_chunks = message_chunks[:int(args.max_seconds * FPS)]
 
-  print("Initializing UI with GPU rendering...")
+  print("Initializing UI...")
 
   if args.headless:
     os.environ['SDL_VIDEODRIVER'] = 'dummy'

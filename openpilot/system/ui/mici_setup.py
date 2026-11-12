@@ -28,7 +28,7 @@ from openpilot.system.ui.widgets.slider import LargerSlider
 from openpilot.selfdrive.ui.mici.layouts.settings.network import WifiNetworkButton
 from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiUIMici
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog, BigConfirmationCircleButton
-from openpilot.selfdrive.ui.mici.widgets.button import BigButton, GreyBigButton
+from openpilot.selfdrive.ui.mici.widgets.button import GreyBigButton, BigPillButton
 
 NetworkType = log.DeviceState.NetworkType
 
@@ -252,42 +252,6 @@ class FailedPage(NavScroller):
       self._reason_card.set_visible(True)
     else:
       self._reason_card.set_visible(False)
-
-
-class BigPillButton(BigButton):
-  def __init__(self, *args, green: bool = False, disabled_background: bool = False, **kwargs):
-    self._green = green
-    self._disabled_background = disabled_background
-    super().__init__(*args, **kwargs)
-
-    self._label.set_font_size(48)
-    self._label.set_alignment(TextAlignment.CENTER)
-    self._label.set_alignment_vertical(TextAlignmentVertical.MIDDLE)
-
-  def _load_images(self):
-    if self._green:
-      self._txt_default_bg = gui_app.texture("icons_mici/setup/start_button.png", 402, 180)
-      self._txt_pressed_bg = gui_app.texture("icons_mici/setup/start_button_pressed.png", 402, 180)
-    else:
-      self._txt_default_bg = gui_app.texture("icons_mici/setup/continue.png", 402, 180)
-      self._txt_pressed_bg = gui_app.texture("icons_mici/setup/continue_pressed.png", 402, 180)
-    self._txt_disabled_bg = gui_app.texture("icons_mici/setup/continue_disabled.png", 402, 180)
-
-  def set_green(self, green: bool):
-    if self._green != green:
-      self._green = green
-      self._load_images()
-
-  def _update_label_layout(self):
-    # Don't change label text size
-    pass
-
-  def _handle_background(self) -> tuple[rl.Texture, float, float, float]:
-    txt_bg, btn_x, btn_y, scale = super()._handle_background()
-
-    if self._disabled_background:
-      txt_bg = self._txt_disabled_bg
-    return txt_bg, btn_x, btn_y, scale
 
 
 class NetworkSetupPageBase(Scroller):

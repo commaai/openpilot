@@ -1,74 +1,34 @@
-import platform
 import numpy as np
 import raylib_nb as rl
 
 from openpilot.cereal.visionipc import VisionStreamType
 from msgq.visionipc import VisionIpcClient, VisionBuf
 from openpilot.common.swaglog import cloudlog
-from openpilot.common.hardware import COMMA_HARDWARE
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.lib.egl import init_egl, create_egl_image, destroy_egl_image, bind_egl_image_to_texture, EGLImage
 from openpilot.system.ui.widgets import Widget
 from openpilot.selfdrive.ui.ui_state import ui_state
 
 CONNECTION_RETRY_INTERVAL = 0.2  # seconds between connection attempts
 
-VERSION = """
-#version 300 es
-precision mediump float;
-"""
-if platform.system() == "Darwin":
-  VERSION = """
-    #version 330 core
-  """
+
+def color_curve(curve) -> np.ndarray:
+  """a per channel curve as rl.cpu.nv12's lut, for channel values -512 to 767: they aren't clamped before the curve"""
+  values = (np.arange(1280) - 512) / 255
+  with np.errstate(invalid="ignore"):
+    out = curve(values)
+  out = np.clip(np.nan_to_num(out, nan=0.0), 0, 1)
+  return np.round(out * 255).astype(np.uint8)
 
 
-VERTEX_SHADER = VERSION + """
-in vec3 vertexPosition;
-in vec2 vertexTexCoord;
-in vec3 vertexNormal;
-in vec4 vertexColor;
-uniform mat4 mvp;
-out vec2 fragTexCoord;
-out vec4 fragColor;
-void main() {
-  fragTexCoord = vertexTexCoord;
-  fragColor = vertexColor;
-  gl_Position = mvp * vec4(vertexPosition, 1.0);
-}
-"""
+# a gamma for the device's display
+def _display_gamma(c):
+  return c ** (1 / 1.28)
 
-# Choose fragment shader based on platform capabilities
-if COMMA_HARDWARE:
-  FRAME_FRAGMENT_SHADER = """
-    #version 300 es
-    #extension GL_OES_EGL_image_external_essl3 : enable
-    precision mediump float;
-    in vec2 fragTexCoord;
-    uniform samplerExternalOES texture0;
-    out vec4 fragColor;
-    void main() {
-      vec4 color = texture(texture0, fragTexCoord);
-      fragColor = vec4(pow(color.rgb, vec3(1.0/1.28)), color.a);
-    }
-    """
-else:
-  FRAME_FRAGMENT_SHADER = VERSION + """
-    in vec2 fragTexCoord;
-    uniform sampler2D texture0;
-    uniform sampler2D texture1;
-    out vec4 fragColor;
-    void main() {
-      float y = texture(texture0, fragTexCoord).r;
-      vec2 uv = texture(texture1, fragTexCoord).ra - 0.5;
-      fragColor = vec4(y + 1.402*uv.y, y - 0.344*uv.x - 0.714*uv.y, y + 1.772*uv.x, 1.0);
-    }
-    """
+
+FRAME_COLOR = (color_curve(_display_gamma), 1.0)
 
 
 class CameraView(Widget):
-  FRAGMENT_SHADER = FRAME_FRAGMENT_SHADER
-
   def __init__(self, name: str, stream_type: VisionStreamType):
     super().__init__()
     self._name = name
@@ -83,30 +43,11 @@ class CameraView(Widget):
     self._target_stream_type: VisionStreamType | None = None
     self._switching: bool = False
 
-    self._texture_needs_update = True
+    self._new_frame = True
     self.last_connection_attempt: float = 0.0
-    self.shader = rl.load_shader_from_memory(VERTEX_SHADER, self.FRAGMENT_SHADER)
-    self._texture1_loc: int = rl.get_shader_location(self.shader, "texture1") if not COMMA_HARDWARE else -1
 
     self.frame: VisionBuf | None = None
-    self.texture_y: rl.Texture | None = None
-    self.texture_uv: rl.Texture | None = None
-
-    # EGL resources
-    self.egl_images: dict[int, EGLImage] = {}
-    self.egl_texture: rl.Texture | None = None
-
     self._placeholder_color: rl.Color | None = None
-
-    # Initialize EGL for zero-copy rendering on COMMA_HARDWARE
-    if COMMA_HARDWARE:
-      if not init_egl():
-        raise RuntimeError("Failed to initialize EGL")
-
-      # Create a 1x1 pixel placeholder texture for EGL image binding
-      temp_image = rl.gen_image_color(1, 1, rl.BLACK)
-      self.egl_texture = rl.load_texture_from_image(temp_image)
-      rl.unload_image(temp_image)
 
     ui_state.add_offroad_transition_callback(self._offroad_transition)
 
@@ -142,18 +83,6 @@ class CameraView(Widget):
     return self._stream_type
 
   def close(self) -> None:
-    self._clear_textures()
-
-    # Clean up EGL texture
-    if COMMA_HARDWARE and self.egl_texture:
-      rl.unload_texture(self.egl_texture)
-      self.egl_texture = None
-
-    # Clean up shader
-    if self.shader and self.shader.id:
-      rl.unload_shader(self.shader)
-      self.shader.id = 0
-
     self.frame = None
     self.available_streams.clear()
     self.client = None
@@ -192,7 +121,7 @@ class CameraView(Widget):
     # Try to get a new buffer without blocking
     buffer = self.client.recv(timeout_ms=0)
     if buffer:
-      self._texture_needs_update = True
+      self._new_frame = True
       self.frame = buffer
     elif not self.client.is_connected():
       # ensure we clear the displayed frame when the connection is lost
@@ -221,68 +150,19 @@ class CameraView(Widget):
 
     dst_rect = rl.Rectangle(x_offset, y_offset, scale_x, scale_y)
 
-    # Render with appropriate method
-    if COMMA_HARDWARE:
-      self._render_egl(src_rect, dst_rect)
-    else:
-      self._render_textures(src_rect, dst_rect)
+    curve, saturation = self._frame_color()
+    rl.cpu.target_raylib()
+    rl.cpu.nv12(self.frame.data, self.frame.uv_offset, self.frame.stride, self.frame.width, self.frame.height, dst_rect,
+                src_rect.width < 0, curve, round(saturation * 256), self._new_frame)
+    self._new_frame = False
 
   def _draw_placeholder(self, rect: rl.Rectangle):
     if self._placeholder_color:
       rl.draw_rectangle_rec(rect, self._placeholder_color)
 
-  def _render_egl(self, src_rect: rl.Rectangle, dst_rect: rl.Rectangle) -> None:
-    """Render using EGL for direct buffer access"""
-    if self.frame is None or self.egl_texture is None:
-      return
-
-    idx = self.frame.idx
-    egl_image = self.egl_images.get(idx)
-
-    # Create EGL image if needed
-    if egl_image is None:
-      egl_image = create_egl_image(self.frame.width, self.frame.height, self.frame.stride, self.frame.fd, self.frame.uv_offset)
-      if egl_image:
-        self.egl_images[idx] = egl_image
-      else:
-        return
-
-    # Update texture dimensions to match current frame
-    self.egl_texture.width = self.frame.width
-    self.egl_texture.height = self.frame.height
-
-    # Bind the EGL image to our texture
-    bind_egl_image_to_texture(self.egl_texture.id, egl_image)
-
-    # Render with shader
-    rl.begin_shader_mode(self.shader)
-    self._set_shader_uniforms()
-    rl.draw_texture_pro(self.egl_texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
-    rl.end_shader_mode()
-
-  def _render_textures(self, src_rect: rl.Rectangle, dst_rect: rl.Rectangle) -> None:
-    """Render using texture copies"""
-    if not self.texture_y or not self.texture_uv or self.frame is None:
-      return
-
-    # Update textures with new frame data
-    if self._texture_needs_update:
-      y_data = self.frame.data[: self.frame.uv_offset]
-      uv_data = self.frame.data[self.frame.uv_offset:]
-
-      rl.update_texture(self.texture_y, y_data)
-      rl.update_texture(self.texture_uv, uv_data)
-      self._texture_needs_update = False
-
-    # Render with shader
-    rl.begin_shader_mode(self.shader)
-    self._set_shader_uniforms()
-    rl.set_shader_value_texture(self.shader, self._texture1_loc, self.texture_uv)
-    rl.draw_texture_pro(self.texture_y, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
-    rl.end_shader_mode()
-
-  def _set_shader_uniforms(self) -> None:
-    pass
+  def _frame_color(self) -> tuple[np.ndarray, float]:
+    """the frame's per channel curve and saturation"""
+    return FRAME_COLOR
 
   def _ensure_connection(self) -> bool:
     if not self.client.is_connected():
@@ -299,7 +179,6 @@ class CameraView(Widget):
         return False
 
       cloudlog.debug(f"Connected to {self._name} stream: {self._stream_type}, buffers: {self.client.num_buffers}")
-      self._initialize_textures()
       self.available_streams = {VisionStreamType(s) for s in self.client.available_streams(self._name, block=False)}
 
     return True
@@ -329,38 +208,12 @@ class CameraView(Widget):
     assert self._target_client is not None and self._target_stream_type is not None
     self.client = self._target_client
     self._stream_type = self._target_stream_type
-    self._texture_needs_update = True
+    self._new_frame = True
 
     # Reset state
     self._target_client = None
     self._target_stream_type = None
     self._switching = False
-
-    # Initialize textures for new stream
-    self._initialize_textures()
-
-  def _initialize_textures(self):
-    self._clear_textures()
-    if not COMMA_HARDWARE:
-      stride, height = self.client.stride, self.client.height
-      assert stride is not None and height is not None
-      self.texture_y = rl.load_texture_from_image(rl.Image(None, stride, height, 1, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAYSCALE))
-      self.texture_uv = rl.load_texture_from_image(rl.Image(None, stride // 2, height // 2, 1, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA))
-
-  def _clear_textures(self):
-    if self.texture_y and self.texture_y.id:
-      rl.unload_texture(self.texture_y)
-      self.texture_y = None
-
-    if self.texture_uv and self.texture_uv.id:
-      rl.unload_texture(self.texture_uv)
-      self.texture_uv = None
-
-    # Clean up EGL resources
-    if COMMA_HARDWARE:
-      for data in self.egl_images.values():
-        destroy_egl_image(data)
-      self.egl_images = {}
 
 
 if __name__ == "__main__":
