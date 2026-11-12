@@ -1581,8 +1581,21 @@ bool SpectraCamera::processFrame(int buf_idx, uint64_t request_id, uint64_t ife_
 bool SpectraCamera::syncFirstFrame(int camera_id, uint64_t request_id, uint64_t ife_frame_id, uint64_t timestamp, bool staggered) {
   if (first_frame_synced) return true;
 
+  // The sensors free-run for their first frames, then each jumps onto its FSIN pulse. The frame that lands on FSIN
+  // isn't settled yet: rarely a stray frame start follows it (CSID UNBOUNDED_FRAME), and the sensor slips a frame
+  // getting back onto FSIN. Syncing on that landing frame leaves the camera's frame IDs off by one for the whole
+  // session. Only sync on a frame that came one frame period after the camera's previous frame.
+  const uint64_t period_ns = FRAME_PERIOD_MS * 1000000ULL;
+  const uint64_t tolerance_ns = 200000ULL;           // 0.2ms
+  bool settled = false;
+  if (auto prev = camera_sync_data.find(camera_id); prev != camera_sync_data.end() &&
+      ife_frame_id == prev->second.frame_id_offset && timestamp > prev->second.timestamp) {
+    uint64_t dt = timestamp - prev->second.timestamp;
+    settled = (dt > period_ns ? dt - period_ns : period_ns - dt) <= tolerance_ns;
+  }
+
   // Store the frame data for this camera
-  camera_sync_data[camera_id] = SyncData{timestamp, ife_frame_id + 1, staggered};
+  camera_sync_data[camera_id] = SyncData{timestamp, ife_frame_id + 1, staggered, settled};
 
   // Ensure all cameras are up
   int enabled_camera_count = std::count_if(std::begin(ALL_CAMERA_CONFIGS), std::end(ALL_CAMERA_CONFIGS),
@@ -1592,10 +1605,12 @@ bool SpectraCamera::syncFirstFrame(int camera_id, uint64_t request_id, uint64_t 
   // Check that camera timestamps are properly aligned:
   // - non-staggered cameras should be within 0.2ms of each other
   // - staggered cameras should be within 0.2ms of a 25ms offset from non-staggered cameras
-  const uint64_t half_period_ns = FRAME_PERIOD_MS * 1000000ULL / 2;  // 25ms
-  const uint64_t tolerance_ns = 200000ULL;           // 0.2ms
+  const uint64_t half_period_ns = period_ns / 2;  // 25ms
   bool all_cams_synced = true;
   for (const auto &[cam, sync_data] : camera_sync_data) {
+    if (!sync_data.settled) {
+      all_cams_synced = false;
+    }
     if (cam == camera_id) continue;
     uint64_t diff = std::max(timestamp, sync_data.timestamp) -
                     std::min(timestamp, sync_data.timestamp);
