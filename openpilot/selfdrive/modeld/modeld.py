@@ -71,6 +71,7 @@ def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.
                                               plan_stds[:,Plan.POSITION][:,0],
                                               np.array(ModelConstants.T_IDXS),
                                               long_action_t)
+  lane_lines, lane_probs = model_output['lane_lines'][0,:,:,0], model_output['lane_lines_prob'][0,1::2]
   if 'action' not in model_output:
     desired_curvature = get_curvature_from_plan(plan[:,Plan.T_FROM_CURRENT_EULER][:,2],
                                                 plan[:,Plan.ORIENTATION_RATE][:,2],
@@ -78,8 +79,7 @@ def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.
                                                 v_ego,
                                                 lat_action_t)
   else:
-    desired_curvature = get_turn_softening(model_output['action'][0,0] / (max(2.5, v_ego))**2, v_ego)
-  lane_lines, lane_probs = model_output['lane_lines'][0,:,:,0], model_output['lane_lines_prob'][0,1::2]
+    desired_curvature = get_turn_softening(model_output['action'][0,0] / (max(2.5, v_ego))**2, v_ego, min(lane_probs[1], lane_probs[2]))
   # off during lane changes, it would pull back to the old lane. the filter fades it out and back in
   lane_center = 0.0 if lane_change else get_lane_center_curvature(v_ego, plan[:,Plan.POSITION][:,0], plan[:,Plan.POSITION][:,1],
                                                                   np.array(ModelConstants.X_IDXS), lane_lines[1], lane_lines[2],
