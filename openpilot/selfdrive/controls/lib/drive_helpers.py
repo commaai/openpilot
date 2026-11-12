@@ -77,7 +77,13 @@ def get_lane_center_curvature(v_ego, plan_x, plan_y, lane_x, left_y, right_y, le
   dist = max(2.0 * v_ego, 10.0)
   center = (np.interp(dist, lane_x, left_y) + np.interp(dist, lane_x, right_y)) / 2
   error = center - np.interp(dist, plan_x, plan_y)
-  weight = min(left_prob, right_prob) * np.interp(v_ego, [4.0, 8.0], [0.0, 1.0])
+  # only fix the cut to the inside of curves. on straights or to the outside the model moves over on purpose,
+  # e.g. around parked cars. the curve comes from the lane lines, so a swerve in the plan does not look like a curve
+  road_curvature = 2 * center / dist ** 2
+  curve = np.interp(abs(road_curvature) * v_ego ** 2, [0.5, 1.0], [0.0, 1.0])
+  inside = float(np.sign(error) == -np.sign(road_curvature))
+  error = np.clip(error, -0.5, 0.5)
+  weight = min(left_prob, right_prob) * np.interp(v_ego, [4.0, 8.0], [0.0, 1.0]) * curve * inside
   max_curvature = 0.5 / max(v_ego, 1.0) ** 2  # at most 0.5 m/s^2 of lat accel
   return float(np.clip(0.5 * weight * 2 * error / dist ** 2, -max_curvature, max_curvature))
 
