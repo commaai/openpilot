@@ -235,6 +235,7 @@ private:
     uint64_t timestamp;
     uint64_t frame_id_offset = 0;
     bool staggered = false;
+    bool settled = false;  // this frame came one frame period after the camera's previous one
   };
   inline static std::map<int, SyncData> camera_sync_data;
   inline static bool first_frame_synced = false;
