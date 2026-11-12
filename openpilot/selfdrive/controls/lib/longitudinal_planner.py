@@ -2,6 +2,7 @@
 import numpy as np
 
 import openpilot.cereal.messaging as messaging
+from openpilot.cereal import log
 from opendbc.car.interfaces import ACCEL_MIN, ACCEL_MAX
 from openpilot.common.constants import CV
 from openpilot.common.filter_simple import FirstOrderFilter
@@ -12,7 +13,7 @@ from openpilot.selfdrive.controls.lib.curve_speed import CurveSpeed
 from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc, LongitudinalPlanSource
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import T_IDXS as T_IDXS_MPC
-from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N, should_stop, smooth_value
+from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N, get_accel_from_plan, should_stop, smooth_value
 from openpilot.selfdrive.car.cruise import V_CRUISE_MAX, V_CRUISE_UNSET
 from openpilot.common.swaglog import cloudlog
 
@@ -20,6 +21,18 @@ J_CRUISE_VALS = [1.6, 1.2, 0.8, 0.6]
 J_CRUISE_BP = [0., 10.0, 25., 40.]
 A_CRUISE_MIN = -0.5
 CONTROL_N_T_IDX = ModelConstants.T_IDXS[:CONTROL_N]
+
+
+def get_set_speed_pull(e2e_accel, a_cruise, v_ego, plan_t, plan_v, personality):
+  # on open highway, pull e2e up toward the set speed. stops the moment the plan isn't cruising
+  # (slowing for a light, offramp, lead, curve), and below highway speeds the model's speed is kept
+  if len(plan_t) != len(plan_v):
+    return 0.0
+  plan_t, plan_v = np.array(plan_t), np.array(plan_v)
+  slowdown = plan_v[0] - np.min(plan_v[plan_t <= 10.0])
+  strength = {log.LongitudinalPersonality.aggressive: 1.0, log.LongitudinalPersonality.standard: 0.5}.get(personality, 0.0)
+  weight = strength * np.interp(slowdown, [0.5, 1.5], [1.0, 0.0]) * np.interp(v_ego, [22.0, 27.0], [0.0, 1.0])
+  return weight * np.clip(a_cruise - e2e_accel, 0.0, 0.6)
 
 
 def get_cruise_accel(v_cruise, v_ego, a_cruise_prev, a_target_prev, dt):
@@ -95,6 +108,10 @@ class LongitudinalPlanner:
     # Save starting point for next iteration
     a_prev = self.output_a_target
 
+    action_t =  self.CP.longitudinalActuatorDelay + DT_MDL
+    output_a_target_mpc = get_accel_from_plan(self.v_desired_trajectory, self.a_desired_trajectory, CONTROL_N_T_IDX,
+                                              action_t=action_t)
+    output_should_stop_mpc = should_stop(v_ego, output_a_target_mpc)
     output_a_target_e2e = sm['modelV2'].action.desiredAcceleration
     output_should_stop_e2e = sm['modelV2'].action.shouldStop
 
@@ -102,10 +119,13 @@ class LongitudinalPlanner:
     cruise_should_stop = should_stop(v_ego, self.a_cruise)
 
     # no accel boost: the accel from the plan is not timid like the action, a boost only keeps it accelerating
+    output_a_target_e2e += get_set_speed_pull(output_a_target_e2e, self.a_cruise, v_ego, sm['modelV2'].position.t,
+                                              sm['modelV2'].velocity.x, sm['selfdriveState'].personality)
     output_a_target_e2e = self.curve_speed.update(sm['modelV2'], sm['vehicleParameters'].roll, output_a_target_e2e)
 
-    # experiment: e2e only, no lead mpc. the mpc still runs for fcw
-    candidates = [(self.a_cruise, LongitudinalPlanSource.cruise, cruise_should_stop),
+    # the lead mpc only ever brakes more, it catches leads the model is late for
+    candidates = [(output_a_target_mpc, self.mpc.source, output_should_stop_mpc),
+                  (self.a_cruise, LongitudinalPlanSource.cruise, cruise_should_stop),
                   (output_a_target_e2e, LongitudinalPlanSource.e2e, output_should_stop_e2e)]
 
     output_a_target, self.mpc.source, _ = min(candidates, key=lambda c: c[0])
