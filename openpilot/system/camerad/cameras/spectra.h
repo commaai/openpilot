@@ -100,13 +100,19 @@ public:
   SpectraBuf() = default;
 
   ~SpectraBuf() {
+    free();
+  }
+
+  void free() {
     if (video_fd >= 0 && ptr) {
       munmap(ptr, mmap_size);
       release(video_fd, handle);
+      ptr = nullptr;
     }
   }
 
   void init(SpectraMaster *m, int s, int a, bool shared_access, int mmu_hdl = 0, int mmu_hdl2 = 0, int count = 1) {
+    free();  // a reopened camera allocates again
     video_fd = m->video0_fd;
     size = s;
     alignment = a;
@@ -137,6 +143,7 @@ public:
   ~SpectraCamera();
 
   void camera_open(VisionIpcServer *v);
+  void configDevices();
   bool handle_camera_event(const cam_req_mgr_message *event_data);
   void camera_close();
   void camera_map_bufs();
@@ -210,11 +217,15 @@ public:
   uint64_t last_valid_ife_frame_id = 0;
   int invalid_request_count = 0;
   bool skip_expected = true;
+  bool recovering = false;  // requeued after an error, and no frame has come through since
+  bool reopened = false;    // the IFE's frame counter started over
 
   CameraBuf buf;
   SpectraMaster *m;
 
 private:
+  void recover(uint64_t from_request_id);
+  void reopen(uint64_t from_request_id);
   void clearAndRequeue(uint64_t from_request_id);
   bool validateEvent(uint64_t request_id, uint64_t ife_frame_id);
   bool waitForFrameReady(uint64_t request_id);
