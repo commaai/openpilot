@@ -172,6 +172,8 @@ MemoryManager::~MemoryManager() {
   }
 }
 
+const int FRAME_PERIOD_MS = 50;  // 20 fps
+
 // *** SpectraMaster ***
 
 void SpectraMaster::init() {
@@ -273,6 +275,14 @@ int SpectraCamera::clear_req_queue() {
   return ret;
 }
 
+void SpectraCamera::configDevices() {
+  open = true;
+  configISP();
+  if (cc.output_type == ISP_BPS_PROCESSED) configICP();
+  configCSIPHY();
+  linkDevices();
+}
+
 void SpectraCamera::camera_open(VisionIpcServer *v) {
   if (!openSensor()) {
     return;
@@ -288,11 +298,7 @@ void SpectraCamera::camera_open(VisionIpcServer *v) {
   std::tie(stride, y_height, uv_height, yuv_size) = get_nv12_info(buf.out_img_width, buf.out_img_height);
   uv_offset = stride * y_height;
 
-  open = true;
-  configISP();
-  if (cc.output_type == ISP_BPS_PROCESSED) configICP();
-  configCSIPHY();
-  linkDevices();
+  configDevices();
 
   LOGD("camera init %d", cc.camera_num);
   buf.init(this, v, ife_buf_depth, cc.stream_type);
@@ -1034,7 +1040,7 @@ void SpectraCamera::camera_map_bufs() {
 }
 
 bool SpectraCamera::openSensor() {
-  sensor_fd = open_v4l_by_name_and_index("cam-sensor-driver", cc.camera_num);
+  if (sensor_fd < 0) sensor_fd = open_v4l_by_name_and_index("cam-sensor-driver", cc.camera_num);
   assert(sensor_fd >= 0);
   LOGD("opened sensor for %d", cc.camera_num);
 
@@ -1254,7 +1260,7 @@ void SpectraCamera::configICP() {
 }
 
 void SpectraCamera::configCSIPHY() {
-  csiphy_fd = open_v4l_by_name_and_index("cam-csiphy-driver", cc.camera_num);
+  if (csiphy_fd < 0) csiphy_fd = open_v4l_by_name_and_index("cam-csiphy-driver", cc.camera_num);
   assert(csiphy_fd >= 0);
   LOGD("opened csiphy for %d", cc.camera_num);
 
@@ -1428,9 +1434,10 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
   if (!waitForFrameReady(request_id)) {
     // Reset queue on sync failure to prevent frame tearing
     LOGE("camera %d sync failure %ld %ld ", cc.camera_num, request_id, ife_frame_id);
-    clearAndRequeue(request_id + 1);
+    recover(request_id + 1);
     return false;
   }
+  recovering = false;
 
   int buf_idx = request_id % ife_buf_depth;
   bool ret = processFrame(buf_idx, request_id, ife_frame_id, timestamp);
@@ -1445,7 +1452,7 @@ bool SpectraCamera::validateEvent(uint64_t request_id, uint64_t ife_frame_id) {
   if (request_id == 0) {
     if (invalid_request_count++ > ife_buf_depth+2) {
       LOGE("camera %d reset after half second of invalid requests", cc.camera_num);
-      clearAndRequeue(last_valid_request_id + 1);
+      recover(last_valid_request_id + 1);
       invalid_request_count = 0;
     }
     return false;
@@ -1456,17 +1463,46 @@ bool SpectraCamera::validateEvent(uint64_t request_id, uint64_t ife_frame_id) {
   if (!skip_expected) {
     if (ife_frame_id != last_valid_ife_frame_id + 1) {
       LOGE("camera %d frame ID skipped, %lu -> %lu", cc.camera_num, last_valid_ife_frame_id, ife_frame_id);
-      clearAndRequeue(request_id + 1);
+      recover(request_id + 1);
       return false;
     }
 
     if (request_id != last_valid_request_id + 1) {
       LOGE("camera %d requests skipped %ld -> %ld", cc.camera_num, last_valid_request_id, request_id);
-      clearAndRequeue(request_id + 1);
+      recover(request_id + 1);
       return false;
     }
   }
   return true;
+}
+
+void SpectraCamera::recover(uint64_t from_request_id) {
+  // Flushing and requeuing recovers from frames that were dropped or late. If the last requeue didn't get a single
+  // frame through, the ISP itself is stuck: e.g. after a CSID UNBOUNDED_FRAME the RDI path never produces another
+  // buf done, and the flush's stop/start doesn't reset the CSID or IFE. Reopen the camera to reset them.
+  if (recovering) {
+    reopen(from_request_id);
+  } else {
+    clearAndRequeue(from_request_id);
+  }
+  recovering = true;
+}
+
+void SpectraCamera::reopen(uint64_t from_request_id) {
+  LOGE("camera %d reopening: requeue didn't get a frame through", cc.camera_num);
+
+  // Close and open like camerad's start does: the sensor powers off and back on, and the ISP and CSIPHY are
+  // released and acquired again. A STOP_DEV/START_DEV of the ISP alone, with the CSI-2 link already up, sometimes
+  // times out in the CSID's reset, which leaves the CSID unusable until reboot. The VisionIPC buffers stay.
+  camera_close();
+  open = false;
+  if (!openSensor()) return;
+  configDevices();
+  camera_map_bufs();
+
+  reopened = true;
+  clearAndRequeue(from_request_id);
+  sensors_start();
 }
 
 void SpectraCamera::clearAndRequeue(uint64_t from_request_id) {
@@ -1517,6 +1553,16 @@ bool SpectraCamera::processFrame(int buf_idx, uint64_t request_id, uint64_t ife_
     return false;
   }
 
+  if (reopened) {
+    reopened = false;
+    // the new IFE context counts frames from zero again. Keep the frame IDs going from the last published frame.
+    if (first_frame_synced && buf.cur_frame_data.timestamp_sof > 0) {
+      const uint64_t period_ns = FRAME_PERIOD_MS * 1000000ULL;
+      uint64_t frames = (timestamp - buf.cur_frame_data.timestamp_sof + period_ns / 2) / period_ns;
+      camera_sync_data[cc.camera_num].frame_id_offset = ife_frame_id - (buf.cur_frame_data.frame_id + frames);
+    }
+  }
+
   // in IFE_PROCESSED mode, we can't know the true EOF, so recover it with sensor readout time
   uint64_t timestamp_eof = timestamp + sensor->readout_time_ns;
 
@@ -1546,7 +1592,7 @@ bool SpectraCamera::syncFirstFrame(int camera_id, uint64_t request_id, uint64_t 
   // Check that camera timestamps are properly aligned:
   // - non-staggered cameras should be within 0.2ms of each other
   // - staggered cameras should be within 0.2ms of a 25ms offset from non-staggered cameras
-  const uint64_t half_period_ns = 25 * 1000000ULL;  // 25ms
+  const uint64_t half_period_ns = FRAME_PERIOD_MS * 1000000ULL / 2;  // 25ms
   const uint64_t tolerance_ns = 200000ULL;           // 0.2ms
   bool all_cams_synced = true;
   for (const auto &[cam, sync_data] : camera_sync_data) {
