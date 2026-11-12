@@ -218,7 +218,8 @@ public:
   int invalid_request_count = 0;
   bool skip_expected = true;
   bool recovering = false;  // requeued after an error, and no frame has come through since
-  bool reopened = false;    // the IFE's frame counter started over
+  uint64_t last_sof = 0;       // SOF timestamp of the last published frame
+  int64_t last_frame_id = -1;  // its frame ID
 
   CameraBuf buf;
   SpectraMaster *m;
