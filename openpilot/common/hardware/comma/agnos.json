@@ -56,14 +56,14 @@
   },
   {
     "name": "boot",
-    "url": "https://commadist.azureedge.net/agnosupdate/boot-187ca27e216be3a2d9e46679d4599bf9c6d05bf55d9c9face85a047c5af0a2b0.img.xz",
-    "hash": "187ca27e216be3a2d9e46679d4599bf9c6d05bf55d9c9face85a047c5af0a2b0",
-    "hash_raw": "187ca27e216be3a2d9e46679d4599bf9c6d05bf55d9c9face85a047c5af0a2b0",
+    "url": "https://commadist.azureedge.net/agnosupdate/boot-b457040d21dbce63938a4ba7c9adc87a5de1486cf26f46a0a780032be28a0b6e.img.xz",
+    "hash": "b457040d21dbce63938a4ba7c9adc87a5de1486cf26f46a0a780032be28a0b6e",
+    "hash_raw": "b457040d21dbce63938a4ba7c9adc87a5de1486cf26f46a0a780032be28a0b6e",
     "size": 46897152,
     "sparse": false,
     "full_check": true,
     "has_ab": true,
-    "ondevice_hash": "6a16cd2dd370e0ee8536deb95b0978e7dde674f89fea3df0efa0dc8cf951c10f"
+    "ondevice_hash": "e3b5de13bfbcdc471c9318751a8ec249fc1c8df8cfc298fba6c2df9297f3352a"
   },
   {
     "name": "system",
