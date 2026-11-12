@@ -93,13 +93,12 @@ void *alloc_w_mmu_hdl(int video0_fd, int len, uint32_t *handle, int align, int f
   mem_mgr_alloc_cmd.align = align;
   mem_mgr_alloc_cmd.flags = flags;
   mem_mgr_alloc_cmd.num_hdl = 0;
-  if (mmu_hdl != 0) {
-    mem_mgr_alloc_cmd.mmu_hdls[0] = mmu_hdl;
-    mem_mgr_alloc_cmd.num_hdl++;
-  }
-  if (mmu_hdl2 != 0) {
-    mem_mgr_alloc_cmd.mmu_hdls[1] = mmu_hdl2;
-    mem_mgr_alloc_cmd.num_hdl++;
+  // -1 is the only invalid IOMMU handle: the kernel makes them (context bank index << 16) | 16 random bits, and the
+  // ISP's bank is index 0, so its handle is 0 on 1 boot in 65536
+  for (int hdl : {mmu_hdl, mmu_hdl2}) {
+    if (hdl != -1) {
+      mem_mgr_alloc_cmd.mmu_hdls[mem_mgr_alloc_cmd.num_hdl++] = hdl;
+    }
   }
 
   do_cam_control(video0_fd, CAM_REQ_MGR_ALLOC_BUF, &mem_mgr_alloc_cmd, sizeof(mem_mgr_alloc_cmd));
@@ -1207,7 +1206,7 @@ void SpectraCamera::configICP() {
   release(m->video0_fd, cfg_handle);
 
   // BPS has a lot of buffers to init
-  bps_cmd.init(m, 464, 0x20, true, m->icp_device_iommu, 0, ife_buf_depth);
+  bps_cmd.init(m, 464, 0x20, true, m->icp_device_iommu, -1, ife_buf_depth);
 
   // BPSIQSettings struct
   uint32_t settings_size = sizeof(bps_settings[0]) / sizeof(bps_settings[0][0]);
