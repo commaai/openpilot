@@ -1500,7 +1500,6 @@ void SpectraCamera::reopen(uint64_t from_request_id) {
   configDevices();
   camera_map_bufs();
 
-  reopened = true;
   clearAndRequeue(from_request_id);
   sensors_start();
 }
@@ -1553,15 +1552,32 @@ bool SpectraCamera::processFrame(int buf_idx, uint64_t request_id, uint64_t ife_
     return false;
   }
 
-  if (reopened) {
-    reopened = false;
-    // the new IFE context counts frames from zero again. Keep the frame IDs going from the last published frame.
-    if (first_frame_synced && buf.cur_frame_data.timestamp_sof > 0) {
-      const uint64_t period_ns = FRAME_PERIOD_MS * 1000000ULL;
-      uint64_t frames = (timestamp - buf.cur_frame_data.timestamp_sof + period_ns / 2) / period_ns;
-      camera_sync_data[cc.camera_num].frame_id_offset = ife_frame_id - (buf.cur_frame_data.frame_id + frames);
+  // Frame IDs follow the SOF timestamps, not the IFE's frame counter. All sensors run off the same FSIN pulse, so a
+  // frame that comes N periods after this camera's last one is N frame IDs later. The counter can lose a frame: after
+  // a CSID UNBOUNDED_FRAME, the IFE sometimes never counts the next frame start, and the counter starts over when a
+  // camera is reopened. Trusting it would leave this camera a frame off from the others for the whole session.
+  const uint64_t period_ns = FRAME_PERIOD_MS * 1000000ULL;
+  SyncData &sync = camera_sync_data[cc.camera_num];
+  int64_t frame_id = ife_frame_id - sync.frame_id_offset;
+  if (last_sof == 0) {
+    last_sof = sync.timestamp;  // the sync frame, frame ID -1. 0 if the sync timed out before this camera's first frame
+  }
+  if (last_sof > 0) {
+    if (timestamp < last_sof + period_ns / 2) {
+      LOGE("camera %d dropping frame %lu: came %.1f ms after the last one", cc.camera_num, ife_frame_id,
+           ((int64_t)timestamp - (int64_t)last_sof) * 1e-6);
+      return false;
+    }
+    const int64_t frames = (timestamp - last_sof + period_ns / 2) / period_ns;
+    if (frame_id != last_frame_id + frames) {
+      LOGW("camera %d realigning frame ID %ld to %ld: frame came %.1f ms after the last one", cc.camera_num,
+           frame_id, last_frame_id + frames, (timestamp - last_sof) * 1e-6);
+      frame_id = last_frame_id + frames;
+      sync.frame_id_offset = ife_frame_id - frame_id;
     }
   }
+  last_sof = timestamp;
+  last_frame_id = frame_id;
 
   // in IFE_PROCESSED mode, we can't know the true EOF, so recover it with sensor readout time
   uint64_t timestamp_eof = timestamp + sensor->readout_time_ns;
@@ -1569,7 +1585,7 @@ bool SpectraCamera::processFrame(int buf_idx, uint64_t request_id, uint64_t ife_
   // Update buffer and frame data
   buf.cur_buf_idx = buf_idx;
   buf.cur_frame_data = {
-    .frame_id = (uint32_t)(ife_frame_id - camera_sync_data[cc.camera_num].frame_id_offset),
+    .frame_id = (uint32_t)frame_id,
     .request_id = (uint32_t)request_id,
     .timestamp_sof = timestamp,
     .timestamp_eof = timestamp_eof,
