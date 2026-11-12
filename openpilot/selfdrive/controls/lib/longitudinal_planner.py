@@ -23,15 +23,16 @@ A_CRUISE_MIN = -0.5
 CONTROL_N_T_IDX = ModelConstants.T_IDXS[:CONTROL_N]
 
 
-def get_set_speed_pull(e2e_accel, a_cruise, v_ego, plan_t, plan_v, personality):
-  # on open highway, pull e2e up toward the set speed. stops the moment the plan isn't cruising
-  # (slowing for a light, offramp, lead, curve), and below highway speeds the model's speed is kept
-  if len(plan_t) != len(plan_v):
+def get_set_speed_pull(e2e_accel, a_cruise, v_ego, plan_t, plan_v, plan_x_std, personality):
+  # pull e2e up toward the set speed by personality, only while the plan is cruising and sure of it.
+  # the plan slows for lights, offramps, leads and curves, and it's unsure of where it'll be before stops
+  if not (len(plan_t) == len(plan_v) == len(plan_x_std)):
     return 0.0
   plan_t, plan_v = np.array(plan_t), np.array(plan_v)
   slowdown = plan_v[0] - np.min(plan_v[plan_t <= 10.0])
+  uncertainty = np.interp(10.0, plan_t, plan_x_std) / max(10.0 * v_ego, 10.0)
   strength = {log.LongitudinalPersonality.aggressive: 1.0, log.LongitudinalPersonality.standard: 0.5}.get(personality, 0.0)
-  weight = strength * np.interp(slowdown, [0.5, 1.5], [1.0, 0.0]) * np.interp(v_ego, [22.0, 27.0], [0.0, 1.0])
+  weight = strength * np.interp(slowdown, [0.5, 1.5], [1.0, 0.0]) * np.interp(uncertainty, [0.04, 0.07], [1.0, 0.0])
   return weight * np.clip(a_cruise - e2e_accel, 0.0, 0.6)
 
 
@@ -119,8 +120,9 @@ class LongitudinalPlanner:
     cruise_should_stop = should_stop(v_ego, self.a_cruise)
 
     # no accel boost: the accel from the plan is not timid like the action, a boost only keeps it accelerating
-    output_a_target_e2e += get_set_speed_pull(output_a_target_e2e, self.a_cruise, v_ego, sm['modelV2'].position.t,
-                                              sm['modelV2'].velocity.x, sm['selfdriveState'].personality)
+    model = sm['modelV2']
+    output_a_target_e2e += get_set_speed_pull(output_a_target_e2e, self.a_cruise, v_ego, model.position.t, model.velocity.x,
+                                              model.position.xStd, sm['selfdriveState'].personality)
     output_a_target_e2e = self.curve_speed.update(sm['modelV2'], sm['vehicleParameters'].roll, output_a_target_e2e)
 
     # the lead mpc only ever brakes more, it catches leads the model is late for
