@@ -1,10 +1,11 @@
 import math
+import numpy as np
 import raylib_nb as rl
 from dataclasses import dataclass
 from openpilot.common.constants import CV
 from openpilot.selfdrive.ui.mici.onroad.torque_bar import TorqueBar
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus, ChestnutState
-from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.application import gui_app, FontWeight, ASSETS_DIR
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
@@ -19,6 +20,41 @@ KM_TO_MILE = 0.621371
 CRUISE_DISABLED_CHAR = '–'
 
 SET_SPEED_PERSISTENCE = 2.5  # seconds
+WHEEL_SIZE = 50
+WHEEL_WHITE = (255, 255, 255)
+WHEEL_GREEN = (0, 255, 64)
+WHEEL_ORANGE = (255, 115, 0)
+
+
+def _glow_texture(asset: str, size: int, spread: float, blur: float) -> rl.Texture:
+  """White glow around an icon's alpha, like a Figma drop shadow with zero offset. Tint it when drawing."""
+  image = gui_app._load_image_from_path((ASSETS_DIR / asset).as_posix(), size, size)
+  w, h, px = image.width, image.height, image.width / size
+  alpha = np.frombuffer(image.to_bytes(w * h * 4), dtype=np.uint8).reshape(h, w, 4)[..., 3] / 255.0
+  rl.unload_image(image)
+
+  sigma, radius = blur / 2 * px, spread * px
+  pad = math.ceil(radius + 3 * sigma)
+  src = np.pad(alpha, pad)
+  glow = src.copy()
+  r = math.ceil(radius)
+  for dy in range(-r, r + 1):
+    for dx in range(-r, r + 1):
+      if dx * dx + dy * dy <= radius * radius:
+        glow = np.maximum(glow, np.roll(src, (dy, dx), axis=(0, 1)))
+  x = np.arange(-math.ceil(3 * sigma), math.ceil(3 * sigma) + 1)
+  kernel = np.exp(-x ** 2 / (2 * sigma ** 2))
+  kernel /= kernel.sum()
+  for axis in (0, 1):
+    glow = np.apply_along_axis(np.convolve, axis, glow, kernel, mode='same')
+
+  rgba = np.full((*glow.shape, 4), 255, dtype=np.uint8)
+  rgba[..., 3] = np.clip(glow * 255, 0, 255)
+  texture = rl.load_texture_from_image(rl.Image(None, glow.shape[1], glow.shape[0], 1, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8))
+  rl.update_texture(texture, rgba)
+  rl.set_texture_filter(texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
+  texture.width, texture.height = round(glow.shape[1] / px), round(glow.shape[0] / px)
+  return texture
 
 
 @dataclass(frozen=True)
@@ -120,8 +156,9 @@ class HudRenderer(Widget):
     self._turn_intent = TurnIntent()
     self._torque_bar = TorqueBar()
 
-    self._txt_wheel: rl.Texture = gui_app.texture('icons_mici/wheel.png', 50, 50)
-    self._txt_wheel_critical: rl.Texture = gui_app.texture('icons_mici/wheel_critical.png', 50, 50)
+    self._txt_wheel: rl.Texture = gui_app.texture('icons_mici/wheel.png', WHEEL_SIZE, WHEEL_SIZE)
+    # glow from the design (spread 4, blur 24 at 128px)
+    self._txt_wheel_glow = _glow_texture('icons_mici/wheel.png', WHEEL_SIZE, 4 * WHEEL_SIZE / 128, 24 * WHEEL_SIZE / 128)
     self._txt_exclamation_point: rl.Texture = gui_app.texture('icons_mici/exclamation_point.png', 9, 44)
     self._txt_chestnut: rl.Texture = gui_app.texture('icons_mici/chestnut.png', 60, 44)
     self._txt_chestnut_green: rl.Texture = gui_app.texture('icons_mici/chestnut_green.png', 60, 44)
@@ -129,6 +166,8 @@ class HudRenderer(Widget):
     self._chestnut_icon: rl.Texture | None = None
     self._wheel_alpha_filter = FirstOrderFilter(0, 0.05, 1 / gui_app.target_fps)
     self._wheel_y_filter = FirstOrderFilter(0, 0.1, 1 / gui_app.target_fps)
+    self._wheel_color_filters = [FirstOrderFilter(c, 0.05, 1 / gui_app.target_fps) for c in WHEEL_WHITE]
+    self._wheel_glow_filter = FirstOrderFilter(0, 0.05, 1 / gui_app.target_fps)
 
     self._set_speed_alpha_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._chestnut_alpha_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
@@ -212,18 +251,25 @@ class HudRenderer(Widget):
     rl.draw_texture_ex(icon, pos, 0.0, 1.0, rl.Color(255, 255, 255, int(255 * opacity * alpha)))
 
   def _draw_steering_wheel(self, rect: rl.Rectangle) -> None:
-    wheel_txt = self._txt_wheel_critical if self._show_wheel_critical else self._txt_wheel
+    # The wheel is the source of truth for engagement: green if and only if openpilot is engaged.
+    # When disengaged it's hidden, except for steerRequired alerts which show it orange.
+    engaged = ui_state.status == UIStatus.ENGAGED
+    if engaged:
+      target_color = WHEEL_GREEN
+    elif self._show_wheel_critical:
+      target_color = WHEEL_ORANGE
+    else:
+      target_color = WHEEL_WHITE
+    wheel_txt = self._txt_wheel
 
-    if self._show_wheel_critical:
+    if self._show_wheel_critical or ui_state.status != UIStatus.DISENGAGED:
       self._wheel_alpha_filter.update(255)
       self._wheel_y_filter.update(0)
     else:
-      if ui_state.status == UIStatus.DISENGAGED:
-        self._wheel_alpha_filter.update(0)
-        self._wheel_y_filter.update(wheel_txt.height / 2)
-      else:
-        self._wheel_alpha_filter.update(255 * 0.9)
-        self._wheel_y_filter.update(0)
+      self._wheel_alpha_filter.update(0)
+      self._wheel_y_filter.update(wheel_txt.height / 2)
+    wheel_color = [int(f.update(c)) for f, c in zip(self._wheel_color_filters, target_color, strict=True)]
+    glow = self._wheel_glow_filter.update(target_color != WHEEL_WHITE)
 
     # pos
     pos_x = int(rect.x + 21 + wheel_txt.width / 2)
@@ -238,13 +284,14 @@ class HudRenderer(Widget):
       wheel_txt.height + turn_intent_margin * 2,
     ))
 
-    src_rect = rl.Rectangle(0, 0, wheel_txt.width, wheel_txt.height)
-    dest_rect = rl.Rectangle(pos_x, pos_y, wheel_txt.width, wheel_txt.height)
-    origin = rl.Vector2(wheel_txt.width / 2, wheel_txt.height / 2)
-
-    # color and draw
-    color = rl.Color(255, 255, 255, int(self._wheel_alpha_filter.x))
-    rl.draw_texture_pro(wheel_txt, src_rect, dest_rect, origin, rotation, color)
+    alpha = self._wheel_alpha_filter.x
+    origin = rl.Vector2(self._txt_wheel_glow.width / 2, self._txt_wheel_glow.height / 2)
+    rl.draw_texture_pro(self._txt_wheel_glow, rl.Rectangle(0, 0, self._txt_wheel_glow.width, self._txt_wheel_glow.height),
+                        rl.Rectangle(pos_x, pos_y, self._txt_wheel_glow.width, self._txt_wheel_glow.height), origin, rotation,
+                        rl.Color(*wheel_color, int(alpha * glow)))
+    rl.draw_texture_pro(wheel_txt, rl.Rectangle(0, 0, wheel_txt.width, wheel_txt.height),
+                        rl.Rectangle(pos_x, pos_y, wheel_txt.width, wheel_txt.height),
+                        rl.Vector2(wheel_txt.width / 2, wheel_txt.height / 2), rotation, rl.Color(*wheel_color, int(alpha)))
 
     if self._show_wheel_critical:
       # Draw exclamation point icon
