@@ -95,7 +95,7 @@ class MiciMainLayout(Scroller):
 
   def _render(self, _):
     if not self._setup:
-      if self._alerts_layout.active_alerts() > 0:
+      if self._alerts_layout.active_alerts() > 0 and not gui_app.widget_in_stack(self._onboarding_window):
         self._scroller.scroll_to(self._alerts_layout.rect.x)
       else:
         self._scroller.scroll_to(self._rect.width)
