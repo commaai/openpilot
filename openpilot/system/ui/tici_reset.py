@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import os
 import subprocess
 import sys
 import threading
@@ -50,13 +49,11 @@ class Reset(Widget):
       return
 
     # Removing data and formatting
-    data_mounted = os.path.ismount("/data")
-    rm = subprocess.run(["sudo", "find", "/data", "-mindepth", "1", "-maxdepth", "1",
-                         "-exec", "rm", "-rf", "--", "{}", "+"]).returncode
+    rm = subprocess.run("sudo rm -rf /data/*", shell=True).returncode
     subprocess.run(f"sudo umount {USERDATA}", shell=True)
     fmt = subprocess.run(f"yes | sudo mkfs.ext4 {USERDATA}", shell=True).returncode
 
-    if (data_mounted and rm == 0) or fmt == 0:
+    if rm == 0 or fmt == 0:
       subprocess.run("sudo reboot", shell=True)
     else:
       self._reset_state = ResetState.FAILED

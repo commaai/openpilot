@@ -268,8 +268,6 @@ class GuiApplication:
         signal.signal(sig, signal.SIG_DFL)
       signal.signal(signal.SIGINT, _close)
       signal.signal(signal.SIGTERM, _close)
-      # Finish an in-flight display ioctl before closing between frames.
-      signal.siginterrupt(signal.SIGTERM, False)
       atexit.register(self.close)
 
       if ENABLE_VSYNC:

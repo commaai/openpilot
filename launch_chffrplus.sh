@@ -20,7 +20,7 @@ function agnos_init {
   sudo chmod 660 /dev/snd/*C*
 
   # Check if AGNOS update is required
-  if [ "$(< /VERSION)" != "$AGNOS_VERSION" ] || [ "$(head -n 1 /BUILD)" != "$AGNOS_BUILD" ]; then
+  if [ "$(< /VERSION)" != "$AGNOS_VERSION" ]; then
     AGNOS_PY="$DIR/openpilot/common/hardware/comma/agnos.py"
     MANIFEST="$DIR/openpilot/system/hardware/comma/agnos.json"
     if "$AGNOS_PY" --verify "$MANIFEST"; then
