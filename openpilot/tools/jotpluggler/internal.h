@@ -53,6 +53,7 @@ struct PaneDropAction {
 inline constexpr float SIDEBAR_WIDTH = 320.0f;
 inline constexpr float SIDEBAR_MIN_WIDTH = 220.0f;
 inline constexpr float SIDEBAR_MAX_WIDTH = 520.0f;
+inline constexpr float WORKSPACE_TAB_PADDING_Y = 6.0f;
 inline constexpr float TIMELINE_BAR_HEIGHT = 14.0f;
 inline constexpr float STATUS_BAR_HEIGHT = 52.0f;
 inline constexpr double MIN_HORIZONTAL_ZOOM_SECONDS = 2.0;
