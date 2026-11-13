@@ -8,13 +8,10 @@ from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 
 @cache
 def frame_color(engaged: bool, enhance_driver: bool) -> tuple[np.ndarray, float]:
-  """engaged: 20% saturation, 20% more contrast, and the display's gamma. otherwise 85% bright. a driver's face brightened"""
+  """20% more contrast and the display's gamma, 20% saturation when engaged. a driver's face brightened"""
   def curve(c):
-    if engaged:
-      c = np.clip((c - 0.5) * 1.2 + 0.5, 0, 1)
-      c = c ** (1 / 1.28)
-    else:
-      c = c * 0.85
+    c = np.clip((c - 0.5) * 1.2 + 0.5, 0, 1)
+    c = c ** (1 / 1.28)
     if enhance_driver:
       c = np.clip((c + 0.15 - 0.5) * 0.88 + 0.5, 0, 1)
       c = (c * c * (3 - 2 * c)) ** 0.8
