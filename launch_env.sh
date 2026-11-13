@@ -19,6 +19,6 @@ if [ -z "$AGNOS_VERSION" ]; then
   export AGNOS_VERSION="20.5"
 fi
 
-export AGNOS_BUILD="e9b220e8fcc751f70b191569b78831dd13978222"
+export AGNOS_BUILD="009b2afad4a06feb2c4ccdfabaf190879733f58a"
 
 export STAGING_ROOT="/data/safe_staging"
