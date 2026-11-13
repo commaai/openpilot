@@ -97,7 +97,8 @@ class LongitudinalPlanner:
     output_a_target_mpc = get_accel_from_plan(self.v_desired_trajectory, self.a_desired_trajectory, CONTROL_N_T_IDX,
                                               action_t=action_t)
     output_should_stop_mpc = should_stop(v_ego, output_a_target_mpc)
-    output_a_target_e2e = sm['modelV2'].action.desiredAcceleration + self.curve_speed.update(sm['modelV2'])
+    curve_offset = self.curve_speed.update(sm['modelV2'], sm['vehicleParameters'].roll)
+    output_a_target_e2e = sm['modelV2'].action.desiredAcceleration + curve_offset
     output_should_stop_e2e = sm['modelV2'].action.shouldStop
 
     self.a_cruise = get_cruise_accel(v_cruise, v_ego, self.a_cruise, self.output_a_target, self.dt)
