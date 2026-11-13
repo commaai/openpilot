@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import subprocess
 import sys
 import time
@@ -105,11 +106,13 @@ class Reset(Scroller):
       return
 
     # Removing data and formatting
-    rm = subprocess.run("sudo rm -rf /data/*", shell=True).returncode
+    data_mounted = os.path.ismount("/data")
+    rm = subprocess.run(["sudo", "find", "/data", "-mindepth", "1", "-maxdepth", "1",
+                         "-exec", "rm", "-rf", "--", "{}", "+"]).returncode
     subprocess.run(f"sudo umount {USERDATA}", shell=True)
     fmt = subprocess.run(f"yes | sudo mkfs.ext4 {USERDATA}", shell=True).returncode
 
-    if rm == 0 or fmt == 0:
+    if (data_mounted and rm == 0) or fmt == 0:
       subprocess.run("sudo reboot", shell=True)
     else:
       self._reset_failed = True
