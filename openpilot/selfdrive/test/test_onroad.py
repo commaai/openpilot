@@ -7,6 +7,7 @@ import os
 import re
 import shutil
 import subprocess
+import tempfile
 import time
 import unittest
 import numpy as np
@@ -41,6 +42,11 @@ CPU usage budget
 TEST_DURATION = 25
 DRIVE_DURATION = 60 * 60
 LOG_OFFSET = 8
+
+# once onroad, every disk access takes 100ms (see slowdisk.c), so blocking on disk in a loop fails the timing tests
+SLOWDISK_FLAG = "/dev/shm/slowdisk"
+SLOWDISK_LOG = "/dev/shm/slowdisk.log"
+SLOWDISK_EXEMPT = ["./loggerd"]  # writing to disk is its job
 
 MAX_TOTAL_CPU = 350.  # total for all 8 cores
 PROCS = {
@@ -89,12 +95,14 @@ TIMINGS = {
   "carState": [2.5, 0.35],
   "carControl": [2.5, 0.35],
   "controlsState": [2.5, 0.35],
+  "selfdriveState": [2.5, 0.35],
   "longitudinalPlan": [2.5, 0.5],
   "driverAssistance": [2.5, 0.5],
   "narrowRoadCameraState": [2.5, 0.35],
   "cabinCameraState": [2.5, 0.35],
   "modelV2": [2.5, 0.35],
   "driverStateV2": [2.5, 0.40],
+  "driverMonitoringState": [2.5, 0.40],
   "deviceMotion": [2.5, 0.35],
   "vehicleParameters": [2.5, 0.35],
   "wideRoadCameraState": [1.5, 0.35],
@@ -142,12 +150,20 @@ class TestOnroad(OpenpilotTestCase):
     if os.path.exists(Paths.log_root()):
       shutil.rmtree(Paths.log_root())
 
+    slowdisk = os.path.join(tempfile.mkdtemp(), "slowdisk.so")
+    subprocess.check_call(["clang", "-O2", "-shared", "-fPIC", "-o", slowdisk, os.path.join(BASEDIR, "openpilot/selfdrive/test/slowdisk.c")])
+    for f in (SLOWDISK_FLAG, SLOWDISK_LOG):
+      with contextlib.suppress(FileNotFoundError):
+        os.unlink(f)
+
     # start manager and run openpilot for TEST_DURATION
     proc = None
     try:
       manager_path = os.path.join(BASEDIR, "openpilot/system/manager/manager.py")
       cls.manager_st = time.monotonic()
-      proc = subprocess.Popen(["python", manager_path])
+      env = {**os.environ, "LD_PRELOAD": slowdisk, "SLOWDISK_FLAG": SLOWDISK_FLAG, "SLOWDISK_LOG": SLOWDISK_LOG,
+             "SLOWDISK_EXEMPT": ",".join(SLOWDISK_EXEMPT)}
+      proc = subprocess.Popen(["python", manager_path], env=env)
 
       sm = messaging.SubMaster(['carState'])
       with Timeout(30, "controls didn't start"):
@@ -160,8 +176,16 @@ class TestOnroad(OpenpilotTestCase):
       segs = list(Path(Paths.log_root()).glob(f"{route}--*"))
       assert len(segs) == 1
 
+      # slow down the disk once controls are running
+      sm = messaging.SubMaster(['selfdriveState', 'sendcan'])
+      with Timeout(30, "controls didn't start"):
+        while not all(sm.seen.values()):
+          sm.update(1000)
+      Path(SLOWDISK_FLAG).touch()
       time.sleep(TEST_DURATION)
     finally:
+      with contextlib.suppress(FileNotFoundError):
+        os.unlink(SLOWDISK_FLAG)
       if proc is not None:
         proc.terminate()
         if proc.wait(60) is None:
@@ -178,6 +202,12 @@ class TestOnroad(OpenpilotTestCase):
     for f in log_path.iterdir():
       assert f.is_file()
       cls.log_sizes[f] = f.stat().st_size / 1e6
+
+  def test_slow_disk(self):
+    # not an assert itself, the timing tests fail if any of these are on a realtime path
+    with contextlib.suppress(FileNotFoundError), open(SLOWDISK_LOG) as f:
+      accesses = Counter(tuple(l.rstrip("\n").split("\t")) for l in f)
+      print(tabulate([[*k, v] for k, v in accesses.most_common(30)], ["process", "thread", "op", "path", "count"]))
 
   def test_service_frequencies(self, subtests):
     for s, msgs in self.msgs.items():
