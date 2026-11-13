@@ -54,7 +54,6 @@ class AlertLayout(NamedTuple):
 class AlertRenderer(Widget):
   def __init__(self):
     super().__init__()
-    self._right_inset = 0.0
 
     self._alert_text1_label = UnifiedLabel(text="", font_size=ALERT_FONT_BIG, font_weight=FontWeight.DISPLAY, line_height=0.86,
                                            letter_spacing=ALERT_TITLE_LETTER_SPACING)
@@ -87,10 +86,6 @@ class AlertRenderer(Widget):
     self._txt_blind_spot_left = gui_app.texture('icons_mici/onroad/blind_spot_left.png', 134, 150)
     self._txt_blind_spot_right = gui_app.texture('icons_mici/onroad/blind_spot_left.png', 134, 150, flip_x=True)
     self._txt_red_warning = gui_app.texture('icons_mici/onroad/red_warning.png', 99, 90)
-
-  def set_right_inset(self, right_inset: float):
-    """Keep text and icons this far from the right edge, e.g. clear of the confidence ball"""
-    self._right_inset = right_inset
 
   def will_render(self) -> tuple[Alert | None, bool]:
     alert = get_alert(ui_state.sm)
@@ -142,13 +137,13 @@ class AlertRenderer(Widget):
 
     # create text rect based on icon presence
     text_x = self._rect.x + ALERT_MARGIN
-    text_width = self._rect.width - ALERT_MARGIN - self._right_inset
+    text_width = self._rect.width - 2 * ALERT_MARGIN
     if icon_side == 'left':
       text_x = self._rect.x + self._txt_turn_signal_right.width
-      text_width = self._rect.width - ALERT_MARGIN - self._txt_turn_signal_right.width - self._right_inset
+      text_width = self._rect.width - ALERT_MARGIN - self._txt_turn_signal_right.width
     elif icon_side == 'right':
       text_x = self._rect.x + ALERT_MARGIN
-      text_width = self._rect.width - ALERT_MARGIN - self._txt_turn_signal_right.width - self._right_inset
+      text_width = self._rect.width - ALERT_MARGIN - self._txt_turn_signal_right.width
 
     text_rect = rl.Rectangle(
       text_x,
@@ -203,7 +198,7 @@ class AlertRenderer(Widget):
     if alert_layout.icon.side == 'left':
       pos_x = int(self._rect.x + alert_layout.icon.margin_x)
     else:
-      pos_x = int(self._rect.x + self._rect.width - self._right_inset - alert_layout.icon.margin_x - alert_layout.icon.texture.width)
+      pos_x = int(self._rect.x + self._rect.width - alert_layout.icon.margin_x - alert_layout.icon.texture.width)
 
     if alert_layout.icon.texture not in (self._txt_turn_signal_left, self._txt_turn_signal_right):
       icon_alpha = 255

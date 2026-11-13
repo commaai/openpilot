@@ -15,10 +15,12 @@ SHADOW_LAYER_COLOR = rl.Color(0, 0, 0, round(255 * (1 - (1 - SHADOW_ALPHA) ** (1
 
 
 def draw_circle_gradient(center_x: float, center_y: float, radius: float,
-                         top: rl.Color, bottom: rl.Color) -> None:
+                         top: rl.Color, bottom: rl.Color, alpha: float = 1.0) -> None:
   screen = rl.Rectangle(0, 0, gui_app.width, gui_app.height)
+  shadow = rl.Color(0, 0, 0, round(SHADOW_LAYER_COLOR.a * alpha))
   for z in SHADOW_QUANTILES:
-    draw_polygon(screen, CIRCLE_PTS * (radius + z * SHADOW_SIGMA) + (center_x, center_y + SHADOW_OFFSET), color=SHADOW_LAYER_COLOR)
+    draw_polygon(screen, CIRCLE_PTS * (radius + z * SHADOW_SIGMA) + (center_x, center_y + SHADOW_OFFSET), color=shadow)
+  top, bottom = rl.Color(top.r, top.g, top.b, round(top.a * alpha)), rl.Color(bottom.r, bottom.g, bottom.b, round(bottom.a * alpha))
   # gradient y is measured from the bottom of the screen
   gradient = Gradient(start=(0, 1 - (center_y - radius) / gui_app.height), end=(0, 1 - (center_y + radius) / gui_app.height),
                       colors=[bottom, top], stops=[0.0, 1.0])
@@ -29,6 +31,11 @@ class ConfidenceBall(Widget):
   def __init__(self):
     super().__init__()
     self._confidence_filter = FirstOrderFilter(0.0, 0.5, 1 / gui_app.target_fps)
+    self._alpha_filter = FirstOrderFilter(1.0, 0.05, 1 / gui_app.target_fps)
+    self._hidden = False
+
+  def set_hidden(self, hidden: bool):
+    self._hidden = hidden
 
   def _update_state(self):
     # rests at the bottom while disengaged
@@ -39,6 +46,10 @@ class ConfidenceBall(Widget):
                                                         (1 - max(ui_state.sm['modelV2'].meta.disengagePredictions.steerOverrideProbs or [1])))
 
   def _render(self, _):
+    alpha = self._alpha_filter.update(0.0 if self._hidden else 1.0)
+    if alpha < 1e-2:
+      return
+
     # drawn over the right edge of the camera view
     status_dot_radius = 16
     margin = 10
@@ -67,4 +78,4 @@ class ConfidenceBall(Widget):
       bottom_dot_color = rl.Color(26, 26, 26, 255)
 
     draw_circle_gradient(dot_x, dot_height, status_dot_radius,
-                         top_dot_color, bottom_dot_color)
+                         top_dot_color, bottom_dot_color, alpha)

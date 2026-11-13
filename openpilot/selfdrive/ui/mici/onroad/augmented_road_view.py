@@ -38,7 +38,6 @@ ROAD_CAM_MIN_SPEED = 10.0  # m/s (22 mph)
 
 CAM_Y_OFFSET = 20
 LEFT_COLUMN_WIDTH = 92
-CONFIDENCE_BALL_INSET = 52  # 32px ball, 10px margin to the edge and to alert text
 
 
 class BookmarkIcon(Widget):
@@ -253,11 +252,11 @@ class AugmentedRoadView(CameraView):
     self._hud_renderer.set_torque_bar_hidden(alert_to_render is not None and alert_to_render.status == log.SelfdriveState.AlertStatus.critical)
     self._hud_renderer.set_wheel_critical_icon(alert_to_render is not None and not not_animating_out and
                                                alert_to_render.visual_alert == car.CarControl.HUDControl.VisualAlert.steerRequired)
-    self._alert_renderer.set_right_inset(0 if show_navigation else CONFIDENCE_BALL_INSET)
     self._alert_renderer.render(self._content_rect)
     self._hud_renderer.render(self._content_rect)
 
     if not show_navigation:
+      self._confidence_ball.set_hidden(alert_to_render is not None and not not_animating_out)
       self._confidence_ball.render(self._content_rect)
 
     # Draw fake rounded border
