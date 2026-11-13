@@ -155,6 +155,8 @@ int PandaSpiHandle::bulk_write(unsigned char endpoint, unsigned char* data, int 
       return ret;
     }
   }
+  // healthy again once a transfer gets through: a single timeout mustn't drop CAN for the rest of the drive
+  comms_healthy = true;
   return length;
 }
 
@@ -172,6 +174,7 @@ int PandaSpiHandle::bulk_read(unsigned char endpoint, unsigned char* data, int l
       break;
     }
   }
+  comms_healthy = true;
   return pos;
 }
 
@@ -226,7 +229,7 @@ static bool check_crc(const uint8_t *data, uint32_t len) {
 
 int PandaSpiHandle::spi_transfer_retry(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len, unsigned int timeout) {
   // timeout of 0 means forever
-  const double deadline = (timeout == 0) ? INFINITY : millis_since_boot() + std::max(timeout, SPI_MIN_TIMEOUT);
+  double deadline = (timeout == 0) ? INFINITY : millis_since_boot() + std::max(timeout, SPI_MIN_TIMEOUT);
 
   // the id stays the same when we send the request again, so the panda never runs it twice
   uint32_t id = random_id();
@@ -244,6 +247,10 @@ int PandaSpiHandle::spi_transfer_retry(uint8_t endpoint, uint8_t *tx_data, uint1
       // a new id, since the panda would answer the same id with the same NACK
       id = random_id();
       nack_count += 1;
+      // the panda answered, so it's there: the timeout is for a panda that doesn't answer
+      if (timeout != 0) {
+        deadline = millis_since_boot() + std::max(timeout, SPI_MIN_TIMEOUT);
+      }
       if (nack_count > 3) {
         usleep(std::clamp(nack_count*10, 200, 2000));
       }
@@ -307,6 +314,8 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint32_t id, uint8_t *tx_data
   }();
 
   LockEx lock(spi_fd, hw_lock);
+  // time spent waiting for another thread's transfer isn't the panda being slow
+  deadline = std::max(deadline, millis_since_boot() + SPI_MIN_TIMEOUT);
 
   // the response is always read in one transfer of rx_len
   const uint32_t rx_len = sizeof(spi_resp_header) + max_rx_len + SPI_CRC_SIZE;
