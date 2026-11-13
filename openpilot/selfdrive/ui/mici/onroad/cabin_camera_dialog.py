@@ -123,11 +123,11 @@ class BaseCabinCameraDialog(Widget):
     is_vision = dm_state.activePolicy == log.DriverMonitoringState.MonitoringPolicy.vision
     awareness_pct = dm_state.visionPolicyState.awarenessPercent if is_vision else dm_state.wheeltouchPolicyState.awarenessPercent
     gui_label(rl.Rectangle(rect.x + 2, rect.y + 2, rect.width, rect.height),
-              f"Awareness: {awareness_pct:.0f}%", font_size=44, font_weight=FontWeight.MEDIUM,
+              f"awareness: {awareness_pct:.0f}%", font_size=44, font_weight=FontWeight.MEDIUM,
               alignment=TextAlignment.RIGHT,
               alignment_vertical=TextAlignmentVertical.TOP,
               color=rl.Color(0, 0, 0, 180))
-    gui_label(rect, f"Awareness: {awareness_pct:.0f}%", font_size=44, font_weight=FontWeight.MEDIUM,
+    gui_label(rect, f"awareness: {awareness_pct:.0f}%", font_size=44, font_weight=FontWeight.MEDIUM,
               alignment=TextAlignment.RIGHT,
               alignment_vertical=TextAlignmentVertical.TOP,
               color=rl.Color(255, 255, 255, int(255 * 0.9)))
