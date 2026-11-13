@@ -342,6 +342,8 @@ class WifiManagerUI(Widget):
       if not rl.check_collision_recs(item_rect, rect):
         continue
 
+      self._networks_buttons[network.ssid].set_parent_rect(rect)
+      self._forget_networks_buttons[network.ssid].set_parent_rect(rect)
       self._draw_network_item(item_rect, network)
       if i < len(self._networks) - 1:
         line_y = int(item_rect.y + item_rect.height - 1)
