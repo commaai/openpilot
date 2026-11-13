@@ -113,7 +113,9 @@ class BigInputDialog(BigDialogBase):
     self._keyboard.set_enabled(lambda: self.enabled and not self.is_dismissing)  # for nav stack + NavWidget
     self._text_valid = lambda text: len(text) >= minimum_length and (text_validator is None or text_validator(text))
 
-    self._backspace_held_time: float | None = None
+    self._pressed_button: str | None = None  # "enter" or "backspace", activated on release
+    self._backspace_press_time = 0.0
+    self._backspace_repeated = False
 
     self._backspace_img = gui_app.texture("icons_mici/settings/keyboard/backspace.png", 42, 36)
     self._backspace_img_alpha = FirstOrderFilter(0, 0.05, 1 / gui_app.target_fps)
@@ -136,21 +138,18 @@ class BigInputDialog(BigDialogBase):
     super()._update_state()
 
     if self.is_dismissing:
-      self._backspace_held_time = None
+      self._pressed_button = None
       return
 
+    # hold backspace to delete repeatedly
     last_mouse_event = gui_app.last_mouse_event
     mouse_pos = rl.Vector2(last_mouse_event.pos.x, last_mouse_event.pos.y)
-    if last_mouse_event.left_down and rl.check_collision_point_rec(mouse_pos, self._top_right_button_rect) and self._backspace_img_alpha.x > 1:
-      if self._backspace_held_time is None:
-        self._backspace_held_time = rl.get_time()
-
-      if rl.get_time() - self._backspace_held_time > 0.5:
+    if (self._pressed_button == "backspace" and last_mouse_event.left_down and
+        rl.check_collision_point_rec(mouse_pos, self._top_right_button_rect)):
+      if rl.get_time() - self._backspace_press_time > 0.5:
         if gui_app.frame % round(gui_app.target_fps / self.BACKSPACE_RATE) == 0:
           self._keyboard.backspace()
-
-    else:
-      self._backspace_held_time = None
+          self._backspace_repeated = True
 
   def _render(self, _):
     # draw current text so far below everything. text floats left but always stays in view
@@ -232,17 +231,28 @@ class BigInputDialog(BigDialogBase):
 
   def _handle_mouse_press(self, mouse_pos: MousePos):
     super()._handle_mouse_press(mouse_pos)
-    # TODO: need to track where press was so enter and back can activate on release rather than press
-    #  or turn into icon widgets :eyes_open:
-
+    self._pressed_button = None
     if self.is_dismissing:
       return
 
-    # handle backspace icon click
-    if rl.check_collision_point_rec(rl.Vector2(mouse_pos.x, mouse_pos.y), self._top_right_button_rect) and self._backspace_img_alpha.x > 254:
+    pos = rl.Vector2(mouse_pos.x, mouse_pos.y)
+    if rl.check_collision_point_rec(pos, self._top_right_button_rect) and self._backspace_img_alpha.x > 254:
+      self._pressed_button = "backspace"
+      self._backspace_press_time = rl.get_time()
+      self._backspace_repeated = False
+    elif rl.check_collision_point_rec(pos, self._top_left_button_rect) and self._enter_img_alpha.x > 254:
+      self._pressed_button = "enter"
+
+  def _handle_mouse_release(self, mouse_pos: MousePos):
+    super()._handle_mouse_release(mouse_pos)
+    button, self._pressed_button = self._pressed_button, None
+    if self.is_dismissing:
+      return
+
+    pos = rl.Vector2(mouse_pos.x, mouse_pos.y)
+    if button == "backspace" and rl.check_collision_point_rec(pos, self._top_right_button_rect) and not self._backspace_repeated:
       self._keyboard.backspace()
-    elif rl.check_collision_point_rec(rl.Vector2(mouse_pos.x, mouse_pos.y), self._top_left_button_rect) and self._enter_img_alpha.x > 254:
-      # handle enter icon click
+    elif button == "enter" and rl.check_collision_point_rec(pos, self._top_left_button_rect):
       self._confirm_callback()
 
 
