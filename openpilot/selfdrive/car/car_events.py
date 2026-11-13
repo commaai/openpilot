@@ -137,7 +137,9 @@ class CarEvents:
       events.add(EventName.carNotReady)
     if CS.steeringPressed:
       events.add(EventName.steerOverride)
-    # experiment: long only, steering by the driver does not disengage, like stock TACC
+    # the car faults cruise until a restart if it stays engaged at hands-on level 3, cancel first so a re-engage works
+    if CS.steeringDisengage and not CS_prev.steeringDisengage:
+      events.add(EventName.steerDisengage)
     if CS.brakePressed and CS.standstill:
       events.add(EventName.preEnableStandstill)
     if CS.gasPressed:
