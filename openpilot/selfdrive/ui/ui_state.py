@@ -233,6 +233,10 @@ class UIState:
       self.chestnut_state = ChestnutState.UNCOMPILED
     elif self.chestnut_loading or not model_seen:
       self.chestnut_state = ChestnutState.LOADING
+    elif (detected and self.chestnut_active is True and self.sm.alive["modelV2"] and
+          self.sm.valid["modelV2"] and self.sm["modelV2"].big):
+      # Confirmed big-model output can recover from an earlier loading gap or failure.
+      self.chestnut_state = ChestnutState.ACTIVE
     elif self.chestnut_state == ChestnutState.FAILED or not detected or (model_seen and (not self.sm.alive["modelV2"] or not self.sm["modelV2"].big)):
       self.chestnut_state = ChestnutState.FAILED
     elif self.chestnut_active is False:
