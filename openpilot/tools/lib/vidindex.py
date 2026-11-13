@@ -119,14 +119,15 @@ HEVC_CODED_SLICE_SEGMENT_NAL_UNITS = (
 class VideoFileInvalid(Exception):
   pass
 
-def get_ue(dat: bytes, start_idx: int, skip_bits: int) -> tuple[int, int]:
+def get_ue(dat: bytes, start_idx: int, skip_bits: int, end: int | None = None) -> tuple[int, int]:
   prefix_val = 0
   prefix_len = 0
   suffix_val = 0
   suffix_len = 0
 
   i = start_idx
-  while i < len(dat):
+  limit = len(dat) if end is None else end
+  while i < limit:
     j = 7
     while j >= 0:
       if skip_bits > 0:
@@ -148,8 +149,8 @@ def get_ue(dat: bytes, start_idx: int, skip_bits: int) -> tuple[int, int]:
   raise VideoFileInvalid("invalid exponential-golomb code")
 
 def require_nal_unit_start(dat: bytes, nal_unit_start: int) -> None:
-  if nal_unit_start < 1:
-    raise ValueError("start index must be greater than zero")
+  if nal_unit_start < 0:
+    raise ValueError("start index must be non-negative")
 
   if dat[nal_unit_start:nal_unit_start + NAL_UNIT_START_CODE_SIZE] != NAL_UNIT_START_CODE:
     raise VideoFileInvalid("data must begin with start code")
@@ -178,12 +179,14 @@ def get_hevc_nal_unit_type(dat: bytes, nal_unit_start: int) -> HevcNalUnitType:
   nal_unit_header = dat[header_start:header_start + NAL_UNIT_HEADER_SIZE]
   if len(nal_unit_header) != 2:
     raise VideoFileInvalid("data to short to contain nal unit header")
+  if nal_unit_header[0] & 0x80 or not (nal_unit_header[1] & 0x07):
+    raise VideoFileInvalid("invalid NAL unit header")
   nal_unit_type = HevcNalUnitType((nal_unit_header[0] >> 1) & 0x3F)
   if DEBUG:
     print("  nal_unit_type:", nal_unit_type.name, f"({nal_unit_type.value})")
   return nal_unit_type
 
-def get_hevc_slice_type(dat: bytes, nal_unit_start: int, nal_unit_type: HevcNalUnitType) -> tuple[int, bool]:
+def get_hevc_slice_type(dat: bytes, nal_unit_start: int, nal_unit_type: HevcNalUnitType, end: int | None = None) -> tuple[int, bool]:
   # 7.3.2.9 Slice segment layer RBSP syntax
   # slice_segment_layer_rbsp( ) {
   #   slice_segment_header( )
@@ -215,6 +218,8 @@ def get_hevc_slice_type(dat: bytes, nal_unit_start: int, nal_unit_type: HevcNalU
   # first_slice_segment_in_pic_flag equal to 1 specifies that the slice segment is the first slice segment of the picture in
   # decoding order. first_slice_segment_in_pic_flag equal to 0 specifies that the slice segment is not the first slice segment
   # of the picture in decoding order.
+  if rbsp_start >= (len(dat) if end is None else end):
+    raise VideoFileInvalid("missing slice segment header")
   is_first_slice = dat[rbsp_start] >> 7 & 1 == 1
   if not is_first_slice:
     # TODO: parse dependent_slice_segment_flag and slice_segment_address and get real slice_type
@@ -231,7 +236,7 @@ def get_hevc_slice_type(dat: bytes, nal_unit_start: int, nal_unit_type: HevcNalU
   # 7.4.7.1 General slice segment header semantics
   # slice_pic_parameter_set_id specifies the value of pps_pic_parameter_set_id for the PPS in use.
   # The value of slice_pic_parameter_set_id shall be in the range of 0 to 63, inclusive.
-  _, size = get_ue(dat, rbsp_start, skip_bits)
+  _, size = get_ue(dat, rbsp_start, skip_bits, end)
   skip_bits += size # skip past slice_pic_parameter_set_id
 
   # 7.4.3.3.1 General picture parameter set RBSP semanal_unit_lenntics
@@ -251,7 +256,7 @@ def get_hevc_slice_type(dat: bytes, nal_unit_start: int, nal_unit_type: HevcNalU
   #     1      | P (P slice)
   #     2      | I (I slice)
   # unsigned integer 0-th order Exp-Golomb-coded syntax element with the left bit first
-  slice_type, _ = get_ue(dat, rbsp_start, skip_bits)
+  slice_type, _ = get_ue(dat, rbsp_start, skip_bits, end)
   if DEBUG:
     print("  slice_type:", slice_type, f"(first slice: {is_first_slice})")
   if slice_type > 2:
@@ -271,16 +276,20 @@ def hevc_index(hevc_file_name: str, allow_corrupt: bool=False) -> tuple[list, in
   prefix_dat = b""
   frame_types = []
 
-  i = 1 # skip past first byte 0x00
+  i = dat.find(NAL_UNIT_START_CODE)
+  if i < 0 or any(dat[:i]):
+    raise VideoFileInvalid("data must begin with an Annex B start code")
   try:
     while i < len(dat):
       require_nal_unit_start(dat, i)
       nal_unit_len = get_hevc_nal_unit_length(dat, i)
+      if nal_unit_len < NAL_UNIT_START_CODE_SIZE + NAL_UNIT_HEADER_SIZE:
+        raise VideoFileInvalid("truncated NAL unit header")
       nal_unit_type = get_hevc_nal_unit_type(dat, i)
       if nal_unit_type in HEVC_PARAMETER_SET_NAL_UNITS:
         prefix_dat += dat[i:i+nal_unit_len]
       elif nal_unit_type in HEVC_CODED_SLICE_SEGMENT_NAL_UNITS:
-        slice_type, is_first_slice = get_hevc_slice_type(dat, i, nal_unit_type)
+        slice_type, is_first_slice = get_hevc_slice_type(dat, i, nal_unit_type, i + nal_unit_len)
         if is_first_slice:
           frame_types.append((slice_type, i))
       i += nal_unit_len
