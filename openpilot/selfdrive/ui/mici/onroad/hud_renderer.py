@@ -19,6 +19,7 @@ KM_TO_MILE = 0.621371
 CRUISE_DISABLED_CHAR = '–'
 
 SET_SPEED_PERSISTENCE = 2.5  # seconds
+WHEEL_COLOR_ENGAGED = (0, 255, 64)
 
 
 @dataclass(frozen=True)
@@ -129,6 +130,7 @@ class HudRenderer(Widget):
     self._chestnut_icon: rl.Texture | None = None
     self._wheel_alpha_filter = FirstOrderFilter(0, 0.05, 1 / gui_app.target_fps)
     self._wheel_y_filter = FirstOrderFilter(0, 0.1, 1 / gui_app.target_fps)
+    self._wheel_green_filter = FirstOrderFilter(0, 0.05, 1 / gui_app.target_fps)
 
     self._set_speed_alpha_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._chestnut_alpha_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
@@ -212,18 +214,18 @@ class HudRenderer(Widget):
     rl.draw_texture_ex(icon, pos, 0.0, 1.0, rl.Color(255, 255, 255, int(255 * opacity * alpha)))
 
   def _draw_steering_wheel(self, rect: rl.Rectangle) -> None:
-    wheel_txt = self._txt_wheel_critical if self._show_wheel_critical else self._txt_wheel
+    # The wheel is the source of truth for engagement: green if and only if openpilot is engaged.
+    # When disengaged it's hidden, except for steerRequired alerts which show the orange critical wheel.
+    engaged = ui_state.status == UIStatus.ENGAGED
+    wheel_txt = self._txt_wheel_critical if self._show_wheel_critical and not engaged else self._txt_wheel
 
-    if self._show_wheel_critical:
+    if self._show_wheel_critical or ui_state.status != UIStatus.DISENGAGED:
       self._wheel_alpha_filter.update(255)
       self._wheel_y_filter.update(0)
     else:
-      if ui_state.status == UIStatus.DISENGAGED:
-        self._wheel_alpha_filter.update(0)
-        self._wheel_y_filter.update(wheel_txt.height / 2)
-      else:
-        self._wheel_alpha_filter.update(255 * 0.9)
-        self._wheel_y_filter.update(0)
+      self._wheel_alpha_filter.update(0)
+      self._wheel_y_filter.update(wheel_txt.height / 2)
+    self._wheel_green_filter.update(engaged)
 
     # pos
     pos_x = int(rect.x + 21 + wheel_txt.width / 2)
@@ -243,7 +245,11 @@ class HudRenderer(Widget):
     origin = rl.Vector2(wheel_txt.width / 2, wheel_txt.height / 2)
 
     # color and draw
-    color = rl.Color(255, 255, 255, int(self._wheel_alpha_filter.x))
+    if wheel_txt is self._txt_wheel:
+      green = self._wheel_green_filter.x
+      color = rl.Color(*(int(255 + (c - 255) * green) for c in WHEEL_COLOR_ENGAGED), int(self._wheel_alpha_filter.x))
+    else:
+      color = rl.Color(255, 255, 255, int(self._wheel_alpha_filter.x))
     rl.draw_texture_pro(wheel_txt, src_rect, dest_rect, origin, rotation, color)
 
     if self._show_wheel_critical:
