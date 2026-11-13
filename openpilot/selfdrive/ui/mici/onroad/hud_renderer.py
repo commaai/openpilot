@@ -3,6 +3,7 @@ import numpy as np
 import raylib_nb as rl
 from dataclasses import dataclass
 from openpilot.common.constants import CV
+from openpilot.selfdrive.ui.mici.onroad import DIMMED_ICON_ALPHA
 from openpilot.selfdrive.ui.mici.onroad.torque_bar import TorqueBar
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus, ChestnutState
 from openpilot.system.ui.lib.application import gui_app, FontWeight, ASSETS_DIR
@@ -164,7 +165,6 @@ class HudRenderer(Widget):
     self._txt_chestnut_orange: rl.Texture = gui_app.texture('icons_mici/chestnut_orange.png', 61, 36)
     self._chestnut_icon: rl.Texture | None = None
     self._wheel_alpha_filter = FirstOrderFilter(0, 0.05, 1 / gui_app.target_fps)
-    self._wheel_y_filter = FirstOrderFilter(0, 0.1, 1 / gui_app.target_fps)
     self._wheel_color_filters = [FirstOrderFilter(c, 0.05, 1 / gui_app.target_fps) for c in WHEEL_WHITE]
     self._wheel_glow_filter = FirstOrderFilter(0, 0.05, 1 / gui_app.target_fps)
 
@@ -255,7 +255,7 @@ class HudRenderer(Widget):
 
   def _draw_steering_wheel(self, rect: rl.Rectangle) -> None:
     # The wheel is the source of truth for engagement: green if and only if openpilot is engaged.
-    # When disengaged it's hidden, except for steerRequired alerts which show it orange.
+    # When disengaged it's greyed out, except for steerRequired alerts which show it orange.
     engaged = ui_state.status == UIStatus.ENGAGED
     if engaged:
       target_color = WHEEL_GREEN
@@ -267,16 +267,14 @@ class HudRenderer(Widget):
 
     if self._show_wheel_critical or ui_state.status != UIStatus.DISENGAGED:
       self._wheel_alpha_filter.update(255)
-      self._wheel_y_filter.update(0)
     else:
-      self._wheel_alpha_filter.update(0)
-      self._wheel_y_filter.update(wheel_txt.height / 2)
+      self._wheel_alpha_filter.update(255 * DIMMED_ICON_ALPHA)
     wheel_color = [int(f.update(c)) for f, c in zip(self._wheel_color_filters, target_color, strict=True)]
     glow = self._wheel_glow_filter.update(target_color != WHEEL_WHITE)
 
     # pos
     pos_x = int(rect.x + rect.width / 2)
-    pos_y = int(rect.y + rect.height - 10 - wheel_txt.height / 2 + self._wheel_y_filter.x)
+    pos_y = int(rect.y + rect.height - 10 - wheel_txt.height / 2)
     rotation = -ui_state.sm['carState'].steeringAngleDeg
 
     turn_intent_margin = 25

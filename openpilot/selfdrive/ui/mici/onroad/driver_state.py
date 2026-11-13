@@ -42,6 +42,8 @@ class DriverStateRenderer(Widget):
     self._face_pitch = 0.
     self._face_yaw = 0.
     self._should_draw = False
+    self._dimmed = False
+    self._show_under_alerts = False
     self._force_active = False
     self._looking_center = False
     self._awareness_unfull = False
@@ -74,9 +76,16 @@ class DriverStateRenderer(Widget):
   def set_should_draw(self, should_draw: bool):
     self._should_draw = should_draw
 
+  def set_dimmed(self, dimmed: bool):
+    """Draw greyed out without the cone, like when monitoring is inactive"""
+    self._dimmed = dimmed
+
+  def set_show_under_alerts(self, show_under_alerts: bool):
+    self._show_under_alerts = show_under_alerts
+
   @property
   def should_draw(self):
-    return (self._should_draw and ui_state.sm["selfdriveState"].alertSize == AlertSize.none and
+    return (self._should_draw and (self._show_under_alerts or ui_state.sm["selfdriveState"].alertSize == AlertSize.none) and
             ui_state.sm.recv_frame["driverStateV2"] > ui_state.started_frame)
 
   def set_force_active(self, force_active: bool):
@@ -107,7 +116,7 @@ class DriverStateRenderer(Widget):
                        rl.Color(255, 255, 255, int(255 * 0.9 * self._fade_filter.x)))
 
     green_amount = self._color_fade_filter.update(0.0 if self._awareness_unfull else 1.0)
-    if self.effective_active:
+    if self.effective_active and not self._dimmed:
       source_rect = rl.Rectangle(0, 0, self._dm_cone.width, self._dm_cone.height)
       dest_rect = rl.Rectangle(
         self._rect.x + self._rect.width / 2,
@@ -211,7 +220,7 @@ class DriverStateRenderer(Widget):
 
     if not self.should_draw:
       self._fade_filter.update(0.0)
-    elif not self.effective_active:
+    elif not self.effective_active or self._dimmed:
       self._fade_filter.update(0.35)
     else:
       self._fade_filter.update(1.0)

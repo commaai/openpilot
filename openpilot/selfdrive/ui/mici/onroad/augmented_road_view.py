@@ -272,10 +272,10 @@ class AugmentedRoadView(CameraView):
     if show_navigation:
       left_rect = rl.Rectangle(self._content_rect.x, self._content_rect.y, LEFT_COLUMN_WIDTH, self._content_rect.height)
 
-    # Hide DMoji when disengaged unless AlwaysOnDM is enabled. In the side panel nothing overlaps it, otherwise it hides under the set speed
-    should_draw_dmoji = ((not show_navigation or not self._hud_renderer.drawing_top_icons()) and
-                         (ui_state.status != UIStatus.DISENGAGED or ui_state.always_on_dm))
-    self._driver_state_renderer.set_should_draw(should_draw_dmoji)
+    # Grey out DMoji when disengaged unless AlwaysOnDM is enabled. In the side panel nothing overlaps it, otherwise it hides under the set speed
+    self._driver_state_renderer.set_should_draw(not show_navigation or not self._hud_renderer.drawing_top_icons())
+    self._driver_state_renderer.set_dimmed(ui_state.status == UIStatus.DISENGAGED and not ui_state.always_on_dm)
+    self._driver_state_renderer.set_show_under_alerts(not show_navigation)
     # the 52px cone is centered 36px from the top left
     dm_size = self._driver_state_renderer.rect.width
     self._driver_state_renderer.set_position(left_rect.x + (left_rect.width - dm_size) / 2, left_rect.y + 36 - dm_size / 2)
