@@ -15,6 +15,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.selfdrived.alertmanager import OFFROAD_ALERTS
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.mici.widgets.button import GreyBigButton, BigPillButton
+from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationDialog
 from openpilot.selfdrive.ui.mici.widgets.qr import QR
 from openpilot.common.hardware import HARDWARE
 from openpilot.system.ui.widgets import Widget
@@ -341,8 +342,15 @@ class MiciOffroadAlerts(Scroller):
 
       # Create alert item widget
       alert_item = AlertItem(alert_data)
+      if key == "Offroad_ExcessiveActuation":
+        alert_item.set_click_callback(self._confirm_uninstall)
       self.alert_items.append(alert_item)
       self._scroller.add_widget(alert_item)
+
+  def _confirm_uninstall(self):
+    icon = gui_app.texture("icons_mici/settings/device/uninstall.png", 64, 64)
+    gui_app.push_widget(BigConfirmationDialog("slide to\nuninstall", icon, lambda: self.params.put_bool("DoUninstall", True, block=True),
+                                              exit_on_confirm=False))
 
   def _params_worker(self):
     drop_realtime()
