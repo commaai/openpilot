@@ -11,9 +11,7 @@ from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
 from openpilot.common.filter_simple import FirstOrderFilter
-from openpilot.cereal import log
 
-EventName = log.OnroadEvent.EventName
 
 # Constants
 SET_SPEED_NA = 255
@@ -27,35 +25,40 @@ WHEEL_GREEN = (0, 255, 64)
 WHEEL_ORANGE = (255, 115, 0)
 
 
-def _glow_texture(asset: str, size: int, spread: float, blur: float) -> rl.Texture:
-  """White glow around an icon's alpha, like a Figma drop shadow with zero offset. Tint it when drawing."""
+def _texture(rgba: np.ndarray, px: float) -> rl.Texture:
+  texture = rl.load_texture_from_image(rl.Image(None, rgba.shape[1], rgba.shape[0], 1, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8))
+  rl.update_texture(texture, np.ascontiguousarray(rgba))
+  rl.set_texture_filter(texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
+  texture.width, texture.height = round(rgba.shape[1] / px), round(rgba.shape[0] / px)
+  return texture
+
+
+def _wheel_effect_textures(asset: str, size: int) -> tuple[rl.Texture, rl.Texture]:
+  """White glow and center highlight for the wheel, matching the design's render. Tint the glow when drawing."""
   image = gui_app._load_image_from_path((ASSETS_DIR / asset).as_posix(), size, size)
   w, h, px = image.width, image.height, image.width / size
   alpha = np.frombuffer(image.to_bytes(w * h * 4), dtype=np.uint8).reshape(h, w, 4)[..., 3] / 255.0
   rl.unload_image(image)
 
-  sigma, radius = blur / 2 * px, spread * px
-  pad = math.ceil(radius + 3 * sigma)
-  src = np.pad(alpha, pad)
-  glow = src.copy()
-  r = math.ceil(radius)
-  for dy in range(-r, r + 1):
-    for dx in range(-r, r + 1):
-      if dx * dx + dy * dy <= radius * radius:
-        glow = np.maximum(glow, np.roll(src, (dy, dx), axis=(0, 1)))
-  x = np.arange(-math.ceil(3 * sigma), math.ceil(3 * sigma) + 1)
+  # glow: Figma's drop shadow (blur 24 at 128px) renders as a gaussian with sigma 10, its spread is ignored on vectors
+  sigma = 10 * size / 128 * px
+  pad = math.ceil(3 * sigma)
+  glow = np.pad(alpha, pad)
+  x = np.arange(-pad, pad + 1)
   kernel = np.exp(-x ** 2 / (2 * sigma ** 2))
   kernel /= kernel.sum()
   for axis in (0, 1):
     glow = np.apply_along_axis(np.convolve, axis, glow, kernel, mode='same')
+  glow_rgba = np.full((*glow.shape, 4), 255, dtype=np.uint8)
+  glow_rgba[..., 3] = np.clip(glow * 255, 0, 255)
 
-  rgba = np.full((*glow.shape, 4), 255, dtype=np.uint8)
-  rgba[..., 3] = np.clip(glow * 255, 0, 255)
-  texture = rl.load_texture_from_image(rl.Image(None, glow.shape[1], glow.shape[0], 1, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8))
-  rl.update_texture(texture, rgba)
-  rl.set_texture_filter(texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
-  texture.width, texture.height = round(glow.shape[1] / px), round(glow.shape[0] / px)
-  return texture
+  # highlight: the fill is a radial gradient from 35% lighter at the center to the base color at the rim
+  yy, xx = np.mgrid[:h, :w]
+  r = np.hypot(xx + 0.5 - w / 2, yy + 0.5 - h / 2) / (w / 2)
+  highlight_rgba = np.full((h, w, 4), 255, dtype=np.uint8)
+  highlight_rgba[..., 3] = np.clip(alpha * 89 * (1 - r), 0, 255)
+
+  return _texture(glow_rgba, px), _texture(highlight_rgba, px)
 
 
 @dataclass(frozen=True)
@@ -74,63 +77,6 @@ class Colors:
 
 FONT_SIZES = FontSizes()
 COLORS = Colors()
-
-
-class TurnIntent(Widget):
-  FADE_IN_ANGLE = 30  # degrees
-
-  def __init__(self):
-    super().__init__()
-    self._pre = False
-    self._turn_intent_direction: int = 0
-
-    self._turn_intent_alpha_filter = FirstOrderFilter(0, 0.05, 1 / gui_app.target_fps)
-    self._turn_intent_rotation_filter = FirstOrderFilter(0, 0.1, 1 / gui_app.target_fps)
-
-    self._txt_turn_intent_left: rl.Texture = gui_app.texture('icons_mici/turn_intent_left.png', 50, 20)
-    self._txt_turn_intent_right: rl.Texture = gui_app.texture('icons_mici/turn_intent_left.png', 50, 20, flip_x=True)
-
-  def _render(self, _):
-    if self._turn_intent_alpha_filter.x > 1e-2:
-      turn_intent_texture = self._txt_turn_intent_right if self._turn_intent_direction == 1 else self._txt_turn_intent_left
-      src_rect = rl.Rectangle(0, 0, turn_intent_texture.width, turn_intent_texture.height)
-      dest_rect = rl.Rectangle(self._rect.x + self._rect.width / 2, self._rect.y + self._rect.height / 2,
-                               turn_intent_texture.width, turn_intent_texture.height)
-
-      origin = rl.Vector2(turn_intent_texture.width / 2, self._rect.height / 2)
-      color = rl.Color(255, 255, 255, int(255 * self._turn_intent_alpha_filter.x))
-      rl.draw_texture_pro(turn_intent_texture, src_rect, dest_rect, origin, self._turn_intent_rotation_filter.x, color)
-
-  def _update_state(self) -> None:
-    sm = ui_state.sm
-
-    left = any(e.name == EventName.preLaneChangeLeft for e in sm['onroadEvents'])
-    right = any(e.name == EventName.preLaneChangeRight for e in sm['onroadEvents'])
-    if left or right:
-      # pre lane change
-      if not self._pre:
-        self._turn_intent_rotation_filter.x = self.FADE_IN_ANGLE if left else -self.FADE_IN_ANGLE
-
-      self._pre = True
-      self._turn_intent_direction = -1 if left else 1
-      self._turn_intent_alpha_filter.update(1)
-      self._turn_intent_rotation_filter.update(0)
-    elif any(e.name == EventName.laneChange for e in sm['onroadEvents']):
-      # fade out and rotate away
-      self._pre = False
-      self._turn_intent_alpha_filter.update(0)
-
-      if self._turn_intent_direction == 0:
-        # unknown. missed pre frame?
-        self._turn_intent_rotation_filter.update(0)
-      else:
-        self._turn_intent_rotation_filter.update(self._turn_intent_direction * self.FADE_IN_ANGLE)
-    else:
-      # didn't complete lane change, just hide
-      self._pre = False
-      self._turn_intent_direction = 0
-      self._turn_intent_alpha_filter.update(0)
-      self._turn_intent_rotation_filter.update(0)
 
 
 class HudRenderer(Widget):
@@ -154,12 +100,10 @@ class HudRenderer(Widget):
     self._font_semi_bold: rl.Font = gui_app.font(FontWeight.SEMI_BOLD)
     self._font_display: rl.Font = gui_app.font(FontWeight.DISPLAY)
 
-    self._turn_intent = TurnIntent()
     self._torque_bar = TorqueBar()
 
     self._txt_wheel: rl.Texture = gui_app.texture('icons_mici/wheel.png', WHEEL_SIZE, WHEEL_SIZE)
-    # glow from the design (spread 4, blur 24 at 128px)
-    self._txt_wheel_glow = _glow_texture('icons_mici/wheel.png', WHEEL_SIZE, 4 * WHEEL_SIZE / 128, 24 * WHEEL_SIZE / 128)
+    self._txt_wheel_glow, self._txt_wheel_highlight = _wheel_effect_textures('icons_mici/wheel.png', WHEEL_SIZE)
     self._txt_chestnut: rl.Texture = gui_app.texture('icons_mici/chestnut.png', 48, 36)
     self._txt_chestnut_green: rl.Texture = gui_app.texture('icons_mici/chestnut_green.png', 48, 36)
     self._txt_chestnut_orange: rl.Texture = gui_app.texture('icons_mici/chestnut_orange.png', 61, 36)
@@ -277,14 +221,6 @@ class HudRenderer(Widget):
     pos_y = int(rect.y + rect.height - 10 - wheel_txt.height / 2)
     rotation = -ui_state.sm['carState'].steeringAngleDeg
 
-    turn_intent_margin = 25
-    self._turn_intent.render(rl.Rectangle(
-      pos_x - wheel_txt.width / 2 - turn_intent_margin,
-      pos_y - wheel_txt.height / 2 - turn_intent_margin,
-      wheel_txt.width + turn_intent_margin * 2,
-      wheel_txt.height + turn_intent_margin * 2,
-    ))
-
     alpha = self._wheel_alpha_filter.x
     origin = rl.Vector2(self._txt_wheel_glow.width / 2, self._txt_wheel_glow.height / 2)
     rl.draw_texture_pro(self._txt_wheel_glow, rl.Rectangle(0, 0, self._txt_wheel_glow.width, self._txt_wheel_glow.height),
@@ -293,6 +229,9 @@ class HudRenderer(Widget):
     rl.draw_texture_pro(wheel_txt, rl.Rectangle(0, 0, wheel_txt.width, wheel_txt.height),
                         rl.Rectangle(pos_x, pos_y, wheel_txt.width, wheel_txt.height),
                         rl.Vector2(wheel_txt.width / 2, wheel_txt.height / 2), rotation, rl.Color(*wheel_color, int(alpha)))
+    rl.draw_texture_pro(self._txt_wheel_highlight, rl.Rectangle(0, 0, wheel_txt.width, wheel_txt.height),
+                        rl.Rectangle(pos_x, pos_y, wheel_txt.width, wheel_txt.height),
+                        rl.Vector2(wheel_txt.width / 2, wheel_txt.height / 2), rotation, rl.Color(255, 255, 255, int(alpha * glow)))
 
   def _draw_set_speed(self, rect: rl.Rectangle) -> None:
     """Draw the MAX speed indicator box."""
