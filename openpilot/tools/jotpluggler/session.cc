@@ -798,7 +798,16 @@ float draw_main_menu_bar(AppSession *session, UiState *state) {
       const int total = static_cast<int>(std::max(0.0, session->route_data.x_max - route_start));
       const int current = static_cast<int>(elapsed);
       const int minutes_width = std::max(2, static_cast<int>(std::to_string(total / 60).size()));
-      ImGui::Text("%0*d:%02d / %0*d:%02d", minutes_width, current / 60, current % 60, minutes_width, total / 60, total % 60);
+      const std::string time_label = util::string_format("%0*d:%02d / %0*d:%02d###route_elapsed",
+                                                         minutes_width, current / 60, current % 60,
+                                                         minutes_width, total / 60, total % 60);
+      ImGui::BeginDisabled(!session->route_data.has_time_range);
+      if (ImGui::SmallButton(time_label.c_str())) {
+        ImGui::SetClipboardText(util::string_format("%.3f", elapsed).c_str());
+        state->status_text = "Copied current time in seconds";
+      }
+      ImGui::SetItemTooltip("Copy current time in seconds");
+      ImGui::EndDisabled();
       ImGui::SameLine(0.0f, 20.0f);
       std::string clock_text = "--";
       if (wall && !wall->values.empty() && wall->values.front() > 0.0) {
