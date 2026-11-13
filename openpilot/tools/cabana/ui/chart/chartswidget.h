@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -11,6 +12,7 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 
+#include "tools/cabana/core/analysis.h"
 #include "tools/cabana/ui/chart/signalselector.h"
 #include "tools/cabana/ui/widgets/tabbar.h"
 #include "tools/cabana/commands.h"
@@ -68,8 +70,23 @@ class ChartsWidget {
 public:
   ChartsWidget();
   ~ChartsWidget();  // out of line: the header users only see a forward declared ChartView
+  void requestCerealUpdate(bool data_changed = false);
+  void requestMapUpdate(bool data_changed);
+  void requestDerivedUpdate(bool data_changed);
+  std::shared_ptr<std::atomic<uint64_t>> derived_generation_ = std::make_shared<std::atomic<uint64_t>>(0);
+  bool derived_running_ = false, derived_dirty_ = false;
+  std::shared_ptr<std::atomic<uint64_t>> map_generation_ = std::make_shared<std::atomic<uint64_t>>(0);
+  bool map_running_ = false, map_dirty_ = false;
+  bool cereal_running_ = false;
+  bool cereal_dirty_ = false;
+  void loadAnalysisLayoutFile(const std::string &path);
+  void loadAnalysisLayout(const cabana::AnalysisLayout &layout);
+  cabana::AnalysisLayout analysisLayout() const;
+  void editPythonSeries(ChartView *owner = nullptr, const std::string &name = "Derived signal",
+                        const cabana::PythonSeries &spec = {});
   void draw();  // content only; MainWindow owns the dockable panel
   size_t chartCount() const { return charts_.size(); }
+  void showCerealChart(const std::string &path, bool merge = false);
   void showChart(const MessageId &id, const cabana::Signal *sig, bool show, bool merge);
   inline bool hasSignal(const MessageId &id, const cabana::Signal *sig) { return findChart(id, sig) != nullptr; }
   std::vector<std::string> serializeChartIds() const;
@@ -83,6 +100,17 @@ public:
   Observable<double> showTip;
 
 private:
+  void drawPythonEditor();
+  std::map<std::string, cabana::PythonSeries> derived_definitions_;
+  bool changing_layout_ = false;
+  std::map<int, std::string> tab_names_;
+  std::map<int, cabana::LayoutNode> tab_roots_;
+  uint64_t layout_generation_ = 0;
+  void remapLayoutTree(int id, const std::vector<ChartView *> &before);
+  bool python_editor_open_ = false;
+  ChartView *python_owner_ = nullptr;
+  std::string python_name_, python_inputs_, python_error_;
+  cabana::PythonSeries python_spec_;
   void handleEvents();  // the back button, focus loss, the chart drag and the value tip leave
   void newChart();
   ChartView *createChart(int pos = 0);
@@ -149,6 +177,8 @@ private:
   std::unique_ptr<SignalSelector> signal_selector_;
   ChartView *signal_selector_owner_ = nullptr;
   std::function<void(SignalSelector &)> signal_selector_accepted_;
+  std::shared_ptr<std::atomic<uint64_t>> cereal_generation_ = std::make_shared<std::atomic<uint64_t>>(0);
+  std::shared_ptr<bool> alive_ = std::make_shared<bool>(true);
   Connections connections_;
   friend class ChartView;
   friend class ChartsContainer;

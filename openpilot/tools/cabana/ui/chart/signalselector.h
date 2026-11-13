@@ -11,13 +11,16 @@ class SignalSelector {
 public:
   struct ListItem {
     ListItem(const MessageId &msg_id, const cabana::Signal *sig) : msg_id(msg_id), sig(sig) {}
+    explicit ListItem(std::string path) : cereal_path(std::move(path)) {}
     MessageId msg_id;
-    const cabana::Signal *sig;
+    const cabana::Signal *sig = nullptr;
+    std::string cereal_path;
   };
 
   SignalSelector(std::string title);
   const std::vector<ListItem> &selectedItems() const { return selected_list_; }
   inline void addSelected(const MessageId &id, const cabana::Signal *sig) { selected_list_.emplace_back(id, sig); }
+  void addSelectedCereal(const std::string &path) { selected_list_.emplace_back(path); }
   void open() { open_ = true; show_ = false; accepted_ = false; }
   bool draw();  // false once the dialog is closed
   bool accepted() const { return accepted_; }
@@ -31,11 +34,13 @@ private:
   struct ComboItem {
     std::string text;
     MessageId id;
+    bool cereal = false;
   };
   std::string title_;
   std::vector<ComboItem> msgs_combo_;
   int msgs_combo_index_ = -1;
   std::string msgs_combo_filter_;
+  std::string signal_filter_;
   std::vector<ListItem> available_list_;
   std::vector<ListItem> selected_list_;
   int available_row_ = -1;
@@ -43,4 +48,5 @@ private:
   bool accepted_ = false;
   bool open_ = false;
   bool show_ = false;
+  Connection cereal_connection_;
 };

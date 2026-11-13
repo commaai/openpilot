@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
+#include <cmath>
 #include <iterator>
 #include <vector>
 
@@ -20,9 +21,10 @@ auto pixelEnvelope(Iterator begin, Iterator end, double min, double max, int pix
     return (int)std::clamp((p.x - min) / (max - min) * pixels, 0.0, double(pixels - 1));
   };
   while (begin != end) {
+    if (!std::isfinite(begin->y)) { result.push_back(*begin++); continue; }
     auto last = begin, low = begin, high = begin, next = begin + 1;
     const int bucket = column(*begin);
-    while (next != end && column(*next) == bucket) {
+    while (next != end && std::isfinite(next->y) && column(*next) == bucket) {
       if (next->y < low->y) low = next;
       if (next->y > high->y) high = next;
       last = next++;

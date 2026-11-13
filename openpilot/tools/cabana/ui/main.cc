@@ -36,6 +36,7 @@ struct CabanaArgs {
   std::string remote;
   std::string data_dir;
   std::string dbc;
+  std::string layout;
   std::string route;
 };
 
@@ -53,17 +54,18 @@ void printUsage(const char *argv0) {
           "  --qcam                    load qcamera\n"
           "  --wide-road               load wide road camera (alias: --ecam)\n"
           "  --cabin                   load cabin camera (alias: --dcam)\n"
-          "  --msgq                    read can messages from the msgq\n"
+          "  --msgq, --stream          read live cereal messages from msgq\n"
           "  --panda                   read can messages from panda\n"
           "  --panda-serial <serial>   read can messages from panda with given serial\n"
 #ifdef __linux__
           "  --socketcan <device>      read can messages from given SocketCAN device\n"
 #endif
-          "  --remote <ip-address>     read can messages from a device at the specified ip-address\n"
+          "  --remote <ip-address>     read live cereal messages from the specified device\n"
           "  --data_dir <dir>          local directory with routes\n"
           "  --no-vipc                 do not output video\n"
           "  --no-cache                turn off the local route file cache\n"
-          "  --dbc <file>              dbc file to open\n",
+          "  --dbc <file>              dbc file to open\n"
+          "  --layout <name-or-file>    analysis layout to open\n",
           argv0);
 }
 
@@ -93,7 +95,7 @@ std::optional<int> parseArgs(int argc, char *argv[], CabanaArgs &args) {
       args.wide_road = true;
     } else if (std::strcmp(a, "--cabin") == 0 || std::strcmp(a, "--dcam") == 0) {
       args.cabin = true;
-    } else if (std::strcmp(a, "--msgq") == 0) {
+    } else if ((std::strcmp(a, "--msgq") == 0 || std::strcmp(a, "--stream") == 0)) {
       args.msgq = true;
     } else if (std::strcmp(a, "--panda") == 0) {
       args.panda = true;
@@ -116,6 +118,10 @@ std::optional<int> parseArgs(int argc, char *argv[], CabanaArgs &args) {
       args.no_cache = true;
     } else if (std::strcmp(a, "--dbc") == 0) {
       if (!takeValue(argc, argv, i, args.dbc)) return 1;
+    } else if (std::strcmp(a, "--layout") == 0) {
+      if (!takeValue(argc, argv, i, args.layout)) return 1;
+    } else if (std::strcmp(a, "--can") == 0) {
+      // CAN decoding is always available in Cabana.
     } else if (a[0] == '-') {
       fprintf(stderr, "error: unknown option %s\n", a);
       printUsage(argv[0]);
@@ -139,12 +145,16 @@ int main(int argc, char *argv[]) {
   // arenas fragment without bound (RSS grew ~3 MB/min with charts open). macOS has a single allocator zone.
   mallopt(M_ARENA_MAX, 1);
 #endif
+  CabanaArgs args;
+  if (auto code = parseArgs(argc, argv, args)) return *code;
+  if (!args.dbc.empty() && std::filesystem::is_regular_file(args.dbc)) args.dbc = std::filesystem::absolute(args.dbc).string();
+  if (!args.data_dir.empty() && std::filesystem::is_directory(args.data_dir)) args.data_dir = std::filesystem::absolute(args.data_dir).string();
+  if (!args.layout.empty() && std::filesystem::is_regular_file(args.layout)) {
+    args.layout = std::filesystem::absolute(args.layout).string();
+  }
   // ensure the current dir matches the executable's directory
   std::error_code ec;
   std::filesystem::current_path(executableDir(), ec);
-
-  CabanaArgs args;
-  if (auto code = parseArgs(argc, argv, args)) return *code;
 
   std::unique_ptr<AbstractStream> stream;
   StreamLoader stream_loader;
@@ -198,5 +208,5 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  return run(std::move(stream), std::move(stream_loader), args.dbc);
+  return run(std::move(stream), std::move(stream_loader), args.dbc, args.layout);
 }

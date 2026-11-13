@@ -10,6 +10,10 @@
 #include "imgui_internal.h"
 #include "implot.h"
 
+#include "tools/cabana/core/analysis.h"
+#include "tools/cabana/ui/widgets/cameraview.h"
+#include "tools/cabana/ui/chart/mapwidget.h"
+#include "tools/cabana/ui/chart/recordedcamera.h"
 #include "tools/cabana/ui/chart/tiplabel.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
@@ -31,6 +35,30 @@ public:
   struct SigItem {
     MessageId msg_id;
     const cabana::Signal *sig = nullptr;
+    std::string cereal_path;
+    std::string display_name;
+    std::optional<cabana::PythonSeries> python;
+    std::string key() const { return python ? cabana::pythonSeriesKey(*python) : cereal_path; }
+    bool isCereal() const { return !cereal_path.empty(); }
+    std::string name() const { if (!display_name.empty()) return display_name; return isCereal() ? (python ? cereal_path : "/" + cereal_path) : sig->name; }
+    std::string unit() const { return isCereal() ? "" : sig->unit; }
+    std::string label() const { return isCereal() ? " cereal" : msgLabel(msg_id); }
+    std::string formatValue(double value, bool with_unit = true) const {
+      if (!std::isfinite(value)) return "--";
+      if (!isCereal() && !transform.derivative && transform.scale == 1 && transform.offset == 0) {
+        return sig->formatValue(value, with_unit);
+      }
+      if (!isCereal()) return doubleToString(value);
+      if (transform.derivative || transform.scale != 1 || transform.offset != 0 ||
+          value < 0 || value > 65535 || std::floor(value) != value) return doubleToString(value);
+      auto label = enum_labels.find(static_cast<uint16_t>(value));
+      return label != enum_labels.end() ? label->second : doubleToString(value);
+    }
+    std::map<uint16_t, std::string> enum_labels;
+    std::map<std::string, uint16_t> text_codes;
+    cabana::CerealPoints raw_points;
+    cabana::SeriesTransform transform;
+    std::string error;
     CabanaColor color;
     bool visible = true;
     std::vector<ImPlotPoint> vals;
@@ -43,13 +71,25 @@ public:
 
   ChartView(const std::pair<double, double> &x_range, ChartsWidget *parent);
   void addSignal(const MessageId &msg_id, const cabana::Signal *sig);
+  void addCerealSignal(const std::string &path);
+  void addPythonSignal(const std::string &name, const cabana::PythonSeries &spec);
+  void applyLayout(const cabana::LayoutChart &layout);
+  cabana::LayoutChart analysisLayout() const;
+  bool hasCerealSignal(const std::string &path) const;
+  void setCerealSeries(const std::string &path, const cabana::CerealPoints &points);
+  void setCerealError(const std::string &key, const std::string &error);
   bool hasSignal(const MessageId &msg_id, const cabana::Signal *sig) const;
   void updateSeries(const cabana::Signal *sig = nullptr, const MessageEventsMap *msg_new_events = nullptr);
   void updatePlot(double cur, double min, double max);
   void setSeriesType(SeriesType type) { series_type_ = type; }
   void showTip(double sec);
   void hideTip();
-  void draw(float width);  // one chart of settings.chart_height
+  void draw(float width, float height = -1);
+  bool isPlot() const { return kind_ == "plot"; }
+  bool isMap() const { return kind_ == "map"; }
+  void setMapError(const std::string &error) { pane_error_ = error; }
+  void setMapSeries(const std::map<std::string, cabana::CerealPoints> &series);
+  void hidePane() { if (camera_) camera_->setVisible(false); }  // one chart of settings.chart_height
   void drawGhost(float width);  // the same tile rendered again, without handling any input
   void removeIf(std::function<bool(const SigItem &)> predicate);
   void takeSignalsFrom(ChartView *source);
@@ -61,7 +101,8 @@ public:
   const ImRect &rect() const { return layout_.rect; }  // the whole chart widget, screen coordinates
   bool plotHovered() const { return layout_.plot_hovered; }
   double secondsAtPoint(const ImVec2 &pt) const {
-    return x_min_ + (pt.x - layout_.plot_area.Min.x) * (x_max_ - x_min_) / std::max(layout_.plot_area.GetWidth(), 1.0f);
+    const double fraction = (pt.x - layout_.plot_area.Min.x) / std::max(layout_.plot_area.GetWidth(), 1.0f);
+    return x_min_ + (flip_x_ ? 1 - fraction : fraction) * (x_max_ - x_min_);
   }
 
 private:
@@ -69,11 +110,12 @@ private:
 
   void signalUpdated(const cabana::Signal *sig);
   void manageSignals();
-  void msgRemoved(MessageId id) { removeIf([=](auto &s) { return s.msg_id.address == id.address && !dbc()->msg(id); }); }
+  void msgRemoved(MessageId id) { removeIf([=](auto &s) { return !s.isCereal() && s.msg_id.address == id.address && !dbc()->msg(id); }); }
   void signalRemoved(const cabana::Signal *sig) { removeIf([=](auto &s) { return s.sig == sig; }); }
 
   void appendCanEvents(const cabana::Signal *sig, const std::vector<const CanEvent *> &events,
-                       std::vector<ImPlotPoint> &vals, std::vector<ImPlotPoint> &step_vals);
+                       cabana::CerealPoints &points);
+  void rebuildSeries(SigItem &series);
   void createToolButtons();
   void drawContextMenu();
   void handleMousePress();
@@ -100,8 +142,14 @@ private:
   // the samples inside [x_min_, x_max_)
   std::pair<PointIter, PointIter> visibleRange(const std::vector<ImPlotPoint> &points) const;
   inline void clearTrackPoints() { for (auto &s : sigs_) s.track_pt = {}; }
-  inline float xPos(double sec) const { return layout_.plot_area.Min.x + (sec - x_min_) / (x_max_ - x_min_) * layout_.plot_area.GetWidth(); }
-  inline float yPos(double val) const { return layout_.plot_area.Max.y - (val - y_min_) / (y_max_ - y_min_) * layout_.plot_area.GetHeight(); }
+  inline float xPos(double sec) const {
+    const double fraction = (sec - x_min_) / (x_max_ - x_min_);
+    return layout_.plot_area.Min.x + (flip_x_ ? 1 - fraction : fraction) * layout_.plot_area.GetWidth();
+  }
+  inline float yPos(double val) const {
+    const double fraction = (val - y_min_) / (y_max_ - y_min_);
+    return layout_.plot_area.Max.y - (flip_y_ ? 1 - fraction : fraction) * layout_.plot_area.GetHeight();
+  }
 
   // layout
   struct Layout {
@@ -132,9 +180,18 @@ private:
   bool drawing_ghost_ = false;  // drawing the drag preview: no mouse handling, no tip
   ImGuiID context_menu_id_ = 0;
 
+  std::string title_;
+  std::optional<std::pair<double, double>> fixed_y_limits_;
   TipLabel tip_label_;
   std::vector<SigItem> sigs_;
   double cur_sec_ = 0;
+  std::string pane_error_;
+  bool flip_x_ = false, flip_y_ = false;
+  std::string kind_ = "plot", camera_view_ = "road";
+  std::optional<std::pair<double, double>> fixed_x_limits_;
+  std::unique_ptr<CameraWidget> camera_;
+  std::unique_ptr<cabana::RecordedCameraWidget> recorded_camera_;
+  std::unique_ptr<cabana::MapWidget> map_;
   SeriesType series_type_ = SeriesType::Line;
   bool can_drop_ = false;
   double tooltip_x_ = -1;

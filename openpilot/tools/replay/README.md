@@ -83,12 +83,12 @@ openpilot/tools/replay/replay <route-name>
 cd openpilot/selfdrive/ui && ./ui.py
 ```
 
-## Work with plotjuggler
-If you want to use replay with plotjuggler, you can stream messages by running:
+## Analyze a replay with Cabana
+Stream messages from replay into Cabana:
 
 ```bash
 openpilot/tools/replay/replay <route-name>
-openpilot/tools/plotjuggler/juggle.py --stream
+openpilot/tools/cabana/cabana --msgq
 ```
 
 ## watch3
