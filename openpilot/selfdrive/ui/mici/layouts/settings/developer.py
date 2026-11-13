@@ -34,7 +34,7 @@ class DeveloperLayoutMici(NavScroller):
 
     def github_username_callback(username: str):
       if username:
-        self._ssh_keys_btn.set_value("Loading...")
+        self._ssh_keys_btn.set_value("loading...")
         self._ssh_keys_btn.set_enabled(False)
 
         def on_response(error):
@@ -42,13 +42,13 @@ class DeveloperLayoutMici(NavScroller):
           if error is None:
             self._ssh_keys_btn.set_value(username)
           else:
-            self._ssh_keys_btn.set_value("Not set")
+            self._ssh_keys_btn.set_value("not set")
             gui_app.push_widget(BigDialog("", error))
 
         self._ssh_fetcher.fetch(username, on_response)
       else:
         self._ssh_fetcher.clear()
-        self._ssh_keys_btn.set_value("Not set")
+        self._ssh_keys_btn.set_value("not set")
 
     def ssh_keys_callback():
       github_username = ui_state.params.get("GithubUsername") or ""
@@ -61,7 +61,7 @@ class DeveloperLayoutMici(NavScroller):
 
     txt_ssh = gui_app.texture("icons_mici/settings/developer/ssh.png", 56, 64)
     github_username = ui_state.params.get("GithubUsername") or ""
-    self._ssh_keys_btn = BigButton("SSH keys", "Not set" if not github_username else github_username, icon=txt_ssh,
+    self._ssh_keys_btn = BigButton("ssh keys", "not set" if not github_username else github_username, icon=txt_ssh,
                                    description="Grant SSH access to all public keys in your GitHub settings. Only enter your own username.")
     self._ssh_keys_btn.set_click_callback(ssh_keys_callback)
 
