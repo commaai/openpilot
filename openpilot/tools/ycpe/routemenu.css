@@ -1,0 +1,15 @@
+/* the route menu: the name's anatomy, the Route, Car and Version tables as they fit, actions, toggles */
+.route-pop { display: flex; flex-direction: column; width: max-content; min-width: 320px; max-width: 100%; }
+.route-pop > * + * { border-top: 1px solid var(--line); }
+.rm-body { padding: 8px 14px; font-size: 12px; }
+.rm-body .groups { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 4px 24px; }
+.rm-body .groups section { min-width: 0; max-width: 100%; }
+.rm-body h4 { margin: 0 0 2px; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.rm-body .kv-table { border-collapse: collapse; }
+.rm-body .kv-table th { padding: 1px 12px 1px 0; color: var(--muted); font-weight: 500; text-align: left; vertical-align: top; white-space: nowrap; }
+.rm-body .kv-table td { padding: 1px 0; overflow-wrap: anywhere; }
+.rm-body .kv-table .icon-btn { vertical-align: middle; }
+.rm-body .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0; }
+.rm-body .toggles { display: flex; flex-direction: column; gap: 4px; }
+.rm-body .check { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 6px; min-height: 24px; cursor: pointer; }
+.rm-body .check input { align-self: center; margin: 0; }

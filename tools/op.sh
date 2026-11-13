@@ -318,6 +318,11 @@ function op_juggle() {
   op_run_command openpilot/tools/plotjuggler/juggle.py "$@"
 }
 
+function op_ycpe() {
+  op_before_cmd
+  op_run_command openpilot/tools/ycpe/serve.py "$@"
+}
+
 function op_lint() {
   op_before_cmd
   op_run_command scripts/lint/lint.sh "$@"
@@ -462,6 +467,7 @@ function op_default() {
   echo -e "  ${BOLD}stop${NC}         Stops openpilot"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands [Tooling]:${NC}"
+  echo -e "  ${BOLD}ycpe${NC}         Run ycpe: drives, plots, CAN and video in the browser"
   echo -e "  ${BOLD}juggle${NC}       Run PlotJuggler"
   echo -e "  ${BOLD}replay${NC}       Run Replay"
   echo -e "  ${BOLD}cabana${NC}       Run Cabana"
@@ -516,6 +522,7 @@ function _op() {
     esim )          shift 1; op_esim "$@" ;;
     setup )         shift 1; op_setup "$@" ;;
     build )         shift 1; op_build "$@" ;;
+    ycpe )          shift 1; op_ycpe "$@" ;;
     juggle )        shift 1; op_juggle "$@" ;;
     cabana )        shift 1; op_cabana "$@" ;;
     lint )          shift 1; op_lint "$@" ;;

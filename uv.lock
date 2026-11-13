@@ -638,6 +638,7 @@ submodules = [
 testing = [
     { name = "codespell" },
     { name = "coverage" },
+    { name = "oxlint" },
     { name = "ruff" },
     { name = "ty" },
 ]
@@ -678,6 +679,7 @@ requires-dist = [
     { name = "msgq-ipc", extras = ["build"], marker = "extra == 'submodules'", virtual = "msgq_repo" },
     { name = "numpy", specifier = ">=2.0" },
     { name = "opendbc", marker = "extra == 'submodules'", editable = "opendbc_repo" },
+    { name = "oxlint", marker = "extra == 'testing'" },
     { name = "pandacan", marker = "extra == 'submodules'", editable = "panda" },
     { name = "pycapnp", specifier = "==2.1.0" },
     { name = "pyjwt", extras = ["crypto"] },
@@ -698,6 +700,20 @@ provides-extras = ["testing", "tools", "submodules"]
 
 [package.metadata.requires-dev]
 standalone = [{ name = "openpilot", extras = ["submodules"] }]
+
+[[package]]
+name = "oxlint"
+version = "1.93.0"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/34/91/c385f057c2c4496204735cc672101dde32755d7463b0f9af51a32f6d910c/oxlint-1.93.0-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:15ca07ed3b76e25ec403fac6afc537b27111f5b99586b23fbb2b83aeeb23eedd", size = 6395224, upload-time = "2026-11-09T14:59:07.122Z" },
+    { url = "https://files.pythonhosted.org/packages/40/dc/be8b92fb3a46d8217253d0fb0b9ea9196fa35009dbc70816c4a775887745/oxlint-1.93.0-py3-none-macosx_11_0_arm64.whl", hash = "sha256:b885b9e9d55ba2e43d55de596731418e2604e87b67a5f9d6cf7aac17d6d9cff0", size = 5739380, upload-time = "2026-11-09T14:59:08.827Z" },
+    { url = "https://files.pythonhosted.org/packages/0d/e6/54c26e1f1a1a65f7066a7ad03acd0304a1df1dc7046c975b932343e5cfe9/oxlint-1.93.0-py3-none-manylinux_2_18_aarch64.whl", hash = "sha256:7e162f7a3cc904533009b6b2b77f0cd1660db63fafc4fdddcb89edd3ea25a39b", size = 6112491, upload-time = "2026-11-09T14:59:10.509Z" },
+    { url = "https://files.pythonhosted.org/packages/19/74/fb44d8a2fcef8519f79fdd45bf0ed5e944a0918ae6b95965ae46642991d5/oxlint-1.93.0-py3-none-manylinux_2_18_x86_64.whl", hash = "sha256:1cacaf653f08ff70ee0094531bb6f7655883cc5a960ac1a9d65adea9c7ae4e09", size = 6672886, upload-time = "2026-11-09T14:59:12.82Z" },
+    { url = "https://files.pythonhosted.org/packages/72/6f/3954b7d480211bce5da4ad162f5fd7aa1ba26653a546c83eda38363ef96c/oxlint-1.93.0-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:a227ca88ad39b6f0bab53eacf99e0edc6c9221aafff85be80a525de2115e58a4", size = 6124949, upload-time = "2026-11-09T14:59:14.679Z" },
+    { url = "https://files.pythonhosted.org/packages/ee/66/d61c8a09183ee078076ff59bbd080f4d4f0288aabcf11d19ef00145dac04/oxlint-1.93.0-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:2bda3ea6a919bfd080bf598adfb16e31e61b947e8f14b6784a7578285967889e", size = 6739391, upload-time = "2026-11-09T14:59:16.477Z" },
+    { url = "https://files.pythonhosted.org/packages/02/4d/5c028df6a22f8a806b414836d09de8a0e83779c5f081cf068d0d08b0c2f9/oxlint-1.93.0-py3-none-win_amd64.whl", hash = "sha256:02227511ac935db5760f94e40be0f941979eeb575c57a83855df88be25e3b6ee", size = 6244530, upload-time = "2026-11-09T14:59:18.452Z" },
+]
 
 [[package]]
 name = "packaging"
