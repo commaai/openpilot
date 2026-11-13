@@ -6,8 +6,10 @@
 #include <vector>
 
 #include "tools/cabana/streams/abstractstream.h"
+#ifndef __EMSCRIPTEN__
 #include "tools/cabana/streams/pandastream.h"
-#ifdef __linux__
+#endif
+#if defined(__linux__) && !defined(__EMSCRIPTEN__)
 #include "tools/cabana/streams/socketcanstream.h"
 #endif
 #include "tools/cabana/ui/dialogs/routesdialog.h"
@@ -40,6 +42,7 @@ private:
   std::shared_ptr<bool> alive_ = std::make_shared<bool>(true);
 };
 
+#ifndef __EMSCRIPTEN__
 class OpenPandaWidget : public AbstractOpenStreamWidget {
 public:
   OpenPandaWidget();
@@ -72,7 +75,7 @@ private:
   std::string ip_address_;
 };
 
-#ifdef __linux__
+#if defined(__linux__) && !defined(__EMSCRIPTEN__)
 class OpenSocketCanWidget : public AbstractOpenStreamWidget {
 public:
   OpenSocketCanWidget();
@@ -88,6 +91,7 @@ private:
   SocketCanStreamConfig config = {};
 };
 #endif
+#endif  // __EMSCRIPTEN__
 
 class StreamSelector {
 public:

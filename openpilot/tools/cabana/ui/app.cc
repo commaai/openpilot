@@ -10,9 +10,17 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#ifdef __EMSCRIPTEN__
+#include <GLES3/gl3.h>
+#else
 #include "imgui_impl_opengl3_loader.h"
+#endif
 #include "implot.h"
 #include <GLFW/glfw3.h>
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#include <GLFW/emscripten_glfw3.h>
+#endif
 
 #include "tools/cabana/settings.h"
 #include "tools/cabana/ui/inistate.h"
@@ -40,6 +48,7 @@ void glfwErrorCallback(int error, const char *description) {
   fprintf(stderr, "GLFW error %d: %s\n", error, description);
 }
 
+#ifndef __EMSCRIPTEN__
 void paceFrame() {
   using clock = std::chrono::steady_clock;
   static clock::duration period = [] {
@@ -56,6 +65,7 @@ void paceFrame() {
   }
   std::this_thread::sleep_until(next);
 }
+#endif
 
 void renderFrame(GLFWwindow *window, MainWindow *win) {
   glfwPollEvents();
@@ -83,8 +93,10 @@ void renderFrame(GLFWwindow *window, MainWindow *win) {
     ImGui::RenderPlatformWindowsDefault();
     glfwMakeContextCurrent(backup_context);
   }
+#ifndef __EMSCRIPTEN__  // the browser presents the canvas after each frame
   glfwSwapBuffers(window);
   paceFrame();
+#endif
 }
 
 class GlfwRuntime {
@@ -95,9 +107,16 @@ public:
     setMacAppName("Cabana");
 #endif
     if (!glfwInit()) throw std::runtime_error("glfwInit failed");
+#ifdef __EMSCRIPTEN__
+    // the glfw port maps the major version to the WebGL version
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+#else
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#endif
 #ifdef __APPLE__
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
 #endif
@@ -109,7 +128,11 @@ public:
       throw std::runtime_error("glfwCreateWindow failed");
     }
     glfwMakeContextCurrent(window_);
+#ifdef __EMSCRIPTEN__
+    emscripten_glfw_make_canvas_resizable(window_, "window", nullptr);
+#else
     glfwSwapInterval(0);
+#endif
   }
 
   ~GlfwRuntime() {
@@ -133,8 +156,10 @@ public:
     ImPlot::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+#ifndef __EMSCRIPTEN__
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     io.ConfigViewportsNoDecoration = true;
+#endif
     io.ConfigDockingTransparentPayload = true;
     io.IniFilename = nullptr;
     io.LogFilename = nullptr;
@@ -144,7 +169,12 @@ public:
       throw std::runtime_error("ImGui_ImplGlfw_InitForOpenGL failed");
     }
     glfwSetKeyCallback(window, keyCallback);
-    if (!ImGui_ImplOpenGL3_Init("#version 330")) {
+#ifdef __EMSCRIPTEN__
+    const char *glsl_version = "#version 300 es";
+#else
+    const char *glsl_version = "#version 330";
+#endif
+    if (!ImGui_ImplOpenGL3_Init(glsl_version)) {
       ImGui_ImplGlfw_Shutdown();
       ImPlot::DestroyContext();
       ImGui::DestroyContext();
@@ -169,31 +199,58 @@ std::vector<KeyEvent> takeKeyEvents() {
   return std::exchange(g_key_events, {});
 }
 
-int run(std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader, const std::string &dbc_file) {
-  try {
-    // SIGINT/SIGTERM close all windows (which may ask about unsaved changes), then exit
-    UnixSignalHandler signal_handler([]() { g_signal_exit = true; });
-
-    GlfwRuntime glfw;
-    ImGuiRuntime imgui(glfw.window());
+// everything that lives for the duration of the app, in construction order
+struct App {
+  App(std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader, const std::string &dbc_file)
+      : glfw(), imgui(glfw.window()), win(nullptr) {
     loadFonts();
     applyTheme(settings.theme);
     inistate::addSettingsHandler();
     inistate::load();
     inistate::applyWindowGeometry(glfw.window());
+    win = std::make_unique<MainWindow>(glfw.window(), std::move(stream), std::move(stream_loader), dbc_file);
+  }
 
-    MainWindow win(glfw.window(), std::move(stream), std::move(stream_loader), dbc_file);
-    renderFrame(glfw.window(), &win);
-    glfwShowWindow(glfw.window());
-    while (!win.exited()) {
-      if (g_signal_exit.exchange(false)) {
-        printf("\nexiting...\n");
-        win.close();
-      } else if (glfwWindowShouldClose(glfw.window())) {
-        glfwSetWindowShouldClose(glfw.window(), GLFW_FALSE);
-        win.close();
-      }
-      renderFrame(glfw.window(), &win);
+  void step() {
+    if (g_signal_exit.exchange(false)) {
+      printf("\nexiting...\n");
+      win->close();
+    } else if (glfwWindowShouldClose(glfw.window())) {
+      glfwSetWindowShouldClose(glfw.window(), GLFW_FALSE);
+      win->close();
+    }
+    renderFrame(glfw.window(), win.get());
+  }
+
+  GlfwRuntime glfw;
+  ImGuiRuntime imgui;
+  std::unique_ptr<MainWindow> win;
+};
+
+#ifdef __EMSCRIPTEN__
+int run(std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader, const std::string &dbc_file) {
+  App *app = nullptr;
+  try {
+    app = new App(std::move(stream), std::move(stream_loader), dbc_file);
+  } catch (const std::exception &e) {
+    fprintf(stderr, "%s\n", e.what());
+    return 1;
+  }
+  glfwShowWindow(app->glfw.window());
+  // the browser owns the loop; the page going away is the only exit
+  emscripten_set_main_loop_arg([](void *arg) { static_cast<App *>(arg)->step(); }, app, 0, false);
+  return 0;
+}
+#else
+int run(std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader, const std::string &dbc_file) {
+  try {
+    // SIGINT/SIGTERM close all windows (which may ask about unsaved changes), then exit
+    UnixSignalHandler signal_handler([]() { g_signal_exit = true; });
+    App app(std::move(stream), std::move(stream_loader), dbc_file);
+    renderFrame(app.glfw.window(), app.win.get());
+    glfwShowWindow(app.glfw.window());
+    while (!app.win->exited()) {
+      app.step();
     }
     return 0;
   } catch (const std::exception &e) {
@@ -201,3 +258,4 @@ int run(std::unique_ptr<AbstractStream> stream, StreamLoader stream_loader, cons
     return 1;
   }
 }
+#endif
