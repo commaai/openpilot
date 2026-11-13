@@ -197,7 +197,8 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
   assert(receive_buffer_size + RECV_SIZE <= sizeof(receive_buffer));
 
   int recv = handle->bulk_read(0x81, &receive_buffer[receive_buffer_size], RECV_SIZE);
-  if (!comms_healthy()) {
+  // this read's own result: comms_healthy() is shared with the send thread, whose failure says nothing about this data
+  if (recv < 0) {
     return false;
   }
 

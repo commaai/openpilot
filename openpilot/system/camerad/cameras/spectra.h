@@ -58,7 +58,7 @@ int device_config(int fd, int32_t session_handle, int32_t dev_handle, uint64_t p
 int device_control(int fd, int op_code, int session_handle, int dev_handle);
 int do_cam_control(int fd, int op_code, void *handle, int size);
 void *alloc_w_mmu_hdl(int video0_fd, int len, uint32_t *handle, int align = 8, int flags = CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
-                      int mmu_hdl = 0, int mmu_hdl2 = 0);
+                      int mmu_hdl = -1, int mmu_hdl2 = -1);
 void release(int video0_fd, uint32_t handle);
 
 class MemoryManager {
@@ -100,13 +100,19 @@ public:
   SpectraBuf() = default;
 
   ~SpectraBuf() {
+    free();
+  }
+
+  void free() {
     if (video_fd >= 0 && ptr) {
       munmap(ptr, mmap_size);
       release(video_fd, handle);
+      ptr = nullptr;
     }
   }
 
-  void init(SpectraMaster *m, int s, int a, bool shared_access, int mmu_hdl = 0, int mmu_hdl2 = 0, int count = 1) {
+  void init(SpectraMaster *m, int s, int a, bool shared_access, int mmu_hdl = -1, int mmu_hdl2 = -1, int count = 1) {
+    free();  // a reopened camera allocates again
     video_fd = m->video0_fd;
     size = s;
     alignment = a;
@@ -137,6 +143,7 @@ public:
   ~SpectraCamera();
 
   void camera_open(VisionIpcServer *v);
+  void configDevices();
   bool handle_camera_event(const cam_req_mgr_message *event_data);
   void camera_close();
   void camera_map_bufs();
@@ -210,11 +217,16 @@ public:
   uint64_t last_valid_ife_frame_id = 0;
   int invalid_request_count = 0;
   bool skip_expected = true;
+  bool recovering = false;  // requeued after an error, and no frame has come through since
+  uint64_t last_sof = 0;       // SOF timestamp of the last published frame
+  int64_t last_frame_id = -1;  // its frame ID
 
   CameraBuf buf;
   SpectraMaster *m;
 
 private:
+  void recover(uint64_t from_request_id);
+  void reopen(uint64_t from_request_id);
   void clearAndRequeue(uint64_t from_request_id);
   bool validateEvent(uint64_t request_id, uint64_t ife_frame_id);
   bool waitForFrameReady(uint64_t request_id);
@@ -224,6 +236,7 @@ private:
     uint64_t timestamp;
     uint64_t frame_id_offset = 0;
     bool staggered = false;
+    bool settled = false;  // this frame came one frame period after the camera's previous one
   };
   inline static std::map<int, SyncData> camera_sync_data;
   inline static bool first_frame_synced = false;
