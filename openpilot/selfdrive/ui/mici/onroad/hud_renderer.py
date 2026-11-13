@@ -20,7 +20,7 @@ KM_TO_MILE = 0.621371
 CRUISE_DISABLED_CHAR = '–'
 
 SET_SPEED_PERSISTENCE = 2.5  # seconds
-WHEEL_SIZE = 50
+WHEEL_SIZE = 52
 WHEEL_WHITE = (255, 255, 255)
 WHEEL_GREEN = (0, 255, 64)
 WHEEL_ORANGE = (255, 115, 0)
@@ -159,10 +159,9 @@ class HudRenderer(Widget):
     self._txt_wheel: rl.Texture = gui_app.texture('icons_mici/wheel.png', WHEEL_SIZE, WHEEL_SIZE)
     # glow from the design (spread 4, blur 24 at 128px)
     self._txt_wheel_glow = _glow_texture('icons_mici/wheel.png', WHEEL_SIZE, 4 * WHEEL_SIZE / 128, 24 * WHEEL_SIZE / 128)
-    self._txt_exclamation_point: rl.Texture = gui_app.texture('icons_mici/exclamation_point.png', 9, 44)
-    self._txt_chestnut: rl.Texture = gui_app.texture('icons_mici/chestnut.png', 60, 44)
-    self._txt_chestnut_green: rl.Texture = gui_app.texture('icons_mici/chestnut_green.png', 60, 44)
-    self._txt_chestnut_orange: rl.Texture = gui_app.texture('icons_mici/chestnut_orange.png', 75, 44)
+    self._txt_chestnut: rl.Texture = gui_app.texture('icons_mici/chestnut.png', 48, 36)
+    self._txt_chestnut_green: rl.Texture = gui_app.texture('icons_mici/chestnut_green.png', 48, 36)
+    self._txt_chestnut_orange: rl.Texture = gui_app.texture('icons_mici/chestnut_orange.png', 61, 36)
     self._chestnut_icon: rl.Texture | None = None
     self._wheel_alpha_filter = FirstOrderFilter(0, 0.05, 1 / gui_app.target_fps)
     self._wheel_y_filter = FirstOrderFilter(0, 0.1, 1 / gui_app.target_fps)
@@ -175,6 +174,9 @@ class HudRenderer(Widget):
   def set_wheel_critical_icon(self, critical: bool):
     """Set the wheel icon to critical or normal state."""
     self._show_wheel_critical = critical
+
+  def set_torque_bar_hidden(self, hidden: bool):
+    self._torque_bar.set_hidden(hidden)
 
   def set_can_draw_top_icons(self, can_draw_top_icons: bool):
     """Set whether to draw the top part of the HUD."""
@@ -222,6 +224,8 @@ class HudRenderer(Widget):
 
     self._draw_model_source(rect)
 
+  def render_steering_wheel(self, rect: rl.Rectangle) -> None:
+    """Draw the steering wheel centered at the bottom of rect, after render() has updated state."""
     self._draw_steering_wheel(rect)
 
   def _draw_model_source(self, rect: rl.Rectangle) -> None:
@@ -246,8 +250,7 @@ class HudRenderer(Widget):
     if alpha < 1e-2:
       return
 
-    pos = rl.Vector2(rect.x + rect.width - 10 - icon.width,
-                     rect.y + rect.height - 14 - (self._txt_wheel.height + icon.height) / 2)
+    pos = rl.Vector2(rect.x + 14, rect.y + rect.height - 10 - icon.height)
     rl.draw_texture_ex(icon, pos, 0.0, 1.0, rl.Color(255, 255, 255, int(255 * opacity * alpha)))
 
   def _draw_steering_wheel(self, rect: rl.Rectangle) -> None:
@@ -272,8 +275,8 @@ class HudRenderer(Widget):
     glow = self._wheel_glow_filter.update(target_color != WHEEL_WHITE)
 
     # pos
-    pos_x = int(rect.x + 21 + wheel_txt.width / 2)
-    pos_y = int(rect.y + rect.height - 14 - wheel_txt.height / 2 + self._wheel_y_filter.x)
+    pos_x = int(rect.x + rect.width / 2)
+    pos_y = int(rect.y + rect.height - 10 - wheel_txt.height / 2 + self._wheel_y_filter.x)
     rotation = -ui_state.sm['carState'].steeringAngleDeg
 
     turn_intent_margin = 25
@@ -292,13 +295,6 @@ class HudRenderer(Widget):
     rl.draw_texture_pro(wheel_txt, rl.Rectangle(0, 0, wheel_txt.width, wheel_txt.height),
                         rl.Rectangle(pos_x, pos_y, wheel_txt.width, wheel_txt.height),
                         rl.Vector2(wheel_txt.width / 2, wheel_txt.height / 2), rotation, rl.Color(*wheel_color, int(alpha)))
-
-    if self._show_wheel_critical:
-      # Draw exclamation point icon
-      EXCLAMATION_POINT_SPACING = 10
-      exclamation_pos_x = pos_x - self._txt_exclamation_point.width / 2 + wheel_txt.width / 2 + EXCLAMATION_POINT_SPACING
-      exclamation_pos_y = pos_y - self._txt_exclamation_point.height / 2
-      rl.draw_texture_ex(self._txt_exclamation_point, rl.Vector2(exclamation_pos_x, exclamation_pos_y), 0.0, 1.0, rl.WHITE)
 
   def _draw_set_speed(self, rect: rl.Rectangle) -> None:
     """Draw the MAX speed indicator box."""

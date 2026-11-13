@@ -152,6 +152,10 @@ class TorqueBar(Widget):
     super().__init__()
     self._torque_filter = FirstOrderFilter(0, 0.1, 1 / gui_app.target_fps)
     self._torque_line_alpha_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
+    self._hidden = False
+
+  def set_hidden(self, hidden: bool):
+    self._hidden = hidden
 
   def _update_state(self):
     # torque line
@@ -185,7 +189,7 @@ class TorqueBar(Widget):
     torque_line_height = np.interp(abs(self._torque_filter.x), [0.5, 1], [14, 56])
 
     # animate alpha and angle span
-    self._torque_line_alpha_filter.update(ui_state.status != UIStatus.DISENGAGED)
+    self._torque_line_alpha_filter.update(ui_state.status != UIStatus.DISENGAGED and not self._hidden)
 
     torque_line_bg_alpha = np.interp(abs(self._torque_filter.x), [0.5, 1.0], [0.25, 0.5])
     torque_line_bg_color = rl.Color(255, 255, 255, int(255 * torque_line_bg_alpha * self._torque_line_alpha_filter.x))
@@ -201,7 +205,7 @@ class TorqueBar(Widget):
     # centerline radius & center (you already have these values)
     mid_r = torque_line_radius + torque_line_height / 2
 
-    cx = rect.x + rect.width / 2 + 8  # offset 8px to right of camera feed
+    cx = rect.x + rect.width / 2
     cy = rect.y + rect.height + torque_line_radius - torque_line_offset
     offset = np.array([cx, cy], dtype=np.float32)
 
@@ -215,11 +219,11 @@ class TorqueBar(Widget):
     sl_pts = arc_bar_pts(mid_r, torque_line_height, a0s, a1s) + offset
 
     # draw beautiful gradient from center to 65% of the bg torque bar width
-    start_grad_pt = cx / rect.width
+    start_grad_pt = (cx - rect.x) / rect.width
     if self._torque_filter.x < 0:
-      end_grad_pt = (cx * (1 - 0.65) + (min(bg_pts[:, 0]) * 0.65)) / rect.width
+      end_grad_pt = (cx * (1 - 0.65) + (min(bg_pts[:, 0]) * 0.65) - rect.x) / rect.width
     else:
-      end_grad_pt = (cx * (1 - 0.65) + (max(bg_pts[:, 0]) * 0.65)) / rect.width
+      end_grad_pt = (cx * (1 - 0.65) + (max(bg_pts[:, 0]) * 0.65) - rect.x) / rect.width
 
     # fade to orange as we approach max torque
     start_color = blend_colors(

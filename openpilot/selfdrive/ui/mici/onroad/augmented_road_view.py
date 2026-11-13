@@ -37,6 +37,8 @@ WIDE_CAM_MAX_SPEED = 5.0  # m/s (11 mph)
 ROAD_CAM_MIN_SPEED = 10.0  # m/s (22 mph)
 
 CAM_Y_OFFSET = 20
+LEFT_COLUMN_WIDTH = 92
+CONFIDENCE_BALL_INSET = 52  # 32px ball, 10px margin to the edge and to alert text
 
 
 class BookmarkIcon(Widget):
@@ -175,7 +177,7 @@ class AugmentedRoadView(CameraView):
     self._hud_renderer = HudRenderer()
     self._long_indicator = LongIndicator()
     self._alert_renderer = AlertRenderer()
-    self._driver_state_renderer = DriverStateRenderer()
+    self._driver_state_renderer = DriverStateRenderer(background=False)
     self._confidence_ball = ConfidenceBall()
     self._offroad_label = UnifiedLabel("start the car to\nuse openpilot", 54, FontWeight.DISPLAY,
                                        text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
@@ -219,9 +221,10 @@ class AugmentedRoadView(CameraView):
     alert_to_render, not_animating_out = self._alert_renderer.will_render()
     show_navigation = ui_state.navigation_enabled and ui_state.nav_destination_set and alert_to_render is None
 
-    # Create inner content area with border padding
+    # Create inner content area with border padding. Without navigation, the black side panel is on the left
+    side_panel = 0 if show_navigation else SIDE_PANEL_WIDTH
     self._content_rect = rl.Rectangle(
-      self.rect.x,
+      self.rect.x + side_panel,
       self.rect.y,
       self.rect.width - (PANEL_WIDTH if show_navigation else SIDE_PANEL_WIDTH),
       self.rect.height,
@@ -245,20 +248,17 @@ class AugmentedRoadView(CameraView):
     # Fade out bottom of overlays for looks
     rl.draw_texture_ex(self._fade_texture, rl.Vector2(self._content_rect.x, self._content_rect.y), 0.0, 1.0, rl.WHITE)
 
-    # Hide DMoji when disengaged unless AlwaysOnDM is enabled
-    should_draw_dmoji = (not self._hud_renderer.drawing_top_icons() and
-                         (ui_state.status != UIStatus.DISENGAGED or ui_state.always_on_dm))
-    self._driver_state_renderer.set_should_draw(should_draw_dmoji)
-    self._driver_state_renderer.set_position(self._rect.x + 16, self._rect.y + 10)
-    self._driver_state_renderer.render()
-    self._long_indicator.set_should_draw(not self._hud_renderer.drawing_top_icons())
-    self._long_indicator.render(self._content_rect)
-
     self._hud_renderer.set_can_draw_top_icons(alert_to_render is None)
+    # critical alerts show a warning icon where the torque bar is
+    self._hud_renderer.set_torque_bar_hidden(alert_to_render is not None and alert_to_render.status == log.SelfdriveState.AlertStatus.critical)
     self._hud_renderer.set_wheel_critical_icon(alert_to_render is not None and not not_animating_out and
                                                alert_to_render.visual_alert == car.CarControl.HUDControl.VisualAlert.steerRequired)
+    self._alert_renderer.set_right_inset(0 if show_navigation else CONFIDENCE_BALL_INSET)
     self._alert_renderer.render(self._content_rect)
     self._hud_renderer.render(self._content_rect)
+
+    if not show_navigation:
+      self._confidence_ball.render(self._content_rect)
 
     # Draw fake rounded border
     rl.draw_rectangle_rounded_lines_ex(self._content_rect, 0.2 * 1.02, 10, 50, rl.BLACK)
@@ -266,12 +266,28 @@ class AugmentedRoadView(CameraView):
     # End clipping region
     rl.end_scissor_mode()
 
+    # DMoji, longitudinal indicator, and steering wheel are centered in the black side panel on the left,
+    # or in a column along the left edge of the camera when navigation takes the side panel
+    left_rect = rl.Rectangle(self._rect.x, self._rect.y, SIDE_PANEL_WIDTH, self._rect.height)
+    if show_navigation:
+      left_rect = rl.Rectangle(self._content_rect.x, self._content_rect.y, LEFT_COLUMN_WIDTH, self._content_rect.height)
+
+    # Hide DMoji when disengaged unless AlwaysOnDM is enabled. In the side panel nothing overlaps it, otherwise it hides under the set speed
+    should_draw_dmoji = ((not show_navigation or not self._hud_renderer.drawing_top_icons()) and
+                         (ui_state.status != UIStatus.DISENGAGED or ui_state.always_on_dm))
+    self._driver_state_renderer.set_should_draw(should_draw_dmoji)
+    # the 52px cone is centered 36px from the top left
+    dm_size = self._driver_state_renderer.rect.width
+    self._driver_state_renderer.set_position(left_rect.x + (left_rect.width - dm_size) / 2, left_rect.y + 36 - dm_size / 2)
+    self._driver_state_renderer.render()
+    self._long_indicator.set_should_draw(not show_navigation or not self._hud_renderer.drawing_top_icons())
+    self._long_indicator.render(left_rect)
+    self._hud_renderer.render_steering_wheel(left_rect)
+
     # Custom UI extension point - add custom overlays here
     # Use self._content_rect for positioning within camera bounds
     if show_navigation:
       self._navigation.render(rl.Rectangle(self._content_rect.x + self._content_rect.width, self.rect.y, PANEL_WIDTH, self.rect.height))
-    else:
-      self._confidence_ball.render(self.rect)
 
     self._bookmark_icon.render(self.rect)
 

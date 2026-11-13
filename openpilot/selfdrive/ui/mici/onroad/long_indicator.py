@@ -85,5 +85,5 @@ class LongIndicator(Widget):
 
   @staticmethod
   def _draw_centered(texture: rl.Texture, rect: rl.Rectangle, y: float, alpha: float) -> None:
-    pos = rl.Vector2(rect.x + 46 - texture.width / 2, rect.y + y - texture.height / 2)
+    pos = rl.Vector2(rect.x + (rect.width - texture.width) / 2, rect.y + y - texture.height / 2)
     rl.draw_texture_ex(texture, pos, 0.0, 1.0, rl.Color(255, 255, 255, round(255 * alpha)))
