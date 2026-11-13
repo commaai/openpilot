@@ -77,7 +77,7 @@ class DriverStateRenderer(Widget):
     self._should_draw = should_draw
 
   def set_dimmed(self, dimmed: bool):
-    """Draw greyed out without the cone, like when monitoring is inactive"""
+    """Draw grayed out without the cone, like when monitoring is inactive"""
     self._dimmed = dimmed
 
   def set_show_under_alerts(self, show_under_alerts: bool):

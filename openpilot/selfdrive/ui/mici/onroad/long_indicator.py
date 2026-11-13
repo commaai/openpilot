@@ -41,7 +41,7 @@ class LongIndicator(Widget):
       self._alpha_filter.x = 0.0
       return
 
-    # greyed out while disengaged, with the lit bars at the dimmed icon alpha
+    # grayed out while disengaged, with the lit bars at the dimmed icon alpha
     visible = self._should_draw
     dim = self._dim_filter.update(1.0 if sm['selfdriveState'].enabled else DIMMED_ICON_ALPHA / 0.9)
     alpha = self._alpha_filter.update(visible) * dim

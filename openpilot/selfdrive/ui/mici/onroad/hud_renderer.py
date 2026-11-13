@@ -199,7 +199,7 @@ class HudRenderer(Widget):
 
   def _draw_steering_wheel(self, rect: rl.Rectangle) -> None:
     # The wheel is the source of truth for engagement: green if and only if openpilot is engaged.
-    # When disengaged it's greyed out, except for steerRequired alerts which show it orange.
+    # When disengaged it's grayed out, except for steerRequired alerts which show it orange.
     engaged = ui_state.status == UIStatus.ENGAGED
     if engaged:
       target_color = WHEEL_GREEN
