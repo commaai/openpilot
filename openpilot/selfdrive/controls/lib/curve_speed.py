@@ -14,7 +14,7 @@ class CurveSpeed:
   def update(self, model):
     target = 0.0
     for t, v, yaw_rate in zip(model.position.t, model.velocity.x, model.orientationRate.z, strict=False):
-      if 0.5 < t < 6.0 and abs(v * yaw_rate) > MAX_LAT_ACCEL:
+      if t < 6.0 and abs(v * yaw_rate) > MAX_LAT_ACCEL:
         target = CURVE_ACCEL_OFFSET
         break
     return self.accel_offset.update(target)
