@@ -42,7 +42,7 @@ function run() {
 }
 
 function run_tests() {
-  run "ruff" ruff check openpilot --quiet
+  run "ruff" ruff check openpilot tools scripts lfs.py --quiet
   run "check_shell" python3 "$DIR/check_shell.py" "${SHELL_FILES[@]}"
   run "check_dependencies" python3 "$DIR/check_dependencies.py"
   run "check_indentation" "$DIR/check_indentation.py" "${PYTHON_FILES[@]}"
@@ -114,7 +114,7 @@ while IFS= read -r -d '' f; do
       PYTHON_FILES+=("$f")
     fi
   fi
-done < <(git ls-files -z openpilot)
+done < <(git ls-files -z openpilot tools scripts lfs.py)
 
 # Include tooling, launchers, and the extensionless Git hook.
 SHELL_FILES=()
