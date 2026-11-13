@@ -1413,6 +1413,7 @@ struct DeviceMotion @0xc24ca2b57206b44d {
   inputsOK @4 :Bool = false;
   posenetOK @5 :Bool = false;
   sensorsOK @6 :Bool = false;
+  filterOK @9 :Bool = false;
 
   timestamp @8 :UInt64;
 
