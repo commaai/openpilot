@@ -17,7 +17,6 @@ from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.mici.widgets.button import GreyBigButton, BigPillButton
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationDialog
 from openpilot.selfdrive.ui.mici.widgets.qr import QR
-from openpilot.common.hardware import HARDWARE
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.scroller import NavScroller
@@ -330,7 +329,7 @@ class MiciOffroadAlerts(NavScroller):
     update_alert_data = AlertData(key="UpdateAvailable", text="", severity=-1)
     self.sorted_alerts.append(update_alert_data)
     update_alert_item = AlertItem(update_alert_data)
-    update_alert_item.set_click_callback(lambda: HARDWARE.reboot())
+    update_alert_item.set_click_callback(self._show_update)
     self.alert_items.append(update_alert_item)
     self._scroller.add_widget(update_alert_item)
 
@@ -346,6 +345,10 @@ class MiciOffroadAlerts(NavScroller):
         alert_item.set_click_callback(self._confirm_uninstall)
       self.alert_items.append(alert_item)
       self._scroller.add_widget(alert_item)
+
+  def _show_update(self):
+    from openpilot.selfdrive.ui.mici.layouts.settings.software import UpdatePage
+    gui_app.push_widget(UpdatePage())
 
   def _confirm_uninstall(self):
     icon = gui_app.texture("icons_mici/settings/device/uninstall.png", 64, 64)
@@ -383,7 +386,7 @@ class MiciOffroadAlerts(NavScroller):
             version, date = parts[0], parts[3]
             version_string = f"\nopenpilot {version}, {date}\n"
 
-        update_alert_data.text = f"Update available {version_string}. Click to update. Read the release notes at blog.comma.ai."
+        update_alert_data.text = f"Update available.{version_string or ' '}Tap for details."
         update_alert_data.visible = True
         active_count += 1
       else:

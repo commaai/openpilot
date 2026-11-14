@@ -18,6 +18,8 @@ UPDATED_TIMEOUT = 10  # seconds to wait for updated to respond
 STATE_TO_DISPLAY_TEXT = {
   "checking...": tr("checking..."),
   "downloading...": tr("downloading..."),
+  "preparing...": tr("preparing..."),
+  "updating OS...": tr("updating OS..."),
   "finalizing update...": tr("finalizing update..."),
 }
 
@@ -109,7 +111,10 @@ class SoftwareLayout(Widget):
       self._waiting_for_updater = False
       self._download_btn.action_item.set_enabled(False)
       # Use the mapping, with a fallback to the original state string
-      display_text = STATE_TO_DISPLAY_TEXT.get(updater_state, updater_state)
+      # translate the stage, keep updated's progress detail (e.g. "updating OS... 45%, ~2 min left")
+      stage, sep, detail = updater_state.partition("... ")
+      stage = stage + "..." if sep else updater_state
+      display_text = STATE_TO_DISPLAY_TEXT.get(stage, stage) + (f" {detail}" if sep else "")
       self._download_btn.action_item.set_value(display_text)
     else:
       if failed_count > 0:
