@@ -49,12 +49,13 @@
 <script>
 const $=id=>document.getElementById(id), names=['Shoulder pan','Shoulder lift','Elbow','Wrist flex','Wrist roll','Gripper'];
 $('joints').innerHTML=names.map((name,i)=>`<tr><td><div class="jointname"><span class="jointnum">0${i+1}</span>${name}</div></td><td id="l${i}">—</td><td id="f${i}">—</td><td><input type="checkbox" class="reverse" id="r${i}" aria-label="Reverse ${name}"></td></tr>`).join('');
-let ws,state=null,videoRetry=null;
+let ws,state=null,videoRetry=null,wasLive=false;
 function badge(id,text,good){const el=$(id);el.classList.toggle('good',good);el.querySelector('span').textContent=text;}
 function send(op,extra={}){if(ws?.readyState===WebSocket.OPEN)ws.send(JSON.stringify({op,...extra}));}
 function stop(){send('stop');}
 function render(s){
   state=s;const device=s.device||{},arm=device.arm||{},camera=device.camera||{},online=!s.device_error&&arm.connected,live=!s.device_error&&camera.age!==null&&camera.age<1;
+  if(live&&!wasLive)video();wasLive=live;
   badge('sessionBadge',s.active?'Following':online&&s.leader.connected?'Ready · paused':'Connecting',s.active||online&&s.leader.connected);
   badge('videoBadge',live?'Live':'Waiting for video',live);$('videoOverlay').classList.toggle('hidden',live);
   $('videoOverlay').textContent=s.device_error||camera.error||'Waiting for wide-camera frames…';

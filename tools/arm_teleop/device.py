@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import secrets
 import signal
+import socket
 import sys
 import threading
 import time
@@ -43,6 +44,8 @@ class Camera:
         while True:
           buf = client.recv()
           if buf is None:
+            if time.monotonic() - last > 2:
+              raise TimeoutError("Wide camera stopped sending frames")
             continue
           data = np.asarray(buf.data, dtype=np.uint8)
           y = data[:buf.uv_offset].reshape(-1, buf.stride)[:buf.height, :buf.width]
@@ -121,6 +124,7 @@ class Robot:
         self.holding = True
         try:
           for i in IDS:
+            self.arm.write(i, 42, positions[i - 1], 2)
             self.arm.write(i, 41, 20)
             self.arm.write(i, 44, 0, 2)
             self.arm.write(i, 46, round(self.speed * TICKS_PER_DEGREE), 2)
@@ -198,6 +202,10 @@ class Robot:
 
 class Handler(BaseHTTPRequestHandler):
   protocol_version = "HTTP/1.1"
+
+  def setup(self):
+    super().setup()
+    self.connection.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
   def log_message(self, *args):
     pass
