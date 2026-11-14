@@ -1,6 +1,7 @@
 import numpy as np
 import raylib_nb as rl
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
+from openpilot.selfdrive.ui.mici.onroad import STATUS_FADE_RC
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.polygon import Gradient, draw_polygon
@@ -32,6 +33,7 @@ class ConfidenceBall(Widget):
     super().__init__()
     self._confidence_filter = FirstOrderFilter(0.0, 0.5, 1 / gui_app.target_fps)
     self._alpha_filter = FirstOrderFilter(1.0, 0.05, 1 / gui_app.target_fps)
+    self._color_filter = FirstOrderFilter(np.array([102, 102, 102, 26, 26, 26], dtype=float), STATUS_FADE_RC, 1 / gui_app.target_fps)
     self._hidden = False
 
   def set_hidden(self, hidden: bool):
@@ -57,25 +59,21 @@ class ConfidenceBall(Widget):
     dot_height = (1 - self._confidence_filter.x) * (self._rect.height - 2 * (status_dot_radius + margin)) + status_dot_radius + margin
     dot_height = self._rect.y + dot_height
 
-    # confidence zones
+    # confidence zones, top and bottom gradient colors
     if ui_state.status == UIStatus.ENGAGED:
       if self._confidence_filter.x > 0.5:
-        top_dot_color = rl.Color(0, 255, 187, 255)
-        bottom_dot_color = rl.Color(0, 255, 64, 255)
+        colors = (0, 255, 187, 0, 255, 64)
       elif self._confidence_filter.x > 0.2:
-        top_dot_color = rl.Color(255, 200, 0, 255)
-        bottom_dot_color = rl.Color(255, 115, 0, 255)
+        colors = (255, 200, 0, 255, 115, 0)
       else:
-        top_dot_color = rl.Color(255, 0, 21, 255)
-        bottom_dot_color = rl.Color(255, 0, 89, 255)
-
+        colors = (255, 0, 21, 255, 0, 89)
     elif ui_state.status == UIStatus.OVERRIDE:
-      top_dot_color = rl.Color(255, 255, 255, 255)
-      bottom_dot_color = rl.Color(82, 82, 82, 255)
-
+      colors = (255, 255, 255, 82, 82, 82)
     else:
-      top_dot_color = rl.Color(102, 102, 102, 255)
-      bottom_dot_color = rl.Color(26, 26, 26, 255)
+      colors = (102, 102, 102, 26, 26, 26)
+    c = np.round(self._color_filter.update(np.array(colors, dtype=float))).astype(int)
+    top_dot_color = rl.Color(*c[:3], 255)
+    bottom_dot_color = rl.Color(*c[3:], 255)
 
     draw_circle_gradient(dot_x, dot_height, status_dot_radius,
                          top_dot_color, bottom_dot_color, alpha)

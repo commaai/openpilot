@@ -3,7 +3,7 @@ import numpy as np
 import raylib_nb as rl
 from dataclasses import dataclass
 from openpilot.common.constants import CV
-from openpilot.selfdrive.ui.mici.onroad import DIMMED_ICON_ALPHA
+from openpilot.selfdrive.ui.mici.onroad import DIMMED_ICON_ALPHA, STATUS_FADE_RC
 from openpilot.selfdrive.ui.mici.onroad.torque_bar import TorqueBar
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus, ChestnutState
 from openpilot.system.ui.lib.application import gui_app, FontWeight, ASSETS_DIR
@@ -109,8 +109,8 @@ class HudRenderer(Widget):
     self._txt_chestnut_orange: rl.Texture = gui_app.texture('icons_mici/chestnut_orange.png', 61, 36)
     self._chestnut_icon: rl.Texture | None = None
     self._wheel_alpha_filter = FirstOrderFilter(0, 0.05, 1 / gui_app.target_fps)
-    self._wheel_color_filters = [FirstOrderFilter(c, 0.05, 1 / gui_app.target_fps) for c in WHEEL_WHITE]
-    self._wheel_glow_filter = FirstOrderFilter(0, 0.05, 1 / gui_app.target_fps)
+    self._wheel_color_filters = [FirstOrderFilter(c, STATUS_FADE_RC, 1 / gui_app.target_fps) for c in WHEEL_WHITE]
+    self._wheel_glow_filter = FirstOrderFilter(0, STATUS_FADE_RC, 1 / gui_app.target_fps)
 
     self._set_speed_alpha_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._chestnut_alpha_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)

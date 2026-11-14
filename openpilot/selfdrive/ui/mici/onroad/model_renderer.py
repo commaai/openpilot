@@ -5,7 +5,7 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.selfdrive.controls.radard import RADAR_TO_CAMERA
 from openpilot.selfdrive.locationd.calibrationd import HEIGHT_INIT
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
-from openpilot.selfdrive.ui.mici.onroad import blend_colors
+from openpilot.selfdrive.ui.mici.onroad import blend_colors, STATUS_FADE_RC
 from openpilot.selfdrive.ui.onroad.model_renderer import ModelRenderer as BaseModelRenderer, CLIP_MARGIN, MAX_DRAW_DISTANCE, STOCK_PATH_GRADIENT
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.polygon import draw_polygon
@@ -36,6 +36,7 @@ class ModelRenderer(BaseModelRenderer):
     super().__init__()
     self._lead_bars = [LeadVehicle(), LeadVehicle()]
     self._torque_filter = FirstOrderFilter(0, 0.1, 1 / gui_app.target_fps)
+    self._ll_color_filter = FirstOrderFilter(np.array([0., 255., 64.]), STATUS_FADE_RC, 1 / gui_app.target_fps)
 
   def _draw_offset(self) -> np.ndarray:
     # car space transform maps to rect-origin space
@@ -135,8 +136,8 @@ class ModelRenderer(BaseModelRenderer):
   def _get_ll_color(self, prob: float, adjacent: bool, left: bool):
     alpha = np.clip(prob, 0.0, 0.7)
     if adjacent:
-      _base_color = LANE_LINE_COLORS.get(ui_state.status, LANE_LINE_COLORS[UIStatus.DISENGAGED])
-      color = rl.Color(_base_color.r, _base_color.g, _base_color.b, int(alpha * 255))
+      r, g, b = np.round(self._ll_color_filter.x).astype(int)
+      color = rl.Color(r, g, b, int(alpha * 255))
 
       # turn adjacent lls orange if torque is high
       torque = self._torque_filter.x
@@ -158,6 +159,8 @@ class ModelRenderer(BaseModelRenderer):
   def _draw_lane_lines(self):
     """Draw lane lines and road edges. Two closest lines should be green (lane line or road edges)."""
     offset = self._draw_offset()
+    c = LANE_LINE_COLORS.get(ui_state.status, LANE_LINE_COLORS[UIStatus.DISENGAGED])
+    self._ll_color_filter.update(np.array([c.r, c.g, c.b], dtype=float))
 
     for i, lane_line in enumerate(self._lane_lines):
       if lane_line.projected_points.size == 0:
