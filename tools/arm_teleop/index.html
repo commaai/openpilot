@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arm control · comma four</title>
+<style>
+:root{color-scheme:dark;--bg:#0c1014;--panel:#141a20;--line:#29323a;--text:#edf2f5;--muted:#8c9ba8;--accent:#84e1c2;--red:#ff7779;--mono:ui-monospace,SFMono-Regular,Consolas,monospace}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 system-ui,-apple-system,sans-serif}button,input,select{font:inherit}button{cursor:pointer}button:disabled{cursor:default;opacity:.4}button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:4px}header{padding:23px 32px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:20px}.brand{display:flex;align-items:center;gap:14px}.mark{height:36px;width:36px;display:grid;place-items:center;background:var(--accent);color:#09291e;border-radius:10px;font-size:22px;font-weight:700}h1{font-size:20px;margin:0;font-weight:620;letter-spacing:-.5px}.subtitle{color:var(--muted);font-size:12px}.pill{border:1px solid var(--line);border-radius:24px;padding:6px 12px;font-size:12px;display:inline-flex;align-items:center;gap:7px}.dot{width:7px;height:7px;border-radius:50%;background:#65717c;display:inline-block}.good .dot{background:var(--accent);box-shadow:0 0 12px #84e1c240}.good{color:var(--accent)}.bad{color:var(--red)}.bad .dot{background:var(--red)}main{max-width:1720px;margin:auto;padding:28px 32px;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:24px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}.panelhead{padding:16px 20px;display:flex;justify-content:space-between;align-items:center}.eyebrow{text-transform:uppercase;letter-spacing:1.6px;font-size:10px;font-weight:700;color:var(--muted)}h2{font-size:15px;margin:0;font-weight:600}.mono{font-family:var(--mono);font-size:11px;color:var(--muted)}.viewer{background:#080b0d;aspect-ratio:1344/760;position:relative;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}.viewer img{width:100%;height:100%;object-fit:contain;display:block}.overlay{position:absolute;inset:0;display:grid;place-items:center;background:#090e13e8;color:var(--muted);text-align:center;padding:24px}.overlay.hidden{display:none}.viewtag{position:absolute;bottom:16px;left:16px;border:1px solid #ffffff25;background:#091014c9;border-radius:6px;padding:5px 9px;color:#d8e1e6;font:11px var(--mono)}.metrics{display:flex;gap:32px;padding:15px 20px}.metric{display:flex;gap:8px;align-items:baseline}.metric strong{font:16px var(--mono);font-weight:500}.metric span{color:var(--muted);font-size:11px}.joints{margin-top:22px}.joint-table{width:100%;border-collapse:collapse}.joint-table th{font-size:11px;color:var(--muted);font-weight:400;text-align:right;padding:0 20px 12px}.joint-table th:first-child{text-align:left}.joint-table td{border-top:1px solid #ffffff08;padding:10px 20px;text-align:right;font:12px var(--mono)}.joint-table td:first-child{text-align:left;font:13px system-ui}.joint-table td:nth-child(3){color:var(--accent)}.jointname{display:flex;align-items:center;gap:10px}.jointnum{color:#5f7180;font:10px var(--mono)}.reverse{width:15px;height:15px;accent-color:var(--accent);cursor:pointer}.table-note{padding:12px 20px;color:var(--muted);font-size:11px;border-top:1px solid var(--line)}aside{display:flex;flex-direction:column;gap:18px}.controls{padding:22px}.connection{display:flex;align-items:flex-start;gap:12px;padding:16px 0}.connection .device-icon{width:36px;height:36px;border:1px solid var(--line);border-radius:9px;display:grid;place-items:center;font-size:19px;color:var(--muted)}.connection-title{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:550}.connection-error{font-size:11px;color:var(--red);line-height:1.4;margin-top:4px;max-width:230px;overflow-wrap:anywhere}.route{margin:-4px 0 -4px 17px;border-left:1px dashed #45545d;height:20px}.divider{height:1px;background:var(--line);margin:12px 0 20px}.labelrow{display:flex;justify-content:space-between;align-items:center;margin:20px 0 10px;font-size:12px}.labelrow output{color:var(--accent);font:12px var(--mono)}input[type=range]{width:100%;accent-color:var(--accent)}.range-ends{display:flex;justify-content:space-between;font:10px var(--mono);color:#61717d;margin-top:4px}.select{width:100%;background:#0e1419;border:1px solid #35424b;color:var(--text);border-radius:7px;padding:9px 10px}.button{width:100%;padding:13px 14px;border:1px solid transparent;border-radius:8px;font-size:13px;font-weight:600;transition:background .15s,transform .1s}.button:active:not(:disabled){transform:translateY(1px)}.start{background:var(--accent);color:#103a2c;margin-top:24px}.start:hover:not(:disabled){background:#a6f2d9}.stop{background:#261c22;color:#ff9496;border-color:#67353c;margin-top:10px}.stop:hover{background:#3c2229}.release{background:transparent;color:var(--muted);font-size:11px;margin-top:10px;padding:7px;border:none;width:100%;text-decoration:underline;text-underline-offset:3px}.hint{color:var(--muted);font-size:11px;margin:12px 0 0;line-height:1.7}.key{padding:1px 5px;border:1px solid #39434b;border-radius:3px;font:10px var(--mono)}.session-note{margin-top:18px;padding:10px 12px;border-radius:7px;background:#0c1217;color:#b3c0c9;font-size:12px}.error{background:#311d22;color:#ffb1b3;border:1px solid #61343d;border-radius:8px;padding:12px 14px;font-size:12px}.error:empty{display:none}.settings{padding:20px 22px}.setting{display:flex;align-items:center;justify-content:space-between;padding:8px 0;font-size:12px;color:#b5c1ca}.setting span:last-child{color:var(--accent);font-size:11px}.settings p{margin:12px 0 0;color:var(--muted);font-size:11px}.footer{font-size:10px;color:#5c6e7b;font-family:var(--mono);padding:0 4px;display:flex;justify-content:space-between}.legend{display:flex;gap:12px;color:var(--muted);font-size:10px}.legend i{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:4px;background:#c7d1d9}.legend i.green{background:var(--accent)}@media(max-width:1000px){main{grid-template-columns:1fr 300px;padding:20px;gap:18px}header{padding:18px 20px}.metrics{gap:18px}}@media(max-width:760px){main{grid-template-columns:1fr;padding:14px}.brand .subtitle{display:none}header{padding:16px}.pill{font-size:10px}.metrics{gap:16px}.metric strong{font-size:13px}.joint-table th,.joint-table td{padding-left:14px;padding-right:14px}aside{grid-row:2}.joints{margin-top:14px}}
+</style>
+<header>
+  <div class="brand"><div class="mark">↗</div><div><h1>Arm control</h1><div class="subtitle">comma four · local teleoperation</div></div></div>
+  <div class="pill" id="sessionBadge"><i class="dot"></i><span>Connecting</span></div>
+</header>
+<main>
+  <section>
+    <div class="panel">
+      <div class="panelhead"><h2>Wide camera</h2><span class="pill" id="videoBadge"><i class="dot"></i><span>Waiting for video</span></span></div>
+      <div class="viewer"><img id="video" alt="Live view from the comma four wide front camera"><div class="overlay" id="videoOverlay"><div>Connecting to the wide camera…</div></div><div class="viewtag">FRONT / WIDE</div></div>
+      <div class="metrics"><div class="metric"><strong id="fps">—</strong><span>fps</span></div><div class="metric"><strong id="controlRate">—</strong><span>control Hz</span></div><div class="metric"><strong id="latency">—</strong><span>command ms</span></div><div class="metric"><strong id="frameAge">—</strong><span>frame age ms</span></div></div>
+    </div>
+    <div class="panel joints">
+      <div class="panelhead"><h2>Joint positions</h2><div class="legend"><span><i></i>Leader</span><span><i class="green"></i>Left arm</span></div></div>
+      <table class="joint-table"><thead><tr><th>Joint</th><th>Leader °</th><th>Left arm °</th><th title="Reverse this joint's following direction">Reverse</th></tr></thead><tbody id="joints"></tbody></table>
+      <div class="table-note">Encoder angles. Relative control starts from the current poses; these are not calibrated joint angles.</div>
+    </div>
+  </section>
+  <aside>
+    <div id="error" class="error" role="alert"></div>
+    <div class="panel controls">
+      <div class="eyebrow">Control link</div>
+      <div class="connection"><div class="device-icon">⌁</div><div><div class="connection-title" id="leaderTitle"><i class="dot"></i>Workstation leader</div><div class="mono" id="leaderSerial">5CBC431223</div><div class="connection-error" id="leaderError"></div></div></div>
+      <div class="route"></div>
+      <div class="connection"><div class="device-icon">↗</div><div><div class="connection-title" id="followerTitle"><i class="dot"></i>Left follower</div><div class="mono" id="followerSerial">5CBC431994</div><div class="connection-error" id="followerError"></div></div></div>
+      <div class="divider"></div>
+      <label class="labelrow" for="scale">Movement scale<output id="scaleLabel">0.50×</output></label>
+      <input id="scale" type="range" min="0.1" max="1" step="0.05" value="0.5"><div class="range-ends"><span>PRECISE</span><span>1:1</span></div>
+      <label class="labelrow" for="speed">Maximum joint speed</label><select id="speed" class="select"><option value="10">10° / sec · gentle</option><option value="20">20° / sec</option><option value="30" selected>30° / sec · standard</option><option value="45">45° / sec</option><option value="60">60° / sec</option></select>
+      <button class="button start" id="start" disabled>Start following</button>
+      <button class="button stop" id="stop">Pause / hold position</button>
+      <p class="hint"><span class="key">Space</span> or <span class="key">Esc</span> to stop. Pause, reposition the leader, then restart to recenter. Leaving this window pauses control.</p>
+      <button class="release" id="release">Release follower torque</button>
+      <p class="hint" style="margin-top:3px;text-align:center">Support the arm before releasing torque.</p>
+      <div class="session-note" id="note" role="status">Connecting to the device…</div>
+    </div>
+    <div class="panel settings"><div class="eyebrow">Device session</div><div class="setting"><span>Operating mode</span><span id="power">Connecting</span></div><div class="setting"><span>Idle shutdown</span><span id="shutdown">—</span></div><div class="setting"><span>Network address</span><span>Permanent MAC</span></div><div class="setting"><span>Control transport</span><span>SSH tunnel</span></div><p>Only the left arm receives commands. Other arms remain independent. A lost command link stops motion and holds the current pose.</p></div>
+    <div class="footer"><span>robot-arm-teleop</span><span>LOCAL SESSION</span></div>
+  </aside>
+</main>
+<script>
+const $=id=>document.getElementById(id), names=['Shoulder pan','Shoulder lift','Elbow','Wrist flex','Wrist roll','Gripper'];
+$('joints').innerHTML=names.map((name,i)=>`<tr><td><div class="jointname"><span class="jointnum">0${i+1}</span>${name}</div></td><td id="l${i}">—</td><td id="f${i}">—</td><td><input type="checkbox" class="reverse" id="r${i}" aria-label="Reverse ${name}"></td></tr>`).join('');
+let ws,state=null,videoRetry=null,wasLive=false;
+function badge(id,text,good){const el=$(id);el.classList.toggle('good',good);el.querySelector('span').textContent=text;}
+function send(op,extra={}){if(ws?.readyState===WebSocket.OPEN)ws.send(JSON.stringify({op,...extra}));}
+function stop(){send('stop');}
+function render(s){
+  state=s;const device=s.device||{},arm=device.arm||{},camera=device.camera||{},online=!s.device_error&&arm.connected,live=!s.device_error&&camera.age!==null&&camera.age<1;
+  if(live&&!wasLive)video();wasLive=live;
+  badge('sessionBadge',s.active?'Following':online&&s.leader.connected?'Ready · paused':'Connecting',s.active||online&&s.leader.connected);
+  badge('videoBadge',live?'Live':'Waiting for video',live);$('videoOverlay').classList.toggle('hidden',live);
+  $('videoOverlay').textContent=s.device_error||camera.error||'Waiting for wide-camera frames…';
+  $('fps').textContent=live?camera.fps.toFixed(1):'—';$('controlRate').textContent=s.active?s.rate.toFixed(1):'—';$('latency').textContent=s.active?s.latency.toFixed(0):'—';$('frameAge').textContent=live?Math.round(camera.age*1000):'—';
+  $('leaderTitle').classList.toggle('good',s.leader.connected);$('followerTitle').classList.toggle('good',!!online);
+  $('leaderSerial').textContent=s.leader.serial;$('followerSerial').textContent=arm.serial||'5CBC431994';
+  $('leaderError').textContent=s.leader.error||'';$('followerError').textContent=s.device_error||arm.error||'';
+  $('start').disabled=s.active||!online||!!arm.error||!s.leader.connected||!live;$('start').textContent=s.active?'● Following leader':'Start following';
+  $('release').disabled=s.active||!online;$('note').textContent=s.note;
+  $('power').textContent=device.performance?'Always on':'Connecting';$('shutdown').textContent=device.performance?'Disabled':'—';
+  for(let i=0;i<6;i++){$('l'+i).textContent=s.leader.connected&&s.leader.positions.length?(s.leader.positions[i]*360/4096).toFixed(1):'—';$('f'+i).textContent=online&&arm.positions.length?(arm.positions[i]*360/4096).toFixed(1):'—';$('r'+i).disabled=s.active;}
+  $('scale').disabled=s.active;$('speed').disabled=s.active;
+}
+function connect(){
+  ws=new WebSocket(`ws://${location.host}/ws`);
+  ws.onmessage=event=>{const msg=JSON.parse(event.data);if(msg.type==='state')render(msg);else if(msg.type==='error')$('error').textContent=msg.message;};
+  ws.onclose=()=>{$('start').disabled=true;badge('sessionBadge','Disconnected',false);$('note').textContent='Reconnecting. Control will remain paused.';setTimeout(connect,1000);};
+}
+function video(){clearTimeout(videoRetry);$('video').src='/video?t='+Date.now();}
+$('video').onerror=()=>{videoRetry=setTimeout(video,2000);};
+$('start').onclick=()=>{$('error').textContent='';send('start',{scale:+$('scale').value,speed:+$('speed').value,signs:names.map((_,i)=>$('r'+i).checked?-1:1)});};
+$('stop').onclick=stop;$('release').onclick=()=>{$('error').textContent='';send('release');};
+$('scale').oninput=()=>{$('scaleLabel').textContent=(+$('scale').value).toFixed(2)+'×';};
+document.addEventListener('keydown',e=>{if(e.code==='Space'||e.code==='Escape'){e.preventDefault();stop();}});
+window.addEventListener('blur',()=>{if(state?.active)stop();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});
+window.addEventListener('pagehide',stop);
+setInterval(()=>{if(!document.hidden)send('heartbeat');},100);
+connect();video();
+</script>
+</html>

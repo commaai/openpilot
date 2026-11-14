@@ -4,6 +4,7 @@
 #include <bitset>
 #include <cassert>
 #include <cerrno>
+#include <cstdlib>
 #include <memory>
 #include <thread>
 #include <utility>
@@ -192,7 +193,7 @@ std::optional<bool> send_panda_states(PubMaster *pm, Panda *panda, bool is_onroa
     panda->set_safety_model(cereal::CarParams::SafetyModel::NO_OUTPUT);
   }
 
-  bool power_save_desired = !ignition_local;
+  bool power_save_desired = !ignition_local && !std::getenv("ARM_TELEOP");
   if (((health.flags_pkt & HEALTH_FLAG_POWER_SAVE_ENABLED) != 0U) != power_save_desired) {
     panda->set_power_saving(power_save_desired);
   }
