@@ -126,10 +126,9 @@ class Setup(Widget):
     self._downloading_body_label = Label("Downloading...", TITLE_FONT_SIZE, FontWeight.MEDIUM, text_padding=20)
 
     try:
-      with open("/sys/class/hwmon/hwmon1/in1_input") as f:
-        voltage = float(f.read().strip()) / 1000.0
-        if voltage < 7:
-          self.state = SetupState.LOW_VOLTAGE
+      voltage = HARDWARE.get_voltage() / 1000.0
+      if voltage < 7:
+        self.state = SetupState.LOW_VOLTAGE
     except (FileNotFoundError, ValueError):
       self.state = SetupState.LOW_VOLTAGE
 

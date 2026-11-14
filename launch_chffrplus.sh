@@ -14,8 +14,13 @@ function agnos_init {
 
   # TODO: do this without udev in AGNOS
   # udev does this, but sometimes we startup faster
-  sudo chgrp gpu /dev/adsprpc-smd /dev/ion /dev/kgsl-3d0
-  sudo chmod 660 /dev/adsprpc-smd /dev/ion /dev/kgsl-3d0
+  # the downstream kernel has KGSL and ION, the upstream one MSM DRM and DMA heaps
+  local nodes=()
+  for node in /dev/adsprpc-smd /dev/ion /dev/kgsl-3d0 /dev/dri/card0 /dev/dri/renderD128 /dev/dma_heap/system; do
+    [ -e "$node" ] && nodes+=("$node")
+  done
+  sudo chgrp gpu "${nodes[@]}"
+  sudo chmod 660 "${nodes[@]}"
   sudo chgrp audio /dev/snd/*C*
   sudo chmod 660 /dev/snd/*C*
 

@@ -276,7 +276,8 @@ bool V4LVideoDecoder::open(AVCodecParameters *codecpar, bool hw_decoder) {
   }
   width = codecpar->width;
   height = codecpar->height;
-  v4l_decoder.init(V4LDecoder::DEVICE, width, height, V4L2_PIX_FMT_HEVC);
+  v4l_decoder = V4LDecoder::create();
+  v4l_decoder->init(width, height, V4L2_PIX_FMT_HEVC);
   return true;
 }
 
@@ -301,10 +302,10 @@ bool V4LVideoDecoder::decode(FrameReader *reader, int idx, VisionBuf *buf) {
   reader->prev_idx = idx;
   bool result = false;
   AVPacket pkt;
-  v4l_decoder.avctx = reader->input_ctx;
+  v4l_decoder->avctx = reader->input_ctx;
   for (int i = from_idx; i <= idx; ++i) {
     if (av_read_frame(reader->input_ctx, &pkt) == 0) {
-      result = v4l_decoder.decodeFrame(&pkt, buf) && (i == idx);
+      result = v4l_decoder->decodeFrame(&pkt, buf) && (i == idx);
       av_packet_unref(&pkt);
     }
   }

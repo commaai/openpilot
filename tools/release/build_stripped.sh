@@ -41,6 +41,9 @@ rm -rf .git/modules/
 
 source "$SOURCE_DIR/tools/release/setup_lfs.sh"
 
+# ship tinygrad patched, as the build would patch it (see SConstruct)
+git apply -R --check --directory=tinygrad_repo tinygrad_repo.patch 2>/dev/null || git apply --directory=tinygrad_repo tinygrad_repo.patch
+
 # include source commit hash and build date in commit
 GIT_HASH=$(git --git-dir="$SOURCE_DIR/.git" rev-parse HEAD)
 GIT_COMMIT_DATE=$(git --git-dir="$SOURCE_DIR/.git" show --no-patch --format='%ct %ci' HEAD)

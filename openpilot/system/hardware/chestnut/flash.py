@@ -20,8 +20,9 @@ ROM_VID_PIDS = (("174c", "2464"), ("174c", "2463"))
 ROM_PRODUCT = "USB 3.2 PCIe TinyEnclosure"
 FIRMWARE_PATH = Path(__file__).with_name("firmware_wrapped.bin")
 CONFIG_DIR = "/data/chestnut_config"
-PM_PATHS = ("/sys/bus/platform/devices/a600000.ssusb", "/sys/bus/usb/devices/usb4")
-VBUS_PATH = "/sys/kernel/debug/regulator/smb2-vbus/enable"
+PM_PATHS = ("/sys/bus/platform/devices/a600000.ssusb", "/sys/bus/platform/devices/a600000.usb", "/sys/bus/usb/devices/usb4")
+VBUS_PATH = "/sys/kernel/debug/regulator/smb2-vbus/enable"  # downstream kernel
+PORT_TYPE_PATH = "/sys/class/typec/port0/port_type"  # upstream kernel
 IMAGE_OFFSET = 0x100
 SECTOR, PAGE = 4096, 128
 MAX_CODE_SIZE = 0x10000
@@ -382,28 +383,42 @@ def rom_write(image, config):
   print("recovery flash done", flush=True)
 
 
-def vbus_write(value):
+def vbus_setting(on):
+  # the file and value that switch the chestnut's VBUS. the upstream kernel has no VBUS switch, but its Type-C port
+  # turns VBUS off when it may only sink, and sources it again as a dual-role port. the Type-C class is in sysfs, which
+  # anyone can read, while the downstream switch is in debugfs, which only root can
+  if os.path.exists(PORT_TYPE_PATH):
+    return PORT_TYPE_PATH, "dual" if on else "sink"
+  return VBUS_PATH, "1" if on else "0"
+
+
+def vbus_control():
+  return os.path.exists(vbus_setting(True)[0])
+
+
+def vbus_write(on):
+  path, value = vbus_setting(on)
   try:
-    with open(VBUS_PATH, "w") as f:
+    with open(path, "w") as f:
       f.write(value + "\n")
   except OSError:
     pass
 
 
 def vbus_cycle():
-  if os.path.exists(VBUS_PATH):
-    vbus_write("0")
+  if vbus_control():
+    vbus_write(False)
     time.sleep(2)
-    vbus_write("1")
+    vbus_write(True)
     time.sleep(5)
 
 
 def activate(expected_product):
-  if not os.path.exists(VBUS_PATH):
+  if not vbus_control():
     print("no VBUS control, firmware activates on the next chestnut power cycle", flush=True)
     return
   print("power-cycling chestnut VBUS", flush=True)
-  vbus_write("0")
+  vbus_write(False)
   disconnected = False
   deadline = time.monotonic() + 5.0
   while time.monotonic() < deadline:
@@ -413,7 +428,7 @@ def activate(expected_product):
       break
     time.sleep(0.2)
   time.sleep(1)
-  vbus_write("1")
+  vbus_write(True)
   if not disconnected:
     print("chestnut stayed powered, firmware activates on its next power cycle", flush=True)
     return

@@ -139,7 +139,8 @@ class HardwareBase(ABC):
   def set_power_save(self, powersave_enabled):
     pass
 
-  def get_gpu_usage_percent(self):
+  def get_gpu_usage_percent(self, pids=()):
+    """pids: the GPU's known clients, for kernels that only report usage per client"""
     return 0
 
   def get_modem_temperatures(self):

@@ -201,7 +201,12 @@ class ModelState:
   def run(self, bufs: Mapping[str, VisionBuf | np.ndarray], transforms: dict[str, np.ndarray],
           inputs: dict[str, np.ndarray], after_enqueue: Callable[[], None] | None = None) -> dict[str, np.ndarray]:
     for i, key in enumerate(self.vision_input_names):
-      np.copyto(self.frames[i], np.frombuffer(bufs[key].data, dtype=np.uint8, count=self.frame_copy_size))
+      buf = bufs[key]
+      if isinstance(buf, VisionBuf):  # warmup passes plain arrays
+        buf.begin_cpu_read(0, self.frame_copy_size)
+      np.copyto(self.frames[i], np.frombuffer(buf.data, dtype=np.uint8, count=self.frame_copy_size))
+      if isinstance(buf, VisionBuf):
+        buf.end_cpu_access()
       self.npy['tfm'][i] = transforms[key]
 
     # Model decides when action is completed, so desire input is just a pulse triggered on rising edge
