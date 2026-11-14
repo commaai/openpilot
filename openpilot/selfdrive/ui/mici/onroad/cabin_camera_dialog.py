@@ -108,7 +108,7 @@ class BaseCabinCameraDialog(Widget):
     ALERT_SOUNDS = {
       'one': AudibleAlert.preAlert,
       'two': AudibleAlert.promptDistracted,
-      'three': AudibleAlert.warningImmediate,
+      'three': AudibleAlert.warningDriver,
     }
     msg = messaging.new_message('selfdriveState')
     if dm_state is not None:

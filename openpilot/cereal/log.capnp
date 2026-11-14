@@ -845,6 +845,8 @@ struct SelfdriveState {
 
     preAlert @9;
     complete @10;
+
+    warningDriver @11;
   }
 
   enum OpenpilotState @0xdbe58b96d2d1ac61 {
