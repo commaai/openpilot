@@ -15,7 +15,6 @@ LEAD_BAR_LENGTH = 12.0  # px
 LEAD_BAR_WIDTH = 1.8  # m
 
 STOP_SPEED = 1.0  # m/s, planned speed that counts as stopping
-STOP_FRONT_OFFSET = 2.0  # m, camera to front bumper
 STOP_APPEAR_DISTANCE = (8.0, 50.0)  # m
 STOP_LEAD_MARGIN = 15.0  # m, a lead this close past the stop is what it's stopping for
 
@@ -56,7 +55,7 @@ class StopPoint:
 
     self._planning = hysteresis(self._planning_filter.update(self.planned_d is not None), self._planning, 0.6, 0.2)
     # the lead bar already shows stopping behind a lead
-    behind_lead = any(d < self.d + STOP_FRONT_OFFSET + STOP_LEAD_MARGIN for d in lead_distances)
+    behind_lead = any(d < self.d + RADAR_TO_CAMERA + STOP_LEAD_MARGIN for d in lead_distances)
     self._behind_lead = hysteresis(self._behind_lead_filter.update(behind_lead), self._behind_lead, 0.6, 0.1)
     # appear out ahead, not right in front of the car while creeping or stopped,
     # and not so far out that a lead to stop behind may not be detected yet
@@ -170,14 +169,14 @@ class ModelRenderer(BaseModelRenderer):
       if visible:
         lead.bar = self._get_lead_bar(lane, lead.d_filter.update(d_rel), lead.y_filter.update(y_rel))
 
-    stop = self._stop_point
+    # the radar is at the front of the car, which is what stops at the planned stop
     lead_distances = [d_rel for present, d_rel, _ in leads if present]
-    planning_stop = stop.update(sm['modelV2'], sm.updated['modelV2'], cs.vEgo, lead_distances)
-    d_stop = stop.d + STOP_FRONT_OFFSET
+    planning_stop = self._stop_point.update(sm['modelV2'], sm.updated['modelV2'], cs.vEgo, lead_distances)
+    d_stop = self._stop_point.d + RADAR_TO_CAMERA
     visible = available and planning_stop and d_stop < MAX_DRAW_DISTANCE and len(lane) > 0
-    stop.fade_filter.update(opacity if visible else 0.0)
+    self._stop_point.fade_filter.update(opacity if visible else 0.0)
     if visible:
-      stop.bar = self._get_lead_bar(lane, d_stop, 0.0)
+      self._stop_point.bar = self._get_lead_bar(lane, d_stop, 0.0)
 
   def _get_lead_bar(self, lane, d_rel, y_rel):
     # bar on the road behind the lead, following the lane
