@@ -29,8 +29,24 @@ def hotplug():
     os.chmod(path, 0o660)
 
 
+def install_gateway_key():
+  source = Path("/data/arm_teleop_gateway.pub")
+  if not source.exists():
+    return
+  kind, key, *_ = source.read_text().split()
+  if kind != "ssh-ed25519":
+    raise ValueError("Expected an Ed25519 gateway public key")
+  target = Path("/tmp/authorized_keys")
+  lines = target.read_text().splitlines() if target.exists() else []
+  lines = [line for line in lines if not line.endswith(" mici-game-gateway")]
+  lines.append(f'restrict,port-forwarding,permitopen="127.0.0.1:8022",command="/bin/false" {kind} {key} mici-game-gateway')
+  target.write_text("\n".join(lines) + "\n")
+  target.chmod(0o644)
+
+
 def main():
   assert os.geteuid() == 0
+  install_gateway_key()
   result = run("systemctl", "mask", "--runtime", "--now", "power_monitor.service", "power_drop_monitor.service",
                "sleep.target", "suspend.target", "hibernate.target", "hybrid-sleep.target")
   print(result.stderr, end="")
@@ -47,7 +63,7 @@ def main():
 
   conf = Path("/run/NetworkManager/conf.d/99-arm-teleop.conf")
   conf.parent.mkdir(parents=True, exist_ok=True)
-  conf.write_text("[device]\nwifi.scan-rand-mac-address=no\n\n[connection]\nwifi.powersave=2\n"
+  conf.write_text("[device]\nwifi.scan-rand-mac-address=no\n\n[connection]\nwifi.powersave=2\n" +
                   "wifi.cloned-mac-address=permanent\nethernet.cloned-mac-address=permanent\n")
   connections = run("nmcli", "-t", "-f", "UUID,TYPE", "connection", "show")
   for line in connections.stdout.splitlines():

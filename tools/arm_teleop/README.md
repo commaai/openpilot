@@ -58,3 +58,5 @@ The local UI remains at `http://127.0.0.1:8070`. Live video and commands pass th
 On the device, `/data/arm_teleop_gateway_key` enables managed mode. It must contain a random service key of at least 32 characters and match the gateway's credential. Every device HTTP request then requires `Authorization: Bearer <service-key>`, and `start` requires a `lease_expires_at` Unix timestamp no more than five minutes ahead. The device converts that timestamp once to a monotonic deadline and holds the arm when the lease ends. The 400 ms command watchdog remains active. Keep device port 8022 on loopback, and restart the device manager after installing the key.
 
 Without the key file, the original direct workstation mode is available. Do not remove this file from a device assigned to the reservation service.
+
+Place the gateway's dedicated Ed25519 SSH public key at `/data/arm_teleop_gateway.pub`. At teleop startup, the power setup installs it into AGNOS's `/tmp/authorized_keys` with a restricted forwarding destination and a disabled shell. Existing administrative SSH keys are preserved. The private key stays on the gateway host.
