@@ -85,7 +85,6 @@ class AlertRenderer(Widget):
     self._txt_turn_signal_right = gui_app.texture('icons_mici/onroad/turn_signal_left.png', 104, 96, flip_x=True)
     self._txt_blind_spot_left = gui_app.texture('icons_mici/onroad/blind_spot_left.png', 134, 150)
     self._txt_blind_spot_right = gui_app.texture('icons_mici/onroad/blind_spot_left.png', 134, 150, flip_x=True)
-    self._txt_red_warning = gui_app.texture('icons_mici/onroad/red_warning.png', 99, 90)
 
   def will_render(self) -> tuple[Alert | None, bool]:
     alert = get_alert(ui_state.sm)
@@ -176,14 +175,8 @@ class AlertRenderer(Widget):
     alert_layout = self._icon_helper(alert)
     self._draw_text(alert, alert_layout)
     self._draw_icons(alert_layout)
-    if alert.status == AlertStatus.critical:
-      self._draw_red_warning()
 
     return True
-
-  def _draw_red_warning(self) -> None:
-    pos = rl.Vector2(self._rect.x + ALERT_MARGIN, self._alert_y_filter.x + self._rect.height - 20 - self._txt_red_warning.height)
-    rl.draw_texture_ex(self._txt_red_warning, pos, 0.0, 1.0, rl.Color(255, 255, 255, int(255 * self._alpha_filter.x)))
 
   def _draw_icons(self, alert_layout: AlertLayout) -> None:
     if alert_layout.icon is None:
