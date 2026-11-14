@@ -19,7 +19,9 @@ from opendbc.car.fw_versions import ObdCallback
 from opendbc.car.car_helpers import get_car, interfaces
 from opendbc.car.interfaces import CarInterfaceBase, RadarInterfaceBase
 from openpilot.selfdrive.pandad import can_capnp_to_list, can_list_to_can_capnp
+from openpilot.selfdrive.car.car_events import CarEvents
 from openpilot.selfdrive.car.cruise import VCruiseHelper
+from openpilot.selfdrive.selfdrived.events import ET
 
 REPLAY = "REPLAY" in os.environ
 
@@ -109,6 +111,7 @@ class Car:
       self.RI = RI
 
     self.CP.alternativeExperience = 0
+    self.car_events = CarEvents(self.CP)
     openpilot_enabled_toggle = self.params.get_bool("OpenpilotEnabledToggle")
     controller_available = self.CI.CC is not None and openpilot_enabled_toggle and not self.CP.dashcamOnly
     self.CP.passive = not controller_available or self.CP.dashcamOnly
@@ -233,12 +236,28 @@ class Car:
       self.params.put_bool("ControlsReady", True)
 
     if self.sm.all_alive(['carControl']):
+      # controlsd made this carControl from the previous carState, take this one's disengage and gas override like the panda does
+      events = self.car_events.update(CS, self.CS_prev, CC)
+      if CS.canValid and (events.contains(ET.USER_DISABLE) or events.contains(ET.OVERRIDE_LONGITUDINAL)):
+        CC = self.override(CC, events.contains(ET.USER_DISABLE))
+
       # send car controls over can
       now_nanos = self.can_log_mono_time if REPLAY else int(time.monotonic() * 1e9)
       self.last_actuators_output, can_sends = self.CI.apply(CC, now_nanos)
       self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
 
       self.CC_prev = CC
+
+  def override(self, CC: car.CarControl, disengage: bool) -> car.CarControl:
+    cc = car.CarControl.new_message(**CC.to_dict())
+    cc.longActive = False
+    cc.actuators.accel = 0.
+    cc.actuators.longControlState = car.CarControl.Actuators.LongControlState.off
+    if disengage:
+      cc.enabled = False
+      cc.latActive = False
+    cc.cruiseControl.override = cc.enabled and self.CP.openpilotLongitudinalControl
+    return cc.as_reader()
 
   def step(self):
     CS, RD = self.state_update()
