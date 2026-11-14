@@ -167,7 +167,7 @@ class AlertItem(Widget):
       return title, body
     else:
       # No sentence boundary found, return full text as title
-      return "", text
+      return text.strip(), ""
 
   def _update_content(self):
     """Update text and calculate height."""

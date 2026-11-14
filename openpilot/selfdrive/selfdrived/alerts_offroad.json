@@ -13,7 +13,7 @@
     "severity": 1
   },
   "Offroad_UpdateFailed": {
-    "text": "Unable to download updates\n%1",
+    "text": "Unable to download updates.\n%1",
     "severity": 1,
     "_comment": "Set extra field to the failed reason."
   },
