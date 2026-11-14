@@ -6,7 +6,7 @@ Development is coordinated through [Discord](https://discord.comma.ai) and GitHu
 
 ### Getting Started
 
-* Set up your [development environment](/tools/)
+* Set up your [development environment](https://github.com/commaai/openpilot/tree/master/tools)
 * Join our [Discord](https://discord.comma.ai)
 * Docs are at https://docs.comma.ai and https://blog.comma.ai
 
@@ -22,10 +22,11 @@ If a PR offers *some* value but will take lots of time to get merged, it will be
 Simple, well-tested bug fixes are the easiest to merge, and new features are the hardest to get merged.
 
 All of these are examples of good PRs:
-* typo fix: https://github.com/commaai/openpilot/pull/30678
-* removing unused code: https://github.com/commaai/openpilot/pull/30573
-* simple car model port: https://github.com/commaai/openpilot/pull/30245
-* car brand port: https://github.com/commaai/openpilot/pull/23331
+
+* Typo fix: [PR #30678](https://github.com/commaai/openpilot/pull/30678)
+* Unused code removal: [PR #30573](https://github.com/commaai/openpilot/pull/30573)
+* Simple car model port: [PR #30245](https://github.com/commaai/openpilot/pull/30245)
+* Car brand port: [PR #23331](https://github.com/commaai/openpilot/pull/23331)
 
 ### What doesn't get merged?
 
@@ -45,14 +46,15 @@ There are a lot of bounties that don't require a comma four or a car.
 
 Pull requests should be against the master branch.
 
-A good pull request has all of the following:
-* a clearly stated purpose
-* every line changed directly contributes to the stated purpose
-* verification, i.e. how did you test your PR?
-* justification
-  * if you've optimized something, post benchmarks to prove it's better
-  * if you've improved your car's tuning, post before and after plots
-* passes the CI tests
+A good pull request meets all of the following criteria:
+
+* It has a clearly stated purpose.
+* Every changed line directly contributes to the stated purpose.
+* It explains how the changes were tested.
+* It includes justification for the changes.
+    * If you've optimized something, include benchmarks that demonstrate the improvement.
+    * If you've improved your car's tuning, include plots showing the results before and after the changes.
+* It passes the CI tests.
 
 ## Contributing without Code
 
@@ -68,6 +70,7 @@ A good pull request has all of the following:
 ### A guide for forks
 
 In order for your fork's data to be eligible for the training set:
+
 * **Your cereal messaging structs must be [compatible](../openpilot/cereal#custom-forks)**
 * **The definitions of all the stock messaging structs must not change**: Do not change how any of the fields are set, including everything from `selfdriveState.enabled` to `carState.steeringAngleDeg`. Instead, create your own structs and set them however you'd like.
 * **Do not include cars that are not supported in upstream platforms**: Instead, create new opendbc platforms for cars that you'd like to support outside of upstream, even if it's just a trim-level difference.
