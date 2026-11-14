@@ -610,7 +610,7 @@ class GuiApplication:
 
         # Only render top widgets, and none under one covering the screen
         widgets = self._nav_stack[-self._nav_stack_widgets_to_render:]
-        if widgets[-1].covers_screen:
+        if widgets and widgets[-1].covers_screen:
           widgets = widgets[-1:]
         for widget in widgets:
           widget.render(rl.Rectangle(0, 0, self.width, self.height))
