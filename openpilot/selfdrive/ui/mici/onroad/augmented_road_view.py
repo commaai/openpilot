@@ -293,7 +293,7 @@ class AugmentedRoadView(CameraView):
 
   def _frame_color(self) -> tuple[np.ndarray, float]:
     h = self._hibernate
-    curve, saturation = frame_color(ui_state.status != UIStatus.DISENGAGED, False, round(h.exposure * 256) / 256, round(h.lift * 256) / 256)
+    curve, saturation = frame_color(ui_state.status != UIStatus.DISENGAGED, False, round(h.exposure * 256) / 256)
     return curve, h.saturation(saturation)
 
   def _draw_frame(self, rect: rl.Rectangle, dst_rect: rl.Rectangle, flip_x: bool):

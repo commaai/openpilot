@@ -1,6 +1,7 @@
 """
 While disengaged the road camera hibernates so it doesn't ask for attention: focus lets go first, then color drains,
-then it settles dim with a slow breath. Engaging wakes it fast. Only the camera frame changes, overlays draw on top.
+then it settles dim with a slow breath. Engaging plays the same thing backwards. Only the camera frame changes,
+overlays draw on top.
 """
 import math
 from collections.abc import Callable
@@ -9,13 +10,11 @@ import raylib_nb as rl
 
 from openpilot.system.ui.lib.application import gui_app
 
-SLEEP_TIME = 2.2  # seconds, eased in and out
-WAKE_TIME = 0.75  # seconds, eased out: half way in 0.15s
+TRANSITION_TIME = 1.0  # seconds, eased in and out, the same both ways
 BREATH_PERIOD = 6.5  # seconds
 BREATH_DEPTH = 0.07  # of exposure
 REST_EXPOSURE = 0.5
 REST_SATURATION = 0.3
-WAKE_LIFT = 0.08  # a brief lift of light as the camera wakes
 
 BLUR_SCALE = 2  # the blurred frame is made at half resolution
 VIGNETTE = 0.55
@@ -38,46 +37,28 @@ class Hibernate:
     self._start_level = 0.0
     self._t = 0.0  # since the current transition started
     self._rest = 0.0  # time spent fully asleep, held while waking so the breath fades out instead of jumping
-    self.focus = self.drain = self.dim = self.breath = self.lift = 0.0
-    self._start_stages = (0.0, 0.0, 0.0)
+    self.focus = self.drain = self.dim = self.breath = 0.0
 
   def update(self, asleep: bool):
     dt = 1 / gui_app.target_fps
+    target = float(asleep)
     if self.level is None:
-      self.level = self._start_level = float(asleep)
+      self.level = self._start_level = target
       self._asleep = asleep
-      self._t = math.inf
-      self._start_stages = (self.level,) * 3
     elif asleep != self._asleep:
       self._asleep, self._start_level, self._t = asleep, self.level, 0.0
-      self._start_stages = (self.focus, self.drain, self.dim)
       if asleep:
         self._rest = 0.0
     else:
       self._t += dt
 
-    if asleep:
-      p = min(self._t / max(SLEEP_TIME * (1 - self._start_level), 1e-3), 1.0)
-      self.level = self._start_level + (1 - self._start_level) * (0.5 - 0.5 * math.cos(math.pi * p))
-      if p >= 1:
-        self._rest += dt
-    else:
-      p = min(self._t / max(WAKE_TIME * self._start_level, 1e-3), 1.0)
-      self.level = self._start_level * (1 - p) ** 3
+    p = min(self._t / max(TRANSITION_TIME * abs(target - self._start_level), 1e-3), 1.0)
+    self.level = self._start_level + (target - self._start_level) * (0.5 - 0.5 * math.cos(math.pi * p))
+    if asleep and p >= 1:
+      self._rest += dt
 
-    # staged from wherever each stage was when this transition started: falling asleep focus goes first, then color,
-    # then light. waking brings everything back together, focus fastest
-    focus, drain, dim = self._start_stages
-    if asleep:
-      u = (self.level - self._start_level) / max(1 - self._start_level, 1e-6)
-      self.focus = focus + (1 - focus) * _smoother(0.0, 0.7, u)
-      self.drain = drain + (1 - drain) * _smoother(0.2, 0.9, u)
-      self.dim = dim + (1 - dim) * _smoother(0.35, 1.0, u)
-      self.lift = 0.0
-    else:
-      u = self.level / max(self._start_level, 1e-6)
-      self.focus, self.drain, self.dim = focus * u ** 1.7, drain * u, dim * u
-      self.lift = WAKE_LIFT * self._start_level * math.exp(-self._t * 7) * (1 - math.exp(-self._t * 40))
+    # focus goes first, then color, then light. waking is the same in reverse
+    self.focus, self.drain, self.dim = _smoother(0.0, 0.7, self.level), _smoother(0.2, 0.9, self.level), _smoother(0.35, 1.0, self.level)
     breath = 0.5 - 0.5 * math.cos(2 * math.pi * self._rest / BREATH_PERIOD)
     self.breath = breath * _smoother(0.0, 1.5, self._rest) * self.level
 
