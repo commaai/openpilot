@@ -10,7 +10,7 @@ from pathlib import Path
 from openpilot.cereal import log
 from openpilot.common.esim.base import WEBBING_ICCID_PREFIX
 from openpilot.common.utils import sudo_read, sudo_write
-from openpilot.common.gpio import gpio_set, gpio_init, get_irqs_for_action
+from openpilot.common.gpio import gpio_set, get_irqs_for_action
 from openpilot.common.esim.base import LPABase
 from openpilot.common.hardware.base import HardwareBase, ThermalConfig, ThermalZone
 from openpilot.common.hardware.comma.pins import GPIO
@@ -351,7 +351,6 @@ class HardwareComma(HardwareBase):
     subprocess.run("sudo chmod a+w /dev/kmsg", shell=True)
 
     # Ensure fan gpio is enabled so fan runs until shutdown, also turned on at boot by the ABL
-    gpio_init(GPIO.SOM_ST_IO, True)
     gpio_set(GPIO.SOM_ST_IO, True)
 
     # *** IRQ config ***
@@ -396,18 +395,12 @@ class HardwareComma(HardwareBase):
     return ms.get('tx_bytes', -1), ms.get('rx_bytes', -1)
 
   def reset_internal_panda(self):
-    gpio_init(GPIO.STM_RST_N, True)
-    gpio_init(GPIO.STM_BOOT0, True)
-
     gpio_set(GPIO.STM_RST_N, True)
     gpio_set(GPIO.STM_BOOT0, False)
     time.sleep(0.01)
     gpio_set(GPIO.STM_RST_N, False)
 
   def recover_internal_panda(self):
-    gpio_init(GPIO.STM_RST_N, True)
-    gpio_init(GPIO.STM_BOOT0, True)
-
     gpio_set(GPIO.STM_RST_N, True)
     gpio_set(GPIO.STM_BOOT0, True)
     time.sleep(0.01)
