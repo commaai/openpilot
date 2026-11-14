@@ -1,54 +1,78 @@
 #!/usr/bin/env python3
+import contextlib
 import hashlib
 import json
-import lzma
 import os
 import struct
 import subprocess
+import threading
 import time
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 
 import requests
 
 SPARSE_CHUNK_FMT = struct.Struct('H2xI4x')
+CHUNK_SIZE = 1024 * 1024
 
 AGNOS_MANIFEST_FILE = "openpilot/system/hardware/comma/agnos.json"
 
 
 class StreamingDecompressor:
+  """Streams an xz image from url. The download runs in its own thread and xz decompresses with
+  multiple threads, so the network, decompression, and the caller's hashing and writing all overlap."""
+
   def __init__(self, url: str) -> None:
-    self.buf = b""
+    self.sha256 = hashlib.sha256()
+    self.error: Exception | None = None
+    self.finished = False
 
     self.req = requests.get(url, stream=True, headers={'Accept-Encoding': 'identity'}, timeout=60)
-    self.it = self.req.iter_content(chunk_size=1024 * 1024)
-    self.decompressor = lzma.LZMADecompressor(format=lzma.FORMAT_AUTO)
-    self.eof = False
-    self.sha256 = hashlib.sha256()
+    self.req.raise_for_status()
+    try:
+      self.proc = subprocess.Popen(["xz", "--decompress", "--stdout", "--threads=4"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    except Exception:
+      self.req.close()
+      raise
+    self.feeder = threading.Thread(target=self._feed, daemon=True)
+    self.feeder.start()
+
+  def _feed(self) -> None:
+    assert self.proc.stdin is not None
+    try:
+      for chunk in self.req.iter_content(chunk_size=CHUNK_SIZE):
+        self.proc.stdin.write(chunk)
+    except requests.exceptions.RequestException as e:
+      self.error = e  # retried by flash_agnos_update
+    except OSError:
+      pass  # xz exited, its exit code says why
+    finally:
+      try:
+        self.proc.stdin.close()
+      except OSError:
+        pass
 
   def read(self, length: int) -> bytes:
-    while len(self.buf) < length and not self.eof:
-      if self.decompressor.needs_input:
-        self.req.raise_for_status()
-
-        try:
-          compressed = next(self.it)
-        except StopIteration:
-          self.eof = True
-          break
-      else:
-        compressed = b''
-
-      self.buf += self.decompressor.decompress(compressed, max_length=length)
-
-      if self.decompressor.eof:
-        self.eof = True
-        break
-
-    result = self.buf[:length]
-    self.buf = self.buf[length:]
+    assert self.proc.stdout is not None
+    result = self.proc.stdout.read(length)
+    if len(result) < length and not self.finished:
+      # end of stream, surface download errors (retried by the caller) before xz's own
+      self.finished = True
+      self.feeder.join()
+      if self.error is not None:
+        raise self.error
+      if self.proc.wait() != 0:
+        raise Exception(f"xz failed with exit code {self.proc.returncode}")
 
     self.sha256.update(result)
     return result
+
+  def close(self) -> None:
+    self.proc.kill()
+    self.req.close()
+    self.feeder.join()
+    self.proc.wait()
+    assert self.proc.stdout is not None
+    self.proc.stdout.close()
 
 
 def unsparsify(f: StreamingDecompressor) -> Generator[bytes, None, None]:
@@ -73,12 +97,19 @@ def unsparsify(f: StreamingDecompressor) -> Generator[bytes, None, None]:
     chunk_type, out_blocks = SPARSE_CHUNK_FMT.unpack(f.read(12))
 
     if chunk_type == 0xcac1:  # Raw
-      # TODO: yield in smaller chunks. Yielding only block_sz is too slow. Largest observed data chunk is 252 MB.
-      yield f.read(out_blocks * block_sz)
+      # yield in pieces, raw chunks can be hundreds of MB
+      remaining = out_blocks * block_sz
+      while remaining > 0:
+        data = f.read(min(remaining, CHUNK_SIZE))
+        if not data:
+          raise Exception("Unexpected end of sparse image")
+        remaining -= len(data)
+        yield data
     elif chunk_type == 0xcac2:  # Fill
       filler = f.read(4) * (block_sz // 4)
-      for _ in range(out_blocks):
-        yield filler
+      fill_blocks = CHUNK_SIZE // block_sz
+      for i in range(0, out_blocks, fill_blocks):
+        yield filler * min(fill_blocks, out_blocks - i)
     elif chunk_type == 0xcac3:  # Don't care
       yield b""
     else:
@@ -87,7 +118,7 @@ def unsparsify(f: StreamingDecompressor) -> Generator[bytes, None, None]:
 
 # noop wrapper with same API as unsparsify() for non sparse images
 def noop(f: StreamingDecompressor) -> Generator[bytes, None, None]:
-  while len(chunk := f.read(1024 * 1024)) > 0:
+  while len(chunk := f.read(CHUNK_SIZE)) > 0:
     yield chunk
 
 
@@ -155,11 +186,9 @@ def clear_partition_hash(target_slot_number: int, partition: dict) -> None:
     os.sync()
 
 
-def extract_compressed_image(target_slot_number: int, partition: dict, cloudlog):
+def extract_compressed_image(target_slot_number: int, partition: dict, cloudlog, progress: Callable[[int], None] | None = None):
   path = get_partition_path(target_slot_number, partition)
-  downloader = StreamingDecompressor(partition['url'])
-
-  with open(path, 'wb+') as out:
+  with open(path, 'wb+') as out, contextlib.closing(StreamingDecompressor(partition['url'])) as downloader:
     # Flash partition
     last_p = 0
     raw_hash = hashlib.sha256()
@@ -167,6 +196,8 @@ def extract_compressed_image(target_slot_number: int, partition: dict, cloudlog)
     for chunk in f(downloader):
       raw_hash.update(chunk)
       out.write(chunk)
+      if progress is not None:
+        progress(out.tell())
       p = int(out.tell() / partition['size'] * 100)
       if p != last_p:
         last_p = p
@@ -184,7 +215,8 @@ def extract_compressed_image(target_slot_number: int, partition: dict, cloudlog)
     os.sync()
 
 
-def flash_partition(target_slot_number: int, partition: dict, cloudlog, standalone=False):
+def flash_partition(target_slot_number: int, partition: dict, cloudlog, standalone=False,
+                    progress: Callable[[int], None] | None = None):
   cloudlog.info(f"Downloading and writing {partition['name']}")
 
   if verify_partition(target_slot_number, partition):
@@ -198,7 +230,7 @@ def flash_partition(target_slot_number: int, partition: dict, cloudlog, standalo
 
   path = get_partition_path(target_slot_number, partition)
 
-  extract_compressed_image(target_slot_number, partition, cloudlog)
+  extract_compressed_image(target_slot_number, partition, cloudlog, progress)
 
   # Write hash after successful flash
   if not full_check:
@@ -222,8 +254,12 @@ def swap(manifest_path: str, target_slot_number: int, cloudlog) -> None:
       cloudlog.error(f"Swap failed {out}")
 
 
-def flash_agnos_update(manifest_path: str, target_slot_number: int, cloudlog, standalone=False) -> None:
+def flash_agnos_update(manifest_path: str, target_slot_number: int, cloudlog, standalone=False,
+                       progress: Callable[[int, int], None] | None = None) -> None:
+  """progress is called with (bytes written, total bytes) across all partitions"""
   update = json.load(open(manifest_path))
+  total_size = sum(partition['size'] for partition in update)
+  done_size = 0
 
   cloudlog.info(f"Target slot {target_slot_number}")
 
@@ -235,7 +271,8 @@ def flash_agnos_update(manifest_path: str, target_slot_number: int, cloudlog, st
 
     for retries in range(10):
       try:
-        flash_partition(target_slot_number, partition, cloudlog, standalone)
+        partition_progress = None if progress is None else lambda n, done=done_size: progress(done + n, total_size)
+        flash_partition(target_slot_number, partition, cloudlog, standalone, partition_progress)
         success = True
         break
 
@@ -247,6 +284,10 @@ def flash_agnos_update(manifest_path: str, target_slot_number: int, cloudlog, st
     if not success:
       cloudlog.info(f"Failed to flash {partition['name']}, aborting")
       raise Exception("Maximum retries exceeded")
+
+    done_size += partition['size']
+    if progress is not None:
+      progress(done_size, total_size)
 
   cloudlog.info(f"AGNOS ready on slot {target_slot_number}")
 

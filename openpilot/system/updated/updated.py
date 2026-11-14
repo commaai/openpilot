@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import atexit
 import os
 import re
 import datetime
@@ -69,6 +70,56 @@ def write_time_to_param(params, param) -> None:
 
 def run(cmd: list[str], cwd: str | None = None) -> str:
   return subprocess.check_output(cmd, cwd=cwd, stderr=subprocess.STDOUT, encoding='utf8')
+
+
+class ProgressReporter:
+  """Shows "<stage>... <detail>" in UpdaterState, where detail is a percent with an ETA or any text, at most once a second"""
+
+  def __init__(self, params: Params, stage: str):
+    self.params = params
+    self.stage = stage
+    self.start: tuple[float, float] | None = None
+    self.last_write = 0.0
+    self.text = f"{stage}..."
+    params.put("UpdaterState", self.text, block=True)
+
+  def update(self, fraction: float) -> None:
+    now = time.monotonic()
+    if self.start is None or fraction < self.start[1]:  # first update, or restarted after a retry
+      self.start = (now, fraction)
+
+    detail = f"{int(fraction * 100)}%"
+    start_t, start_fraction = self.start
+    if now - start_t > 5 and fraction - start_fraction > 0.02 and fraction < 1:
+      remaining = (now - start_t) * (1 - fraction) / (fraction - start_fraction)
+      detail += ", <1 min left" if remaining < 60 else f", ~{round(remaining / 60)} min left"
+    self.detail(detail)
+
+  def detail(self, detail: str) -> None:
+    text = f"{self.stage}... {detail}"
+    now = time.monotonic()
+    if text != self.text and now - self.last_write >= 1.0:
+      self.params.put("UpdaterState", text, block=True)
+      self.text = text
+      self.last_write = now
+
+
+def fetch_with_progress(params: Params, branch: str) -> str:
+  # git's percentages count objects, not bytes, and stall on big files. show how much arrived instead
+  progress = ProgressReporter(params, "downloading")
+  output = []
+  with subprocess.Popen(["git", "fetch", "--progress", "origin", branch], cwd=OVERLAY_MERGED, encoding="utf8", errors="replace",
+                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT) as proc:
+    assert proc.stdout is not None
+    for line in proc.stdout:  # universal newlines also splits git's \r progress updates
+      if m := re.match(r"Receiving objects: .*, ([\d.]+) ([KMG])iB", line):
+        progress.detail(f"{float(m[1]) * 1024 ** 'KMG'.index(m[2]) / 1024:.0f} MB")
+      elif not re.match(r"(remote: )?[\w ]+:\s+\d+% ", line):
+        output.append(line)
+  result = "".join(output)
+  if proc.returncode:
+    raise subprocess.CalledProcessError(proc.returncode, proc.args, output=result)
+  return result
 
 
 def set_consistent_flag(consistent: bool) -> None:
@@ -223,7 +274,8 @@ def handle_agnos_update() -> None:
   if not os.path.isfile(manifest_path):  # releases before the openpilot/ move
     manifest_path = os.path.join(OVERLAY_MERGED, "system/hardware/tici/agnos.json")
   target_slot_number = get_target_slot_number()
-  flash_agnos_update(manifest_path, target_slot_number, cloudlog)
+  progress = ProgressReporter(Params(), "updating OS")
+  flash_agnos_update(manifest_path, target_slot_number, cloudlog, progress=lambda done, total: progress.update(done / total))
 
 
 class Updater:
@@ -267,6 +319,12 @@ class Updater:
       return hash_mismatch or branch_mismatch
     return False
 
+  @property
+  def needs_fetch(self) -> bool:
+    installed_matches = (self.get_commit_hash(BASEDIR) == self.branches[self.target_branch] and
+                         self.get_branch(BASEDIR) == self.target_branch)
+    return self.update_available or (not installed_matches and not self.update_ready)
+
   def get_branch(self, path: str) -> str:
     return run(["git", "rev-parse", "--abbrev-ref", "HEAD"], path).rstrip()
 
@@ -277,7 +335,7 @@ class Updater:
     self.params.put("UpdateFailedCount", failed_count, block=True)
     self.params.put("UpdaterTargetBranch", self.target_branch, block=True)
 
-    self.params.put_bool("UpdaterFetchAvailable", self.update_available, block=True)
+    self.params.put_bool("UpdaterFetchAvailable", bool(self.branches) and self.needs_fetch, block=True)
     if len(self.branches):
       self.params.put("UpdaterAvailableBranches", ','.join(self.branches.keys()), block=True)
 
@@ -348,14 +406,13 @@ class Updater:
 
     excluded_branches = ('release2', 'release2-staging')
 
+    setup_git_options(OVERLAY_MERGED)
     try:
-      run(["git", "ls-remote", "origin", "HEAD"], OVERLAY_MERGED)
+      output = run(["git", "ls-remote", "--heads", "origin"], OVERLAY_MERGED)
       self._has_internet = True
     except subprocess.CalledProcessError:
       self._has_internet = False
-
-    setup_git_options(OVERLAY_MERGED)
-    output = run(["git", "ls-remote", "--heads"], OVERLAY_MERGED)
+      raise
 
     self.branches.clear()
     for line in output.split('\n'):
@@ -376,8 +433,6 @@ class Updater:
   def fetch_update(self) -> None:
     cloudlog.info("attempting git fetch inside staging overlay")
 
-    self.params.put("UpdaterState", "downloading...", block=True)
-
     # TODO: cleanly interrupt this and invalidate old update
     set_consistent_flag(False)
     self.params.put_bool("UpdateAvailable", False, block=True)
@@ -387,9 +442,10 @@ class Updater:
     run(["git", "config", "--replace-all", "remote.origin.fetch", "+refs/heads/*:refs/remotes/origin/*"], OVERLAY_MERGED)
 
     branch = self.target_branch
-    git_fetch_output = run(["git", "fetch", "origin", branch], OVERLAY_MERGED)
+    git_fetch_output = fetch_with_progress(self.params, branch)
     cloudlog.info("git fetch success: %s", git_fetch_output)
 
+    self.params.put("UpdaterState", "preparing...", block=True)
     cloudlog.info("git reset in progress")
     # Check out without running the installed LFS client, the new checkout installs its own below
     nolfs = ["-c", "filter.lfs.process=", "-c", "filter.lfs.required=false", "-c", "core.hooksPath=/dev/null"]
@@ -410,7 +466,6 @@ class Updater:
       lfs = os.path.join(OVERLAY_MERGED, "tools/lfs.sh")
       run([lfs, "pull"] if os.path.isfile(lfs) else ["git", "lfs", "pull"], OVERLAY_MERGED)
 
-    # TODO: show agnos download progress
     if AGNOS:
       handle_agnos_update()
 
@@ -451,6 +506,9 @@ def main() -> None:
     # set initial state
     params.put("UpdaterState", "idle", block=True)
 
+    # manager stops us with SIGINT when going onroad, don't leave progress from an interrupted update behind
+    atexit.register(params.put, "UpdaterState", "idle", block=True)
+
     # Run the update loop
     first_run = True
     while True:
@@ -484,7 +542,7 @@ def main() -> None:
           cloudlog.info("skipping fetch, connection metered")
         elif wait_helper.user_request == UserRequest.CHECK:
           cloudlog.info("skipping fetch, only checking")
-        else:
+        elif updater.needs_fetch:
           updater.fetch_update()
           write_time_to_param(params, "UpdaterLastFetchTime")
         update_failed_count = 0
@@ -503,11 +561,12 @@ def main() -> None:
         OVERLAY_INIT.unlink(missing_ok=True)
 
       try:
-        params.put("UpdaterState", "idle", block=True)
         update_successful = (update_failed_count == 0)
         updater.set_params(update_successful, update_failed_count, exception)
       except Exception:
         cloudlog.exception("uncaught updated exception while setting params, shouldn't happen")
+      finally:
+        params.put("UpdaterState", "idle", block=True)
 
       # infrequent attempts if we successfully updated recently
       wait_helper.user_request = UserRequest.NONE

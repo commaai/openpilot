@@ -1,20 +1,22 @@
+import re
 import subprocess
 import threading
 import raylib_nb as rl
-from enum import IntEnum
 from collections.abc import Callable
 
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.selfdrive.ui.mici.layouts.settings.device.device_layout import EngagedConfirmationButton
 from openpilot.selfdrive.ui.mici.widgets.info import InfoLayoutMici
-from openpilot.selfdrive.ui.mici.widgets.button import BigButton
-from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog
+from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigPillButton, GreyBigButton
+from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigConfirmationDialog
+from openpilot.selfdrive.ui.mici.widgets.qr import QR
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app, MousePos
 from openpilot.system.ui.lib.multilang import tr
+from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.scroller import NavScroller
 
-UPDATER_TIMEOUT = 10.0  # seconds to wait for updater to respond
+UPDATER_TIMEOUT = 30.0  # seconds to wait for updater to respond, retries rebuild the staging area first
 
 
 def _split_description(desc: str) -> tuple[str, str, str, str] | None:
@@ -26,10 +28,13 @@ def _split_description(desc: str) -> tuple[str, str, str, str] | None:
   return version, branch, commit, date
 
 
-class UpdaterState(IntEnum):
-  IDLE = 0
-  WAITING_FOR_UPDATER = 1
-  UPDATER_RESPONDING = 2
+def _parse_updater_state(state: str) -> tuple[str, float | None]:
+  # updated writes "<stage>..." or "<stage>... <detail>", where detail may start with a percent
+  stage, sep, detail = state.partition("... ")
+  if not sep:
+    return state, None
+  m = re.match(r"(\d+)%", detail)
+  return f"{stage}\n{detail}", int(m[1]) / 100 if m else None
 
 
 class SoftwareInfoLayoutMici(InfoLayoutMici):
@@ -53,21 +58,18 @@ class CheckUpdateButton(BigButton):
   UPDATER_PROC = "openpilot.system.updated.updated"
   CHECK_FOR_UPDATE = "SIGUSR1"
   DOWNLOAD_UPDATE = "SIGHUP"
+  RESULT_DURATION = 3.0  # seconds to show the result of a check
 
   def __init__(self):
     self._txt_update_icon = gui_app.texture("icons_mici/settings/device/update.png", 64, 75)
     self._txt_up_to_date_icon = gui_app.texture("icons_mici/settings/device/up_to_date.png", 64, 64)
     super().__init__("check for update", "", self._txt_update_icon)
 
-    self._waiting_for_updater_t: float | None = None
-    self._hide_value_t: float | None = None
-    self._state: UpdaterState = UpdaterState.IDLE
-
-    ui_state.add_offroad_transition_callback(self.offroad_transition)
-
-  def offroad_transition(self):
-    if ui_state.is_offroad():
-      self.set_enabled(True)
+    self._requested_t: float | None = None  # signaled the updater, waiting for it to start
+    self._result_snapshot: tuple | None = None  # last result before the current check, None when not watching
+    self._result: str = ""
+    self._result_t = 0.0
+    self._progress: float | None = None
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
@@ -77,118 +79,143 @@ class CheckUpdateButton(BigButton):
       gui_app.push_widget(dlg)
       return
 
-    self._signal_updater(self.DOWNLOAD_UPDATE if self.get_value() == "download update" else self.CHECK_FOR_UPDATE)
+    self._signal_updater(self.DOWNLOAD_UPDATE if ui_state.params.get_bool("UpdaterFetchAvailable") else self.CHECK_FOR_UPDATE)
 
   def check_for_update(self):
     self._signal_updater(self.CHECK_FOR_UPDATE)
 
+  @property
+  def waiting_for_updater(self) -> bool:
+    return self._requested_t is not None
+
+  def _last_result(self) -> tuple:
+    return ui_state.params.get("LastUpdateTime"), int(ui_state.params.get("UpdateFailedCount") or 0)
+
+  def _check_finished(self) -> bool:
+    # a finished check either succeeded or failed once more. the count also resets when updated restarts, which isn't a result
+    assert self._result_snapshot is not None
+    last_time, failed_count = self._last_result()
+    return last_time != self._result_snapshot[0] or failed_count > self._result_snapshot[1]
+
   def _signal_updater(self, sig: str):
-    self.set_enabled(False)
-    self._state = UpdaterState.WAITING_FOR_UPDATER
-    self._hide_value_t = None
-    self.set_value("")
-    self.set_icon(self._txt_update_icon)
+    self._requested_t = rl.get_time()
+    self._result_snapshot = self._last_result()
+    self._result = ""
 
     def run():
       subprocess.run(f"pkill -{sig} -f {self.UPDATER_PROC}", shell=True)
 
     threading.Thread(target=run, daemon=True).start()
 
-  def set_value(self, value: str):
-    super().set_value(value)
-    if value:
-      self.set_text("")
-    else:
-      self.set_text("check for update")
-
   def _update_state(self):
     super()._update_state()
 
+    params = ui_state.params
+    updater_state = params.get("UpdaterState") or "idle"
+    now = rl.get_time()
+
     if ui_state.started:
-      self.set_enabled(False)
+      # updated doesn't run onroad, forget about any check in progress
+      self._requested_t = self._result_snapshot = None
+
+    elif updater_state != "idle":
+      self._requested_t = None
+      if self._result_snapshot is None:
+        self._result_snapshot = self._last_result()
+      status, self._progress = _parse_updater_state(updater_state)
+      self._show("", status, self._txt_update_icon, enabled=False, spinning=True)
       return
+    self._progress = None
 
-    updater_state = ui_state.params.get("UpdaterState") or ""
-    failed_count = ui_state.params.get("UpdateFailedCount") or 0
-    failed = int(failed_count) > 0
+    failed = int(params.get("UpdateFailedCount") or 0) > 0
+    if self._result_snapshot is not None and self._check_finished():
+      self._requested_t = self._result_snapshot = None
+      if not failed:
+        self._result = "update ready" if params.get_bool("UpdateAvailable") else "up to date"
+        self._result_t = now
+    elif self._requested_t is not None:
+      if now - self._requested_t < UPDATER_TIMEOUT:
+        self._show(self.text or "check for update", "", self._txt_update_icon, enabled=False, spinning=True)
+        return
+      self._requested_t = self._result_snapshot = None
+      self._result, self._result_t = "updater not responding", now
+    elif self._result_snapshot is not None and not ui_state.started:
+      self._result_snapshot = None  # went idle without a result, e.g. restarted
 
-    if self._state == UpdaterState.WAITING_FOR_UPDATER:
-      self.set_rotate_icon(True)
-      if updater_state != "idle":
-        self._state = UpdaterState.UPDATER_RESPONDING
+    enabled = not ui_state.started
+    showing_result = self._result and now - self._result_t < self.RESULT_DURATION
+    if showing_result and self._result == "updater not responding":
+      self._show("check for update", self._result, self._txt_update_icon, enabled)
+    elif params.get_bool("UpdaterFetchAvailable"):
+      self._show("download update", "last attempt failed" if failed else "", self._txt_update_icon, enabled)
+    elif failed:
+      self._show("check for update", "last attempt failed", self._txt_update_icon, enabled)
+    elif showing_result:
+      self._show("check for update", self._result, self._txt_up_to_date_icon, enabled)
+    else:
+      self._show("check for update", "", self._txt_update_icon, enabled)
 
-      # Recover from updater not responding (time invalid shortly after boot)
-      if self._waiting_for_updater_t is None:
-        self._waiting_for_updater_t = rl.get_time()
+  def _show(self, text: str, value: str, icon: rl.Texture, enabled: bool, spinning: bool = False):
+    if self.text != text:
+      self.set_text(text)
+    if self.value != value:
+      self.set_value(value)
+    self.set_icon(icon)
+    self.set_enabled(enabled)
+    self.set_rotate_icon(spinning)
 
-      if self._waiting_for_updater_t is not None and rl.get_time() - self._waiting_for_updater_t > UPDATER_TIMEOUT:
-        self.set_rotate_icon(False)
-        self.set_value("updater failed\nto respond")
-        self._state = UpdaterState.IDLE
-        self._hide_value_t = rl.get_time()
-
-    elif self._state == UpdaterState.UPDATER_RESPONDING:
-      if updater_state == "idle":
-        self.set_rotate_icon(False)
-        self._state = UpdaterState.IDLE
-        self._hide_value_t = rl.get_time()
-      else:
-        if self.get_value() != updater_state:
-          self.set_value(updater_state)
-
-    elif self._state == UpdaterState.IDLE:
-      self.set_rotate_icon(False)
-      if failed:
-        self.set_enabled(True)  # allow retry when failure came from updater param
-        if self.get_value() != "failed to update":
-          self.set_value("failed to update")
-
-      elif ui_state.params.get_bool("UpdaterFetchAvailable"):
-        self.set_enabled(True)
-        if self.get_value() != "download update":
-          self.set_value("download update")
-
-      elif self._hide_value_t is not None:
-        self.set_enabled(True)
-        if self.get_value() == "checking...":
-          self.set_value("up to date")
-          self.set_icon(self._txt_up_to_date_icon)
-
-        # Hide previous text after short amount of time (up to date or failed)
-        if rl.get_time() - self._hide_value_t > 3.0:
-          self._hide_value_t = None
-          self.set_value("")
-          self.set_icon(self._txt_update_icon)
-      else:
-        if self.get_value() != "":
-          self.set_value("")
-
-    if self._state != UpdaterState.WAITING_FOR_UPDATER:
-      self._waiting_for_updater_t = None
+  def _draw_content(self, btn_y: float):
+    super()._draw_content(btn_y)
+    if self._progress is not None:
+      bar = rl.Rectangle(self._rect.x + self.LABEL_HORIZONTAL_PADDING, btn_y + self._rect.height - 16,
+                         self._rect.width - self.LABEL_HORIZONTAL_PADDING * 2, 6)
+      rl.draw_rectangle_rounded(bar, 1.0, 6, rl.Color(255, 255, 255, 40))
+      bar.width *= self._progress
+      if bar.width > 0:
+        rl.draw_rectangle_rounded(bar, 1.0, 6, rl.Color(255, 255, 255, 200))
 
 
-class InstallUpdateButton(BigButton):
+def _apply_update():
+  threading.Thread(target=lambda: ui_state.params.put_bool("DoReboot", True, block=True), daemon=True).start()
+
+
+class UpdatePage(NavScroller):
+  """What the downloaded update is, a QR code to its release notes, and a slider to apply it"""
+  RELEASE_NOTES_URL = "https://github.com/commaai/openpilot/blob/{}/RELEASES.md"
+
   def __init__(self):
-    super().__init__("install now", "", gui_app.texture("icons_mici/settings/device/reboot.png", 64, 70))
+    super().__init__()
+    params = ui_state.params
+    version, branch, commit, date = _split_description(params.get("UpdaterNewDescription") or "") or ("", "", "", "")
+
+    cards: list[Widget] = [GreyBigButton(f"openpilot {version}" if version else "update ready", f"{branch}, {date}" if version else "",
+                                         gui_app.texture("icons_mici/settings/device/update.png", 64, 75))]
+    if commit:
+      cards += [GreyBigButton("release notes", "swipe for QR code",
+                              gui_app.texture("icons_mici/setup/small_slider/slider_arrow.png", 64, 56, flip_x=True)),
+                QR(self.RELEASE_NOTES_URL.format(commit))]
+    apply_button = BigPillButton("apply update", green=True)
+    apply_button.set_click_callback(lambda: gui_app.push_widget(BigConfirmationDialog(
+      "slide to\nupdate", gui_app.texture("icons_mici/settings/device/update.png", 64, 75), _apply_update, exit_on_confirm=False)))
+    cards.append(apply_button)
+    self._scroller.add_widgets(cards)
+
+
+class UpdateButton(BigButton):
+  """The downloaded update, opens UpdatePage"""
+
+  def __init__(self):
+    super().__init__("update", "", gui_app.texture("icons_mici/settings/device/update.png", 64, 75))
     self.set_visible(lambda: ui_state.is_offroad() and ui_state.params.get_bool("UpdateAvailable"))
+    self.set_click_callback(lambda: gui_app.push_widget(UpdatePage()))
 
   def _update_state(self):
     super()._update_state()
 
     desc = _split_description(ui_state.params.get("UpdaterNewDescription") or "")
-    value = f"{desc[0]} ({desc[1]})" if desc is not None else ""
+    value = f"openpilot {desc[0]}" if desc is not None else ""
     if self.get_value() != value:
       self.set_value(value)
-
-  def _handle_mouse_release(self, mouse_pos: MousePos):
-    super()._handle_mouse_release(mouse_pos)
-
-    self.set_enabled(False)
-
-    def run():
-      ui_state.params.put_bool("DoReboot", True, block=True)
-
-    threading.Thread(target=run, daemon=True).start()
 
 
 class BranchSelectPage(NavScroller):
@@ -223,7 +250,8 @@ class TargetBranchButton(BigButton):
     self._check_update_btn = check_update_btn
     self.set_click_callback(self._on_click)
     self.set_visible(not ui_state.params.get_bool("IsTestedBranch"))
-    self.set_enabled(lambda: ui_state.is_offroad())
+    self.set_enabled(lambda: ui_state.is_offroad() and not check_update_btn.waiting_for_updater and
+                     (ui_state.params.get("UpdaterState") or "idle") == "idle")
 
   def _update_state(self):
     super()._update_state()
@@ -260,8 +288,8 @@ class SoftwareLayoutMici(NavScroller):
     check_update_btn = CheckUpdateButton()
     self._scroller.add_widgets([
       SoftwareInfoLayoutMici(),
+      UpdateButton(),
       check_update_btn,
-      InstallUpdateButton(),
       TargetBranchButton(check_update_btn),
       uninstall_openpilot_btn,
     ])
