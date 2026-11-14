@@ -372,18 +372,10 @@ class MiciOffroadAlerts(NavScroller):
 
     if update_alert_data:
       if update_available:
-        version_string = ""
-
-        # Get new version description and parse version and date
-        new_desc = pending_params["UpdaterNewDescription"] or ""
-        if new_desc:
-          # format: "version / branch / commit / date"
-          parts = new_desc.split(" / ")
-          if len(parts) > 3:
-            version, date = parts[0], parts[3]
-            version_string = f"\nopenpilot {version}, {date}\n"
-
-        update_alert_data.text = f"Update available {version_string}. Click to update. Read the release notes at blog.comma.ai."
+        # format: "version / branch / commit / date"
+        parts = (pending_params["UpdaterNewDescription"] or "").split(" / ")
+        version = f"openpilot {parts[0]} ({parts[3]}) is ready. " if len(parts) > 3 else ""
+        update_alert_data.text = f"Update available. {version}Tap to reboot and update. Release notes at blog.comma.ai."
         update_alert_data.visible = True
         active_count += 1
       else:
