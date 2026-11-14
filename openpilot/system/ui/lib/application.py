@@ -18,6 +18,7 @@ from typing import NamedTuple
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.hardware import HARDWARE, PC
+from openpilot.system.ui.lib.device_frame import check_ffmpeg, frame_args
 from openpilot.system.ui.lib.multilang import FONT_FALLBACK_LANGUAGES, TRANSLATIONS_DIR, multilang
 from openpilot.common.realtime import Ratekeeper
 
@@ -42,6 +43,8 @@ RECORD = os.getenv("RECORD") == "1"
 RECORD_OUTPUT = str(Path(os.getenv("RECORD_OUTPUT", "output")).with_suffix(".mp4"))
 RECORD_QUALITY = int(os.getenv("RECORD_QUALITY", "23"))  # Dynamic bitrate quality level (CRF); 0 is lossless (bigger size), max is 51, default is 23 for x264
 RECORD_BITRATE = os.getenv("RECORD_BITRATE", "")  # Target bitrate e.g. "2000k" (overrides RECORD_QUALITY when set)
+RECORD_FFMPEG = os.getenv("RECORD_FFMPEG", "ffmpeg")
+RECORD_DEVICE_FRAME = os.getenv("RECORD_DEVICE_FRAME", "")
 RECORD_SPEED = int(os.getenv("RECORD_SPEED", "1"))  # Speed multiplier
 OFFSCREEN = os.getenv("OFFSCREEN") == "1"  # Disable FPS limiting for fast offline rendering
 
@@ -284,9 +287,13 @@ class GuiApplication:
         rl.set_mouse_scale(1 / self._scale, 1 / self._scale)
 
       if RECORD:
+        if RECORD_DEVICE_FRAME and GuiApplication.big_ui():
+          raise ValueError("RECORD_DEVICE_FRAME is only supported for the comma four UI")
+        if RECORD_DEVICE_FRAME:
+          check_ffmpeg(RECORD_FFMPEG)
         output_fps = fps * RECORD_SPEED
         ffmpeg_args = [
-          'ffmpeg',
+          RECORD_FFMPEG,
           '-v', 'warning',          # Reduce ffmpeg log spam
           '-nostats',               # Suppress encoding progress
           '-f', 'rawvideo',         # Input format
@@ -294,7 +301,7 @@ class GuiApplication:
           '-s', 'x'.join(map(str, rl.cpu.screen().shape[1::-1])),  # Input resolution
           '-r', str(fps),           # Input frame rate
           '-i', 'pipe:0',           # Input from stdin
-          '-vf', 'vflip,format=yuv420p',  # The screen's rows are bottom up: flip vertically and convert to yuv420p
+          *(frame_args(RECORD_DEVICE_FRAME, flip=True, fps=fps) if RECORD_DEVICE_FRAME else ['-vf', 'vflip,format=yuv420p']),
           '-r', str(output_fps),    # Output frame rate (for speed multiplier)
           '-c:v', 'libx264',
           '-preset', 'veryfast',

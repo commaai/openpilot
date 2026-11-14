@@ -11,6 +11,8 @@ Quick start:
 * set `GRID=50` to show a 50-pixel alignment grid overlay
 * set `MAGIC_DEBUG=1` to show every dropped frames (only on device)
 * set `RECORD=1` to record the screen, output defaults to `output.mp4` but can be set with `RECORD_OUTPUT`
+* set `RECORD_DEVICE_FRAME=full` or `RECORD_DEVICE_FRAME=faded` with `RECORD=1` to include the comma four hardware on a white background (faded hides the top of the device). Device frames require a full FFmpeg build: set `RECORD_FFMPEG=/usr/bin/ffmpeg` on Linux (the bundled minimal FFmpeg does not include the compositing filters). Raw screen recording remains the default; device frames are not supported with `BIG=1`.
+* frame an existing screenshot or recording with `python -m openpilot.system.ui.lib.device_frame input.png output.png --mode faded --ffmpeg /usr/bin/ffmpeg` (use `.mp4` output for video). Images preserve their aspect ratio within the screen aperture. Full frames are 1680×1120; faded frames crop the unused upper area to 1240×700. Video defaults to 30 fps; use `--fps` to match other input frame rates. The frame uses the same product render and screen placement as comma.ai.
 * set `PRIME_TYPE` to preview pairing/Prime status: `-1` unpaired, `0` paired without Prime, `2` Prime Lite, `1` Prime Full
 * set `PAIRING_PROVIDER` to preview the different states based on connect auth providers `google`, `github` or `apple`
 * https://www.raylib.com/cheatsheet/cheatsheet.html
