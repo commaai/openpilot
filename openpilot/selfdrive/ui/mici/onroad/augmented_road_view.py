@@ -182,7 +182,7 @@ class AugmentedRoadView(CameraView):
                                        text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
                                        alignment=TextAlignment.CENTER,
                                        alignment_vertical=TextAlignmentVertical.MIDDLE)
-    self._offroad_sublabel = UnifiedLabel("", 36, FontWeight.ROMAN,
+    self._offroad_sublabel = UnifiedLabel("", 40, FontWeight.ROMAN,
                                           text_color=rl.Color(255, 255, 255, int(255 * 0.9 * 0.65)),
                                           alignment=TextAlignment.CENTER)
 
@@ -198,12 +198,15 @@ class AugmentedRoadView(CameraView):
     # update offroad label
     if ui_state.panda_type == log.PandaState.PandaType.unknown:
       self._offroad_label.set_text("system booting")
+      self._offroad_label.set_font_size(54)
       self._offroad_sublabel.set_text("")
     elif ui_state.ignition and not ui_state.started:
-      self._offroad_label.set_text("openpilot\ncan't start")
+      self._offroad_label.set_text("openpilot can't start")
+      self._offroad_label.set_font_size(46)
       self._offroad_sublabel.set_text("check alerts")
     else:
       self._offroad_label.set_text("start the car to\nuse openpilot")
+      self._offroad_label.set_font_size(54)
       self._offroad_sublabel.set_text("")
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
