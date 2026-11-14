@@ -20,7 +20,7 @@ from openpilot.selfdrive.ui.mici.widgets.qr import QR
 from openpilot.common.hardware import HARDWARE
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import UnifiedLabel
-from openpilot.system.ui.widgets.scroller import NavScroller, Scroller
+from openpilot.system.ui.widgets.scroller import NavScroller
 from openpilot.system.ui.lib.application import gui_app, FontWeight, TextAlignment, TextAlignmentVertical
 from openpilot.system.ui.lib.multilang import tr
 
@@ -284,11 +284,8 @@ class NotificationItem(Widget):
     rl.draw_texture_ex(self.icon, icon_pos, 0.0, 1.0, rl.WHITE)
 
 
-class MiciOffroadAlerts(Scroller):
-  """Offroad alerts layout with vertical scrolling."""
-
+class MiciOffroadAlerts(NavScroller):
   def __init__(self):
-    # Create vertical scroller
     super().__init__(horizontal=False, spacing=12, pad=0)
     self.params = Params()
     self.sorted_alerts: list[AlertData] = []
@@ -308,6 +305,9 @@ class MiciOffroadAlerts(Scroller):
     self._pending_params: dict | None = None
     self._params_thread = threading.Thread(target=self._params_worker, daemon=True)
     self._params_thread.start()
+
+    # refresh every frame, shown or not, for the home pill count
+    gui_app.add_nav_stack_tick(self._refresh_state)
 
   def active_alerts(self) -> int:
     return sum(alert.visible for alert in self.sorted_alerts) + len(self._notification_items)
@@ -432,8 +432,7 @@ class MiciOffroadAlerts(Scroller):
     self._scroller.add_widgets(self._notification_items)
     self._sort_items()
 
-  def _update_state(self):
-    """Periodically refresh alerts."""
+  def _refresh_state(self):
     self._refresh_notifications()
 
     # Refresh alerts when thread updates params

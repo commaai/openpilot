@@ -362,12 +362,13 @@ def build_mici_script(pm: PubMaster, main_layout, script: Script) -> None:
     params = Params()
     main_layout._alerts_layout._pending_params = ({"UpdaterNewDescription": params.get("UpdaterNewDescription")} |
                                                   {alert_data.key: params.get(alert_data.key) for alert_data in main_layout._alerts_layout.sorted_alerts})
-    main_layout._alerts_layout._update_state()
+    main_layout._alerts_layout._refresh_state()
 
-  swipe_right(width, wait_after=WAIT_SHORT)  # open alerts
-  script.setup(setup_offroad_alerts_and_refresh)  # show alerts
+  script.setup(setup_offroad_alerts_and_refresh)  # show alerts pill
+  script.click(width - 60, height - 20, wait_after=WAIT_SHORT)  # open alerts
   swipe_up(height)  # scroll alerts
-  swipe_left(width, wait_after=WAIT_SHORT)  # close alerts
+  swipe_down()  # back to the top
+  swipe_down(wait_after=WAIT_SHORT)  # close alerts
 
   # === Settings === #
   click()  # open settings
