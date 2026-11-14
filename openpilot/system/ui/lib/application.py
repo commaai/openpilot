@@ -233,6 +233,7 @@ class GuiApplication:
     self._mouse_history: deque[MousePosWithTime] = deque(maxlen=MOUSE_THREAD_RATE)
     self._show_touches = SHOW_TOUCHES
     self._show_fps = SHOW_FPS
+    self._dim_color = rl.BLANK
     self._grid_size = GRID_SIZE
     self._profile_render_frames = PROFILE_RENDER
     self._render_profiler = None
@@ -247,6 +248,10 @@ class GuiApplication:
 
   def set_show_fps(self, show: bool):
     self._show_fps = show
+
+  def set_dim(self, dim: float):
+    """darken the whole screen, from 0 to 1"""
+    self._dim_color = rl.Color(0, 0, 0, round(255 * min(max(dim, 0.0), 1.0)))
 
   @property
   def show_touches(self) -> bool:
@@ -613,6 +618,9 @@ class GuiApplication:
 
         if self._scale != 1.0:
           rl.rl_pop_matrix()
+
+        if self._dim_color.a > 0:
+          rl.draw_rectangle(0, 0, self._scaled_width, self._scaled_height, self._dim_color)
 
         if RECORD:
           self._ffmpeg_queue.put(rl.cpu.screen().tobytes())  # Async write via background thread

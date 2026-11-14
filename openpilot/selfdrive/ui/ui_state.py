@@ -18,6 +18,9 @@ from openpilot.selfdrive.modeld.helpers import chestnut_compiled
 from openpilot.selfdrive.selfdrived.alertmanager import OFFROAD_ALERTS
 
 BACKLIGHT_OFFROAD = 65 if HARDWARE.get_device_type() == "mici" else 50
+BACKLIGHT_MIN = 30  # the lowest backlight the display shows properly
+# auto brightness goes below the backlight's floor by dimming the UI, down to 40% black
+BRIGHTNESS_MIN = BACKLIGHT_MIN * 0.6 if HARDWARE.get_device_type() == "mici" else BACKLIGHT_MIN
 PARAM_UPDATE_TIME = 1 / 5.0
 
 
@@ -357,9 +360,11 @@ class Device:
       else:
         clipped_brightness = ((clipped_brightness + 16.0) / 116.0) ** 3.0
 
-      clipped_brightness = float(np.interp(clipped_brightness, [0, 1], [30, 100]))
+      clipped_brightness = float(np.interp(clipped_brightness, [0, 1], [BRIGHTNESS_MIN, 100]))
 
-    brightness = round(self._brightness_filter.update(clipped_brightness))
+    brightness = self._brightness_filter.update(clipped_brightness)
+    gui_app.set_dim(1 - brightness / BACKLIGHT_MIN)
+    brightness = round(max(brightness, BACKLIGHT_MIN))
     if not self._awake:
       brightness = 0
 
