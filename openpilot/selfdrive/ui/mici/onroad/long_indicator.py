@@ -52,12 +52,12 @@ class LongIndicator(Widget):
   def _draw_lead_car(self, rect: rl.Rectangle, alpha: float) -> None:
     sm = ui_state.sm
     plan = sm['longitudinalPlan']
-    # static while disengaged
+    # static and filled in while disengaged, like the lit distance bars
     has_lead = ui_state.engaged and sm.alive['longitudinalPlan'] and plan.hasLead
 
     e2e = has_lead and plan.longitudinalPlanSource == log.LongitudinalPlan.LongitudinalPlanSource.e2e
     white_f, green_f = self._lead_car_filters
-    white_alpha = white_f.update(0.0 if e2e else 0.9 if has_lead else 0.35)
+    white_alpha = white_f.update(0.0 if e2e else 0.9 if has_lead or not ui_state.engaged else 0.35)
     green_alpha = green_f.update(float(e2e))
 
     white, green = self._txt_lead_car
