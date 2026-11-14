@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "imgui.h"
+#include "imgui_internal.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_opengl3_loader.h"
@@ -33,6 +34,43 @@ void hookViewportCallbacks() {
   for (ImGuiViewport *viewport : ImGui::GetPlatformIO().Viewports) {
     if (viewport->PlatformHandle == nullptr || viewport == ImGui::GetMainViewport()) continue;
     glfwSetKeyCallback((GLFWwindow *)viewport->PlatformHandle, keyCallback);
+  }
+}
+
+// Dialogs float out into their own OS windows, so clicking another cabana window would raise it over
+// the modals. Re-raise the whole modal stack, bottom to top, like native modal dialogs.
+void keepModalsInFront() {
+  ImGuiContext &g = *GImGui;
+  ImGuiWindow *top_modal = ImGui::GetTopMostPopupModal();
+  if (top_modal == nullptr) return;
+
+  // the top-most modal and any popups above it (combos, menus) may hold focus
+  int top_idx = -1;
+  for (int i = 0; i < g.OpenPopupStack.Size; ++i) {
+    if (g.OpenPopupStack[i].Window == top_modal) top_idx = i;
+  }
+  if (top_idx < 0) return;
+  auto allowed = [&](ImGuiWindow *w) {
+    for (int i = top_idx; i < g.OpenPopupStack.Size; ++i) {
+      if (g.OpenPopupStack[i].Window == w) return true;
+    }
+    return false;
+  };
+
+  bool stolen = false;
+  for (ImGuiViewport *viewport : ImGui::GetPlatformIO().Viewports) {
+    GLFWwindow *w = (GLFWwindow *)viewport->PlatformHandle;
+    if (w == nullptr || !glfwGetWindowAttrib(w, GLFW_FOCUSED)) continue;
+    if (!allowed(static_cast<ImGuiViewportP *>(viewport)->Window)) stolen = true;
+    break;
+  }
+  if (!stolen) return;
+
+  for (int i = 0; i <= top_idx; ++i) {
+    ImGuiWindow *w = g.OpenPopupStack[i].Window;
+    if (w == nullptr || !(w->Flags & ImGuiWindowFlags_Modal) || w->Viewport == nullptr) continue;
+    if (w->Viewport->Window != w || w->Viewport->PlatformHandle == nullptr) continue;  // own OS window only
+    glfwFocusWindow((GLFWwindow *)w->Viewport->PlatformHandle);
   }
 }
 
@@ -80,6 +118,7 @@ void renderFrame(GLFWwindow *window, MainWindow *win) {
     GLFWwindow *backup_context = glfwGetCurrentContext();
     ImGui::UpdatePlatformWindows();
     hookViewportCallbacks();
+    keepModalsInFront();
     ImGui::RenderPlatformWindowsDefault();
     glfwMakeContextCurrent(backup_context);
   }
