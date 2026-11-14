@@ -12,7 +12,8 @@ from openpilot.selfdrive.ui.mici.onroad.long_indicator import LongIndicator
 from openpilot.selfdrive.ui.mici.onroad.model_renderer import ModelRenderer
 from openpilot.selfdrive.ui.mici.onroad.navigation import NavigationPanel, PANEL_WIDTH
 from openpilot.selfdrive.ui.mici.onroad.confidence_ball import ConfidenceBall
-from openpilot.selfdrive.ui.mici.onroad.cameraview import CameraView
+from openpilot.selfdrive.ui.mici.onroad.cameraview import CameraView, frame_color
+from openpilot.selfdrive.ui.mici.onroad.hibernate import BlurredFrame, Hibernate
 from openpilot.system.ui.lib.application import FontWeight, gui_app, MousePos, MouseEvent, TextAlignment, TextAlignmentVertical
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets import Widget
@@ -188,6 +189,9 @@ class AugmentedRoadView(CameraView):
 
     self._fade_texture = gui_app.texture("icons_mici/onroad/onroad_fade.png")
 
+    self._hibernate = Hibernate()
+    self._blurred_frame = BlurredFrame()
+
   def is_swiping_left(self) -> bool:
     """Check if currently swiping left (for scroller to disable)."""
     return self._bookmark_icon.is_swiping_left()
@@ -217,6 +221,7 @@ class AugmentedRoadView(CameraView):
   def _render(self, rect: rl.Rectangle):
     # Offroad shows the side panel in its disengaged state with text in the camera area
     if not ui_state.started:
+      self._hibernate.reset()
       rl.draw_rectangle_rec(self.rect, rl.BLACK)
       self._render_offroad_text(rl.Rectangle(self.rect.x + SIDE_PANEL_WIDTH, self.rect.y, self.rect.width - SIDE_PANEL_WIDTH, self.rect.height))
       self._hud_renderer.set_wheel_critical_icon(False)
@@ -250,6 +255,7 @@ class AugmentedRoadView(CameraView):
     )
 
     # Render the base camera view
+    self._hibernate.update(ui_state.status == UIStatus.DISENGAGED)
     super()._render(self._content_rect)
 
     # Draw all UI overlays
@@ -284,6 +290,21 @@ class AugmentedRoadView(CameraView):
       self._navigation.render(rl.Rectangle(self._content_rect.x + self._content_rect.width, self.rect.y, PANEL_WIDTH, self.rect.height))
 
     self._bookmark_icon.render(self.rect)
+
+  def _frame_color(self) -> tuple[np.ndarray, float]:
+    h = self._hibernate
+    curve, saturation = frame_color(ui_state.status != UIStatus.DISENGAGED, False, round(h.exposure * 256) / 256, round(h.lift * 256) / 256)
+    return curve, h.saturation(saturation)
+
+  def _draw_frame(self, rect: rl.Rectangle, dst_rect: rl.Rectangle, flip_x: bool):
+    curve, saturation = self._frame_color()
+    h = self._hibernate
+    if h.focus <= 0:
+      rl.cpu.target_raylib()
+      self._nv12(dst_rect, flip_x, curve, saturation)
+    else:
+      self._blurred_frame.draw(lambda dst, c, s, new: self._nv12(dst, flip_x, c, s, new), rect, dst_rect, self._new_frame,
+                               h.focus, h.dim, curve, saturation)
 
   def _render_offroad_text(self, rect: rl.Rectangle):
     # center the label and optional subline together

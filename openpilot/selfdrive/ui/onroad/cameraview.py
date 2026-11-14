@@ -148,13 +148,18 @@ class CameraView(Widget):
     x_offset += transform[0, 2] * rect.width / 2
     y_offset += transform[1, 2] * rect.height / 2
 
-    dst_rect = rl.Rectangle(x_offset, y_offset, scale_x, scale_y)
+    self._draw_frame(rect, rl.Rectangle(x_offset, y_offset, scale_x, scale_y), src_rect.width < 0)
+    self._new_frame = False
 
+  def _draw_frame(self, rect: rl.Rectangle, dst_rect: rl.Rectangle, flip_x: bool):
     curve, saturation = self._frame_color()
     rl.cpu.target_raylib()
+    self._nv12(dst_rect, flip_x, curve, saturation)
+
+  def _nv12(self, dst_rect: rl.Rectangle, flip_x: bool, curve: np.ndarray, saturation: float, new_frame: bool | None = None):
+    assert self.frame is not None
     rl.cpu.nv12(self.frame.data, self.frame.uv_offset, self.frame.stride, self.frame.width, self.frame.height, dst_rect,
-                src_rect.width < 0, curve, round(saturation * 256), self._new_frame)
-    self._new_frame = False
+                flip_x, curve, round(saturation * 256), self._new_frame if new_frame is None else new_frame)
 
   def _draw_placeholder(self, rect: rl.Rectangle):
     if self._placeholder_color:
