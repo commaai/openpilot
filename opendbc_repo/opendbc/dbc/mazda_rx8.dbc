@@ -1,0 +1,77 @@
+VERSION ""
+
+
+NS_ : 
+    NS_DESC_
+    CM_
+    BA_DEF_
+    BA_
+    VAL_
+    CAT_DEF_
+    CAT_
+    FILTER
+    BA_DEF_DEF_
+    EV_DATA_
+    ENVVAR_DATA_
+    SGTYPE_
+    SGTYPE_VAL_
+    BA_DEF_SGTYPE_
+    BA_SGTYPE_
+    SIG_TYPE_REF_
+    VAL_TABLE_
+    SIG_GROUP_
+    SIG_VALTYPE_
+    SIGTYPE_VALTYPE_
+    BO_TX_BU_
+    BA_DEF_REL_
+    BA_REL_
+    BA_DEF_DEF_REL_
+    BU_SG_REL_
+    BU_EV_REL_
+    BU_BO_REL_
+    SG_MUL_VAL_
+
+BS_:
+
+BU_: PowertrainControlModule InstrumentCluster ElectricPowerSteering AntilockBrakeSystem
+
+
+BO_ 129 steering: 8 ElectricPowerSteering
+ SG_ SteeringAngle : 23|16@0- (1,0) [0|0] "deg" Vector__XXX
+
+BO_ 513 speed: 8 PowertrainControlModule
+ SG_ EngineRPM : 7|16@0+ (0.25,0) [0|0] "rpm" Vector__XXX
+ SG_ VehicleSpeed : 39|16@0+ (0.01,-100) [0|0] "kph" Vector__XXX
+ SG_ AcceleratorPos : 55|8@0+ (0.5,0) [0|0] "%" Vector__XXX
+
+BO_ 592 throttle_body: 8 PowertrainControlModule
+ SG_ IntakeAirTemperature : 31|8@0+ (1,-40) [0|0] "Cel" Vector__XXX
+ SG_ AcceleratorPedalSensorRaw : 23|8@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ AcceleratorPedalSensorFiltered : 55|8@0+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 658 brake_controls: 8 PowertrainControlModule
+ SG_ BrakePedalSwitch : 43|1@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ ParkingBrakeSwitch : 38|1@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 1056 coolant: 8 PowertrainControlModule
+ SG_ CoolantTemperature : 7|8@0+ (1,-40) [0|0] "Cel" Vector__XXX
+
+BO_ 1072 instrument_cluster: 8 InstrumentCluster
+ SG_ FuelLevel : 7|8@0+ (0.392156,0) [0|0] "%" Vector__XXX
+ SG_ FuelTankSensorLeft : 15|8@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ FuelTankSensorRight : 23|8@0+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 1200 wheel_speed: 8 AntilockBrakeSystem
+ SG_ WheelSpeedFL : 7|16@0+ (0.01,-100) [0|0] "kph" Vector__XXX
+ SG_ WheelSpeedFR : 23|16@0+ (0.01,-100) [0|0] "kph" Vector__XXX
+ SG_ WheelSpeedRL : 39|16@0+ (0.01,-100) [0|0] "kph" Vector__XXX
+ SG_ WheelSpeedRR : 55|16@0+ (0.01,-100) [0|0] "kph" Vector__XXX
+
+CM_ SG_ 129 SteeringAngle "Steering wheel angle: positive is right and negative is left";
+CM_ SG_ 513 AcceleratorPos "processed interpretation of AcceleratorPedalSensor values";
+CM_ SG_ 1072 FuelTankSensorLeft "lower sensor values indicate a more full tank";
+CM_ SG_ 1072 FuelTankSensorRight "lower sensor values indicate a more full tank";
+
+
+
+
