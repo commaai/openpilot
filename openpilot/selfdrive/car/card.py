@@ -8,7 +8,7 @@ import openpilot.cereal.messaging as messaging
 from openpilot.cereal import log
 from opendbc.car.structs import car
 
-from openpilot.common.params import Params
+from openpilot.common.params import Params, ParamKeyFlag
 from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper
 from openpilot.common.swaglog import cloudlog, ForwardingHandler
 
@@ -99,6 +99,13 @@ class Car:
           cached_params = _cached_params
 
       self.CI = get_car(*self.can_callbacks, obd_callback(self.params), alpha_long_allowed, is_release, cached_params)
+
+      # a different car: drop the previous car's params, and its alpha longitudinal choice
+      if self.car_changed(self.CI.CP):
+        self.params.clear_all(ParamKeyFlag.CLEAR_ON_CAR_CHANGE)
+        if alpha_long_allowed and self.CI.CP.alphaLongitudinalAvailable:
+          self.CI = get_car(*self.can_callbacks, obd_callback(self.params), False, is_release, self.CI.CP)
+
       self.RI = interfaces[self.CI.CP.carFingerprint].RadarInterface(self.CI.CP)
       self.CP = self.CI.CP
 
@@ -156,6 +163,13 @@ class Car:
 
     # card is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
+
+  def car_changed(self, CP: car.CarParams) -> bool:
+    prev_cp = self.params.get("CarParamsPersistent")
+    if prev_cp is None:
+      return False
+    with car.CarParams.from_bytes(prev_cp) as prev_CP:
+      return prev_CP.carFingerprint != CP.carFingerprint and "mock" not in (prev_CP.brand, CP.brand)
 
   def state_update(self) -> tuple[car.CarState, structs.RadarDataT | None]:
     """carState update loop, driven by can"""
