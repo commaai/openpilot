@@ -16,7 +16,7 @@ import numpy as np
 from PIL import Image
 
 sys.path.insert(0, "/data/arm_teleop_deps")
-from servos import Arm, IDS, JOINTS, ports
+from servos import Arm, IDS, JOINTS
 from msgq.visionipc import VisionIpcClient
 from openpilot.cereal.visionipc import VisionStreamType
 
@@ -73,13 +73,15 @@ class Camera:
 
 
 class Robot:
-  def __init__(self):
+  def __init__(self, managed=False):
     self.lock = threading.RLock()
     self.arm = None
     self.state = {"serial": FOLLOWER, "connected": False, "positions": [], "error": "Connecting to left arm"}
     self.active = False
     self.holding = False
     self.session = None
+    self.managed = managed
+    self.lease_deadline = float("inf")
     self.sequence = -1
     self.last_command = 0.
     self.goal = []
@@ -92,6 +94,7 @@ class Robot:
   def stop(self, reason):
     self.active = False
     self.session = None
+    self.lease_deadline = float("inf")
     self.reason = reason
     if self.arm is not None and self.holding:
       self.arm.targets(self.arm.positions())
@@ -112,6 +115,10 @@ class Robot:
       if op == "start":
         if self.active:
           raise ValueError("Control is already active")
+        remaining = float(body.get("lease_expires_at", 0)) - time.time()  # noqa: TID251 - Convert UTC once, then enforce with monotonic time.
+        if self.managed and (not math.isfinite(remaining) or not 0 < remaining <= 300):
+          raise ValueError("A current reservation lease of at most five minutes is required")
+        lease_deadline = time.monotonic() + remaining if self.managed else float("inf")
         if any(m != 777 for m in self.arm.models) or any(self.arm.modes):
           raise ValueError("Expected six STS3215 servos in position mode")
         positions = self.arm.positions()
@@ -122,6 +129,8 @@ class Robot:
         self.speed = float(body.get("speed", 30))
         if not math.isfinite(self.speed) or not 5 <= self.speed <= 60:
           raise ValueError("Speed must be between 5 and 60 degrees/second")
+        if time.monotonic() >= lease_deadline:
+          raise ValueError("Reservation ended before control could start")
         self.arm.targets(positions)
         self.holding = True
         try:
@@ -139,10 +148,13 @@ class Robot:
         self.session = secrets.token_hex(16)
         self.sequence = -1
         self.last_command = time.monotonic()
+        self.lease_deadline = lease_deadline
         self.active = True
         self.reason = "Following leader"
         return {"session": self.session, "positions": positions, "limits": self.arm.limits}
       if op == "target":
+        if time.monotonic() >= self.lease_deadline:
+          self.stop("Reservation ended; holding pose")
         if not self.active or body.get("session") != self.session:
           raise ValueError("Control session has stopped")
         sequence = int(body["sequence"])
@@ -177,7 +189,9 @@ class Robot:
             if fault and self.reason != fault:
               self.stop(fault)
             if self.active:
-              if now - self.last_command > WATCHDOG:
+              if now >= self.lease_deadline:
+                self.stop("Reservation ended; holding pose")
+              elif now - self.last_command > WATCHDOG:
                 self.stop("Command connection lost; holding pose")
               else:
                 step = self.speed * TICKS_PER_DEGREE * min(now - last, 0.05)
@@ -204,6 +218,7 @@ class Robot:
   def status(self):
     with self.lock:
       return {**self.state, "active": self.active, "holding": self.holding, "reason": self.reason,
+              "managed": self.managed, "lease_remaining": max(0, self.lease_deadline - time.monotonic()) if self.active and self.managed else None,
               "target": self.commanded, "command_age": time.monotonic() - self.last_command if self.active else None}
 
 
@@ -227,6 +242,8 @@ class Handler(BaseHTTPRequestHandler):
     self.wfile.write(data)
 
   def do_GET(self):
+    if not self.authorized():
+      return
     if self.path == "/status":
       self.json({"arm": robot.status(), "joints": JOINTS, "camera": {"fps": round(camera.fps, 1), "frames": camera.frame,
                  "age": time.monotonic() - camera.updated if camera.updated else None, "error": camera.error},
@@ -242,7 +259,7 @@ class Handler(BaseHTTPRequestHandler):
       try:
         while True:
           with camera.condition:
-            camera.condition.wait_for(lambda: camera.frame != frame and camera.jpeg, timeout=3)
+            camera.condition.wait_for(lambda previous=frame: camera.frame != previous and camera.jpeg, timeout=3)
             if not camera.jpeg or time.monotonic() - camera.updated > 2:
               break
             frame, jpeg = camera.frame, camera.jpeg
@@ -255,6 +272,8 @@ class Handler(BaseHTTPRequestHandler):
       self.json({"error": "Not found"}, 404)
 
   def do_POST(self):
+    if not self.authorized():
+      return
     if self.path != "/command" or self.headers.get("Origin") or self.headers.get_content_type() != "application/json":
       self.json({"error": "Unsupported request"}, 400)
       self.close_connection = True
@@ -267,10 +286,21 @@ class Handler(BaseHTTPRequestHandler):
     except (ValueError, KeyError, TypeError, OSError) as e:
       self.json({"error": str(e)}, 400)
 
+  def authorized(self):
+    if gateway_key is not None and not secrets.compare_digest(self.headers.get("Authorization", ""), "Bearer " + gateway_key):
+      self.json({"error": "Use the reservation gateway"}, 401)
+      self.close_connection = True
+      return False
+    return True
+
 
 if __name__ == "__main__":
+  key_file = Path("/data/arm_teleop_gateway_key")
+  gateway_key = key_file.read_text().strip() if key_file.exists() else None
+  if gateway_key is not None and len(gateway_key) < 32:
+    raise ValueError("Invalid reservation gateway key")
   camera = Camera()
-  robot = Robot()
+  robot = Robot(managed=gateway_key is not None)
   server = ThreadingHTTPServer(("127.0.0.1", 8022), Handler)
   signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
   try:

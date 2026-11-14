@@ -32,7 +32,8 @@ class Station:
     self.latency = 0.
     self.clients = set()
     self.lock = asyncio.Lock()
-    self.base = f"http://127.0.0.1:{args.tunnel_port}"
+    self.base = f"{args.game_url.rstrip('/')}/api/reservations/{args.reservation}" if args.game_url else f"http://127.0.0.1:{args.tunnel_port}"
+    self.headers = {"Authorization": "Bearer " + Path(args.token_file).read_text().strip()} if args.game_url else {}
 
   async def command(self, body):
     async with self.http.post(self.base + "/command", json=body, timeout=ClientTimeout(total=0.7)) as response:
@@ -169,8 +170,10 @@ class Station:
       await asyncio.sleep(2)
 
   async def lifecycle(self, app):
-    self.http = ClientSession()
-    tasks = [asyncio.create_task(fn()) for fn in (self.tunnel, self.controls, self.monitor)]
+    self.http = ClientSession(headers=self.headers)
+    tasks = [asyncio.create_task(fn()) for fn in (self.controls, self.monitor)]
+    if not self.args.game_url:
+      tasks.append(asyncio.create_task(self.tunnel()))
     yield
     async with self.lock:
       await self.stop("Workstation service stopped")
@@ -210,14 +213,14 @@ class Station:
     try:
       upstream = await self.http.get(self.base + "/video", timeout=ClientTimeout(total=None, connect=2, sock_read=4))
     except Exception:
-      raise web.HTTPServiceUnavailable(text="Waiting for wide camera")
+      raise web.HTTPServiceUnavailable(text="Waiting for wide camera") from None
     async with upstream:
-      response = web.StreamResponse(headers={"Content-Type": upstream.headers["Content-Type"], "Cache-Control": "no-store"})
+      response = web.StreamResponse(status=upstream.status, headers={"Content-Type": upstream.headers["Content-Type"], "Cache-Control": "no-store"})
       await response.prepare(request)
       try:
         async for chunk in upstream.content.iter_chunked(65536):
           await response.write(chunk)
-      except (ConnectionError, asyncio.TimeoutError):
+      except (ConnectionError, TimeoutError):
         pass
     return response
 
@@ -225,12 +228,21 @@ class Station:
 def main():
   parser = argparse.ArgumentParser()
   parser.add_argument("--device", default="192.168.63.237")
-  parser.add_argument("--key", required=True)
+  parser.add_argument("--key")
+  parser.add_argument("--game-url", help="Reservation gateway, e.g. https://mici.comma.life")
+  parser.add_argument("--reservation", help="Reservation ID issued by the gateway")
+  parser.add_argument("--token-file", help="File containing this reservation's API token")
   parser.add_argument("--leader", default="5CBC431223")
   parser.add_argument("--port", type=int, default=8070)
   parser.add_argument("--tunnel-port", type=int, default=18022)
   args = parser.parse_args()
-  args.key = str(Path(args.key).expanduser().resolve())
+  if args.game_url:
+    if not args.reservation or not args.token_file:
+      parser.error("--game-url requires --reservation and --token-file")
+  elif not args.key:
+    parser.error("Direct connections require --key")
+  if args.key:
+    args.key = str(Path(args.key).expanduser().resolve())
   station = Station(args)
   app = web.Application()
   app.cleanup_ctx.append(station.lifecycle)

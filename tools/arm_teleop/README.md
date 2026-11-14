@@ -43,3 +43,18 @@ Automatic openpilot updates are disabled in this mode. Switch to a stock branch 
 `device.py` owns the follower bus, command watchdog, and MJPEG encoder. `workstation.py` owns the leader bus, SSH tunnel, and browser session. `servos.py` is a small wrapper around the Feetech SDK with read-only discovery. `power.py` applies the device runtime settings and maintains USB power/permissions after reconnects.
 
 Neither server starts motion on its own. Probe and status reads do not enable torque. Motion commands are accepted only after an explicit Start and require the current session ID and increasing sequence numbers.
+
+## Reserved game sessions
+
+The companion [xx service](https://github.com/commaai/xx/pull/7492) books five-minute slots at `https://mici.comma.life` and issues a different API token for each reservation. Save its token file, stop any older workstation teleop service, and run:
+
+```bash
+python tools/arm_teleop/workstation.py --game-url https://mici.comma.life \
+  --reservation <reservation-id> --token-file /path/to/mici-token.txt
+```
+
+The local UI remains at `http://127.0.0.1:8070`. Live video and commands pass through the gateway and are available only during the reserved slot.
+
+On the device, `/data/arm_teleop_gateway_key` enables managed mode. It must contain a random service key of at least 32 characters and match the gateway's credential. Every device HTTP request then requires `Authorization: Bearer <service-key>`, and `start` requires a `lease_expires_at` Unix timestamp no more than five minutes ahead. The device converts that timestamp once to a monotonic deadline and holds the arm when the lease ends. The 400 ms command watchdog remains active. Keep device port 8022 on loopback, and restart the device manager after installing the key.
+
+Without the key file, the original direct workstation mode is available. Do not remove this file from a device assigned to the reservation service.
