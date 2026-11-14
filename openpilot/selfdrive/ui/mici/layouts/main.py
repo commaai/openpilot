@@ -1,3 +1,4 @@
+import time
 import raylib_nb as rl
 import openpilot.cereal.messaging as messaging
 from openpilot.selfdrive.ui.mici.layouts.home import MiciHomeLayout
@@ -13,6 +14,7 @@ from openpilot.system.ui.lib.application import gui_app
 
 
 ONROAD_DELAY = 2.5  # seconds
+GREET_IGNITION_OFF_TIME = 60 * 60  # greet again when the car turns on after being off this long
 
 
 class MiciMainLayout(Scroller):
@@ -24,6 +26,8 @@ class MiciMainLayout(Scroller):
     self._prev_onroad = False
     self._prev_standstill = False
     self._onroad_time_delay: float | None = None
+    self._prev_ignition = False
+    self._ignition_off_time = time.monotonic()  # home already greets on boot
     self._setup = False
 
     # Initialize widgets
@@ -105,6 +109,14 @@ class MiciMainLayout(Scroller):
     super()._render(self._rect)
 
   def _handle_transitions(self):
+    # greet when getting in the car after it's been off for a while
+    if ui_state.ignition != self._prev_ignition:
+      self._prev_ignition = ui_state.ignition
+      if not ui_state.ignition:
+        self._ignition_off_time = time.monotonic()
+      elif time.monotonic() - self._ignition_off_time > GREET_IGNITION_OFF_TIME:
+        self._home_layout.play_wake_animation()
+
     # Don't pop if onboarding
     if gui_app.widget_in_stack(self._onboarding_window):
       return
