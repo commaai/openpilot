@@ -196,11 +196,7 @@ class AugmentedRoadView(CameraView):
     super()._update_state()
 
     # update offroad label
-    if ui_state.panda_type == log.PandaState.PandaType.unknown:
-      self._offroad_label.set_text("system booting")
-      self._offroad_label.set_font_size(54)
-      self._offroad_sublabel.set_text("")
-    elif ui_state.ignition and not ui_state.started:
+    if ui_state.ignition and not ui_state.started:
       self._offroad_label.set_text("openpilot can't start")
       self._offroad_label.set_font_size(46)
       self._offroad_sublabel.set_text("check alerts")
