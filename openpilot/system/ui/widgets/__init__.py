@@ -85,6 +85,11 @@ class Widget(abc.ABC):
     self._enabled = enabled
 
   @property
+  def covers_screen(self) -> bool:
+    # if so, the nav stack skips rendering the widgets under it
+    return False
+
+  @property
   def is_visible(self) -> bool:
     return self._is_visible() if callable(self._is_visible) else self._is_visible
 
