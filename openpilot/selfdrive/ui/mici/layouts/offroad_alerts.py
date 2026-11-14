@@ -290,6 +290,9 @@ class MiciOffroadAlerts(Scroller):
   def __init__(self):
     # Create vertical scroller
     super().__init__(horizontal=False, spacing=12, pad=0)
+    # making the card textures takes ~50 ms, a dropped frame when they're first drawn
+    for pressed in (False, True):
+      _card_texture(pressed)
     self.params = Params()
     self.sorted_alerts: list[AlertData] = []
     self.alert_items: list[AlertItem] = []

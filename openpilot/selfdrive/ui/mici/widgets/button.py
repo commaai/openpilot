@@ -455,7 +455,8 @@ class BigParamControl(BigToggle):
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
-    self.params.put_bool(self.param, self._checked, block=True)
+    # written in the background: waiting for it to reach the disk can take a frame
+    self.params.put_bool(self.param, self._checked)
 
   def refresh(self):
     self.set_checked(self.params.get_bool(self.param, False))
@@ -473,7 +474,8 @@ class BigCircleParamControl(BigCircleToggle):
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
-    self.params.put_bool(self._param, self._checked, block=True)
+    # written in the background: waiting for it to reach the disk can take a frame
+    self.params.put_bool(self._param, self._checked)
 
   def refresh(self):
     self.set_checked(self.params.get_bool(self._param, False))

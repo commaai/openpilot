@@ -225,6 +225,17 @@ class _Qr:
 def make_texture(data: str, inverted: bool = False) -> rl.Texture:
   """Render a URL as the RGBA QR texture used by the UI. The texture upload
   copies the pixels, so the intermediate image/array don't need to outlive it."""
+  return pixels_texture(make_pixels(data, inverted))
+
+
+def pixels_texture(img_array: np.ndarray) -> rl.Texture:
+  rl_image = rl.Image(img_array, img_array.shape[1], img_array.shape[0], 1,
+                      rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8)
+  return rl.load_texture_from_image(rl_image)
+
+
+def make_pixels(data: str, inverted: bool = False, module_size: int = 10) -> np.ndarray:
+  """The RGBA pixels of a URL's QR code, module_size pixels per module"""
   raw = data.encode()
   for version in range(1, 21):
     count_bits = 8 if version <= 9 else 16
@@ -233,13 +244,9 @@ def make_texture(data: str, inverted: bool = False) -> rl.Texture:
   else:
     raise ValueError("QR URL is too long")
   modules = np.pad(_Qr(version, raw).modules, 0 if inverted else 4)
-  modules = np.repeat(np.repeat(modules, 10, axis=0), 10, axis=1)
+  modules = np.repeat(np.repeat(modules, module_size, axis=0), module_size, axis=1)
   gray = ((modules == inverted) * 255).astype(np.uint8)
-  img_array = np.dstack((gray, gray, gray, np.full_like(gray, 255)))
-
-  rl_image = rl.Image(img_array, img_array.shape[1], img_array.shape[0], 1,
-                      rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8)
-  return rl.load_texture_from_image(rl_image)
+  return np.dstack((gray, gray, gray, np.full_like(gray, 255)))
 
 
 # ---- Symbol structure for decoding ----

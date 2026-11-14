@@ -104,7 +104,6 @@ class PrimeScroller(NavScroller):
     super().__init__()
     self._params = Params()
     self.initial_is_paired = ui_state.prime_state.is_paired()
-    self._last_pairing_qr_generation = float("-inf")
 
     self._manage_icon = gui_app.texture("icons_mici/settings/comma_icon.png", 33, 60)
     if not ui_state.prime_state.is_prime():
@@ -120,7 +119,8 @@ class PrimeScroller(NavScroller):
         self._manage_prime,
       ])
     else:
-      self._qr = QR(self._get_pairing_url())
+      self._qr = QR(self._get_pairing_url)
+      self._last_pairing_qr_generation = time.monotonic()
       self._scroller.scroll_indicator_start_after = self._qr
       self._scroller.add_widgets([
         self._qr,
@@ -147,10 +147,7 @@ class PrimeScroller(NavScroller):
     if not self.initial_is_paired:
       current_time = time.monotonic()
       if current_time - self._last_pairing_qr_generation >= self.QR_REFRESH_INTERVAL:
-        self._qr._url = self._get_pairing_url()
-        if self._qr._texture and self._qr._texture.id != 0:
-          rl.unload_texture(self._qr._texture)
-        self._qr._texture = self._qr._generate_qr_code()
+        self._qr.set_url(self._get_pairing_url)
         self._last_pairing_qr_generation = current_time
     super()._render(rect)
 

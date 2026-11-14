@@ -168,25 +168,25 @@ class DeveloperLayoutMici(NavScroller):
       item.set_checked(ui_state.params.get_bool(key))
 
   def _on_joystick_debug_mode(self, state: bool):
-    ui_state.params.put_bool("JoystickDebugMode", state, block=True)
-    ui_state.params.put_bool("LongitudinalManeuverMode", False, block=True)
+    ui_state.params.put_bool("JoystickDebugMode", state)
+    ui_state.params.put_bool("LongitudinalManeuverMode", False)
     self._long_maneuver_toggle.set_checked(False)
-    ui_state.params.put_bool("LateralManeuverMode", False, block=True)
+    ui_state.params.put_bool("LateralManeuverMode", False)
     self._lat_maneuver_toggle.set_checked(False)
 
   def _on_long_maneuver_mode(self, state: bool):
-    ui_state.params.put_bool("LongitudinalManeuverMode", state, block=True)
-    ui_state.params.put_bool("JoystickDebugMode", False, block=True)
+    ui_state.params.put_bool("LongitudinalManeuverMode", state)
+    ui_state.params.put_bool("JoystickDebugMode", False)
     self._joystick_toggle.set_checked(False)
-    ui_state.params.put_bool("LateralManeuverMode", False, block=True)
+    ui_state.params.put_bool("LateralManeuverMode", False)
     self._lat_maneuver_toggle.set_checked(False)
     restart_needed_callback()
 
   def _on_lat_maneuver_mode(self, state: bool):
-    ui_state.params.put_bool("LateralManeuverMode", state, block=True)
-    ui_state.params.put_bool("JoystickDebugMode", False, block=True)
+    ui_state.params.put_bool("LateralManeuverMode", state)
+    ui_state.params.put_bool("JoystickDebugMode", False)
     self._joystick_toggle.set_checked(False)
-    ui_state.params.put_bool("LongitudinalManeuverMode", False, block=True)
+    ui_state.params.put_bool("LongitudinalManeuverMode", False)
     self._long_maneuver_toggle.set_checked(False)
     restart_needed_callback()
 
