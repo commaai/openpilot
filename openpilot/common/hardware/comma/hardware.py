@@ -254,6 +254,8 @@ class HardwareComma(HardwareBase):
     return (self.read_param_file("/sys/class/power_supply/bms/voltage_now", int) * self.read_param_file("/sys/class/power_supply/bms/current_now", int) / 1e12)
 
   def shutdown(self):
+    if os.getenv("ARM_TELEOP") == "1":
+      return
     subprocess.run("sudo poweroff", shell=True)
 
   def get_thermal_config(self):
@@ -275,6 +277,7 @@ class HardwareComma(HardwareBase):
                          bottomSoc=bottomSoc)
 
   def set_display_power(self, on):
+    on = on or os.getenv("ARM_TELEOP") == "1"
     try:
       with open("/sys/class/backlight/panel0-backlight/bl_power", "w") as f:
         f.write("0" if on else "4")
@@ -282,6 +285,8 @@ class HardwareComma(HardwareBase):
       pass
 
   def set_screen_brightness(self, percentage):
+    if os.getenv("ARM_TELEOP") == "1":
+      percentage = max(percentage, 25)
     try:
       with open("/sys/class/backlight/panel0-backlight/max_brightness") as f:
         max_brightness = float(f.read().strip())
@@ -303,6 +308,8 @@ class HardwareComma(HardwareBase):
       return 0
 
   def set_power_save(self, powersave_enabled):
+    if os.getenv("ARM_TELEOP") == "1":
+      powersave_enabled = False
     # amplifier, 100mW at idle
     if self.amplifier is not None:
       self.amplifier.set_global_shutdown(amp_disabled=powersave_enabled)

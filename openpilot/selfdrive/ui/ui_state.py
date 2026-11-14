@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import time
 import threading
@@ -382,7 +383,7 @@ class Device:
         callback()
     self._prev_timed_out = interaction_timeout
 
-    self._set_awake(ui_state.ignition or not interaction_timeout or PC)
+    self._set_awake(ui_state.ignition or not interaction_timeout or PC or os.getenv("ARM_TELEOP") == "1")
 
   def _set_awake(self, on: bool):
     if on != self._awake:

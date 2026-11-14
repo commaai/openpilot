@@ -167,6 +167,8 @@ def manager_thread() -> None:
     # Exit main loop when uninstall/shutdown/reboot is needed
     shutdown = False
     for param in ("DoUninstall", "DoShutdown", "DoReboot"):
+      if param == "DoShutdown" and os.getenv("ARM_TELEOP") == "1":
+        continue
       if params.get_bool(param):
         shutdown = True
         params.put("LastManagerExitReason", f"{param} {datetime.datetime.now()}", block=True)
