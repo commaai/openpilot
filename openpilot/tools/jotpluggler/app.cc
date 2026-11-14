@@ -1629,7 +1629,7 @@ void draw_workspace(AppSession *session, const UiMetrics &ui, UiState *state) {
   if (ImGui::Begin("##workspace_host", nullptr, flags)) {
     const int selection_request = state->requested_tab_index;
     std::optional<ImRect> rename_tab_rect;
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10.0f, 6.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10.0f, WORKSPACE_TAB_PADDING_Y));
     ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(8.0f, 4.0f));
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
