@@ -143,6 +143,10 @@ class CarEvents:
       events.add(EventName.preEnableStandstill)
     if CS.gasPressed:
       events.add(EventName.gasPressedOverride)
+    # disable on rising edge of brake, also on brake when speed > 0
+    if (CS.brakePressed and (not CS_prev.brakePressed or not CS.standstill)) or \
+      (CS.regenBraking and (not CS_prev.regenBraking or not CS.standstill)):
+      events.add(EventName.pedalPressed)
     if CS.vehicleSensorsInvalid:
       events.add(EventName.vehicleSensorsInvalid)
     if CS.invalidLkasSetting:

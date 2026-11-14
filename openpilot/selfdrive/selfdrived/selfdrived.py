@@ -248,10 +248,8 @@ class SelfdriveD:
           # body always wants to enable
           self.events.add(EventName.pcmEnable)
 
-      # Disable on rising edge of accelerator or brake. Also disable on brake when speed > 0
-      if (CS.gasPressed and not self.CS_prev.gasPressed and self.disengage_on_accelerator) or \
-        (CS.brakePressed and (not self.CS_prev.brakePressed or not CS.standstill)) or \
-        (CS.regenBraking and (not self.CS_prev.regenBraking or not CS.standstill)):
+      # Disable on rising edge of accelerator
+      if CS.gasPressed and not self.CS_prev.gasPressed and self.disengage_on_accelerator and EventName.pedalPressed not in self.events.names:
         self.events.add(EventName.pedalPressed)
 
       # Audible alert when stock cruise was already on at startup, since openpilot will cancel it
