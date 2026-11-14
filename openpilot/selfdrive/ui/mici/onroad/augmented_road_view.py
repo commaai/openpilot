@@ -182,6 +182,9 @@ class AugmentedRoadView(CameraView):
                                        text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
                                        alignment=TextAlignment.CENTER,
                                        alignment_vertical=TextAlignmentVertical.MIDDLE)
+    self._offroad_sublabel = UnifiedLabel("", 36, FontWeight.ROMAN,
+                                          text_color=rl.Color(255, 255, 255, int(255 * 0.9 * 0.65)),
+                                          alignment=TextAlignment.CENTER)
 
     self._fade_texture = gui_app.texture("icons_mici/onroad/onroad_fade.png")
 
@@ -195,10 +198,13 @@ class AugmentedRoadView(CameraView):
     # update offroad label
     if ui_state.panda_type == log.PandaState.PandaType.unknown:
       self._offroad_label.set_text("system booting")
+      self._offroad_sublabel.set_text("")
     elif ui_state.ignition and not ui_state.started:
-      self._offroad_label.set_text("openpilot can't start\ncheck alerts")
+      self._offroad_label.set_text("openpilot\ncan't start")
+      self._offroad_sublabel.set_text("check alerts")
     else:
       self._offroad_label.set_text("start the car to\nuse openpilot")
+      self._offroad_sublabel.set_text("")
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     # Don't trigger click callback if bookmark was triggered
@@ -209,7 +215,7 @@ class AugmentedRoadView(CameraView):
     # Offroad shows the side panel in its disengaged state with text in the camera area
     if not ui_state.started:
       rl.draw_rectangle_rec(self.rect, rl.BLACK)
-      self._offroad_label.render(rl.Rectangle(self.rect.x + SIDE_PANEL_WIDTH, self.rect.y, self.rect.width - SIDE_PANEL_WIDTH, self.rect.height))
+      self._render_offroad_text(rl.Rectangle(self.rect.x + SIDE_PANEL_WIDTH, self.rect.y, self.rect.width - SIDE_PANEL_WIDTH, self.rect.height))
       self._hud_renderer.set_wheel_critical_icon(False)
       self._render_left_panel(False)
       return
@@ -275,6 +281,18 @@ class AugmentedRoadView(CameraView):
       self._navigation.render(rl.Rectangle(self._content_rect.x + self._content_rect.width, self.rect.y, PANEL_WIDTH, self.rect.height))
 
     self._bookmark_icon.render(self.rect)
+
+  def _render_offroad_text(self, rect: rl.Rectangle):
+    # center the label and optional subline together
+    if not self._offroad_sublabel.text:
+      self._offroad_label.render(rect)
+      return
+    gap = 8
+    label_h = self._offroad_label.get_content_height(int(rect.width))
+    sub_h = self._offroad_sublabel.get_content_height(int(rect.width))
+    y = rect.y + (rect.height - label_h - gap - sub_h) / 2
+    self._offroad_label.render(rl.Rectangle(rect.x, y, rect.width, label_h))
+    self._offroad_sublabel.render(rl.Rectangle(rect.x, y + label_h + gap, rect.width, sub_h))
 
   def _render_left_panel(self, show_navigation: bool):
     # DMoji, longitudinal indicator, and steering wheel are centered in the black side panel on the left,
