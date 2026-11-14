@@ -3,6 +3,7 @@
 #include "common/tests/native_test.h"
 #include "openpilot/cereal/messaging/messaging.h"
 #include "selfdrive/pandad/panda.h"
+#include "selfdrive/pandad/pandad.h"
 #include "selfdrive/pandad/tss3_startup_catcher.h"
 
 struct PandaTest : public Panda {
@@ -98,6 +99,14 @@ void PandaTest::test_can_recv(uint32_t rx_chunk_size) {
 }
 
 void test_can_protocol() {
+  // An active startup catcher owns the onroad safety policy, but it must not
+  // suppress PandaSafety's offroad cache reset. This is what lets pandad
+  // restore Toyota safety if the next startup catch times out in ELM327.
+  CHECK(should_configure_panda_safety(false, false));
+  CHECK(should_configure_panda_safety(false, true));
+  CHECK(should_configure_panda_safety(true, false));
+  CHECK(!should_configure_panda_safety(true, true));
+
   CHECK(is_tss3_exact_extended_response(std::string("\x06\x50\x03\x00\x32\x01\xf4\x00", 8)));
   CHECK(!is_tss3_exact_extended_response(std::string("\x06\x50\x03\x00\x64\x01\xf4\x00", 8)));
   CHECK(!is_tss3_exact_extended_response(std::string("\x06\x50\x02\x00\x32\x01\xf4\x00", 8)));

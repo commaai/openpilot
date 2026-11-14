@@ -348,6 +348,245 @@ Run 2026-10-09 with `opendbc_repo/.venv`:
   copied fields in code would violate the stock-longitudinal safety contract;
   an actually stationary engaged capture is still required for that criterion.
 
+### 2026-11-04 post-repin stationary capture: chassis still on bus 1
+
+- Bundle `rlog-18.zip` contains two stationary segments from clean openpilot
+  commit `936f67ffd6cae0452b3f3b1750fa7b85963e800d` on
+  `star2025-kai-clean`. Both exact-match attempts returned `MOCK`, so Panda
+  remained in ELM327 diagnostic safety and the UI correctly kept oracle
+  bringup in its disabled `CHECK HARNESS` state.
+- The physical topology did not change to the required Toyota-B repin. Across
+  both segments, chassis/PT IDs appeared only on bus 1: `0x025` had 11,662
+  frames, `0x0AA` 11,656, `0x101` 5,827, `0x081` 3,885, and native `0x08A`
+  4,661. Buses 0 and 2 instead carried the same bridged CAN-FD camera/FRC
+  family while the interception relay remained closed. This is electrically
+  the unrepinned arrangement, not a transient fingerprint or UI failure.
+- No signer request `0x777` was present. Ten bus-1 `0x7A9` frames in segment
+  18 had no matching signer request and occurred during diagnostic discovery;
+  they are not signer-response evidence. There was no host `0x08A`
+  publication, no controls-allowed sample, and no Toyota safety transition.
+- All 11,141 CarControl samples kept `enabled`, `latActive`, and `longActive`
+  false, with actuator acceleration, gas, and brake exactly zero. The only
+  onroad events were `carUnrecognized`, startup initialization, and
+  `startupNoCar`; there were no `canError`, `canBusMissing`, or
+  `controlsMismatch` events, but that cannot validate Toyota safety while the
+  car is `MOCK`.
+- Do not route around this state in software and do not road-test it. With
+  power removed, correct and retain the complete Toyota-B pair swap so the
+  chassis side is CAN0/bus 0 and the camera/FRC side is CAN2/bus 2, then repeat
+  stationary fingerprint and signer validation.
+
+### 2026-11-13 repeat harness capture: topology unchanged
+
+- `rlog (1).zst` came from the clean deployed documentation commit
+  `34f6e8518fc4e85086d5efed5c18d82eb9997ea2` on
+  `star2025-kai-clean`. Its active 60-second window again fingerprinted as
+  `MOCK`, emitted 60 `carUnrecognized` events, and kept Panda in ELM327 safety
+  for all 600 reported samples.
+- Bus placement is unchanged. Bus 1 carried 81,576 frames, including all
+  chassis/PT traffic: 6,003 `0x025`, 6,000 `0x0AA`, 3,000 `0x101`, 2,000
+  `0x081`, and 2,399 native `0x08A`. Buses 0 and 2 each carried exactly 23,639
+  frames of the same relay-bridged CAN-FD family. The intended car-side CAN0
+  and camera-side CAN2 interception topology is therefore still not present.
+- There were no `sendcan` frames, signer `0x777` requests, `0x7A9` responses,
+  host `0x08A` publications, controls-allowed samples, or Toyota-safety
+  samples. All 6,000 CarControl messages kept `enabled`, `latActive`, and
+  `longActive` false, with acceleration, gas, and brake exactly zero.
+- This repeat rules out a one-off UI or fingerprint transient. No software
+  routing change is appropriate; power-off continuity and terminal-retention
+  checks must prove the complete pair exchange before another stationary run.
+
+### 2026-11-14 repin recovery capture: functional bus-2 topology restored
+
+- Archive `qlog.zip` contains two sequential stationary routes beginning at
+  03:09:47 and 03:10:22 UTC from clean openpilot commit `34f6e8518f` on
+  `star2025-kai-clean`, plus bringup bundle
+  `20261113T221013-1710-65860944588`. Both routes recovered the exact,
+  non-fuzzy `TOYOTA_COROLLA_TSS3` firmware fingerprint, selected stock
+  longitudinal, and used Toyota safety parameter `12873`.
+- The first route preceded the successful RAM install. Its 19 complete
+  bus-2 `0x777` requests produced 76 accepted and zero rejected fragment
+  receipts, but no valid runtime signer response; `signerUnavailable`
+  consequently remained present. The included kit then bound Corolla EPS
+  F181 `8965F1208000 / 8A3111213000`, matched the Panda device and signed-file
+  signature prefix `5423f5e1fdf937be`, and retained payload SHA-256
+  `6234bb5bd496a82fabb32c27b56b3db0f1907b5bf6482e4c19f8835153ff69fc`.
+  Its independent self-test received a status-zero `0x7A9` response in
+  66.724 ms with all four `0x777` fragments accepted and none rejected. The
+  peer-state verdict remained explicitly inconclusive because the optional
+  Brake DTC query timed out; no supported peer-health check reported a fault.
+- The second, post-install route proves stable runtime residency. It completed
+  58 bus-2 signer requests, received all 58 status-zero bus-2 `0x7A9`
+  responses, and recorded all 232 request fragments as accepted with no
+  bus-194 rejection. The only `signerUnavailable` event was the startup sample
+  before the first response. After 39 startup samples populated the required
+  frames, the remaining 5,790 CarState samples were CAN-valid. Panda reported
+  no fault and no invalid Toyota RX check; neither route emitted `canError`,
+  `canBusMissing`, or `controlsMismatch`.
+- The observed side assignment is the known bus-2-adapted arrangement. In the
+  post-install route, the full-rate `0x025`, `0x0AA`, `0x101`, and `0x081`
+  stream arrived on physical bus 2 after the relay transition and was
+  forwarded to bus 0. This is why the existing Corolla-specific bus-2 parser,
+  safety RX flag, and signer routing operate correctly in this capture. It
+  records the observed topology without treating another in-car repin as a
+  safe or necessary validation step.
+- Both routes stayed in Park at exactly 0 m/s. Every CarControl and CarOutput
+  acceleration sample was 0.0, and CarControl gas, brake, `enabled`,
+  `latActive`, and `longActive` also remained zero or false. Controls never
+  engaged, so there was no host `sendcan` `0x08A` to payload-match. All 2,439
+  post-install native FRC `0x08A` frames were accounted for by 149 pre-relay
+  bus-0 copies and 2,290 accepted bus-0 passthrough receipts; none is evidence
+  of a host publication. Host-publication rejection and host longitudinal
+  fields therefore remain untested.
+- Preserve this now-functional harness and do not revert the bus-2 software
+  adaptation. The preceding terminal move produced the documented bus-1/MOCK
+  failure, so no further terminal swap should be attempted from software bus
+  observations alone. The next test is an engaged stationary capture on this
+  exact configuration for payload-matched host `0x08A`, zero host-publication
+  rejection, and both host longitudinal fields at zero. If an upstream-style
+  CAN0/CAN2 physical layout is pursued later, first map the disconnected
+  harness end to end with power-off continuity measurements and an unambiguous
+  cavity-numbered pinout; do not trial that change in the car.
+
+### 2026-11-14 engaged stock-longitudinal and alpha diagnostic routes
+
+- The additional route files all ran clean deployed openpilot commit
+  `34f6e8518f` on `star2025-kai-clean` with exact, non-fuzzy Corolla
+  fingerprinting. They are moving-road captures, not the requested stationary
+  validation: peak speed was 15.437 m/s. Panda reported no fault or invalid RX
+  check. The single `controlsMismatch` event occurred at the end of `rlog-4`
+  on the deliberate Toyota-to-ELM327 safety transition, not during stable
+  Toyota safety.
+- The stock-longitudinal `rlog.zst` interval later in the 03:10:22 UTC route
+  engaged lateral control for 2,056 samples. It produced 2,071 complete signer
+  requests, 2,072 status-zero responses (including one response whose request
+  preceded the retained interval), and 2,057 accepted host `0x08A`
+  publications with none rejected. The retained interval payload-matched
+  2,055 publications; the other two began across the omitted segment boundary.
+  Openpilot longitudinal control and acceleration remained zero. The equal
+  host longitudinal fields ranged from -0.214 to -0.004 m/s² because stock
+  mode correctly copied the moving vehicle's native longitudinal request.
+- `rlog-1.zst` and `rlog-2.zst` are one continuous alpha-longitudinal route.
+  The user deliberately enabled alpha after perceiving no openpilot output;
+  it was not a spontaneous parameter or controller transition. CarParams
+  consequently reported `openpilotLongitudinalControl=true`, Toyota safety
+  parameter `12361`, and 5,650 `longActive` CarControl samples. Openpilot
+  acceleration reached 1.780 m/s², and the equal host longitudinal fields
+  ranged from -0.454 to 1.780 m/s². All 5,709 host publications exactly
+  matched their retained 28-byte request and fresh response trailer, all were
+  accepted, and none was rejected. Four signer-fragment rejections occurred
+  across disengagement boundaries; no host publication was rejected.
+- `rlog-3.zst` and `rlog-4.zst` then returned to stock longitudinal and provide
+  direct evidence that openpilot was producing lateral output. CarControl was
+  enabled and `latActive` for 6,510 samples while `longActive`, CarControl
+  acceleration, and CarOutput acceleration remained zero. The transport made
+  6,541 complete signer requests, received 6,527 status-zero responses, and
+  published 6,491 host `0x08A` frames. Every host payload exactly matched its
+  application and fresh trailer, Panda accepted all 6,491, and rejected none;
+  response-to-publication latency was 2.231--26.358 ms.
+- All 6,491 stock-mode host publications requested lateral result ID 11, and
+  1,438 retained `CONTROL_RESULT` frames reported lateral result ID 11 without
+  `REQUEST_LOSS`. That result is not proof that the host request reached the
+  actuator: the native bus-2 request also used lateral ID 11 in 1,724 frames,
+  so the result cannot be attributed uniquely to the host publication.
+  CarOutput commanded up to 99.993° and the measured/requested angles had
+  0.912 correlation, but the rate limiter itself follows measured angle. When
+  the host target differed from measured angle by more than 5°, measured
+  angle moved toward it after 250 ms in only 55.2% of samples. This proves
+  openpilot generation and Panda transmission, not steering authority.
+- The user's report of no felt actuation therefore keeps the relay-side
+  hypothesis open. Runtime signer requests and EPS responses are on bus 2,
+  while the completed host `0x08A` is transmitted on bus 0. If those are
+  opposite sides of the opened interception relay in this harness, Panda can
+  accept every correctly signed publication without the VMC applying it. This
+  is the specific topology failure previously predicted by the external port
+  author; alpha longitudinal cannot correct it because it changes payload
+  fields, not the publication bus.
+- Do not tune angle limits or gains and do not make a production routing
+  change from these moving captures. Leave alpha off. The next diagnostic must
+  be stationary and must distinguish bus-0 from bus-2 host delivery while
+  retaining safety enforcement; only an observed actuator response may select
+  a publication side. The requested stationary zero-host-longitudinal-field
+  criterion remains outstanding.
+
+### 2026-11-14 parked follow-up: no control engagement
+
+- Archive `qlog-3.zip`, subsequently supplied as four qlog/rlog pairs and
+  bringup bundle `20261113T225652-1685-39687139932`, ran clean deployed
+  documentation commit `29d73dc50f`, opendbc `e59da8d8db`, and Panda
+  `f38f504ffa`. Both automatic catches matched the signed Panda firmware,
+  retained the expected signer payload, accepted all four independent probe
+  fragments with none rejected, and passed fresh status-zero self-tests in
+  68.985 and 69.304 ms. Neither install changed host publication routing.
+- Both stationary routes fingerprinted exactly as `TOYOTA_COROLLA_TSS3`, used
+  stock longitudinal and Toyota safety parameter `12873`, kept Panda RX checks
+  valid, and reported no Panda fault, `canError`, or `canBusMissing`. Runtime
+  probing remained continuous across the four retained segments: 213 complete
+  bus-2 requests produced 852 accepted fragments, zero rejected fragments,
+  and 213 status-zero responses. The startup `signerUnavailable` sample in
+  each route cleared normally. The one `controlsMismatch` sample coincided
+  with the final Toyota-to-ELM327 transition.
+- This was not a host-delivery or steering-authority diagnostic. All 21,442
+  CarControl samples had `enabled=false`, `latActive=false`, and
+  `longActive=false`; every Panda sample had `controlsAllowed=false`. The car
+  remained in Park at 0 m/s with parking-brake, seatbelt, wrong-gear, and
+  wrong-car-mode no-entry conditions. No host `sendcan` `0x08A` was generated
+  on any bus, so there is no bus-0/bus-2 comparison or actuator-response
+  evidence in this archive.
+- CarControl and CarOutput acceleration, gas, and brake remained zero. The
+  large steering-angle values in the final segment came from manually moving
+  the wheel while controls were disabled; the controller output reference
+  followed measured angle and was limited to 99.993°. Those values are not
+  openpilot steering commands. No functional code or harness change follows
+  from this capture. A valid next diagnostic must actually engage laterally
+  while stationary and explicitly vary only the host-publication side under
+  safety enforcement.
+
+### 2026-11-14 two-route safety restore failure
+
+- The 24 qlog/rlog pairs supplied with bringup bundle
+  `20261114T124935-1690-42163918159` contain two moving routes from clean
+  deployed commit `b4269f6c3d`. The bundle matched Panda's device and signed
+  firmware signatures, retained payload SHA-256
+  `6234bb5bd496a82fabb32c27b56b3db0f1907b5bf6482e4c19f8835153ff69fc`,
+  and passed both installer and independent status-zero signer probes with
+  four accepted and zero rejected fragments. It did not contain the proposed
+  bus-2 host-publication diagnostic; completed host `0x08A` routing remained
+  on bus 0.
+- The first route began at 17:49:43 UTC, fingerprinted exactly as
+  `TOYOTA_COROLLA_TSS3`, selected stock longitudinal, and entered Toyota
+  safety parameter `12873`. It engaged lateral control in multiple retained
+  segments and published thousands of accepted signed host `0x08A` frames on
+  bus 0. CarControl `longActive`, CarControl acceleration, and CarOutput
+  acceleration remained zero throughout. This is further evidence of host
+  generation under the existing routing, not proof of actuator authority.
+- At the end of that route the automatic startup catcher armed for the next
+  ignition and deliberately selected ELM327 safety parameter 1. The second
+  route began at 18:11:15 UTC. Its exact Corolla CarParams again requested
+  Toyota safety parameter `12873`, but every retained PandaState instead
+  remained ELM327 parameter 1. It logged a `10 02` request 0.251 ms after the
+  exact positive `50 03`, then timed out before confirming the PROGRAMMING
+  transition. No subsequent `setting safety model: 2, param: 12873` message
+  appeared.
+- Consequently the second route continuously reported `controlsMismatch`
+  and `signerUnavailable`. It reached 21.78 m/s, but every CarControl sample
+  kept `enabled`, `latActive`, and `longActive` false, Panda never allowed
+  controls, and there were no runtime status-zero `0x7A9` responses or host
+  `0x08A` publications. This directly explains why openpilot did not command
+  the car on that drive; it is independent of the unresolved bus-0/bus-2 host
+  delivery question.
+- Root cause is a stale `PandaSafety::safety_configured_` cache. Pandad used to
+  skip `configureSafetyMode(false)` whenever the startup catcher was active.
+  The catcher therefore changed the hardware to ELM327 offroad without
+  invalidating the previous route's cached Toyota configuration. When the
+  next catch timed out, `configureSafetyMode(true)` incorrectly concluded
+  that safety was already configured and left Panda in ELM327.
+- Pandad now always runs the non-transmitting offroad cache reset even while
+  the startup catcher owns the hardware policy. It still does not overwrite
+  an active catch onroad. Thus a timed-out catch causes the next onroad safety
+  pass to install the current CarParams Toyota policy. A four-state regression
+  test covers active/inactive catcher behavior onroad and offroad.
+
 ## File inventory (merge-base diffs vs commaai master, 2026-10-09)
 
 ### opendbc — 22 files, +2,258 / −57

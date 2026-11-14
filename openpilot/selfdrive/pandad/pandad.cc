@@ -730,7 +730,9 @@ bool pandad_run(Panda *panda) {
         is_onroad = sm["deviceState"].getDeviceState().getStarted();
       }
       process_panda_state(panda, &pm, engaged, is_onroad, spoofing_started, tss3_startup_catcher.active());
-      if (!tss3_startup_catcher.active()) panda_safety.configureSafetyMode(is_onroad);
+      if (should_configure_panda_safety(is_onroad, tss3_startup_catcher.active())) {
+        panda_safety.configureSafetyMode(is_onroad);
+      }
     }
 
     // Send out peripheralState at 2Hz
