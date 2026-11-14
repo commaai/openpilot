@@ -182,6 +182,9 @@ class AugmentedRoadView(CameraView):
                                        text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
                                        alignment=TextAlignment.CENTER,
                                        alignment_vertical=TextAlignmentVertical.MIDDLE)
+    self._offroad_sublabel = UnifiedLabel("", 40, FontWeight.ROMAN,
+                                          text_color=rl.Color(255, 255, 255, int(255 * 0.9 * 0.65)),
+                                          alignment=TextAlignment.CENTER)
 
     self._fade_texture = gui_app.texture("icons_mici/onroad/onroad_fade.png")
 
@@ -195,10 +198,16 @@ class AugmentedRoadView(CameraView):
     # update offroad label
     if ui_state.panda_type == log.PandaState.PandaType.unknown:
       self._offroad_label.set_text("system booting")
+      self._offroad_label.set_font_size(54)
+      self._offroad_sublabel.set_text("")
     elif ui_state.ignition and not ui_state.started:
-      self._offroad_label.set_text("openpilot can't start\ncheck alerts")
+      self._offroad_label.set_text("openpilot can't start")
+      self._offroad_label.set_font_size(46)
+      self._offroad_sublabel.set_text("check alerts")
     else:
       self._offroad_label.set_text("start the car to\nuse openpilot")
+      self._offroad_label.set_font_size(54)
+      self._offroad_sublabel.set_text("")
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     # Don't trigger click callback if bookmark was triggered
@@ -206,10 +215,12 @@ class AugmentedRoadView(CameraView):
       super()._handle_mouse_release(mouse_pos)
 
   def _render(self, rect: rl.Rectangle):
-    # Draw text if not onroad
+    # Offroad shows the side panel in its disengaged state with text in the camera area
     if not ui_state.started:
       rl.draw_rectangle_rec(self.rect, rl.BLACK)
-      self._offroad_label.render(self._rect)
+      self._render_offroad_text(rl.Rectangle(self.rect.x + SIDE_PANEL_WIDTH, self.rect.y, self.rect.width - SIDE_PANEL_WIDTH, self.rect.height))
+      self._hud_renderer.set_wheel_critical_icon(False)
+      self._render_left_panel(False)
       return
 
     self._switch_stream_if_needed(ui_state.sm)
@@ -265,6 +276,28 @@ class AugmentedRoadView(CameraView):
     # End clipping region
     rl.end_scissor_mode()
 
+    self._render_left_panel(show_navigation)
+
+    # Custom UI extension point - add custom overlays here
+    # Use self._content_rect for positioning within camera bounds
+    if show_navigation:
+      self._navigation.render(rl.Rectangle(self._content_rect.x + self._content_rect.width, self.rect.y, PANEL_WIDTH, self.rect.height))
+
+    self._bookmark_icon.render(self.rect)
+
+  def _render_offroad_text(self, rect: rl.Rectangle):
+    # center the label and optional subline together
+    if not self._offroad_sublabel.text:
+      self._offroad_label.render(rect)
+      return
+    gap = 8
+    label_h = self._offroad_label.get_content_height(int(rect.width))
+    sub_h = self._offroad_sublabel.get_content_height(int(rect.width))
+    y = rect.y + (rect.height - label_h - gap - sub_h) / 2
+    self._offroad_label.render(rl.Rectangle(rect.x, y, rect.width, label_h))
+    self._offroad_sublabel.render(rl.Rectangle(rect.x, y + label_h + gap, rect.width, sub_h))
+
+  def _render_left_panel(self, show_navigation: bool):
     # DMoji, longitudinal indicator, and steering wheel are centered in the black side panel on the left,
     # or in a column along the left edge of the camera when navigation takes the side panel
     left_rect = rl.Rectangle(self._rect.x, self._rect.y, SIDE_PANEL_WIDTH, self._rect.height)
@@ -273,7 +306,7 @@ class AugmentedRoadView(CameraView):
 
     # Grey out DMoji when disengaged unless AlwaysOnDM is enabled. In the side panel nothing overlaps it, otherwise it hides under the set speed
     self._driver_state_renderer.set_should_draw(not show_navigation or not self._hud_renderer.drawing_top_icons())
-    self._driver_state_renderer.set_dimmed(ui_state.status == UIStatus.DISENGAGED and not ui_state.always_on_dm)
+    self._driver_state_renderer.set_dimmed(not ui_state.started or (ui_state.status == UIStatus.DISENGAGED and not ui_state.always_on_dm))
     self._driver_state_renderer.set_show_under_alerts(not show_navigation)
     # the 52px cone is centered 36px from the top left
     dm_size = self._driver_state_renderer.rect.width
@@ -282,13 +315,6 @@ class AugmentedRoadView(CameraView):
     self._long_indicator.set_should_draw(not show_navigation or not self._hud_renderer.drawing_top_icons())
     self._long_indicator.render(left_rect)
     self._hud_renderer.render_steering_wheel(left_rect)
-
-    # Custom UI extension point - add custom overlays here
-    # Use self._content_rect for positioning within camera bounds
-    if show_navigation:
-      self._navigation.render(rl.Rectangle(self._content_rect.x + self._content_rect.width, self.rect.y, PANEL_WIDTH, self.rect.height))
-
-    self._bookmark_icon.render(self.rect)
 
   def close(self):
     self._navigation.close()

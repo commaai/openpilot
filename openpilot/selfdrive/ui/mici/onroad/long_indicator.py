@@ -35,7 +35,8 @@ class LongIndicator(Widget):
 
   def _render(self, rect: rl.Rectangle) -> None:
     sm = ui_state.sm
-    if sm.recv_frame['selfdriveState'] < ui_state.started_frame or not ui_state.has_longitudinal_control:
+    # offroad shows the disengaged state
+    if not ui_state.has_longitudinal_control or (ui_state.started and sm.recv_frame['selfdriveState'] < ui_state.started_frame):
       self._personality = None
       self._personality_changed_time = -HIGHLIGHT_TIME
       self._alpha_filter.x = 0.0
@@ -43,7 +44,7 @@ class LongIndicator(Widget):
 
     # grayed out while disengaged, with the lit bars at the dimmed icon alpha
     visible = self._should_draw
-    dim = self._dim_filter.update(1.0 if sm['selfdriveState'].enabled else DIMMED_ICON_ALPHA / 0.9)
+    dim = self._dim_filter.update(1.0 if ui_state.engaged else DIMMED_ICON_ALPHA / 0.9)
     alpha = self._alpha_filter.update(visible) * dim
     self._draw_lead_car(rect, alpha)
     self._draw_distance_bars(rect, alpha, visible)
@@ -51,12 +52,12 @@ class LongIndicator(Widget):
   def _draw_lead_car(self, rect: rl.Rectangle, alpha: float) -> None:
     sm = ui_state.sm
     plan = sm['longitudinalPlan']
-    # static while disengaged
-    has_lead = sm['selfdriveState'].enabled and sm.alive['longitudinalPlan'] and plan.hasLead
+    # static and filled in while disengaged, like the lit distance bars
+    has_lead = ui_state.engaged and sm.alive['longitudinalPlan'] and plan.hasLead
 
     e2e = has_lead and plan.longitudinalPlanSource == log.LongitudinalPlan.LongitudinalPlanSource.e2e
     white_f, green_f = self._lead_car_filters
-    white_alpha = white_f.update(0.0 if e2e else 0.9 if has_lead else 0.35)
+    white_alpha = white_f.update(0.0 if e2e else 0.9 if has_lead or not ui_state.engaged else 0.35)
     green_alpha = green_f.update(float(e2e))
 
     white, green = self._txt_lead_car
@@ -66,7 +67,7 @@ class LongIndicator(Widget):
   def _draw_distance_bars(self, rect: rl.Rectangle, alpha: float, visible: bool) -> None:
     sm = ui_state.sm
     now = rl.get_time()
-    personality = sm['selfdriveState'].personality.raw
+    personality = sm['selfdriveState'].personality.raw if ui_state.started else ui_state.personality_param
     if self._personality is not None and personality != self._personality:
       self._personality_changed_time = now
     self._personality = personality

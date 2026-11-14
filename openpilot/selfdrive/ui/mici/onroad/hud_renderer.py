@@ -215,7 +215,7 @@ class HudRenderer(Widget):
     # pos
     pos_x = int(rect.x + rect.width / 2)
     pos_y = int(rect.y + rect.height - 10 - wheel_txt.height / 2)
-    rotation = -ui_state.sm['carState'].steeringAngleDeg
+    rotation = -ui_state.sm['carState'].steeringAngleDeg if ui_state.started else 0.0
 
     alpha = self._wheel_alpha_filter.x
     origin = rl.Vector2(self._txt_wheel_glow.width / 2, self._txt_wheel_glow.height / 2)
