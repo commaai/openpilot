@@ -11,6 +11,7 @@ from openpilot.common.utils import sudo_write
 from openpilot.common.realtime import config_realtime_process, Ratekeeper
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.gpio import gpiochip_get_ro_value_fd, gpioevent_data
+from openpilot.common.hardware.comma.pins import GPIO
 
 from openpilot.system.sensord.sensors.i2c_sensor import Sensor
 from openpilot.system.sensord.sensors.lsm6ds3_accel import LSM6DS3_Accel
@@ -29,7 +30,7 @@ def interrupt_loop(sensors: list[tuple[Sensor, str, bool]], event) -> None:
   # Requesting both edges as the data ready pulse from the lsm6ds sensor is
   # very short (75us) and is mostly detected as falling edge instead of rising.
   # So if it is detected as rising the following falling edge is skipped.
-  fd = gpiochip_get_ro_value_fd("sensord", 0, 84)
+  fd = gpiochip_get_ro_value_fd("sensord", GPIO.LSM_INT)
 
   # Configure IRQ affinity
   irq_path = "/proc/irq/336/smp_affinity_list"

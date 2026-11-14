@@ -12,7 +12,7 @@ from struct import unpack_from, calcsize, pack
 
 from openpilot.cereal import log
 import openpilot.cereal.messaging as messaging
-from openpilot.common.gpio import gpio_init, gpio_set
+from openpilot.common.gpio import gpio_set
 from openpilot.common.utils import retry
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.common.hardware.comma.pins import GPIO
@@ -214,7 +214,6 @@ def main() -> NoReturn:
   diag = ModemDiag()
   setup_quectel(diag)
   cloudlog.warning("quectel setup done")
-  gpio_init(GPIO.GNSS_PWR_EN, True)
   gpio_set(GPIO.GNSS_PWR_EN, True)
 
   pm = messaging.PubMaster(['qcomGnss', 'gpsLocation'])
