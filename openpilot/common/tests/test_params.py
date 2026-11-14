@@ -36,9 +36,9 @@ class TestParams(OpenpilotTestCase):
     assert not os.path.isfile(undefined_param)
 
   def test_params_clear_on_car_change(self):
-    self.params.put_bool("AlphaLongitudinalEnabled", True)
-    self.params.put("CalibrationParams", b"test")
-    self.params.put("DongleId", "cb38263377b873ee")
+    self.params.put_bool("AlphaLongitudinalEnabled", True, block=True)
+    self.params.put("CalibrationParams", b"test", block=True)
+    self.params.put("DongleId", "cb38263377b873ee", block=True)
     self.params.clear_all(ParamKeyFlag.CLEAR_ON_CAR_CHANGE)
     assert self.params.get("AlphaLongitudinalEnabled") is None
     assert self.params.get("CalibrationParams") is None
