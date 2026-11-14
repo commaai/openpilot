@@ -50,8 +50,8 @@ sound_list: dict[int, tuple[str, int | None, float]] = {
   AudibleAlert.preAlert: ("pre_alert.wav", 1, MAX_VOLUME),
 
   AudibleAlert.warningSoft: ("critical.wav", None, MAX_VOLUME),
-  AudibleAlert.warningImmediate: ("critical.wav", None, MAX_VOLUME),
-  AudibleAlert.warningDriver: ("dm_critical.wav", None, MAX_VOLUME),
+  AudibleAlert.warningImmediateSystem: ("critical.wav", None, MAX_VOLUME),
+  AudibleAlert.warningImmediateUser: ("dm_critical.wav", None, MAX_VOLUME),
   CRITICAL_MAX: ("critical_max.wav", None, MAX_VOLUME),
   DM_CRITICAL_MAX: ("dm_critical_max.wav", None, MAX_VOLUME),
 }
@@ -59,8 +59,8 @@ sound_list: dict[int, tuple[str, int | None, float]] = {
 # critical alerts ramp up in volume, then switch to their max sound
 critical_max_sounds = {
   AudibleAlert.warningSoft: CRITICAL_MAX,
-  AudibleAlert.warningImmediate: CRITICAL_MAX,
-  AudibleAlert.warningDriver: DM_CRITICAL_MAX,
+  AudibleAlert.warningImmediateSystem: CRITICAL_MAX,
+  AudibleAlert.warningImmediateUser: DM_CRITICAL_MAX,
 }
 
 def check_selfdrive_timeout_alert(sm):
@@ -161,7 +161,7 @@ class Soundd:
       new_alert = sm['selfdriveState'].alertSound.raw
       self.update_alert(new_alert)
     elif check_selfdrive_timeout_alert(sm):
-      self.update_alert(AudibleAlert.warningImmediate)
+      self.update_alert(AudibleAlert.warningImmediateSystem)
       self.selfdrive_timeout_alert = True
     elif self.selfdrive_timeout_alert:
       self.update_alert(AudibleAlert.none)

@@ -171,7 +171,7 @@ class UserSoftDisableAlert(SoftDisableAlert):
   def __init__(self, alert_text_2: str):
     super().__init__(alert_text_2),
     self.alert_text_1 = "openpilot will disengage"
-    self.audible_alert = AudibleAlert.warningDriver
+    self.audible_alert = AudibleAlert.warningImmediateUser
 
 
 class ImmediateDisableAlert(Alert):
@@ -179,14 +179,14 @@ class ImmediateDisableAlert(Alert):
     super().__init__("TAKE CONTROL IMMEDIATELY", alert_text_2,
                      AlertStatus.critical, AlertSize.full,
                      Priority.HIGHEST, VisualAlert.steerRequired,
-                     AudibleAlert.warningImmediate, 4.),
+                     AudibleAlert.warningImmediateSystem, 4.),
 
 
 # user-triggered ImmediateDisable, plays the driver sound
 class UserImmediateDisableAlert(ImmediateDisableAlert):
   def __init__(self, alert_text_2: str):
     super().__init__(alert_text_2)
-    self.audible_alert = AudibleAlert.warningDriver
+    self.audible_alert = AudibleAlert.warningImmediateUser
 
 
 class EngagementAlert(Alert):
@@ -544,7 +544,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
       "DISENGAGE IMMEDIATELY",
       "Driver Distracted",
       AlertStatus.critical, AlertSize.full,
-      Priority.HIGH, VisualAlert.steerRequired, AudibleAlert.warningDriver, .1),
+      Priority.HIGH, VisualAlert.steerRequired, AudibleAlert.warningImmediateUser, .1),
   },
 
   EventName.driverUnresponsive1: {
@@ -568,7 +568,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
       "DISENGAGE IMMEDIATELY",
       "Driver Unresponsive",
       AlertStatus.critical, AlertSize.full,
-      Priority.HIGH, VisualAlert.steerRequired, AudibleAlert.warningDriver, .1),
+      Priority.HIGH, VisualAlert.steerRequired, AudibleAlert.warningImmediateUser, .1),
   },
 
   EventName.manualRestart: {

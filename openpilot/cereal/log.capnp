@@ -837,7 +837,8 @@ struct SelfdriveState {
     refuse @3;
 
     warningSoft @4;
-    warningImmediate @5;
+    warningImmediateSystem @5;
+    warningImmediateUser @11;
 
     prompt @6;
     promptRepeat @7;
@@ -845,8 +846,6 @@ struct SelfdriveState {
 
     preAlert @9;
     complete @10;
-
-    warningDriver @11;
   }
 
   enum OpenpilotState @0xdbe58b96d2d1ac61 {
