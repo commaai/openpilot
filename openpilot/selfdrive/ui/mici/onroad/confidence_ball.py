@@ -1,6 +1,7 @@
 import numpy as np
 import raylib_nb as rl
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
+from openpilot.selfdrive.ui.mici.onroad.status import status_fade
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.polygon import Gradient, draw_polygon
@@ -57,25 +58,17 @@ class ConfidenceBall(Widget):
     dot_height = (1 - self._confidence_filter.x) * (self._rect.height - 2 * (status_dot_radius + margin)) + status_dot_radius + margin
     dot_height = self._rect.y + dot_height
 
-    # confidence zones
-    if ui_state.status == UIStatus.ENGAGED:
-      if self._confidence_filter.x > 0.5:
-        top_dot_color = rl.Color(0, 255, 187, 255)
-        bottom_dot_color = rl.Color(0, 255, 64, 255)
-      elif self._confidence_filter.x > 0.2:
-        top_dot_color = rl.Color(255, 200, 0, 255)
-        bottom_dot_color = rl.Color(255, 115, 0, 255)
-      else:
-        top_dot_color = rl.Color(255, 0, 21, 255)
-        bottom_dot_color = rl.Color(255, 0, 89, 255)
-
-    elif ui_state.status == UIStatus.OVERRIDE:
-      top_dot_color = rl.Color(255, 255, 255, 255)
-      bottom_dot_color = rl.Color(82, 82, 82, 255)
-
+    # confidence zones while engaged, top and bottom gradient colors
+    if self._confidence_filter.x > 0.5:
+      engaged = (rl.Color(0, 255, 187, 255), rl.Color(0, 255, 64, 255))
+    elif self._confidence_filter.x > 0.2:
+      engaged = (rl.Color(255, 200, 0, 255), rl.Color(255, 115, 0, 255))
     else:
-      top_dot_color = rl.Color(102, 102, 102, 255)
-      bottom_dot_color = rl.Color(26, 26, 26, 255)
+      engaged = (rl.Color(255, 0, 21, 255), rl.Color(255, 0, 89, 255))
+    override = (rl.Color(255, 255, 255, 255), rl.Color(82, 82, 82, 255))
+    disengaged = (rl.Color(102, 102, 102, 255), rl.Color(26, 26, 26, 255))
+    top_dot_color, bottom_dot_color = (status_fade.color({UIStatus.ENGAGED: e, UIStatus.OVERRIDE: o, UIStatus.DISENGAGED: d})
+                                       for e, o, d in zip(engaged, override, disengaged, strict=True))
 
     draw_circle_gradient(dot_x, dot_height, status_dot_radius,
                          top_dot_color, bottom_dot_color, alpha)
