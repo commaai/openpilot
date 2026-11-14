@@ -1,7 +1,7 @@
 """
 Engaged and override can flap every frame (gas taps, steer override on driver torque near the threshold),
 so anything that looks different between them must blend through status_fade instead of switching on
-ui_state.status. test_status_fade enforces this.
+ui_state.status.
 """
 import numpy as np
 import raylib_nb as rl
