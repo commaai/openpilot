@@ -289,6 +289,10 @@ class WifiUIMici(NavScroller):
       networks_updated=self._on_network_updated,
     )
 
+    # loading the textures of the first network buttons and password dialog takes ~20 ms, a dropped frame
+    WifiButton(Network("", 0, SecurityType.OPEN, False), self._wifi_manager)
+    BigInputDialog("")
+
   @property
   def any_network_forgetting(self) -> bool:
     # TODO: deactivate before forget and add DISCONNECTING state

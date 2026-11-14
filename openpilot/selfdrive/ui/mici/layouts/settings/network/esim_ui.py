@@ -326,6 +326,9 @@ class EsimUI(NavScroller):
     self._cellular_manager.on_profiles_updated = self._on_profiles_updated
     self._cellular_manager.on_operation_error = self._on_error
 
+    # loading the textures of the first profile buttons takes ~15 ms, a dropped frame
+    EsimProfileButton(Profile("", "", False, ""), self._cellular_manager, self._profiles_enabled)
+
   def show_event(self):
     super().show_event()
     self._update_buttons(re_sort=True)

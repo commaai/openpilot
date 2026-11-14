@@ -608,8 +608,11 @@ class GuiApplication:
         for tick in self._nav_stack_ticks:
           tick()
 
-        # Only render top widgets
-        for widget in self._nav_stack[-self._nav_stack_widgets_to_render:]:
+        # Only render top widgets, and none under one covering the screen
+        widgets = self._nav_stack[-self._nav_stack_widgets_to_render:]
+        if getattr(widgets[-1], "covers_screen", False):
+          widgets = widgets[-1:]
+        for widget in widgets:
           widget.render(rl.Rectangle(0, 0, self.width, self.height))
 
         frame_time = rl.get_frame_time()
@@ -661,6 +664,7 @@ class GuiApplication:
         font = rl.load_font_ex((fspath / NOTO_FONTS[language]).as_posix(), 48,
                                codepoints, len(codepoints))
       rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
+      self._prepare_font(font)
       self._fallback_fonts[language] = font
     return self._fallback_fonts[language]
 
@@ -688,9 +692,18 @@ class GuiApplication:
                                codepoints, len(codepoints))
         if font_weight_file != FontWeight.UNIFONT:
           rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
+        self._prepare_font(font)
         self._fonts[font_weight_file] = font
     if multilang.requires_font_fallback():
       self.fallback_font()
+
+  @staticmethod
+  def _prepare_font(font: rl.Font):
+    # the first time raylib draws a font, it converts its atlas, and makes the smaller copies it draws small text from:
+    # ~60 ms for ours, a dropped frame. draw it now, tiny and clear, which the first frame clears anyway
+    draw_text = getattr(rl, "_orig_draw_text_ex", rl.draw_text_ex)
+    draw_text(font, "a", rl.Vector2(0, 0), 4, 0, rl.BLANK)
+    rl.cpu.target_raylib()  # draws what's batched
 
   def _patch_text_functions(self):
     # Wrap raylib text APIs to apply a global text size scale so our px sizes match Qt

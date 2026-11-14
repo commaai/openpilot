@@ -83,8 +83,10 @@ class TogglesLayoutMici(NavScroller):
     self._update_toggles()
 
   def _on_metric_toggle(self, state: bool):
-    ui_state.params.put_bool("IsMetric", state, block=True)
-    self._update_toggles()
+    # written in the background, so don't read it back
+    ui_state.params.put_bool("IsMetric", state)
+    ui_state.is_metric = state
+    self._initial_cruise_speed.refresh()
 
   def _update_toggles(self):
     ui_state.update_params()
