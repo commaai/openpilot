@@ -348,7 +348,7 @@ class MiciOffroadAlerts(Scroller):
       self._scroller.add_widget(alert_item)
 
   def _confirm_snooze(self):
-    icon = gui_app.texture("icons_mici/settings/device/update.png", 64, 64)
+    icon = gui_app.texture("icons_mici/alerts_bell.png", 64, 64)
     gui_app.push_widget(BigConfirmationDialog("slide to\nsnooze update", icon, lambda: self.params.put_bool("SnoozeUpdate", True)))
 
   def _params_worker(self):
