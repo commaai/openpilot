@@ -2,7 +2,6 @@ import raylib_nb as rl
 
 SIDE_PANEL_WIDTH = 72
 DIMMED_ICON_ALPHA = 0.32  # side panel icons while disengaged
-STATUS_FADE_RC = 0.25  # status colors fade so engaged/override chatter never flickers
 
 
 def blend_colors(a: rl.Color, b: rl.Color, f: float) -> rl.Color:
