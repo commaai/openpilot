@@ -1,7 +1,7 @@
 """
 While disengaged the road camera hibernates so it doesn't ask for attention: focus lets go first, then color drains,
-then it settles dim with a slow breath. Engaging plays the same thing backwards. Only the camera frame changes,
-overlays draw on top.
+then it settles dim with a slow breath. It follows status_fade, so it moves with the rest of the onroad UI and engaging
+plays it backwards. Only the camera frame changes, overlays draw on top.
 """
 import math
 from collections.abc import Callable
@@ -10,7 +10,6 @@ import raylib_nb as rl
 
 from openpilot.system.ui.lib.application import gui_app
 
-TRANSITION_TIME = 1.0  # seconds, eased in and out, the same both ways
 BREATH_PERIOD = 6.5  # seconds
 BREATH_DEPTH = 0.07  # of exposure
 REST_EXPOSURE = 0.5
@@ -27,40 +26,21 @@ def _smoother(a: float, b: float, x: float) -> float:
 
 
 class Hibernate:
-  """sleep level 0 (awake) to 1 (asleep), stepped once per frame. a reversal continues from where it is"""
+  """stages of the camera's sleep, from how disengaged the UI is (0 to 1)"""
   def __init__(self):
-    self.reset()
-
-  def reset(self):
-    self.level: float | None = None
-    self._asleep = False
-    self._start_level = 0.0
-    self._t = 0.0  # since the current transition started
-    self._rest = 0.0  # time spent fully asleep, held while waking so the breath fades out instead of jumping
     self.focus = self.drain = self.dim = self.breath = 0.0
+    self._rest = 0.0  # time spent asleep, held while waking so the breath fades out instead of jumping
 
-  def update(self, asleep: bool):
-    dt = 1 / gui_app.target_fps
-    target = float(asleep)
-    if self.level is None:
-      self.level = self._start_level = target
-      self._asleep = asleep
-    elif asleep != self._asleep:
-      self._asleep, self._start_level, self._t = asleep, self.level, 0.0
-      if asleep:
-        self._rest = 0.0
-    else:
-      self._t += dt
-
-    p = min(self._t / max(TRANSITION_TIME * abs(target - self._start_level), 1e-3), 1.0)
-    self.level = self._start_level + (target - self._start_level) * (0.5 - 0.5 * math.cos(math.pi * p))
-    if asleep and p >= 1:
-      self._rest += dt
+  def update(self, level: float):
+    if level > 0.99:
+      self._rest += 1 / gui_app.target_fps
+    elif level < 0.01:
+      self._rest = 0.0
 
     # focus goes first, then color, then light. waking is the same in reverse
-    self.focus, self.drain, self.dim = _smoother(0.0, 0.7, self.level), _smoother(0.2, 0.9, self.level), _smoother(0.35, 1.0, self.level)
+    self.focus, self.drain, self.dim = _smoother(0.0, 0.7, level), _smoother(0.2, 0.9, level), _smoother(0.35, 1.0, level)
     breath = 0.5 - 0.5 * math.cos(2 * math.pi * self._rest / BREATH_PERIOD)
-    self.breath = breath * _smoother(0.0, 1.5, self._rest) * self.level
+    self.breath = breath * _smoother(0.0, 1.5, self._rest) * level
 
   @property
   def exposure(self) -> float:

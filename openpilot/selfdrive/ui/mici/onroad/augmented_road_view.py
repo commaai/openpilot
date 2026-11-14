@@ -14,6 +14,7 @@ from openpilot.selfdrive.ui.mici.onroad.navigation import NavigationPanel, PANEL
 from openpilot.selfdrive.ui.mici.onroad.confidence_ball import ConfidenceBall
 from openpilot.selfdrive.ui.mici.onroad.cameraview import CameraView, frame_color
 from openpilot.selfdrive.ui.mici.onroad.hibernate import BlurredFrame, Hibernate
+from openpilot.selfdrive.ui.mici.onroad.status import status_fade
 from openpilot.system.ui.lib.application import FontWeight, gui_app, MousePos, MouseEvent, TextAlignment, TextAlignmentVertical
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets import Widget
@@ -221,7 +222,6 @@ class AugmentedRoadView(CameraView):
   def _render(self, rect: rl.Rectangle):
     # Offroad shows the side panel in its disengaged state with text in the camera area
     if not ui_state.started:
-      self._hibernate.reset()
       rl.draw_rectangle_rec(self.rect, rl.BLACK)
       self._render_offroad_text(rl.Rectangle(self.rect.x + SIDE_PANEL_WIDTH, self.rect.y, self.rect.width - SIDE_PANEL_WIDTH, self.rect.height))
       self._hud_renderer.set_wheel_critical_icon(False)
@@ -255,7 +255,7 @@ class AugmentedRoadView(CameraView):
     )
 
     # Render the base camera view
-    self._hibernate.update(ui_state.status == UIStatus.DISENGAGED)
+    self._hibernate.update(status_fade.weight(UIStatus.DISENGAGED))
     super()._render(self._content_rect)
 
     # Draw all UI overlays
