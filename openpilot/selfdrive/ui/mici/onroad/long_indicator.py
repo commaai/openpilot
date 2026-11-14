@@ -69,7 +69,7 @@ class LongIndicator(Widget):
     if self._personality is not None and personality != self._personality:
       self._personality_changed_time = now
     self._personality = personality
-    # the personality alert covers the bars, hold the highlight until they show
+    # hold the highlight until the bars show
     if not visible and now - self._personality_changed_time < HIGHLIGHT_TIME:
       self._personality_changed_time = now
     highlight = now - self._personality_changed_time < HIGHLIGHT_TIME
