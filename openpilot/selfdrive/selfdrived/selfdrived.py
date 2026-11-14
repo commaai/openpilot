@@ -51,16 +51,12 @@ class SelfdriveD:
     self.params = Params()
 
     # Ensure the current branch is cached, otherwise the first cycle lags
-    build_metadata = get_build_metadata()
+    self.build_metadata = get_build_metadata()
 
-    if CP is None:
-      cloudlog.info("selfdrived is waiting for CarParams")
-      self.CP = messaging.log_from_bytes(self.params.get("CarParams", block=True), car.CarParams)
-      cloudlog.info("selfdrived got CarParams")
-    else:
-      self.CP = CP
-
-    self.car_events = CarEvents(self.CP)
+    # CarParams come from card after fingerprinting, until then we run with defaults and show initializing
+    self.CP = car.CarParams()
+    self.CP_initialized = False
+    self.CP_init_frame = 0
 
     self.pose_calibrator = PoseCalibrator()
     self.calibrated_pose: Pose | None = None
@@ -103,12 +99,6 @@ class SelfdriveD:
     self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
     openpilot_enabled = self.params.get_bool("OpenpilotEnabledToggle")
 
-    car_recognized = self.CP.brand != 'mock'
-
-    # cleanup old params
-    if not self.CP.alphaLongitudinalAvailable:
-      self.params.remove("AlphaLongitudinalEnabled")
-
     self.CS_prev = car.CarState.new_message()
     self.AM = AlertManager()
     self.events = Events()
@@ -132,8 +122,26 @@ class SelfdriveD:
     self.state_machine = StateMachine()
     self.rk = Ratekeeper(100, print_delay_threshold=None)
 
+    self.startup_event = None
+
+    if CP is None:
+      cloudlog.info("selfdrived is waiting for CarParams")
+    else:
+      self.initialize_car_params(CP)
+
+  def initialize_car_params(self, CP):
+    self.CP = CP
+    self.CP_init_frame = self.sm.frame
+    self.car_events = CarEvents(self.CP)
+
+    car_recognized = self.CP.brand != 'mock'
+
+    # cleanup old params
+    if not self.CP.alphaLongitudinalAvailable:
+      self.params.remove("AlphaLongitudinalEnabled")
+
     # Determine startup event
-    self.startup_event = EventName.startup if build_metadata.openpilot.comma_remote and build_metadata.tested_channel else EventName.startupMaster
+    self.startup_event = EventName.startup if self.build_metadata.openpilot.comma_remote and self.build_metadata.tested_channel else EventName.startupMaster
     if HARDWARE.get_device_type() == 'mici':
       self.startup_event = None
     if not car_recognized:
@@ -148,6 +156,8 @@ class SelfdriveD:
       self.events.add(EventName.carUnrecognized, static=True)
     elif self.CP.passive:
       self.events.add(EventName.dashcamMode, static=True)
+
+    self.CP_initialized = True
 
   def update_events(self, CS):
     """Compute onroadEvents from carState"""
@@ -244,7 +254,7 @@ class SelfdriveD:
 
       if self.CP.notCar:
         # wait for everything to init first
-        if self.sm.frame > int(2. / DT_CTRL) and self.initialized:
+        if (self.sm.frame - self.CP_init_frame) > int(2. / DT_CTRL) and self.initialized:
           # body always wants to enable
           self.events.add(EventName.pcmEnable)
 
@@ -340,7 +350,7 @@ class SelfdriveD:
         safety_mismatch = pandaState.safetyModel not in IGNORED_SAFETY_MODES
 
       # safety mismatch allows some time for pandad to set the safety mode and publish it back from panda
-      if (safety_mismatch and self.sm.frame*DT_CTRL > 10.) or pandaState.safetyRxChecksInvalid or self.mismatch_counter >= 200:
+      if (safety_mismatch and (self.sm.frame - self.CP_init_frame)*DT_CTRL > 10.) or pandaState.safetyRxChecksInvalid or self.mismatch_counter >= 200:
         self.events.add(EventName.controlsMismatch)
 
       if log.PandaState.FaultType.relayMalfunction in pandaState.faults:
@@ -475,9 +485,17 @@ class SelfdriveD:
 
     self.sm.update(0)
 
-    if not self.initialized:
+    # read on this thread so CarParams and car_events are always set together before any event uses them
+    if not self.CP_initialized:
+      CP_bytes = self.params.get("CarParams")
+      if CP_bytes is not None:
+        self.initialize_car_params(messaging.log_from_bytes(CP_bytes, car.CarParams))
+        cloudlog.info("selfdrived got CarParams")
+
+    # fingerprinting time doesn't count towards the init timeout
+    if not self.initialized and self.CP_initialized:
       all_valid = CS.canValid and self.sm.all_checks()
-      timed_out = self.sm.frame * DT_CTRL > 6.
+      timed_out = (self.sm.frame - self.CP_init_frame) * DT_CTRL > 6.
       if all_valid or timed_out or (SIMULATION and not REPLAY):
         available_streams = VisionIpcClient.available_streams("camerad", block=False)
         if VisionStreamType.VISION_STREAM_NARROW_ROAD not in available_streams:
