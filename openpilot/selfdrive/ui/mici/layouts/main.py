@@ -28,7 +28,6 @@ class MiciMainLayout(Scroller):
     self._onroad_time_delay: float | None = None
     self._prev_ignition = False
     self._ignition_off_time = time.monotonic()  # home already greets on boot
-    self._setup = False
 
     # Initialize widgets
     self._home_layout = MiciHomeLayout()
@@ -44,7 +43,6 @@ class MiciMainLayout(Scroller):
       widget.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
 
     self._scroller.add_widgets([
-      self._alerts_layout,
       self._home_layout,
       self._car_onroad_layout,
       self._body_onroad_layout,
@@ -74,11 +72,10 @@ class MiciMainLayout(Scroller):
     return self._body_onroad_layout if ui_state.is_body else self._car_onroad_layout
 
   def _setup_callbacks(self):
-    self._alerts_layout.set_enabled(lambda: self.enabled)
     self._alerts_layout.set_pairing_callback(self._settings_layout.show_pairing)
     self._home_layout.set_callbacks(
       on_settings=lambda: gui_app.push_widget(self._settings_layout),
-      on_alerts=lambda: self._scroll_to(self._alerts_layout),
+      on_alerts=lambda: gui_app.push_widget(self._alerts_layout),
       alert_count_callback=self._alerts_layout.active_alerts,
       alert_icon_callback=self._alerts_layout.highest_severity_icon,
     )
@@ -91,22 +88,6 @@ class MiciMainLayout(Scroller):
   def _scroll_to(self, layout: Widget):
     layout_x = int(layout.rect.x)
     self._scroller.scroll_to(layout_x, smooth=True)
-
-  def _update_state(self):
-    super()._update_state()
-    # TODO: Hack to run alert updates while not in view. Add a nav stack tick?
-    self._alerts_layout._update_state()
-
-  def _render(self, _):
-    if not self._setup:
-      if self._alerts_layout.active_alerts() > 0:
-        self._scroller.scroll_to(self._alerts_layout.rect.x)
-      else:
-        self._scroller.scroll_to(self._rect.width)
-      self._setup = True
-
-    # Render
-    super()._render(self._rect)
 
   def _handle_transitions(self):
     # greet when getting in the car after it's been off for a while

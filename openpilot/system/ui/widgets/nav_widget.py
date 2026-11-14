@@ -55,8 +55,8 @@ class NavWidget(Widget, abc.ABC):
   """
   BACK_TOUCH_AREA_PERCENTAGE = 0.65
 
-  def __init__(self):
-    super().__init__()
+  def __init__(self, **kwargs):
+    super().__init__(**kwargs)  # kwargs go to the next class in the MRO, e.g. Scroller
     # State
     self._drag_start_pos: MousePos | None = None  # cleared after certain amount of horizontal movement
     self._dragging_down = False  # swiped down enough to trigger dismissing on release
