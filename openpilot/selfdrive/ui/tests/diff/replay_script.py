@@ -302,7 +302,7 @@ def build_mici_script(pm: PubMaster, main_layout, script: Script) -> None:
 
   toggle_cases: Cases = [
     lambda: click(times=3, wait_after=FAST_CLICK),  # first toggle is personality, which has 3 states
-    None, None, None, None, None, None,  # skip other toggles to save time
+    None, None, None,  # skip other toggles to save time
     lambda: click(times=2, wait_after=FAST_CLICK),  # test final toggle (enable openpilot)
   ]
 
@@ -316,6 +316,7 @@ def build_mici_script(pm: PubMaster, main_layout, script: Script) -> None:
     None,
     click,  # update
     explore_setting,  # pairing (just open and close)
+    None, None, None,  # metric, record cabin camera, record mic
     lambda: explore_setting(
       # training guide
       lambda: swipe_left(width * 2), click,  # first page, click next
