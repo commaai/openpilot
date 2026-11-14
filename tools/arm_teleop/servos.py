@@ -22,6 +22,7 @@ class Arm:
     self.path = next(p["port"] for p in ports() if p["serial"] == serial)
     self.port = scs.PortHandler(self.path)
     self.packet = scs.PacketHandler(0)
+    self.errors = {}
     if not self.port.openPort():
       raise OSError(f"Could not open {self.path}")
     try:
@@ -45,22 +46,26 @@ class Arm:
   def read(self, motor, address, size):
     fn = self.packet.read1ByteTxRx if size == 1 else self.packet.read2ByteTxRx
     value, result, error = fn(self.port, motor, address)
-    self.check(result, error)
+    self.check(result)
     return value
 
   def positions(self):
     self.check(self.reader.txPacket())
     positions = []
+    errors = {}
     for i in IDS:
       data, result, error = self.packet.readRx(self.port, i, 2)
-      self.check(result, error)
+      self.check(result)
+      if error:
+        errors[JOINTS[i - 1]] = self.packet.getRxPacketError(error)
       positions.append(signed_position(data[0] | data[1] << 8))
+    self.errors = errors
     return positions
 
   def write(self, motor, address, value, size=1):
     fn = self.packet.write1ByteTxRx if size == 1 else self.packet.write2ByteTxRx
     result, error = fn(self.port, motor, address, value)
-    self.check(result, error)
+    self.check(result, 0 if address == 40 and value == 0 else error)
 
   def torque(self, enabled):
     for i in IDS:

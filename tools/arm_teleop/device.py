@@ -115,6 +115,8 @@ class Robot:
         if any(m != 777 for m in self.arm.models) or any(self.arm.modes):
           raise ValueError("Expected six STS3215 servos in position mode")
         positions = self.arm.positions()
+        if self.arm.errors:
+          raise ValueError("; ".join(f"{name}: {error}" for name, error in self.arm.errors.items()))
         if any(not lo <= p <= hi for p, (lo, hi) in zip(positions, self.arm.limits, strict=True)):
           raise ValueError("Joint position is outside the servo limits")
         self.speed = float(body.get("speed", 30))
@@ -165,10 +167,15 @@ class Robot:
           if self.arm is None and now >= retry_at:
             retry_at = now + 2
             self.arm = Arm(FOLLOWER)
+            self.holding = any(self.arm.read(i, 40, 1) for i in IDS)
             self.state.update(connected=True, port=self.arm.path, limits=self.arm.limits, models=self.arm.models, error="")
           if self.arm is not None:
             positions = self.arm.positions()
             self.state["positions"] = positions
+            fault = "; ".join(f"{name}: {error}" for name, error in self.arm.errors.items())
+            self.state.update(error=fault, faults=self.arm.errors)
+            if fault and self.reason != fault:
+              self.stop(fault)
             if self.active:
               if now - self.last_command > WATCHDOG:
                 self.stop("Command connection lost; holding pose")
