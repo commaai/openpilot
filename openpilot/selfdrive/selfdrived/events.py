@@ -148,11 +148,14 @@ EmptyAlert = Alert("" , "", AlertStatus.normal, AlertSize.none, Priority.LOWEST,
 
 class NoEntryAlert(Alert):
   def __init__(self, alert_text_2: str,
-               alert_text_1: str = "openpilot Unavailable",
+               alert_text_1: str | None = None,
                visual_alert: car.CarControl.HUDControl.VisualAlert=VisualAlert.none,
                priority: Priority = Priority.LOW):
-    if HARDWARE.get_device_type() == 'mici':
-      alert_text_1, alert_text_2 = alert_text_2, alert_text_1
+    if alert_text_1 is None:
+      alert_text_1 = "openpilot Unavailable"
+      # on mici, the reason is the title
+      if HARDWARE.get_device_type() == 'mici':
+        alert_text_1, alert_text_2 = alert_text_2, alert_text_1
     super().__init__(alert_text_1, alert_text_2, AlertStatus.normal,
                      AlertSize.mid, priority, visual_alert,
                      AudibleAlert.refuse, 3.)
@@ -266,7 +269,7 @@ def calibration_incomplete_alert(CP: car.CarParams, CS: car.CarState, sm: messag
 def too_distracted_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
   if sm['driverMonitoringState'].lockout:
     mins_left = sm['driverMonitoringState'].lockoutMinutesRemaining
-    return NoEntryAlert("Too Distracted", f"{mins_left} minute{'s' if mins_left != 1 else ''} Left", priority=Priority.HIGH)
+    return NoEntryAlert(f"{mins_left} minute{'s' if mins_left != 1 else ''} Left", alert_text_1="Too Distracted", priority=Priority.HIGH)
   return NoEntryAlert("Pay Attention to Engage", priority=Priority.HIGH)
 
 
@@ -286,11 +289,8 @@ def posenet_invalid_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.Sub
 
 def process_not_running_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
   not_running = [p.name for p in sm['managerState'].processes if not p.running and p.shouldBeRunning]
-  alert = NoEntryAlert(', '.join(not_running), alert_text_1="Process Not Running")
-  if HARDWARE.get_device_type() == 'mici':
-    # keep the title short, the process list can be long
-    alert.alert_text_1, alert.alert_text_2 = alert.alert_text_2, alert.alert_text_1
-  return alert
+  msg = ', '.join(not_running)
+  return NoEntryAlert(msg, alert_text_1="Process Not Running")
 
 
 def comm_issue_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
