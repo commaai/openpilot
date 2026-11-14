@@ -51,7 +51,8 @@ class LongIndicator(Widget):
   def _draw_lead_car(self, rect: rl.Rectangle, alpha: float) -> None:
     sm = ui_state.sm
     plan = sm['longitudinalPlan']
-    has_lead = sm.alive['longitudinalPlan'] and plan.hasLead
+    # static while disengaged
+    has_lead = sm['selfdriveState'].enabled and sm.alive['longitudinalPlan'] and plan.hasLead
 
     e2e = has_lead and plan.longitudinalPlanSource == log.LongitudinalPlan.LongitudinalPlanSource.e2e
     white_f, green_f = self._lead_car_filters
@@ -74,17 +75,12 @@ class LongIndicator(Widget):
       self._personality_changed_time = now
     highlight = now - self._personality_changed_time < HIGHLIGHT_TIME
 
-    # blink at double the turn signal rate (2.67 Hz) while overriding the gas
-    overriding = any(e.name == log.OnroadEvent.EventName.gasPressedOverride for e in sm['onroadEvents'])
-    blink = 0.35 / 0.9 if overriding and now % 0.375 > 0.1875 else 1.0
-
     count = personality + 1
     for i, ((white, green), y, (active_f, green_f)) in enumerate(zip(self._txt_distance, (122, 136, 152), self._distance_filters, strict=True)):
       active = active_f.update(float(i < count))
       green_alpha = green_f.update(float(highlight and i == count - 1))
-      # only lit bars blink on override
-      self._draw_centered(white, rect, y, (0.35 * (1 - active) + 0.9 * (active - green_alpha) * blink) * alpha)
-      self._draw_centered(green, rect, y, green_alpha * blink * alpha)
+      self._draw_centered(white, rect, y, (0.35 * (1 - active) + 0.9 * (active - green_alpha)) * alpha)
+      self._draw_centered(green, rect, y, green_alpha * alpha)
 
   @staticmethod
   def _draw_centered(texture: rl.Texture, rect: rl.Rectangle, y: float, alpha: float) -> None:
