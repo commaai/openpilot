@@ -62,6 +62,7 @@ class Notifications:
       notifications = [n | {"dismissed": n["id"] in dismissed} for n in notifications]
       if notifications != self._notifications:
         self._set(notifications)
+    self._params.save()  # on the disk before the images only the old list uses are deleted
 
     used = {n[key] for n in notifications for key in ASSET_KEYS if key in n}
     for fn in os.listdir(ASSETS_ROOT):
@@ -93,7 +94,7 @@ class Notifications:
 
   def _set(self, notifications: list[dict]) -> None:
     self._notifications = notifications
-    self._params.put("Notifications", notifications, block=True)
+    self._params.put("Notifications", notifications)
 
   @property
   def active(self) -> list[dict]:

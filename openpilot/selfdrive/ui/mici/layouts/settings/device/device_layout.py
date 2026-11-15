@@ -154,10 +154,10 @@ class DeviceLayoutMici(NavScroller):
     self._pending_pairing_grow_animation = False
 
     def power_off_callback():
-      ui_state.params.put_bool("DoShutdown", True, block=True)
+      ui_state.params.put_bool("DoShutdown", True)
 
     def reboot_callback():
-      ui_state.params.put_bool("DoReboot", True, block=True)
+      ui_state.params.put_bool("DoReboot", True)
 
     def reset_calibration_callback():
       params = ui_state.params
@@ -165,7 +165,7 @@ class DeviceLayoutMici(NavScroller):
       params.remove("LiveTorqueParameters")
       params.remove("LiveParametersV2")
       params.remove("LiveDelay")
-      params.put_bool("OnroadCycleRequested", True, block=True)
+      params.put_bool("OnroadCycleRequested", True)
 
     reset_calibration_btn = EngagedConfirmationButton("reset calibration", "reset", gui_app.texture("icons_mici/settings/device/lkas.png", 122, 64),
                                                       reset_calibration_callback,
@@ -224,7 +224,7 @@ class DeviceLayoutMici(NavScroller):
     ui_state.add_engaged_transition_callback(self._update_toggles)
 
   def _on_metric_toggle(self, state: bool):
-    ui_state.params.put_bool("IsMetric", state, block=True)
+    ui_state.params.put_bool("IsMetric", state)
     ui_state.update_params()
 
   def _update_toggles(self):

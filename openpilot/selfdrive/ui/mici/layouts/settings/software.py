@@ -186,7 +186,7 @@ class InstallUpdateButton(BigButton):
     self.set_enabled(False)
 
     def run():
-      ui_state.params.put_bool("DoReboot", True, block=True)
+      ui_state.params.put_bool("DoReboot", True)
 
     threading.Thread(target=run, daemon=True).start()
 
@@ -239,7 +239,7 @@ class TargetBranchButton(BigButton):
     gui_app.push_widget(BranchSelectPage(self._on_select))
 
   def _on_select(self, branch: str):
-    ui_state.params.put("UpdaterTargetBranch", branch, block=True)
+    ui_state.params.put("UpdaterTargetBranch", branch)
     self.set_value(branch)
     self._check_update_btn.check_for_update()
 
@@ -249,7 +249,7 @@ class SoftwareLayoutMici(NavScroller):
     super().__init__()
 
     def uninstall_openpilot_callback():
-      ui_state.params.put_bool("DoUninstall", True, block=True)
+      ui_state.params.put_bool("DoUninstall", True)
 
     uninstall_openpilot_btn = EngagedConfirmationButton("uninstall openpilot", "uninstall",
                                                         gui_app.texture("icons_mici/settings/device/uninstall.png", 64, 64),

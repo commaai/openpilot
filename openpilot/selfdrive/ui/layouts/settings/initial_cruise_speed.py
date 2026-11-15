@@ -31,7 +31,7 @@ def get_speed_options() -> tuple[list[int], int]:
 
 def set_initial_cruise_speed(speed: int) -> None:
   """Save an initial cruise speed in display units"""
-  ui_state.params.put("InitialCruiseSpeedKph", round(speed / _speed_conversion()), block=True)
+  ui_state.params.put("InitialCruiseSpeedKph", round(speed / _speed_conversion()))
   ui_state.update_params()
 
 

@@ -4,7 +4,6 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass
 from openpilot.common.params import Params
-from openpilot.common.hardware import HARDWARE
 from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
@@ -109,7 +108,7 @@ class AbstractAlert(Widget, ABC):
     self.excessive_actuation_btn.set_click_callback(excessive_actuation_callback)
 
     self.reboot_btn = ActionButton(lambda: tr("Reboot and Update"), min_width=600)
-    self.reboot_btn.set_click_callback(lambda: HARDWARE.reboot())
+    self.reboot_btn.set_click_callback(lambda: self.params.put_bool("DoReboot", True))
 
     # TODO: just use a Scroller?
     self.content_rect = rl.Rectangle(0, 0, 0, 0)

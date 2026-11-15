@@ -155,7 +155,7 @@ def manager_thread() -> None:
 
     # update offroad state for services that don't subscribe to deviceState
     if started != started_prev:
-      params.put_bool("IsOffroad", not started, block=True)
+      params.put_bool("IsOffroad", not started)
 
     started_prev = started
     ignition_prev = ignition

@@ -318,7 +318,7 @@ class OnboardingWindow(Widget):
     self._training_guide.set_enabled(lambda: self.enabled)  # for nav stack
 
   def _on_uninstall(self):
-    ui_state.params.put_bool("DoUninstall", True, block=True)
+    ui_state.params.put_bool("DoUninstall", True)
 
   def show_event(self):
     super().show_event()
@@ -340,11 +340,11 @@ class OnboardingWindow(Widget):
     self._completed_callback()
 
   def _on_terms_accepted(self):
-    ui_state.params.put("HasAcceptedTerms", terms_version, block=True)
+    ui_state.params.put("HasAcceptedTerms", terms_version)
     gui_app.push_widget(self._training_guide)
 
   def _on_completed_training(self):
-    ui_state.params.put("CompletedTrainingVersion", training_version, block=True)
+    ui_state.params.put("CompletedTrainingVersion", training_version)
     self.close()
 
   def _render(self, _):
