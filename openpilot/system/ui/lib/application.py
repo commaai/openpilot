@@ -19,7 +19,7 @@ from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.hardware import HARDWARE, PC
 from openpilot.system.ui.lib.multilang import FONT_FALLBACK_LANGUAGES, TRANSLATIONS_DIR, multilang
-from openpilot.common.realtime import Ratekeeper
+from openpilot.common.realtime import Priority, Ratekeeper
 
 _DEFAULT_FPS = int(os.getenv("FPS", {'tizi': 20}.get(HARDWARE.get_device_type(), 60)))
 FPS_LOG_INTERVAL = 5  # Seconds between logging FPS drops
@@ -160,6 +160,12 @@ class MouseState:
       self._thread.join()
 
   def _run_thread(self):
+    # touches are stamped when polled, so run above the renderer. otherwise they wait for it to finish the frame
+    try:
+      os.sched_setscheduler(0, os.SCHED_FIFO, os.sched_param(Priority.CTRL_HIGH + 1))
+    except PermissionError:
+      pass
+
     while not self._exit_event.is_set():
       rl.poll_input_events()
       self._handle_mouse_event()
