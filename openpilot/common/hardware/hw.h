@@ -29,8 +29,15 @@ namespace Path {
     return Hardware::PC() ? Path::comma_home() + "/media/0/realdata" : "/data/media/0/realdata";
   }
 
+  // where params are read and written, which is RAM on the device
   inline std::string params() {
-    return util::getenv("PARAMS_ROOT", Hardware::PC() ? (Path::comma_home() + "/params") : "/data/params");
+    return util::getenv("PARAMS_ROOT", Hardware::PC() ? (Path::comma_home() + "/params") : "/dev/shm/params");
+  }
+
+  // where the params in RAM are saved. empty when params() is the disk, and for tests
+  inline std::string params_disk() {
+    bool ram = !Hardware::PC() && getenv("PARAMS_ROOT") == nullptr && Path::openpilot_prefix().empty();
+    return util::getenv("PARAMS_DISK_ROOT", ram ? "/data/params" : "");
   }
 
   inline std::string swaglog_ipc() {

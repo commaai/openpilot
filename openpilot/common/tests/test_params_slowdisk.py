@@ -1,11 +1,12 @@
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
 
 from openpilot.common.basedir import BASEDIR
-from openpilot.common.params import Params
+from openpilot.common.hardware.hw import Paths
 from openpilot.common.test import OpenpilotTestCase
 
 SLOWDISK_SRC = os.path.join(BASEDIR, "openpilot/selfdrive/test/slowdisk.c")
@@ -17,6 +18,7 @@ ITERATIONS = 200
 WORKER = r"""
 import json
 import os
+import threading
 import time
 from pathlib import Path
 
@@ -28,6 +30,14 @@ params.put_bool("IsMetric", True, block=True)
 params.put("CarParams", b"startup", block=True)
 for k in ("DongleId", "IsMetric", "CarParams", "IsOffroad", "LongitudinalPersonality"):
   params.get(k)
+
+# like manager does
+def save():
+  p = Params()
+  while True:
+    p.wait_for_write(1.)
+    p.save()
+threading.Thread(target=save, daemon=True).start()
 
 Path(os.environ["SLOWDISK_FLAG"]).touch()
 time.sleep(1.1)  # the shim checks for the flag once a second
@@ -56,30 +66,34 @@ for i in range(int(os.environ["ITERATIONS"])):
   time.sleep(0.002)
 
 os.unlink(os.environ["SLOWDISK_FLAG"])
+assert params.save() == 0
 print(json.dumps(worst))
 """
 
 
 class TestParamsSlowDisk(OpenpilotTestCase):
   def test_no_blocking_on_disk(self):
-    params = Params()
-    fs_type = subprocess.check_output(["stat", "-f", "-c", "%t", params.get_param_path()], text=True).strip()
+    # params in RAM, saved to the disk like on the device
+    disk = tempfile.mkdtemp(dir=Paths.log_root())
+    self.addCleanup(shutil.rmtree, disk)
+    fs_type = subprocess.check_output(["stat", "-f", "-c", "%t", disk], text=True).strip()
     if fs_type != EXT_MAGIC:
-      self.skipTest("params aren't on ext4")
+      self.skipTest("not on ext4")
 
     with tempfile.TemporaryDirectory(dir="/dev/shm") as d:
       shim = os.path.join(d, "slowdisk.so")
       subprocess.check_call(["cc", "-O2", "-shared", "-fPIC", "-o", shim, SLOWDISK_SRC, "-ldl"])
-      env = {**os.environ, "LD_PRELOAD": shim, "SLOWDISK_FLAG": os.path.join(d, "flag"), "ITERATIONS": str(ITERATIONS)}
+      env = {**os.environ, "LD_PRELOAD": shim, "SLOWDISK_FLAG": os.path.join(d, "flag"), "ITERATIONS": str(ITERATIONS),
+             "PARAMS_ROOT": os.path.join(d, "params"), "PARAMS_DISK_ROOT": disk}
       out = subprocess.check_output([sys.executable, "-c", WORKER], env=env, text=True, timeout=120)
 
     worst = json.loads(out.strip().splitlines()[-1])
     for name, ms in worst.items():
       assert ms < MAX_LATENCY_MS, f"{name} blocked on disk: {worst}"
 
-    # the worker has exited, so its writes are on disk
-    with open(params.get_param_path("DongleId"), "rb") as f:
+    disk = os.path.join(disk, os.environ["OPENPILOT_PREFIX"])
+    with open(os.path.join(disk, "DongleId"), "rb") as f:
       assert f.read() == f"v{ITERATIONS - 1}".encode()
-    with open(params.get_param_path("IsMetric"), "rb") as f:
+    with open(os.path.join(disk, "IsMetric"), "rb") as f:
       assert f.read() == (b"1" if (ITERATIONS - 1) % 2 else b"0")
-    assert not os.path.exists(params.get_param_path("CarParams"))
+    assert not os.path.exists(os.path.join(disk, "CarParams"))

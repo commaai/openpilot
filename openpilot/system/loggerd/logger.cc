@@ -103,7 +103,7 @@ std::string logger_get_identifier(std::string key) {
   } catch (std::exception &e) {
     cnt = 0;
   }
-  params.put(key, std::to_string(cnt + 1));
+  params.put(key, std::to_string(cnt + 1), true);
 
   std::stringstream ss;
   std::random_device rd;
