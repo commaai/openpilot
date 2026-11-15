@@ -20,14 +20,6 @@ Panda::Panda(std::string serial) {
   can_reset_communications();
 }
 
-bool Panda::connected() {
-  return handle->connected;
-}
-
-bool Panda::comms_healthy() {
-  return handle->comms_healthy;
-}
-
 std::string Panda::hw_serial() {
   return handle->hw_serial;
 }
@@ -188,7 +180,7 @@ void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data
 
 void Panda::can_send(const capnp::List<cereal::CanData>::Reader &can_data_list) {
   pack_can_buffer(can_data_list, [=](uint8_t* data, size_t size) {
-    handle->bulk_write(3, data, size, 5);
+    handle->bulk_write(3, data, size);
   });
 }
 
@@ -197,10 +189,6 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
   assert(receive_buffer_size + RECV_SIZE <= sizeof(receive_buffer));
 
   int recv = handle->bulk_read(0x81, &receive_buffer[receive_buffer_size], RECV_SIZE);
-  // this read's own result: comms_healthy() is shared with the send thread, whose failure says nothing about this data
-  if (recv < 0) {
-    return false;
-  }
 
   if (PANDAD_MAXOUT) {
     static uint8_t junk[RECV_SIZE];

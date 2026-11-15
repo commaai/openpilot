@@ -1,6 +1,5 @@
 #pragma once
 
-#include <atomic>
 #include <cstdint>
 #include <mutex>
 #include <string>
@@ -14,8 +13,6 @@
 class PandaSpiHandle {
 public:
   std::string hw_serial;
-  std::atomic<bool> connected = true;
-  std::atomic<bool> comms_healthy = true;
 
   PandaSpiHandle(std::string serial);
   ~PandaSpiHandle();
