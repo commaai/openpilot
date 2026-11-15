@@ -73,8 +73,13 @@ def unsparsify(f: StreamingDecompressor) -> Generator[bytes, None, None]:
     chunk_type, out_blocks = SPARSE_CHUNK_FMT.unpack(f.read(12))
 
     if chunk_type == 0xcac1:  # Raw
-      # TODO: yield in smaller chunks. Yielding only block_sz is too slow. Largest observed data chunk is 252 MB.
-      yield f.read(out_blocks * block_sz)
+      # largest observed data chunk is 252 MB, stream it in 1 MB pieces
+      remaining = out_blocks * block_sz
+      while remaining > 0:
+        data = f.read(min(remaining, 1024 * 1024))
+        assert len(data) > 0, "truncated sparse image"
+        remaining -= len(data)
+        yield data
     elif chunk_type == 0xcac2:  # Fill
       filler = f.read(4) * (block_sz // 4)
       for _ in range(out_blocks):
@@ -164,9 +169,19 @@ def extract_compressed_image(target_slot_number: int, partition: dict, cloudlog)
     last_p = 0
     raw_hash = hashlib.sha256()
     f = unsparsify if partition['sparse'] else noop
+    flushed = 0
     for chunk in f(downloader):
       raw_hash.update(chunk)
       out.write(chunk)
+
+      # write back and drop what's flashed as we go, so flashing GBs never piles up
+      # dirty pages or page cache that openpilot would stall on when it runs onroad
+      if out.tell() - flushed >= 8 * 1024 * 1024:
+        out.flush()
+        os.fdatasync(out.fileno())
+        os.posix_fadvise(out.fileno(), 0, 0, os.POSIX_FADV_DONTNEED)
+        flushed = out.tell()
+
       p = int(out.tell() / partition['size'] * 100)
       if p != last_p:
         last_p = p

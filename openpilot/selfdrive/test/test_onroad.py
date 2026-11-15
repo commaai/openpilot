@@ -68,6 +68,7 @@ PROCS = {
   "openpilot.system.proclogd": 7.0,
   "openpilot.system.logmessaged": 1.0,
   "openpilot.system.tombstoned": 0,
+  "openpilot.system.updated.updated": 0,
   "openpilot.system.journald": 1.0,
   "openpilot.system.micd": 5.0,
   "openpilot.system.timed": 0,

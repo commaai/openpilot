@@ -5,6 +5,7 @@ import datetime
 import subprocess
 import shutil
 import signal
+import sys
 import fcntl
 import time
 import threading
@@ -15,7 +16,9 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.common.markdown import parse_markdown
+from openpilot.common.linux import LinuxSystemStats
 from openpilot.common.swaglog import cloudlog
+from openpilot.common.utils import sudo_write
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.common.hardware import AGNOS, HARDWARE
 from openpilot.common.version import get_build_metadata
@@ -29,6 +32,11 @@ OVERLAY_MERGED = os.path.join(STAGING_ROOT, "merged")
 FINALIZED = os.path.join(STAGING_ROOT, "finalized")
 
 OVERLAY_INIT = Path(os.path.join(BASEDIR, ".overlay_init"))
+
+# updated also runs onroad, where it only gets what openpilot leaves over
+CGROUP = "/sys/fs/cgroup/updated"
+MEMORY_MAX = 128 * 1024 * 1024  # anon + page cache, an OOM kills updated, not openpilot
+LOW_MEMORY_PERCENT = 85  # selfdrived soft disables over 90
 
 # do not allow to engage after this many hours onroad and this many routes
 HOURS_NO_CONNECTIVITY_MAX = 27
@@ -66,6 +74,34 @@ class WaitTimeHelper:
 def write_time_to_param(params, param) -> None:
   t = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
   params.put(param, t, block=True)
+
+def limit_resources() -> None:
+  # lowest CPU and IO priority, inherited by git and every other child
+  os.setpriority(os.PRIO_PROCESS, 0, 19)
+  run(["ionice", "-c", "2", "-n", "7", "-p", str(os.getpid())])
+
+  run(["sudo", "mkdir", "-p", CGROUP])
+  sudo_write(str(MEMORY_MAX), os.path.join(CGROUP, "memory.max"))
+  sudo_write(str(os.getpid()), os.path.join(CGROUP, "cgroup.procs"))
+  threading.Thread(target=memory_guard, daemon=True).start()
+
+def low_memory() -> bool:
+  return LinuxSystemStats.memory_usage_percent() > LOW_MEMORY_PERCENT
+
+def memory_guard() -> None:
+  # the update fails and retries later, instead of pushing openpilot into low memory
+  while True:
+    if low_memory():
+      with open(os.path.join(CGROUP, "cgroup.procs")) as f:
+        pids = [int(p) for p in f.read().split() if int(p) != os.getpid()]
+      if pids:
+        cloudlog.warning(f"low memory, killing update processes {pids}")
+      for pid in pids:
+        try:
+          os.kill(pid, signal.SIGKILL)
+        except ProcessLookupError:
+          pass
+    time.sleep(0.5)
 
 def run(cmd: list[str], cwd: str | None = None) -> str:
   return subprocess.check_output(cmd, cwd=cwd, stderr=subprocess.STDOUT, encoding='utf8')
@@ -112,6 +148,12 @@ def setup_git_options(cwd: str) -> None:
     ("protocol.version", "2"),
     ("gc.auto", "0"),
     ("gc.autoDetach", "false"),
+    # bound git's memory to fit in the cgroup, a default gc peaks near 1 GB on a release
+    ("core.bigFileThreshold", "16m"),
+    ("core.deltaBaseCacheLimit", "16m"),
+    ("pack.threads", "1"),
+    ("pack.windowMemory", "32m"),
+    ("pack.deltaCacheSize", "16m"),
   ]
   for option, value in git_cfg:
     run(["git", "config", option, value], cwd)
@@ -204,8 +246,6 @@ def finalize_update() -> None:
 
 
 def handle_agnos_update() -> None:
-  from openpilot.common.hardware.comma.agnos import flash_agnos_update, get_target_slot_number
-
   cur_version = HARDWARE.get_os_version()
   updated_version = run(["bash", "-c", r"unset AGNOS_VERSION && source launch_env.sh && \
                           echo -n $AGNOS_VERSION"], OVERLAY_MERGED).strip()
@@ -222,8 +262,9 @@ def handle_agnos_update() -> None:
   manifest_path = os.path.join(OVERLAY_MERGED, "openpilot/system/hardware/comma/agnos.json")
   if not os.path.isfile(manifest_path):  # releases before the openpilot/ move
     manifest_path = os.path.join(OVERLAY_MERGED, "system/hardware/tici/agnos.json")
-  target_slot_number = get_target_slot_number()
-  flash_agnos_update(manifest_path, target_slot_number, cloudlog)
+  # a child process, so the memory guard can stop it
+  agnos_py = os.path.join(BASEDIR, "openpilot/common/hardware/comma/agnos.py")
+  cloudlog.info(run([sys.executable, agnos_py, manifest_path]))
 
 
 class Updater:
@@ -427,6 +468,9 @@ def main() -> None:
     cloudlog.warning("updates are disabled by the DisableUpdates param")
     exit(0)
 
+  if AGNOS:
+    limit_resources()
+
   with open(LOCK_FILE, 'w') as ov_lock_fd:
     try:
       fcntl.flock(ov_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -465,7 +509,7 @@ def main() -> None:
         # ensure we have some params written soon after startup
         updater.set_params(False, update_failed_count, exception)
 
-        if not system_time_valid() or first_run:
+        if not system_time_valid() or first_run or low_memory():
           first_run = False
           wait_helper.sleep(60)
           continue
