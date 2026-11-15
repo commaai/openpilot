@@ -587,6 +587,59 @@ Run 2026-10-09 with `opendbc_repo/.venv`:
   pass to install the current CarParams Toyota policy. A four-state regression
   test covers active/inactive catcher behavior onroad and offroad.
 
+### 2026-11-14 safety recovery validation and bus-0 non-application
+
+- Ten subsequent qlog/rlog pairs and bringup bundle
+  `20261114T184251-1672-116493393119` ran clean deployed commit
+  `408031352e`, opendbc `e59da8d8db`, and Panda `f38f504ffa`. All three
+  included bringup attempts matched the signed Panda firmware and retained
+  payload SHA-256
+  `6234bb5bd496a82fabb32c27b56b3db0f1907b5bf6482e4c19f8835153ff69fc`.
+  Their independent signer probes were status zero with four accepted and
+  zero rejected fragments. The optional Brake DTC read remained unavailable,
+  so peer-health stayed inconclusive rather than failed.
+- The pandad safety-restore fix worked. Each new route recovered the exact
+  `TOYOTA_COROLLA_TSS3` fingerprint and Toyota safety parameter `12873` after
+  the catch/install transitions; Panda did not remain in ELM327. There were
+  no Panda faults, `canError`, or `canBusMissing` events. The ten invalid-RX
+  samples in the first post-install route occurred during its initial one
+  second of Toyota-safety population while controls were disallowed, then
+  cleared. The remaining route transitions had valid RX checks.
+- The first moving post-install route completed 2,304 bus-2 signer requests
+  and received 2,304 status-zero bus-2 responses in 5.139--20.609 ms. It
+  published 2,177 signed host `0x08A` frames on bus 0; every payload matched
+  its 28-byte application and fresh response trailer, and Panda accepted all
+  2,177 with none rejected. A later moving route after another automatic catch
+  completed 3,778 requests and 3,772 status-zero responses, then published
+  3,626 payload-matched host frames, again all accepted and none rejected. Its
+  one rejected request fragment occurred at a transition boundary.
+- Openpilot longitudinal control remained disabled. Across every route,
+  CarControl `longActive`, CarControl acceleration, gas and brake, and
+  CarOutput acceleration were exactly zero. The signed host frames retained
+  the stock longitudinal fields as designed: the equal upper/lower OEM
+  requests ranged from -0.728 to 1.030 m/s² in the first drive and -0.393 to
+  1.967 m/s² in the later drive. Those copied stock fields are not openpilot
+  longitudinal commands and must not be forced to zero while stock ACC is in
+  use.
+- The first moving route resolves the prior actuator-result ambiguity. Of its
+  host publications, 1,702 requested lateral result ID 11. Every retained
+  native bus-2 `0x08A` instead requested lateral ID 0, and all 4,943 retained
+  `CONTROL_RESULT` frames likewise reported lateral result ID 0 with no
+  `REQUEST_LOSS`. Thus the correctly signed and Panda-accepted bus-0 host
+  publication was not becoming the applied lateral request. The later route
+  cannot answer this because both native and host requests used ID 11 there.
+- Corolla now publishes its signed host `0x08A` on bus 2, matching the
+  empirically recovered control side and its existing bus-2 signer/RX path.
+  Camry, Crown, and the default signer transport retain bus-0 publication.
+  Panda safety selects the publication bus from the existing
+  `TSS3_RX_BUS_2` flag, applies the same approval, angle, longitudinal-copy,
+  PCS-release, and watchdog checks, rejects Corolla publication on bus 0, and
+  parses Corolla publication receipts on bus 194. The exact rebuilt debug
+  Panda firmware has signed-file SHA-256
+  `3080ef669158a4b9c98ea6f3451439c769df999850907da5473716c66df82017`
+  and signature prefix `335101b5c85e9b3f`. This is a scoped diagnostic
+  change; its first validation must be stationary with stock longitudinal.
+
 ## File inventory (merge-base diffs vs commaai master, 2026-10-09)
 
 ### opendbc — 22 files, +2,258 / −57
