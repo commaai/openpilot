@@ -210,6 +210,8 @@ public:
   uint64_t last_valid_ife_frame_id = 0;
   int invalid_request_count = 0;
   bool skip_expected = true;
+  uint64_t last_sof = 0;       // SOF timestamp of the last published frame
+  int64_t last_frame_id = -1;  // its frame ID
 
   CameraBuf buf;
   SpectraMaster *m;
