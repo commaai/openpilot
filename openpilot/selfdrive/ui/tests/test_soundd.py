@@ -3,12 +3,18 @@ import threading
 from openpilot.common.test import OpenpilotTestCase
 from openpilot.cereal import log, messaging
 from openpilot.cereal.messaging import SubMaster, PubMaster
-from openpilot.selfdrive.ui.soundd import SELFDRIVE_STATE_TIMEOUT, check_selfdrive_timeout_alert
+from openpilot.selfdrive.ui.soundd import SELFDRIVE_STATE_TIMEOUT, check_selfdrive_timeout_alert, sound_list
 
 AudibleAlert = log.SelfdriveState.AudibleAlert
 
 
 class TestSoundd(OpenpilotTestCase):
+  def test_custom_labeled_sounds(self):
+    assert sound_list[AudibleAlert.engage][0] == "engage.wav"
+    assert sound_list[AudibleAlert.disengage][0] == "disengage.wav"
+    assert sound_list[AudibleAlert.prompt][0] == "prompt.wav"
+    assert sound_list[AudibleAlert.startup][0] == "startup.wav"
+
   def test_check_selfdrive_timeout_alert(self, mocker):
     sm = SubMaster(['selfdriveState'])
     pm = PubMaster(['selfdriveState'])

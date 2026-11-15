@@ -213,7 +213,7 @@ class StartupAlert(Alert):
       alert_size = AlertSize.small
     super().__init__(alert_text_1, alert_text_2,
                      alert_status, alert_size,
-                     Priority.LOWER, VisualAlert.none, AudibleAlert.none, 5.),
+                     Priority.LOWER, VisualAlert.none, AudibleAlert.startup, 5.),
 
 
 

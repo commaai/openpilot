@@ -76,7 +76,7 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     driverUnresponsive3 @38;
     belowSteerSpeed @39;
     accFaulted @41;
-    signerUnavailable @105;
+    signerUnavailable @106;
     sensorDataInvalid @42;
     commIssue @43;
     commIssueAvgFreq @44;
@@ -847,6 +847,7 @@ struct SelfdriveState {
 
     preAlert @9;
     complete @10;
+    startup @12;
   }
 
   enum OpenpilotState @0xdbe58b96d2d1ac61 {
