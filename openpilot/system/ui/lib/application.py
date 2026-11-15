@@ -161,10 +161,8 @@ class MouseState:
 
   def _run_thread(self):
     # touches are stamped when polled, so run above the renderer. otherwise they wait for it to finish the frame
-    try:
+    if sys.platform == 'linux' and not PC:
       os.sched_setscheduler(0, os.SCHED_FIFO, os.sched_param(Priority.CTRL_HIGH + 1))
-    except PermissionError:
-      pass
 
     while not self._exit_event.is_set():
       rl.poll_input_events()
