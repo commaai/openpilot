@@ -260,7 +260,6 @@ class MiciHomeLayout(Widget):
     usb_connected = ui_state.usb_connected
     usb_unknown = ui_state.usb_unknown
     chestnut_state = ui_state.chestnut_state
-    # a chestnut problem stays on the chestnut icon, even once it drops off usb
     chestnut_failed = chestnut_state in (ChestnutState.UNCOMPILED, ChestnutState.FAILED)
     self._usb_icon.set_visible(usb_connected and usb_unknown and not chestnut_failed)
     self._chestnut_icon.set_visible(not usb_unknown and chestnut_state not in
