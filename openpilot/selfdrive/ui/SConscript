@@ -27,14 +27,16 @@ if GetOption('extras') and arch == "comma_arm64":
                              "ld -r -b binary -o $TARGET $SOURCE")
   inter_bold = raylib_env.Command("installer/inter_bold.o", "../assets/fonts/Inter-Bold.ttf",
                               "ld -r -b binary -o $TARGET $SOURCE")
-  inter_light = raylib_env.Command("installer/inter_light.o", "../assets/fonts/Inter-Light.ttf",
-                              "ld -r -b binary -o $TARGET $SOURCE")
+  mici_sans = raylib_env.Command("installer/mici_sans_regular.o", "installer/mici-sans-regular-ascii.ttf",
+                                 "ld -r -b binary -o $TARGET $SOURCE")
+  mici_sans_bold = raylib_env.Command("installer/mici_sans_bold.o", "installer/mici-sans-bold-ascii.ttf",
+                                      "ld -r -b binary -o $TARGET $SOURCE")
   for name, branch in installers:
     d = {'BRANCH': f"'\"{branch}\"'"}
     if "internal" in name:
       d['INTERNAL'] = "1"
 
     obj = raylib_env.Object(f"installer/installers/installer_{name}.o", ["installer/installer.cc"], CPPDEFINES=d)
-    f = raylib_env.Program(f"installer/installers/installer_{name}", [obj, cont, inter, inter_bold, inter_light], LIBS=raylib_libs)
+    f = raylib_env.Program(f"installer/installers/installer_{name}", [obj, cont, inter, inter_bold, mici_sans, mici_sans_bold], LIBS=raylib_libs)
     # keep installers small
     assert f[0].get_size() < 2500*1e3, f[0].get_size()

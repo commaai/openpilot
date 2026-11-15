@@ -63,8 +63,7 @@ BURN_IN_COLORS = _burn_in_colors()
 DEFAULT_TEXT_SIZE = 60
 DEFAULT_TEXT_COLOR = rl.Color(255, 255, 255, int(255 * 0.9))
 
-# Qt draws fonts accounting for ascent/descent differently, so compensate to match old styles
-# The real scales for the fonts below range from 1.212 to 1.266
+# raylib sizes text by the ascent+descent box, not the em. Mici Sans has a 1.16em box, so mici sizes are em sizes like in Figma
 FONT_SCALE = 1.242 if BIG_UI else 1.16
 
 ASSETS_DIR = files("openpilot.selfdrive").joinpath("assets")
@@ -80,16 +79,16 @@ NOTO_FONTS = {
 
 
 class FontWeight(StrEnum):
-  NORMAL = "Inter-Regular.ttf" if BIG_UI else "Inter-Medium.ttf"
-  MEDIUM = "Inter-Medium.ttf"
-  BOLD = "Inter-Bold.ttf"
-  SEMI_BOLD = "Inter-SemiBold.ttf"
+  NORMAL = "Inter-Regular.ttf" if BIG_UI else "MiciSans-Regular.ttf"
+  MEDIUM = "Inter-Medium.ttf" if BIG_UI else "MiciSans-Regular.ttf"
+  BOLD = "Inter-Bold.ttf" if BIG_UI else "MiciSans-Bold.ttf"
+  SEMI_BOLD = "Inter-SemiBold.ttf" if BIG_UI else "MiciSans-SemiBold.ttf"
   UNIFONT = "unifont.otf"
 
   # Small UI fonts
-  DISPLAY_REGULAR = "Inter-Regular.ttf"
-  ROMAN = "Inter-Regular.ttf"
-  DISPLAY = "Inter-Bold.ttf"
+  DISPLAY_REGULAR = "Inter-Regular.ttf" if BIG_UI else "MiciSans-Regular.ttf"
+  ROMAN = "Inter-Regular.ttf" if BIG_UI else "MiciSans-Regular.ttf"
+  DISPLAY = "Inter-Bold.ttf" if BIG_UI else "MiciSans-Bold.ttf"
 
 
 class TextAlignment(IntEnum):
@@ -105,7 +104,7 @@ class TextAlignmentVertical(IntEnum):
 
 
 def font_fallback(font: rl.Font) -> rl.Font:
-  """Use a Noto fallback for languages not covered by Inter."""
+  """Use a Noto fallback for languages not covered by the UI font."""
   if multilang.requires_font_fallback():
     return gui_app.fallback_font()
   return font

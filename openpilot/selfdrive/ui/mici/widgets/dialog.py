@@ -45,14 +45,13 @@ class SettingDescriptionDialog(NavScroller):
     cards = [GreyBigButton(title, "scroll for details", icon or gui_app.texture("icons_mici/setup/green_info.png", 64, 64))]
     # Explicit lines are authored cards; otherwise prefer sentence boundaries.
     paragraphs = description.splitlines() if "\n" in description else re.split(r"(?<=[.!?])\s+", description.strip())
-    # Measure each card so longer text still fits with the actual font and padding.
+    # A card is full once its text has to shrink to fit
     for sentence in paragraphs:
       card = GreyBigButton("", "")
       words: list[str] = []
       for word in sentence.split():
         card.set_value(" ".join([*words, word]))
-        height = card._sub_label.get_content_height(card._subtitle_width_hint())
-        if words and height > card.rect.height - 2 * card.LABEL_VERTICAL_PADDING:
+        if words and card._sub_label.font_size < card.VALUE_FONT_SIZE:
           card.set_value(" ".join(words))
           cards.append(card)
           card = GreyBigButton("", "")
@@ -96,7 +95,7 @@ class BigConfirmationDialog(BigDialogBase):
 class BigInputDialog(BigDialogBase):
   BACK_TOUCH_AREA_PERCENTAGE = 0.2
   BACKSPACE_RATE = 25  # hz
-  TEXT_INPUT_SIZE = 35
+  TEXT_INPUT_SIZE = 36
 
   def __init__(self,
                hint: str,
@@ -106,8 +105,8 @@ class BigInputDialog(BigDialogBase):
                auto_return_to_letters: str = "",
                text_validator: Callable[[str], bool] | None = None):
     super().__init__()
-    self._hint_label = UnifiedLabel(hint, font_size=35, text_color=rl.Color(255, 255, 255, int(255 * 0.35)),
-                                    font_weight=FontWeight.MEDIUM)
+    self._hint_label = UnifiedLabel(hint, font_size=self.TEXT_INPUT_SIZE, text_color=rl.Color(255, 255, 255, int(255 * 0.35)),
+                                    font_weight=FontWeight.ROMAN)
     self._keyboard = MiciKeyboard(auto_return_to_letters=auto_return_to_letters)
     self._keyboard.set_text(default_text)
     self._keyboard.set_enabled(lambda: self.enabled and not self.is_dismissing)  # for nav stack + NavWidget

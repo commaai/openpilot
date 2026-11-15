@@ -36,14 +36,19 @@ extern const uint8_t str_continue[] asm("_binary_selfdrive_ui_installer_continue
 extern const uint8_t str_continue_end[] asm("_binary_selfdrive_ui_installer_continue_openpilot_sh_end");
 extern const uint8_t inter_ttf[] asm("_binary_selfdrive_ui_installer_inter_ascii_ttf_start");
 extern const uint8_t inter_ttf_end[] asm("_binary_selfdrive_ui_installer_inter_ascii_ttf_end");
-extern const uint8_t inter_light_ttf[] asm("_binary_selfdrive_assets_fonts_Inter_Light_ttf_start");
-extern const uint8_t inter_light_ttf_end[] asm("_binary_selfdrive_assets_fonts_Inter_Light_ttf_end");
 extern const uint8_t inter_bold_ttf[] asm("_binary_selfdrive_assets_fonts_Inter_Bold_ttf_start");
 extern const uint8_t inter_bold_ttf_end[] asm("_binary_selfdrive_assets_fonts_Inter_Bold_ttf_end");
+extern const uint8_t mici_sans_ttf[] asm("_binary_selfdrive_ui_installer_mici_sans_regular_ascii_ttf_start");
+extern const uint8_t mici_sans_ttf_end[] asm("_binary_selfdrive_ui_installer_mici_sans_regular_ascii_ttf_end");
+extern const uint8_t mici_sans_bold_ttf[] asm("_binary_selfdrive_ui_installer_mici_sans_bold_ascii_ttf_start");
+extern const uint8_t mici_sans_bold_ttf_end[] asm("_binary_selfdrive_ui_installer_mici_sans_bold_ascii_ttf_end");
 
-Font font_inter;
-Font font_roman;
-Font font_display;
+// Mici Sans has a 1.16em line box, so these match the UI's 64 and 128 sizes
+const float MICI_TITLE_SIZE = 64 * 1.16;
+const float MICI_PERCENT_SIZE = 128 * 1.16;
+
+Font font_regular;
+Font font_bold;
 
 const bool tici_device = Hardware::get_device_type() == cereal::InitData::DeviceType::TICI ||
                          Hardware::get_device_type() == cereal::InitData::DeviceType::TIZI;
@@ -86,9 +91,9 @@ void finishInstall() {
     if (tici_device) {
       const char *m = "Finishing install...";
       int text_width = MeasureText(m, FONT_SIZE);
-      DrawTextEx(font_display, m, (Vector2){(float)(GetScreenWidth() - text_width)/2 + FONT_SIZE, (float)(GetScreenHeight() - FONT_SIZE)/2}, FONT_SIZE, 0, WHITE);
+      DrawTextEx(font_bold, m, (Vector2){(float)(GetScreenWidth() - text_width)/2 + FONT_SIZE, (float)(GetScreenHeight() - FONT_SIZE)/2}, FONT_SIZE, 0, WHITE);
     } else {
-      DrawTextEx(font_display, "finishing setup", (Vector2){12, 0}, 77, 0, (Color){255, 255, 255, (unsigned char)(255 * 0.9)});
+      DrawTextEx(font_bold, "finishing setup", (Vector2){12, 2}, MICI_TITLE_SIZE, 0, (Color){255, 255, 255, (unsigned char)(255 * 0.9)});
     }
   EndDrawing();
   util::sleep_for(60 * 1000);
@@ -98,17 +103,17 @@ void renderProgress(int progress) {
   BeginDrawing();
     ClearBackground(BLACK);
     if (tici_device) {
-      DrawTextEx(font_inter, "Installing...", (Vector2){150, 290}, 110, 0, WHITE);
+      DrawTextEx(font_regular, "Installing...", (Vector2){150, 290}, 110, 0, WHITE);
       Rectangle bar = {150, 570, (float)GetScreenWidth() - 300, 72};
       DrawRectangleRec(bar, (Color){41, 41, 41, 255});
       progress = std::clamp(progress, 0, 100);
       bar.width *= progress / 100.0f;
       DrawRectangleRec(bar, (Color){70, 91, 234, 255});
-      DrawTextEx(font_inter, (std::to_string(progress) + "%").c_str(), (Vector2){150, 670}, 85, 0, WHITE);
+      DrawTextEx(font_regular, (std::to_string(progress) + "%").c_str(), (Vector2){150, 670}, 85, 0, WHITE);
     } else {
-      DrawTextEx(font_display, "installing...", (Vector2){12, 0}, 77, 0, (Color){255, 255, 255, (unsigned char)(255 * 0.9)});
+      DrawTextEx(font_bold, "installing...", (Vector2){12, 2}, MICI_TITLE_SIZE, 0, (Color){255, 255, 255, (unsigned char)(255 * 0.9)});
       const std::string percent_str = std::to_string(progress) + "%";
-      DrawTextEx(font_inter, percent_str.c_str(), (Vector2){12, (float)(GetScreenHeight() - 154 + 20)}, 154, 0,
+      DrawTextEx(font_regular, percent_str.c_str(), (Vector2){12, GetScreenHeight() - MICI_PERCENT_SIZE + 18}, MICI_PERCENT_SIZE, 0,
                  (Color){255, 255, 255, (unsigned char)(255 * 0.9 * 0.65)});
     }
 
@@ -246,12 +251,15 @@ int main(int argc, char *argv[]) {
     InitWindow(536, 240, "Installer");
   }
 
-  font_inter = LoadFontFromMemory(".ttf", inter_ttf, inter_ttf_end - inter_ttf, FONT_SIZE, NULL, 0);
-  font_roman = LoadFontFromMemory(".ttf", inter_light_ttf, inter_light_ttf_end - inter_light_ttf, FONT_SIZE, NULL, 0);
-  font_display = LoadFontFromMemory(".ttf", inter_bold_ttf, inter_bold_ttf_end - inter_bold_ttf, FONT_SIZE, NULL, 0);
-  SetTextureFilter(font_inter.texture, TEXTURE_FILTER_BILINEAR);
-  SetTextureFilter(font_roman.texture, TEXTURE_FILTER_BILINEAR);
-  SetTextureFilter(font_display.texture, TEXTURE_FILTER_BILINEAR);
+  if (tici_device) {
+    font_regular = LoadFontFromMemory(".ttf", inter_ttf, inter_ttf_end - inter_ttf, FONT_SIZE, NULL, 0);
+    font_bold = LoadFontFromMemory(".ttf", inter_bold_ttf, inter_bold_ttf_end - inter_bold_ttf, FONT_SIZE, NULL, 0);
+  } else {
+    font_regular = LoadFontFromMemory(".ttf", mici_sans_ttf, mici_sans_ttf_end - mici_sans_ttf, FONT_SIZE, NULL, 0);
+    font_bold = LoadFontFromMemory(".ttf", mici_sans_bold_ttf, mici_sans_bold_ttf_end - mici_sans_bold_ttf, FONT_SIZE, NULL, 0);
+  }
+  SetTextureFilter(font_regular.texture, TEXTURE_FILTER_BILINEAR);
+  SetTextureFilter(font_bold.texture, TEXTURE_FILTER_BILINEAR);
 
   branchMigration();
 
@@ -264,8 +272,7 @@ int main(int argc, char *argv[]) {
   }
 
   CloseWindow();
-  UnloadFont(font_inter);
-  UnloadFont(font_roman);
-  UnloadFont(font_display);
+  UnloadFont(font_regular);
+  UnloadFont(font_bold);
   return 0;
 }
