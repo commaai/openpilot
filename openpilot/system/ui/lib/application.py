@@ -196,6 +196,7 @@ class GuiApplication:
 
     self._fonts: dict[FontWeight, rl.Font] = {}
     self._fallback_fonts: dict[str, rl.Font] = {}
+    self._font_chars: set[str] = set()
     self._width = width if width is not None else GuiApplication._default_width()
     self._height = height if height is not None else GuiApplication._default_height()
 
@@ -654,6 +655,10 @@ class GuiApplication:
   def font(self, font_weight: FontWeight = FontWeight.NORMAL) -> rl.Font:
     return self._fonts[font_weight]
 
+  @property
+  def font_chars(self) -> set[str]:
+    return self._font_chars
+
   def fallback_font(self) -> rl.Font:
     language = multilang.language
     if language not in self._fallback_fonts:
@@ -683,6 +688,7 @@ class GuiApplication:
       if code not in FONT_FALLBACK_LANGUAGES:
         base_chars.update(TRANSLATIONS_DIR.joinpath(f"app_{code}.po").read_text(encoding="utf-8"))
 
+    self._font_chars = base_chars
     for font_weight_file in FontWeight:
       with as_file(FONT_DIR) as fspath:
         unifont = font_weight_file == FontWeight.UNIFONT
