@@ -352,6 +352,11 @@ class NetworkSetupPageBase(Scroller):
     self._prev_wifi_connected = wifi_connected
 
     if self._pending_has_internet_scroll is not None:
+      # Don't interrupt password entry when cellular connectivity returns.
+      if isinstance(gui_app.get_active_widget(), BigInputDialog):
+        self._pending_has_internet_scroll = None
+        return
+
       # Scrolls over to continue button, then grows once in view
       elapsed = rl.get_time() - self._pending_has_internet_scroll
       if elapsed > 0.7 or gui_app.get_active_widget() is self:  # instant scroll + grow if not popping
