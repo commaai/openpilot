@@ -11,6 +11,7 @@ from openpilot.system.ui.widgets.scroller import NavRawScrollPanel, NavScroller
 from openpilot.selfdrive.ui.mici.widgets.info import InfoLayoutMici
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigCircleButton, BigToggle, BigParamControl
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigConfirmationDialog
+from openpilot.selfdrive.ui.mici.widgets.power import power_action
 from openpilot.selfdrive.ui.mici.onroad.cabin_camera_dialog import CabinCameraDialog
 from openpilot.selfdrive.ui.mici.layouts.onboarding import TrainingGuide, TermsPage
 from openpilot.selfdrive.ui.layouts.settings.common import restart_needed_callback
@@ -154,10 +155,10 @@ class DeviceLayoutMici(NavScroller):
     self._pending_pairing_grow_animation = False
 
     def power_off_callback():
-      ui_state.params.put_bool("DoShutdown", True, block=True)
+      power_action("powering off", lambda: ui_state.params.put_bool("DoShutdown", True, block=True))
 
     def reboot_callback():
-      ui_state.params.put_bool("DoReboot", True, block=True)
+      power_action("rebooting", lambda: ui_state.params.put_bool("DoReboot", True, block=True))
 
     def reset_calibration_callback():
       params = ui_state.params

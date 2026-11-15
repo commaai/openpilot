@@ -12,6 +12,7 @@ from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.mici_setup import GreyBigButton, FailedPage
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigConfirmationCircleButton
+from openpilot.selfdrive.ui.mici.widgets.power import power_action
 
 USERDATA = "/dev/disk/by-partlabel/userdata"
 TIMEOUT = 3*60
@@ -74,7 +75,7 @@ class Reset(Scroller):
     self._cancel_button = BigConfirmationCircleButton("cancel", gui_app.texture("icons_mici/setup/cancel.png", 64, 64),
                                                       gui_app.request_close, exit_on_confirm=False)
     self._reboot_button = BigConfirmationCircleButton("reboot\ndevice", gui_app.texture("icons_mici/settings/device/reboot.png", 64, 70),
-                                                      HARDWARE.reboot, exit_on_confirm=False)
+                                                      lambda: power_action("rebooting", HARDWARE.reboot), exit_on_confirm=False)
 
     # show reboot button if in recover mode
     self._cancel_button.set_visible(mode != ResetMode.RECOVER)

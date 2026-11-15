@@ -9,6 +9,7 @@ from openpilot.selfdrive.ui.mici.layouts.settings.device.device_layout import En
 from openpilot.selfdrive.ui.mici.widgets.info import InfoLayoutMici
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog
+from openpilot.selfdrive.ui.mici.widgets.power import power_action
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app, MousePos
 from openpilot.system.ui.lib.multilang import tr
@@ -183,12 +184,7 @@ class InstallUpdateButton(BigButton):
   def _handle_mouse_release(self, mouse_pos: MousePos):
     super()._handle_mouse_release(mouse_pos)
 
-    self.set_enabled(False)
-
-    def run():
-      ui_state.params.put_bool("DoReboot", True, block=True)
-
-    threading.Thread(target=run, daemon=True).start()
+    power_action("rebooting", lambda: ui_state.params.put_bool("DoReboot", True, block=True))
 
 
 class BranchSelectPage(NavScroller):

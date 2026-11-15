@@ -16,6 +16,7 @@ from openpilot.selfdrive.selfdrived.alertmanager import OFFROAD_ALERTS
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.mici.widgets.button import GreyBigButton, BigPillButton
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigConfirmationDialog
+from openpilot.selfdrive.ui.mici.widgets.power import power_action
 from openpilot.selfdrive.ui.mici.widgets.qr import QR
 from openpilot.common.hardware import HARDWARE
 from openpilot.system.ui.widgets import Widget
@@ -335,7 +336,7 @@ class MiciOffroadAlerts(NavScroller):
     update_alert_data = AlertData(key="UpdateAvailable", text="", severity=-1)
     self.sorted_alerts.append(update_alert_data)
     update_alert_item = AlertItem(update_alert_data)
-    update_alert_item.set_click_callback(lambda: HARDWARE.reboot())
+    update_alert_item.set_click_callback(lambda: power_action("rebooting", HARDWARE.reboot))
     self.alert_items.append(update_alert_item)
     self._scroller.add_widget(update_alert_item)
 

@@ -28,6 +28,7 @@ from openpilot.system.ui.widgets.slider import LargerSlider
 from openpilot.selfdrive.ui.mici.layouts.settings.network import WifiNetworkButton
 from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiUIMici
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog, BigConfirmationCircleButton
+from openpilot.selfdrive.ui.mici.widgets.power import power_action
 from openpilot.selfdrive.ui.mici.widgets.button import GreyBigButton, BigPillButton
 
 NetworkType = log.DeviceState.NetworkType
@@ -243,7 +244,7 @@ class FailedPage(NavScroller):
                     gui_app.texture(icon, 64, 58)),
       self._reason_card,
       BigConfirmationCircleButton("reboot\ndevice", gui_app.texture("icons_mici/settings/device/reboot.png", 64, 70),
-                                  HARDWARE.reboot, exit_on_confirm=False),
+                                  lambda: power_action("rebooting", HARDWARE.reboot), exit_on_confirm=False),
     ])
 
   def set_reason(self, reason: str):
