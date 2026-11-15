@@ -149,6 +149,7 @@ class AlertItem(Widget):
     self._title_text = ""
     self._body_text = ""
     self._text_offset = 0.0  # centers text shorter than the icon
+    self._body_y = 0.0  # body top, relative to the text top
 
     self._update_content()
 
@@ -192,7 +193,11 @@ class AlertItem(Widget):
     title_height = self._title_label.get_content_height(title_width) if self._title_text else 0
     body_height = self._body_label.get_content_height(body_width) if self._body_text else 0
     spacing = self.TITLE_BODY_SPACING if (self._title_text and self._body_text) else 0
-    total_text_height = title_height + spacing + body_height
+    # the body runs under the icon, so after a short title it starts below the icon
+    self._body_y = title_height + spacing
+    if self._title_text and self._body_text:
+      self._body_y = max(self._body_y, self.ICON_SIZE + self.ICON_MARGIN)
+    total_text_height = self._body_y + body_height
 
     # Fit the card to the text, and the icon
     self._text_offset = max(self.ICON_SIZE - total_text_height, 0) / 2
@@ -225,7 +230,7 @@ class AlertItem(Widget):
         self._title_label.get_content_height(title_width),
       )
       self._title_label.render(title_rect)
-      text_y += title_rect.height + self.TITLE_BODY_SPACING
+    text_y += self._body_y
 
     # Draw body label
     if self._body_text:
@@ -372,18 +377,10 @@ class MiciOffroadAlerts(NavScroller):
 
     if update_alert_data:
       if update_available:
-        version_string = ""
-
-        # Get new version description and parse version and date
-        new_desc = pending_params["UpdaterNewDescription"] or ""
-        if new_desc:
-          # format: "version / branch / commit / date"
-          parts = new_desc.split(" / ")
-          if len(parts) > 3:
-            version, date = parts[0], parts[3]
-            version_string = f"\nopenpilot {version}, {date}\n"
-
-        update_alert_data.text = f"Update available {version_string}. Click to update. Read the release notes at blog.comma.ai."
+        # format: "version / branch / commit / date"
+        parts = (pending_params["UpdaterNewDescription"] or "").split(" / ")
+        version = f"openpilot {parts[0]} ({parts[3]}) is ready to install. " if len(parts) > 3 else ""
+        update_alert_data.text = f"Update available. {version}Tap to update. Read the release notes at blog.comma.ai."
         update_alert_data.visible = True
         active_count += 1
       else:
