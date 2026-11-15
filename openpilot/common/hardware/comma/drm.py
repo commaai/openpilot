@@ -27,8 +27,8 @@ def _get_drm_fd() -> int:
   with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
     s.settimeout(1)
     s.connect(DRM_FD_SOCK)
-    _, anc, _, _ = s.recvmsg(1, socket.CMSG_LEN(array.array("i").itemsize))
-    return array.array("i", anc[0][2])[0]
+    _, ancillary, _, _ = s.recvmsg(1, socket.CMSG_LEN(array.array("i").itemsize))
+    return array.array("i", ancillary[0][2])[0]
 
 
 def set_dpms(on: bool) -> None:
