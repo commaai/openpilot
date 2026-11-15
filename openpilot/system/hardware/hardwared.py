@@ -232,6 +232,7 @@ def hardware_thread(end_event, hw_queue) -> None:
   all_temp_filter = FirstOrderFilter(0., TEMP_TAU, DT_HW, initialized=False)
   offroad_temp_filter = FirstOrderFilter(0., TEMP_TAU, DT_HW, initialized=False)
   should_start_prev = False
+  network_metered_prev = None
   in_car = False
   engaged_prev = False
   pwrsave = False
@@ -472,7 +473,9 @@ def hardware_thread(end_event, hw_queue) -> None:
         except Exception:
           cloudlog.exception("failed to save offroad status")
 
-    params.put_bool("NetworkMetered", msg.deviceState.networkMetered)
+    if msg.deviceState.networkMetered != network_metered_prev:
+      params.put_bool("NetworkMetered", msg.deviceState.networkMetered)
+      network_metered_prev = msg.deviceState.networkMetered
 
     now_ts = time.monotonic()
     if off_ts:
