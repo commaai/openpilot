@@ -59,7 +59,7 @@ class GuiScrollPanel2:
     self._velocity_buffer: deque[float] = deque(maxlen=12 if COMMA_HARDWARE else 6)
     self._position_buffer: deque[tuple[float, float]] = deque(maxlen=FLING_VELOCITY_SAMPLES)  # (t, pos)
     self._enabled: bool | Callable[[], bool] = True
-    self._dragging = False  # the current touch moved past the slop, so it's not a tap
+    self._dragging = False  # moved past the slop, so it's not a tap
 
   def set_enabled(self, enabled: bool | Callable[[], bool]) -> None:
     self._enabled = enabled
@@ -185,7 +185,6 @@ class GuiScrollPanel2:
       if mouse_event.left_released:
         self._state = ScrollState.STEADY
       elif math.hypot(dx, dy) > MIN_DRAG_PIXELS:
-        # past the touch slop it's not a tap, even if it goes across this panel's axis
         self._dragging = True
         if abs(along) * (DRAG_ANGLE_BIAS if can_scroll else 1.0) >= abs(across):
           GuiScrollPanel2._drag_bid = (self, initial_click_event, gui_app.frame)
