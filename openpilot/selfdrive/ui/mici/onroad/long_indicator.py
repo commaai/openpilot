@@ -2,7 +2,8 @@ import raylib_nb as rl
 from openpilot.cereal import log
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.selfdrive.ui.mici.onroad import DIMMED_ICON_ALPHA
-from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.selfdrive.ui.mici.onroad.status import status_fade
+from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets import Widget
 
@@ -17,7 +18,6 @@ class LongIndicator(Widget):
                           (self._texture('distance_2', 40, 9), self._texture('distance_2_green', 68, 37)),
                           (self._texture('distance_3', 48, 11), self._texture('distance_3_green', 76, 39))]
     self._alpha_filter = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps)
-    self._dim_filter = FirstOrderFilter(1.0, 0.05, 1 / gui_app.target_fps)
     # crossfade between states, a white and a green filter per icon
     self._lead_car_filters = (FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps), FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps))
     self._distance_filters = [(FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps), FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps))
@@ -44,7 +44,7 @@ class LongIndicator(Widget):
 
     # grayed out while disengaged, with the lit bars at the dimmed icon alpha
     visible = self._should_draw
-    dim = self._dim_filter.update(1.0 if ui_state.engaged else DIMMED_ICON_ALPHA / 0.9)
+    dim = 1 - (1 - DIMMED_ICON_ALPHA / 0.9) * status_fade.weight(UIStatus.DISENGAGED)
     alpha = self._alpha_filter.update(visible) * dim
     self._draw_lead_car(rect, alpha)
     self._draw_distance_bars(rect, alpha, visible)
@@ -52,13 +52,14 @@ class LongIndicator(Widget):
   def _draw_lead_car(self, rect: rl.Rectangle, alpha: float) -> None:
     sm = ui_state.sm
     plan = sm['longitudinalPlan']
-    # static and filled in while disengaged, like the lit distance bars
-    has_lead = ui_state.engaged and sm.alive['longitudinalPlan'] and plan.hasLead
-
+    has_lead = sm.alive['longitudinalPlan'] and plan.hasLead
     e2e = has_lead and plan.longitudinalPlanSource == log.LongitudinalPlan.LongitudinalPlanSource.e2e
     white_f, green_f = self._lead_car_filters
-    white_alpha = white_f.update(0.0 if e2e else 0.9 if has_lead or not ui_state.engaged else 0.35)
+    white_alpha = white_f.update(0.0 if e2e else 0.9 if has_lead else 0.35)
     green_alpha = green_f.update(float(e2e))
+    # static and filled in while disengaged, like the lit distance bars
+    disengaged = status_fade.weight(UIStatus.DISENGAGED)
+    white_alpha, green_alpha = white_alpha + (0.9 - white_alpha) * disengaged, green_alpha * (1 - disengaged)
 
     white, green = self._txt_lead_car
     self._draw_centered(white, rect, 100, white_alpha * alpha)

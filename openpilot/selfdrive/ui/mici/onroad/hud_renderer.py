@@ -109,10 +109,10 @@ class HudRenderer(Widget):
     self._txt_chestnut_green: rl.Texture = gui_app.texture('icons_mici/chestnut_green.png', 48, 36)
     self._txt_chestnut_orange: rl.Texture = gui_app.texture('icons_mici/chestnut_orange.png', 61, 36)
     self._chestnut_icon: rl.Texture | None = None
-    self._wheel_alpha_filter = FirstOrderFilter(0, 0.05, 1 / gui_app.target_fps)
     self._wheel_critical_filter = FirstOrderFilter(0, STATUS_FADE_RC, 1 / gui_app.target_fps)
 
     self._set_speed_alpha_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
+    self._set_speed_alpha = 0.0
     self._chestnut_alpha_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
   def set_wheel_critical_icon(self, critical: bool):
@@ -128,7 +128,7 @@ class HudRenderer(Widget):
 
   def drawing_top_icons(self) -> bool:
     # whether we're drawing any top icons currently
-    return bool(self._set_speed_alpha_filter.x > 1e-2)
+    return bool(self._set_speed_alpha > 1e-2)
 
   def _update_state(self) -> None:
     """Update HUD state based on car state and controls state."""
@@ -207,17 +207,12 @@ class HudRenderer(Widget):
     glow = engaged + (1 - engaged) * critical
     wheel_txt = self._txt_wheel
 
-    if self._show_wheel_critical or ui_state.status != UIStatus.DISENGAGED:
-      self._wheel_alpha_filter.update(255)
-    else:
-      self._wheel_alpha_filter.update(255 * DIMMED_ICON_ALPHA)
-
     # pos
     pos_x = int(rect.x + rect.width / 2)
     pos_y = int(rect.y + rect.height - 10 - wheel_txt.height / 2)
     rotation = -ui_state.sm['carState'].steeringAngleDeg if ui_state.started else 0.0
 
-    alpha = self._wheel_alpha_filter.x
+    alpha = 255 * (1 - (1 - DIMMED_ICON_ALPHA) * status_fade.weight(UIStatus.DISENGAGED) * (1 - critical))
     origin = rl.Vector2(self._txt_wheel_glow.width / 2, self._txt_wheel_glow.height / 2)
     rl.draw_texture_pro(self._txt_wheel_glow, rl.Rectangle(0, 0, self._txt_wheel_glow.width, self._txt_wheel_glow.height),
                         rl.Rectangle(pos_x, pos_y, self._txt_wheel_glow.width, self._txt_wheel_glow.height), origin, rotation,
@@ -231,8 +226,8 @@ class HudRenderer(Widget):
 
   def _draw_set_speed(self, rect: rl.Rectangle) -> None:
     """Draw the MAX speed indicator box."""
-    alpha = self._set_speed_alpha_filter.update(0 < rl.get_time() - self._set_speed_changed_time < SET_SPEED_PERSISTENCE and
-                                                self._can_draw_top_icons and self._engaged)
+    alpha = self._set_speed_alpha_filter.update(0 < rl.get_time() - self._set_speed_changed_time < SET_SPEED_PERSISTENCE and self._can_draw_top_icons)
+    alpha = self._set_speed_alpha = alpha * (1 - status_fade.weight(UIStatus.DISENGAGED))
     if alpha < 1e-2:
       return
 
