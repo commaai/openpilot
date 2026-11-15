@@ -33,10 +33,11 @@ FINALIZED = os.path.join(STAGING_ROOT, "finalized")
 
 OVERLAY_INIT = Path(os.path.join(BASEDIR, ".overlay_init"))
 
-# updated also runs onroad, where it only gets what openpilot leaves over
+# updated also runs onroad, where it only gets what openpilot leaves over.
+# nothing here can fail an update offroad, so the next update always gets through
 CGROUP = "/sys/fs/cgroup/updated"
-MEMORY_MAX = 128 * 1024 * 1024  # anon + page cache, an OOM kills updated, not openpilot
-LOW_MEMORY_PERCENT = 85  # selfdrived soft disables over 90
+ONROAD_MEMORY_HIGH = 128 * 1024 * 1024  # page cache above this is reclaimed, it's never an OOM
+ONROAD_LOW_MEMORY_PERCENT = 85  # selfdrived soft disables over 90
 
 # do not allow to engage after this many hours onroad and this many routes
 HOURS_NO_CONNECTIVITY_MAX = 27
@@ -81,17 +82,24 @@ def limit_resources() -> None:
   run(["ionice", "-c", "2", "-n", "7", "-p", str(os.getpid())])
 
   run(["sudo", "mkdir", "-p", CGROUP])
-  sudo_write(str(MEMORY_MAX), os.path.join(CGROUP, "memory.max"))
+  sudo_write("max", os.path.join(CGROUP, "memory.max"))
   sudo_write(str(os.getpid()), os.path.join(CGROUP, "cgroup.procs"))
   threading.Thread(target=memory_guard, daemon=True).start()
 
-def low_memory() -> bool:
-  return LinuxSystemStats.memory_usage_percent() > LOW_MEMORY_PERCENT
+def onroad_low_memory(params: Params) -> bool:
+  return not params.get_bool("IsOffroad") and LinuxSystemStats.memory_usage_percent() > ONROAD_LOW_MEMORY_PERCENT
 
 def memory_guard() -> None:
-  # the update fails and retries later, instead of pushing openpilot into low memory
+  params = Params()
+  memory_high = None
   while True:
-    if low_memory():
+    high = "max" if params.get_bool("IsOffroad") else str(ONROAD_MEMORY_HIGH)
+    if high != memory_high:
+      memory_high = high
+      sudo_write(memory_high, os.path.join(CGROUP, "memory.high"))
+
+    # the update fails and retries later, instead of pushing openpilot into low memory
+    if onroad_low_memory(params):
       with open(os.path.join(CGROUP, "cgroup.procs")) as f:
         pids = [int(p) for p in f.read().split() if int(p) != os.getpid()]
       if pids:
@@ -509,7 +517,7 @@ def main() -> None:
         # ensure we have some params written soon after startup
         updater.set_params(False, update_failed_count, exception)
 
-        if not system_time_valid() or first_run or low_memory():
+        if not system_time_valid() or first_run or onroad_low_memory(params):
           first_run = False
           wait_helper.sleep(60)
           continue
