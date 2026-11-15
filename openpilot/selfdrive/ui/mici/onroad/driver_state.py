@@ -176,7 +176,6 @@ class DriverStateRenderer(Widget):
     sm = ui_state.sm
 
     dm_state = sm["driverMonitoringState"]
-    # dmonitoringd sends invalid state while DM isn't running, like while the big model loads
     self._is_active = sm.valid["driverMonitoringState"] and dm_state.activePolicy == log.DriverMonitoringState.MonitoringPolicy.vision
     self._is_rhd = dm_state.isRHD
     self._face_detected = dm_state.visionPolicyState.faceDetected
