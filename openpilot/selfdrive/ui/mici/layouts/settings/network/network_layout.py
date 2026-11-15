@@ -40,7 +40,7 @@ class NetworkLayoutMici(NavScroller):
 
     def tethering_password_clicked():
       tethering_password = self._wifi_manager.tethering_password
-      # WPA2 passphrases are 8 to 63 characters
+      # WPA2 passphrases are 8 to 63 characters, NetworkManager rejects anything else
       dlg = BigInputDialog("enter password...", tethering_password, minimum_length=8,
                            confirm_callback=tethering_password_callback, text_validator=lambda text: len(text) <= 63)
       gui_app.push_widget(dlg)
