@@ -9,7 +9,7 @@ from openpilot.selfdrive.ui.mici.onroad import blend_colors
 from openpilot.selfdrive.ui.mici.onroad.status import status_fade
 from openpilot.selfdrive.ui.onroad.model_renderer import ModelRenderer as BaseModelRenderer, CLIP_MARGIN, MAX_DRAW_DISTANCE, STOCK_PATH_GRADIENT
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.lib.polygon import draw_polygon
+from openpilot.system.ui.lib.polygon import Gradient, draw_polygon
 
 LEAD_BAR_LENGTH = 12.0  # px
 LEAD_BAR_WIDTH = 1.8  # m
@@ -23,6 +23,12 @@ LANE_LINE_COLORS = {
   UIStatus.OVERRIDE: rl.Color(255, 255, 255, 255),
   UIStatus.ENGAGED: rl.Color(0, 255, 64, 255),
 }
+
+
+def _faded(gradient: Gradient, alpha: float) -> Gradient:
+  if alpha >= 1:
+    return gradient
+  return Gradient(gradient.start, gradient.end, [rl.Color(c.r, c.g, c.b, round(c.a * alpha)) for c in gradient.colors], gradient.stops)
 
 
 class LeadVehicle:
@@ -86,6 +92,7 @@ class ModelRenderer(BaseModelRenderer):
     self._lead_bars = [LeadVehicle(), LeadVehicle()]
     self._stop_point = StopPoint()
     self._torque_filter = FirstOrderFilter(0, 0.1, 1 / gui_app.target_fps)
+    self._visible = 0.0
 
   def _draw_offset(self) -> np.ndarray:
     # car space transform maps to rect-origin space
@@ -131,8 +138,9 @@ class ModelRenderer(BaseModelRenderer):
       self._update_model(lead_one, path_x_array)
       self._transform_dirty = False
 
-    # Draw elements (hide when disengaged)
-    if ui_state.status != UIStatus.DISENGAGED:
+    # lane lines and path fade out while disengaged
+    self._visible = 1 - status_fade.weight(UIStatus.DISENGAGED)
+    if self._visible > 1e-2:
       self._draw_lane_lines()
       self._draw_path()
 
@@ -159,7 +167,7 @@ class ModelRenderer(BaseModelRenderer):
     # braking disengages without making openpilot unavailable
     available = ss.enabled or ss.engageable or cs.brakePressed
     lane = self._path.raw_points
-    opacity = 0.4 if ui_state.status == UIStatus.DISENGAGED else 0.8
+    opacity = 0.8 - 0.4 * status_fade.weight(UIStatus.DISENGAGED)
     for lead, (present, d_rel, y_rel) in zip(self._lead_bars, leads, strict=True):
       visible = available and present and d_rel < MAX_DRAW_DISTANCE and len(lane) > 0
       # snap to a new vehicle instead of sliding over
@@ -193,7 +201,7 @@ class ModelRenderer(BaseModelRenderer):
     return bar.astype(np.float32)
 
   def _get_ll_color(self, prob: float, adjacent: bool, left: bool):
-    alpha = np.clip(prob, 0.0, 0.7)
+    alpha = np.clip(prob, 0.0, 0.7) * self._visible
     if adjacent:
       _base_color = status_fade.color(LANE_LINE_COLORS)
       color = rl.Color(_base_color.r, _base_color.g, _base_color.b, int(alpha * 255))
@@ -209,9 +217,6 @@ class ModelRenderer(BaseModelRenderer):
         )
     else:
       color = rl.Color(255, 255, 255, int(alpha * 255))
-
-    if ui_state.status == UIStatus.DISENGAGED:
-      color = rl.Color(0, 0, 0, int(alpha * 255))
 
     return color
 
@@ -240,14 +245,12 @@ class ModelRenderer(BaseModelRenderer):
 
     path_pts = self._path.projected_points + self._draw_offset()
 
-    if ui_state.status == UIStatus.DISENGAGED:
-      draw_polygon(self._rect, path_pts, rl.Color(0, 0, 0, 90))
-    elif not self._longitudinal_control:
-      draw_polygon(self._rect, path_pts, gradient=STOCK_PATH_GRADIENT)
+    if not self._longitudinal_control:
+      draw_polygon(self._rect, path_pts, gradient=_faded(STOCK_PATH_GRADIENT, self._visible))
     elif len(self._path_gradient.colors) > 1:
-      draw_polygon(self._rect, path_pts, gradient=self._path_gradient)
+      draw_polygon(self._rect, path_pts, gradient=_faded(self._path_gradient, self._visible))
     else:
-      draw_polygon(self._rect, path_pts, rl.Color(255, 255, 255, 30))
+      draw_polygon(self._rect, path_pts, rl.Color(255, 255, 255, round(30 * self._visible)))
 
   def _draw_lead_indicator(self):
     offset = self._draw_offset()

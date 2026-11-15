@@ -39,12 +39,8 @@ class ConfidenceBall(Widget):
     self._hidden = hidden
 
   def _update_state(self):
-    # rests at the bottom while disengaged
-    if ui_state.status == UIStatus.DISENGAGED:
-      self._confidence_filter.update(0.0)
-    else:
-      self._confidence_filter.update((1 - max(ui_state.sm['modelV2'].meta.disengagePredictions.brakeDisengageProbs or [1])) *
-                                                        (1 - max(ui_state.sm['modelV2'].meta.disengagePredictions.steerOverrideProbs or [1])))
+    predictions = ui_state.sm['modelV2'].meta.disengagePredictions
+    self._confidence_filter.update((1 - max(predictions.brakeDisengageProbs or [1])) * (1 - max(predictions.steerOverrideProbs or [1])))
 
   def _render(self, _):
     alpha = self._alpha_filter.update(0.0 if self._hidden else 1.0)
@@ -55,7 +51,9 @@ class ConfidenceBall(Widget):
     status_dot_radius = 16
     margin = 10
     dot_x = self._rect.x + self._rect.width - margin - status_dot_radius
-    dot_height = (1 - self._confidence_filter.x) * (self._rect.height - 2 * (status_dot_radius + margin)) + status_dot_radius + margin
+    # rests at the bottom while disengaged. the color still comes from the confidence, so it doesn't pass through the low zones
+    height = self._confidence_filter.x * (1 - status_fade.weight(UIStatus.DISENGAGED))
+    dot_height = (1 - height) * (self._rect.height - 2 * (status_dot_radius + margin)) + status_dot_radius + margin
     dot_height = self._rect.y + dot_height
 
     # confidence zones while engaged, top and bottom gradient colors
