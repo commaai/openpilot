@@ -128,9 +128,6 @@ class BaseCabinCameraDialog(Widget):
       return "pay attention", ORANGE, True
     if level == 1:
       return "pay attention", rl.WHITE, False
-    # face is seen, but DM fell back to wheel touch (model is uncertain)
-    if dm_state.activePolicy != log.DriverMonitoringState.MonitoringPolicy.vision:
-      return "looking for driver", GREY, False
     return "driver detected", GREEN, False
 
   def _publish_alert_sound(self, dm_state):
@@ -236,7 +233,6 @@ class BaseCabinCameraDialog(Widget):
       self._draw_meter(rl.Rectangle(meter_x, row_y + 10, meter_w, 6), value, with_alpha(meter_color, 0.9))
       row_y += ROW_HEIGHT
 
-    # awareness of the active policy, vision awareness is frozen while on wheel touch
     is_vision = dm_state.activePolicy == log.DriverMonitoringState.MonitoringPolicy.vision
     policy_state = dm_state.visionPolicyState if is_vision else dm_state.wheeltouchPolicyState
     awareness = self._awareness.update(max(0, policy_state.awarenessPercent) / 100)
