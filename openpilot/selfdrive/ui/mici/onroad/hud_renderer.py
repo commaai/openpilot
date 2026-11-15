@@ -210,7 +210,6 @@ class HudRenderer(Widget):
     # pos
     pos_x = int(rect.x + rect.width / 2)
     pos_y = int(rect.y + rect.height - 10 - wheel_txt.height / 2)
-    # the last drive's carState sticks around until this drive's first one
     car_state_fresh = ui_state.started and ui_state.sm.recv_frame['carState'] >= ui_state.started_frame
     rotation = -ui_state.sm['carState'].steeringAngleDeg if car_state_fresh else 0.0
 
