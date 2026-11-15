@@ -32,7 +32,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 from urllib.parse import parse_qs, urlencode, urlsplit
 
-from openpilot.tools.lib.api import CommaApi, UnauthorizedError
+from openpilot.tools.lib.api import APIError, CommaApi
 from openpilot.tools.lib.auth_config import set_token, get_token
 
 class ClientRedirectServer(ThreadingHTTPServer):
@@ -172,6 +172,6 @@ if __name__ == '__main__':
     me = CommaApi(token=get_token()).get('/v1/me')
     print("Authenticated!")
     pprint.pprint(me)
-  except UnauthorizedError:
-    print("Got invalid JWT")
+  except APIError as e:
+    print(f"Could not verify the comma account: {e}", file=sys.stderr)
     exit(1)

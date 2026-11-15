@@ -43,6 +43,7 @@ RouteIdentifier Route::parseRoute(const std::string &str) {
 }
 
 bool Route::load() {
+  err_ = RouteLoadError::None;
   route_ = parseRoute(route_string_);
   if (route_.str.empty() || (data_dir_.empty() && route_.dongle_id.empty())) {
     rInfo("invalid route format");
@@ -123,8 +124,11 @@ bool Route::loadFromServer() {
   if (json.is_object() && json["error"].is_string()) {
     const std::string &error = json["error"].string_value();
     if (error == "unauthorized") {
-      rWarning(">> Unauthorized. Authenticate with openpilot/tools/lib/auth.py <<");
+      rWarning("Comma account sign-in required. Run 'op auth' to sign in manually.");
       err_ = RouteLoadError::Unauthorized;
+    } else if (error == "forbidden") {
+      rWarning("Access denied. Check that your comma account has access to this route.");
+      err_ = RouteLoadError::AccessDenied;
     } else if (error == "not_found") {
       rWarning("The specified route could not be found on the server.");
       err_ = RouteLoadError::FileNotFound;

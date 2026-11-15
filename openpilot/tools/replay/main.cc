@@ -1,4 +1,5 @@
 #include <getopt.h>
+#include <unistd.h>
 
 #include <cstdlib>
 #include <iomanip>
@@ -7,9 +8,11 @@
 #include <string>
 #include <vector>
 
+#include "json11/json11.hpp"
 #include "common/prefix.h"
 #include "common/timing.h"
 #include "tools/replay/consoleui.h"
+#include "tools/replay/py_tools.h"
 #include "tools/replay/replay.h"
 #include "tools/replay/util.h"
 
@@ -131,6 +134,23 @@ bool parseArgs(int argc, char *argv[], ReplayConfig &config) {
   return true;
 }
 
+static bool signIn() {
+  std::cerr << "Sign in with google, apple, or github (Enter to cancel): ";
+  std::string provider;
+  if (!std::getline(std::cin, provider) || provider.empty()) return false;
+  if (provider != "google" && provider != "apple" && provider != "github") {
+    std::cerr << "Unknown sign-in provider. Choose google, apple, or github.\n";
+    return false;
+  }
+
+  std::string parse_error;
+  auto status = json11::Json::parse(PyTools::authenticate(provider, nullptr), parse_error);
+  if (parse_error.empty() && status["success"].bool_value()) return true;
+  const std::string &error = status["error"].string_value();
+  std::cerr << (error.empty() ? "Could not start sign-in. Try 'op auth'." : error) << '\n';
+  return false;
+}
+
 int main(int argc, char *argv[]) {
 #ifdef __APPLE__
   // With all sockets opened, we might hit the default limit of 256 on macOS
@@ -160,7 +180,10 @@ int main(int argc, char *argv[]) {
     replay.setSpeed(std::clamp(config.playback_speed, ConsoleUI::speed_array.front(), ConsoleUI::speed_array.back()));
   }
   if (!replay.load()) {
-    return 1;
+    if (replay.lastRouteError() != RouteLoadError::Unauthorized || !isatty(STDIN_FILENO) || !isatty(STDERR_FILENO) ||
+        !signIn() || !replay.load()) {
+      return 1;
+    }
   }
 
   if (config.flags & REPLAY_FLAG_BENCHMARK) {

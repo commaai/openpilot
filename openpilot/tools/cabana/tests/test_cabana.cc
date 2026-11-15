@@ -290,6 +290,7 @@ void test_route_api_response() {
   REQUIRE(routes::checkApiResponse("") == std::make_pair(false, 500));
   REQUIRE(routes::checkApiResponse("not json") == std::make_pair(false, 500));
   REQUIRE(routes::checkApiResponse(R"({"error": "unauthorized"})") == std::make_pair(false, 401));
+  REQUIRE(routes::checkApiResponse(R"({"error": "forbidden"})") == std::make_pair(false, 403));
   REQUIRE(routes::checkApiResponse(R"({"error": "server error"})") == std::make_pair(false, 500));
   REQUIRE(routes::checkApiResponse("[]") == std::make_pair(true, 0));
   REQUIRE(routes::checkApiResponse(R"({"dongle_id": "aaaa"})") == std::make_pair(true, 0));

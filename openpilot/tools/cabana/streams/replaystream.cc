@@ -67,15 +67,9 @@ bool ReplayStream::loadRoute(const std::string &route, const std::string &data_d
   if (!success) {
     std::string message;
     if (replay->lastRouteError() == RouteLoadError::Unauthorized) {
-      auto auth_content = util::read_file(util::getenv("HOME") + "/.comma/auth.json");
-      if (auth_content.empty()) {
-        message = "Authentication Required. Please run the following command to authenticate:\n\n"
-                  "python3 openpilot/tools/lib/auth.py\n\n"
-                  "This will grant access to routes from your comma account.";
-      } else {
-        message = "Access Denied. You do not have permission to access route:\n\n" + route + "\n\n"
-                  "This is likely a private route.";
-      }
+      message = "Comma account sign-in required. Open Remote Routes to sign in or run 'op auth'.";
+    } else if (replay->lastRouteError() == RouteLoadError::AccessDenied) {
+      message = "Access denied. Check that your comma account has access to route:\n\n" + route;
     } else if (replay->lastRouteError() == RouteLoadError::NetworkError) {
       message = "Unable to load the route:\n\n " + route + ".\n\nPlease check your network connection and try again.";
     } else if (replay->lastRouteError() == RouteLoadError::FileNotFound) {

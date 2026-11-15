@@ -22,7 +22,7 @@ private:
   void signIn(const std::string &provider);
   void drawLogin();
   void setDeviceList(const std::vector<routes::DeviceInfo> &devices, bool success, int error_code);
-  void setRouteList(const std::vector<routes::RouteInfo> &list, bool success);
+  void setRouteList(const std::vector<routes::RouteInfo> &list, bool success, int error_code);
   void fetchRoutes();
   void finish(bool accepted);
 

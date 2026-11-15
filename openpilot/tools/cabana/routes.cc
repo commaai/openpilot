@@ -16,7 +16,10 @@ std::pair<bool, int> checkApiResponse(const std::string &result) {
   auto doc = json11::Json::parse(result, err);
   if (!err.empty()) return {false, 500};
   if (doc.is_object() && doc["error"].is_string()) {
-    return {false, doc["error"].string_value() == "unauthorized" ? 401 : 500};
+    const auto &error = doc["error"].string_value();
+    if (error == "unauthorized") return {false, 401};
+    if (error == "forbidden") return {false, 403};
+    return {false, 500};
   }
   return {true, 0};
 }

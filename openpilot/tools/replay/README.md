@@ -4,11 +4,11 @@
 
 ## Setup
 
-Before starting a replay, you need to authenticate with your comma account using `auth.py`. This will allow you to access your routes from the server.
+When a remote route requires sign-in, interactive replay prompts for your sign-in provider and retries the route after you sign in. To authenticate ahead of time, run:
 
 ```bash
 # Authenticate to access routes from your comma account:
-python3 openpilot/tools/lib/auth.py
+op auth
 ```
 
 ## Replay a Remote Route

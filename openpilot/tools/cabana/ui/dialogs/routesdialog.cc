@@ -43,17 +43,19 @@ void RoutesDialog::setDeviceList(const std::vector<routes::DeviceInfo> &devices,
   if (success) {
     s_.login = false;
     open_ = true;
+    const std::string selected_device = s_.devices.empty() ? "" : s_.devices[s_.device_index];
     s_.devices.clear();
     for (const auto &device : devices) s_.devices.push_back(device.dongle_id);
     s_.devices_loaded = true;
-    s_.device_index = 0;
+    const auto selected = std::find(s_.devices.begin(), s_.devices.end(), selected_device);
+    s_.device_index = selected == s_.devices.end() ? 0 : std::distance(s_.devices.begin(), selected);
     fetchRoutes();
   } else if (error_code == 401) {
     s_.login = true;
     open_ = true;
   } else {
     // Initial failures are shown on the calling window without opening the route browser.
-    MessageBox::warning("Error", "Network error", "",
+    MessageBox::warning("Error", error_code == 403 ? "Access denied. Check your comma account's permissions." : "Network error", "",
                         utils::guarded(alive_, [this]() { finish(false); }));
   }
 }
@@ -66,23 +68,27 @@ void RoutesDialog::fetchRoutes() {
   s_.empty_text = "Loading...";
 
   const int request_id = ++s_.fetch_id;
-  auto on_routes = [this, alive = std::weak_ptr<bool>(alive_), request_id](std::vector<routes::RouteInfo> list, bool success, int) {
-    utils::runOnMainThread(utils::guarded(alive.lock(), [this, list = std::move(list), success, request_id]() {
-      if (s_.fetch_id == request_id) setRouteList(list, success);
+  auto on_routes = [this, alive = std::weak_ptr<bool>(alive_), request_id](std::vector<routes::RouteInfo> list, bool success, int error_code) {
+    utils::runOnMainThread(utils::guarded(alive.lock(), [this, list = std::move(list), success, error_code, request_id]() {
+      if (s_.fetch_id == request_id) setRouteList(list, success, error_code);
     }));
   };
   routes::fetchRoutes(s_.devices[s_.device_index], PERIOD_DAYS[s_.period_index], std::move(on_routes));
 }
 
-void RoutesDialog::setRouteList(const std::vector<routes::RouteInfo> &list, bool success) {
+void RoutesDialog::setRouteList(const std::vector<routes::RouteInfo> &list, bool success, int error_code) {
   if (success) {
     for (const auto &route : list) {
       const int mins = static_cast<int>((route.end_ms - route.start_ms) / 60000);
       s_.routes.push_back({routes::formatUnixMs(route.start_ms) + "    " + std::to_string(mins) + " min", route.name});
     }
     if (!s_.routes.empty()) s_.route_index = 0;
+  } else if (error_code == 401) {
+    s_.devices_loaded = false;
+    s_.login = true;
   } else {
-    MessageBox::warning("Error", "Failed to fetch routes. Check your network connection.", "",
+    MessageBox::warning("Error", error_code == 403 ? "Access denied. Check your comma account's permissions."
+                                                   : "Failed to fetch routes. Check your network connection.", "",
                         utils::guarded(alive_, [this]() { finish(false); }));
   }
   s_.empty_text = "No items";

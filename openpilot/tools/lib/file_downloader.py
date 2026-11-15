@@ -36,7 +36,7 @@ def api_call(func):
   except UnauthorizedError:
     json.dump({"error": "unauthorized"}, sys.stdout)
   except APIError as e:
-    error = "not_found" if getattr(e, 'status_code', 0) == 404 else str(e)
+    error = {403: "forbidden", 404: "not_found"}.get(e.status_code, str(e))
     json.dump({"error": error}, sys.stdout)
   except Exception as e:
     json.dump({"error": str(e)}, sys.stdout)
