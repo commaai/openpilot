@@ -181,6 +181,7 @@ def main():
     longitudinalPlan.shouldStop = should_stop(v_ego, accel)
 
     longitudinalPlan.allowBrake = True
+    longitudinalPlan.allowThrottle = True
     longitudinalPlan.hasLead = True
 
     longitudinalPlan.speeds = [0.2]  # triggers carControl.cruiseControl.resume in controlsd

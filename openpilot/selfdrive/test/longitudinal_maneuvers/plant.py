@@ -12,7 +12,7 @@ from openpilot.selfdrive.controls.radard import _LEAD_ACCEL_TAU
 
 class Plant:
   def __init__(self, lead_relevancy=False, speed=0.0, distance_lead=2.0,
-               enabled=True, only_lead2=False, only_radar=False, personality=0, force_decel=False):
+               enabled=True, only_lead2=False, only_radar=False, e2e=False, personality=0, force_decel=False):
     self.rate = 1. / DT_MDL
     self.frame = 0
 
@@ -29,6 +29,7 @@ class Plant:
     self.enabled = enabled
     self.only_lead2 = only_lead2
     self.only_radar = only_radar
+    self.e2e = e2e
     self.personality = personality
     self.force_decel = force_decel
 
@@ -43,12 +44,13 @@ class Plant:
   def current_time(self):
     return float(self.frame) / self.rate
 
-  def step(self, v_lead=0.0, prob_lead=1.0, v_cruise=50.):
+  def step(self, v_lead=0.0, prob_lead=1.0, v_cruise=50., pitch=0.0, prob_throttle=1.0):
     radar = messaging.new_message('radarState')
     control = messaging.new_message('controlsState')
     ss = messaging.new_message('selfdriveState')
     car_state = messaging.new_message('carState')
     model = messaging.new_message('modelV2')
+    car_control = messaging.new_message('carControl')
     a_lead = (v_lead - self.v_lead_prev)/self.ts
     self.v_lead_prev = v_lead
 
@@ -85,16 +87,20 @@ class Plant:
 
     # Model requests more acceleration so the lead policy must handle slowdowns.
     model.modelV2.action.desiredAcceleration = float(self.acceleration + 0.5)
+    model.modelV2.meta.disengagePredictions.gasPressProbs = [float(prob_throttle)] * 6
 
     control.controlsState.longControlState = LongCtrlState.pid if self.enabled else LongCtrlState.off
+    ss.selfdriveState.experimentalMode = self.e2e
     ss.selfdriveState.personality = self.personality
     control.controlsState.forceDecel = self.force_decel
     car_state.carState.vEgo = float(self.speed)
     car_state.carState.standstill = bool(self.speed < 0.01)
     car_state.carState.vCruise = float(v_cruise * 3.6)
+    car_control.carControl.orientationNED = [0., float(pitch), 0.]
 
     sm = {'radarState': radar.radarState,
           'carState': car_state.carState,
+          'carControl': car_control.carControl,
           'controlsState': control.controlsState,
           'selfdriveState': ss.selfdriveState,
           'modelV2': model.modelV2,

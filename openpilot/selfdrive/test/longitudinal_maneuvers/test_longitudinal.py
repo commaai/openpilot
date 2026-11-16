@@ -142,8 +142,9 @@ def create_maneuvers(kwargs):
 
 
 class TestLongitudinalControl(OpenpilotTestCase):
-  @parameterized.expand([m for force_decel in (True, False) for m in create_maneuvers({"force_decel": force_decel})],
-                        ids=lambda m: f"{m.title}_force_decel_{m.force_decel}")
+  @parameterized.expand([m for e2e in (True, False) for force_decel in (True, False)
+                         for m in create_maneuvers({"e2e": e2e, "force_decel": force_decel})],
+                        ids=lambda m: f"{m.title}_e2e_{m.e2e}_force_decel_{m.force_decel}")
   def test_maneuver(self, maneuver):
     valid, _ = maneuver.evaluate()
     assert valid
