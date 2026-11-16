@@ -112,8 +112,6 @@ def load_logs_parallel(log_paths: list[str], fps: int = 20) -> list[dict]:
 
 
 def patch_submaster(message_chunks, ui_state):
-  # Reset started_frame so alerts render correctly (recv_frame must be >= started_frame)
-  ui_state.started_frame = 0
   ui_state.started_time = time.monotonic()
 
   def mock_update(timeout=None):

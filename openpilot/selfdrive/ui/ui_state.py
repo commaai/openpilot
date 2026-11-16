@@ -84,7 +84,7 @@ class UIState:
 
     # UI Status tracking
     self.status: UIStatus = UIStatus.DISENGAGED
-    self.started_frame: int = 0
+    self._started_frame: int = 0
     self.started_time: float = 0.0
     self._engaged_prev: bool = False
     self._started_prev: bool = False
@@ -144,7 +144,7 @@ class UIState:
     return not self.started
 
   def received_since_started(self, service: str) -> bool:
-    return self.sm.recv_frame[service] > self.started_frame
+    return self.sm.recv_frame[service] > self._started_frame
 
   def update(self) -> None:
     self.prime_state.start()  # start thread after manager forks ui
@@ -215,7 +215,7 @@ class UIState:
     if self.started != self._started_prev or self.sm.frame == 1:
       self.status = UIStatus.DISENGAGED
       if self.started:
-        self.started_frame = self.sm.frame
+        self._started_frame = self.sm.frame
         self.started_time = time.monotonic()
         self.chestnut_present = self.sm["deviceState"].chestnutPresent or (self.chestnut_compiled and self.usb_connected and not usb_host_connected())
 
