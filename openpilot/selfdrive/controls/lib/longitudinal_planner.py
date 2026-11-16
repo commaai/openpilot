@@ -3,7 +3,8 @@ import numpy as np
 
 import openpilot.cereal.messaging as messaging
 from opendbc.car.interfaces import ACCEL_MIN, ACCEL_MAX
-from openpilot.common.constants import CV
+from opendbc.car.structs import car
+from openpilot.common.constants import ACCELERATION_DUE_TO_GRAVITY, CV
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.modeld.constants import ModelConstants
@@ -11,7 +12,8 @@ from openpilot.selfdrive.controls.lib.curve_speed import CurveSpeed
 from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc, LongitudinalPlanSource
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import T_IDXS as T_IDXS_MPC
-from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N, get_accel_from_plan, should_stop, smooth_value
+from openpilot.selfdrive.controls.lib.drive_helpers import (CONTROL_N, MAX_CURVATURE, MAX_LATERAL_ACCEL_NO_ROLL, MIN_SPEED,
+                                                          get_accel_from_plan, should_stop, smooth_value)
 from openpilot.selfdrive.car.cruise import V_CRUISE_MAX, V_CRUISE_UNSET
 from openpilot.common.swaglog import cloudlog
 
@@ -98,7 +100,16 @@ class LongitudinalPlanner:
                                               action_t=action_t)
     output_should_stop_mpc = should_stop(v_ego, output_a_target_mpc)
     lac = getattr(sm['controlsState'].lateralControlState, sm['controlsState'].lateralControlState.which())
-    curve_offset = self.curve_speed.update(sm['modelV2'], sm['vehicleParameters'].roll, lac.active and lac.saturated)
+    roll = sm['vehicleParameters'].roll
+    if self.CP.steerControlType == car.CarParams.SteerControlType.torque:
+      steer_at_max = abs(lac.output) >= 1.0 - 1e-3
+    else:
+      curvature = sm['controlsState'].desiredCurvature
+      lat_accel = curvature * max(v_ego, MIN_SPEED) ** 2 - ACCELERATION_DUE_TO_GRAVITY * roll
+      steer_at_max = abs(curvature) >= MAX_CURVATURE - 1e-6 or abs(lat_accel) >= MAX_LATERAL_ACCEL_NO_ROLL - 1e-3
+      if self.CP.steerControlType == car.CarParams.SteerControlType.curvature:
+        steer_at_max |= abs(lac.output) >= MAX_CURVATURE - 1e-6
+    curve_offset = self.curve_speed.update(sm['modelV2'], roll, lac.active and lac.saturated and steer_at_max)
     output_a_target_e2e = sm['modelV2'].action.desiredAcceleration + curve_offset
     output_should_stop_e2e = sm['modelV2'].action.shouldStop
 
