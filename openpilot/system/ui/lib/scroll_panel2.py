@@ -54,6 +54,7 @@ class GuiScrollPanel2:
     self._velocity_buffer: deque[float] = deque(maxlen=12 if COMMA_HARDWARE else 6)
     self._position_buffer: deque[tuple[float, float]] = deque(maxlen=FLING_VELOCITY_SAMPLES)  # (t, pos)
     self._enabled: bool | Callable[[], bool] = True
+    self._moved_past_slop = False
 
   def set_enabled(self, enabled: bool | Callable[[], bool]) -> None:
     self._enabled = enabled
@@ -150,6 +151,9 @@ class GuiScrollPanel2:
 
     mouse_pos = self._get_mouse_pos(mouse_event)
 
+    if mouse_event.left_pressed:
+      self._moved_past_slop = False
+
     if not self.enabled:
       # Reset state if not enabled
       self._state = ScrollState.STEADY
@@ -164,8 +168,11 @@ class GuiScrollPanel2:
           self._initial_click_event = mouse_event
 
     elif self._state == ScrollState.PRESSED:
-      initial_click_pos = self._get_mouse_pos(cast(MouseEvent, self._initial_click_event))
+      initial_click_event = cast(MouseEvent, self._initial_click_event)
+      initial_click_pos = self._get_mouse_pos(initial_click_event)
       diff = abs(mouse_pos - initial_click_pos)
+      if math.hypot(mouse_event.pos.x - initial_click_event.pos.x, mouse_event.pos.y - initial_click_event.pos.y) > MIN_DRAG_PIXELS:
+        self._moved_past_slop = True
       if mouse_event.left_released:
         # Special handling for down and up clicks across two frames
         # TODO: not sure what that means or if it's accurate anymore
@@ -275,4 +282,4 @@ class GuiScrollPanel2:
 
   def is_touch_valid(self) -> bool:
     # MIN_VELOCITY_FOR_CLICKING is checked in auto-scroll state
-    return bool(self._state != ScrollState.MANUAL_SCROLL)
+    return self._state != ScrollState.MANUAL_SCROLL and not self._moved_past_slop
