@@ -527,6 +527,8 @@ class Setup(Widget):
     except urllib.error.HTTPError as e:
       if e.code == 409:
         self._download_failed_reason = "Incompatible openpilot version."
+      else:
+        self._download_failed_reason = f"Server error ({e.code}): " + self.download_url.replace("https://", "", 1)
     except Exception:
       self._download_failed_reason = "Invalid URL: " + self.download_url.replace("https://", "", 1)
 

@@ -196,6 +196,7 @@ class GuiApplication:
 
     self._fonts: dict[FontWeight, rl.Font] = {}
     self._fallback_fonts: dict[str, rl.Font] = {}
+    self._font_chars: set[str] = set()
     self._width = width if width is not None else GuiApplication._default_width()
     self._height = height if height is not None else GuiApplication._default_height()
 
@@ -233,6 +234,7 @@ class GuiApplication:
     self._mouse_history: deque[MousePosWithTime] = deque(maxlen=MOUSE_THREAD_RATE)
     self._show_touches = SHOW_TOUCHES
     self._show_fps = SHOW_FPS
+    self._dim_color = rl.BLANK
     self._grid_size = GRID_SIZE
     self._profile_render_frames = PROFILE_RENDER
     self._render_profiler = None
@@ -247,6 +249,10 @@ class GuiApplication:
 
   def set_show_fps(self, show: bool):
     self._show_fps = show
+
+  def set_dim(self, dim: float):
+    """darken the whole screen, from 0 to 1"""
+    self._dim_color = rl.Color(0, 0, 0, round(255 * min(max(dim, 0.0), 1.0)))
 
   @property
   def show_touches(self) -> bool:
@@ -603,8 +609,11 @@ class GuiApplication:
         for tick in self._nav_stack_ticks:
           tick()
 
-        # Only render top widgets
-        for widget in self._nav_stack[-self._nav_stack_widgets_to_render:]:
+        # Only render top widgets, and none under one covering the screen
+        widgets = self._nav_stack[-self._nav_stack_widgets_to_render:]
+        if widgets and widgets[-1].covers_screen:
+          widgets = widgets[-1:]
+        for widget in widgets:
           widget.render(rl.Rectangle(0, 0, self.width, self.height))
 
         frame_time = rl.get_frame_time()
@@ -613,6 +622,9 @@ class GuiApplication:
 
         if self._scale != 1.0:
           rl.rl_pop_matrix()
+
+        if self._dim_color.a > 0:
+          rl.draw_rectangle(0, 0, self._scaled_width, self._scaled_height, self._dim_color)
 
         if RECORD:
           self._ffmpeg_queue.put(rl.cpu.screen().tobytes())  # Async write via background thread
@@ -643,6 +655,10 @@ class GuiApplication:
   def font(self, font_weight: FontWeight = FontWeight.NORMAL) -> rl.Font:
     return self._fonts[font_weight]
 
+  @property
+  def font_chars(self) -> set[str]:
+    return self._font_chars
+
   def fallback_font(self) -> rl.Font:
     language = multilang.language
     if language not in self._fallback_fonts:
@@ -672,6 +688,7 @@ class GuiApplication:
       if code not in FONT_FALLBACK_LANGUAGES:
         base_chars.update(TRANSLATIONS_DIR.joinpath(f"app_{code}.po").read_text(encoding="utf-8"))
 
+    self._font_chars = base_chars
     for font_weight_file in FontWeight:
       with as_file(FONT_DIR) as fspath:
         unifont = font_weight_file == FontWeight.UNIFONT

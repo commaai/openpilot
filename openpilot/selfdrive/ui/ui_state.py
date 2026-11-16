@@ -18,6 +18,9 @@ from openpilot.selfdrive.modeld.helpers import chestnut_compiled
 from openpilot.selfdrive.selfdrived.alertmanager import OFFROAD_ALERTS
 
 BACKLIGHT_OFFROAD = 65 if HARDWARE.get_device_type() == "mici" else 50
+BACKLIGHT_MIN = 30  # the lowest backlight the display shows properly
+# auto brightness goes below the backlight's floor by dimming the UI, down to 40% black
+BRIGHTNESS_MIN = BACKLIGHT_MIN * 0.6 if HARDWARE.get_device_type() == "mici" else BACKLIGHT_MIN
 PARAM_UPDATE_TIME = 1 / 5.0
 
 
@@ -109,6 +112,7 @@ class UIState:
     self.panda_type: log.PandaState.PandaType = log.PandaState.PandaType.unknown
     self.personality: log.LongitudinalPersonality = log.LongitudinalPersonality.standard
     self.has_longitudinal_control: bool = False
+    self.personality_param: int = log.LongitudinalPersonality.standard
     self.is_body: bool | None = False
     self.CP: car.CarParams | None = None
     self.light_sensor: float = -1.0
@@ -206,8 +210,8 @@ class UIState:
 
     # Handle onroad/offroad transition
     if self.started != self._started_prev or self.sm.frame == 1:
+      self.status = UIStatus.DISENGAGED
       if self.started:
-        self.status = UIStatus.DISENGAGED
         self.started_frame = self.sm.frame
         self.started_time = time.monotonic()
         self.chestnut_present = self.sm["deviceState"].chestnutPresent or (self.chestnut_compiled and self.usb_connected and not usb_host_connected())
@@ -255,6 +259,7 @@ class UIState:
     self.is_metric = self.params.get_bool("IsMetric")
     self.initial_cruise_speed = self.params.get("InitialCruiseSpeedKph", return_default=True)
     self.always_on_dm = self.params.get_bool("AlwaysOnDM")
+    self.personality_param = self.params.get("LongitudinalPersonality", return_default=True)
     self.navigation_enabled = self.params.get_bool("NavigationEnabled")
     self.nav_destination_set = self.params.get("NavDestination") is not None
     self.chestnut_active = self.params.get("ChestnutActive")
@@ -357,9 +362,11 @@ class Device:
       else:
         clipped_brightness = ((clipped_brightness + 16.0) / 116.0) ** 3.0
 
-      clipped_brightness = float(np.interp(clipped_brightness, [0, 1], [30, 100]))
+      clipped_brightness = float(np.interp(clipped_brightness, [0, 1], [BRIGHTNESS_MIN, 100]))
 
-    brightness = round(self._brightness_filter.update(clipped_brightness))
+    brightness = self._brightness_filter.update(clipped_brightness)
+    gui_app.set_dim(1 - brightness / BACKLIGHT_MIN)
+    brightness = round(max(brightness, BACKLIGHT_MIN))
     if not self._awake:
       brightness = 0
 
