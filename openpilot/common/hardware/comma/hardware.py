@@ -293,15 +293,22 @@ class HardwareComma(HardwareBase):
                          bottomSoc=bottomSoc)
 
   def set_display_power(self, on):
+    # panel on before the backlight, off after it. a DPMS failure must not skip the backlight write
+    def dpms():
+      try:
+        set_dpms(on)
+      except Exception:
+        pass
+
+    if on:
+      dpms()
     try:
-      if on:
-        set_dpms(True)
       with open("/sys/class/backlight/panel0-backlight/bl_power", "w") as f:
         f.write("0" if on else "4")
-      if not on:
-        set_dpms(False)
     except Exception:
       pass
+    if not on:
+      dpms()
 
   def set_screen_brightness(self, percentage):
     try:

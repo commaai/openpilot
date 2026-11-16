@@ -1,5 +1,6 @@
 import array
 import ctypes
+import functools
 import os
 import socket
 
@@ -31,13 +32,18 @@ def _get_drm_fd() -> int:
     return array.array("i", ancillary[0][2])[0]
 
 
-def set_dpms(on: bool) -> None:
-  """Power the panel and DSI link on or off. The backlight alone leaves the panel scanning out."""
+@functools.cache
+def _libdrm() -> ctypes.CDLL:
   drm = ctypes.CDLL("libdrm.so.2")
   drm.drmModeGetResources.restype = ctypes.POINTER(_Resources)
   drm.drmModeObjectGetProperties.restype = ctypes.POINTER(_ObjectProperties)
   drm.drmModeGetProperty.restype = ctypes.POINTER(_Property)
+  return drm
 
+
+def set_dpms(on: bool) -> None:
+  """Power the panel and DSI link on or off. The backlight alone leaves the panel scanning out."""
+  drm = _libdrm()
   fd = _get_drm_fd()
   try:
     res = drm.drmModeGetResources(fd)

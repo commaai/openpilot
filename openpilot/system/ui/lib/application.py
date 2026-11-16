@@ -229,7 +229,7 @@ class GuiApplication:
     self._last_mouse_event: MouseEvent = MouseEvent(MousePos(0, 0), 0, False, False, False, 0.0)
 
     self._should_render = True
-    self._display_on = True
+    self._display_on: bool | None = None  # unknown at startup, e.g. a restart while the display was off
 
     # Debug variables
     self._mouse_history: deque[MousePosWithTime] = deque(maxlen=MOUSE_THREAD_RATE)
