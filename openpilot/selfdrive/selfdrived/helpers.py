@@ -21,8 +21,8 @@ class ExcessiveActuationType(StrEnum):
 class ExcessiveActuationCheck:
   def __init__(self):
     self._excessive_counter = 0
-    self._engaged_counter = 0
     self._long_engaged_counter = 0
+    self._lat_engaged_counter = 0
 
   def update(self, sm: messaging.SubMaster, CS: car.CarState, calibrated_pose: Pose) -> ExcessiveActuationType | None:
     # CS.aEgo can be noisy to bumps in the road, transitioning from standstill, losing traction, etc.
@@ -40,8 +40,8 @@ class ExcessiveActuationCheck:
 
     # Prevent false positives after overriding
     excessive_lat_actuation = False
-    self._engaged_counter = self._engaged_counter + 1 if sm['carControl'].latActive and not CS.steeringPressed else 0
-    if self._engaged_counter > MIN_ENGAGE_BUFFER and sm['vehicleParameters'].valid:
+    self._lat_engaged_counter = self._lat_engaged_counter + 1 if sm['carControl'].latActive and not CS.steeringPressed else 0
+    if self._lat_engaged_counter > MIN_ENGAGE_BUFFER and sm['vehicleParameters'].valid:
       if abs(roll_compensated_lateral_accel) > ISO_LATERAL_ACCEL * 2 and steering_agrees:
         excessive_lat_actuation = True
 
