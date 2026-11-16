@@ -143,6 +143,9 @@ class UIState:
   def is_offroad(self) -> bool:
     return not self.started
 
+  def received_since_started(self, service: str) -> bool:
+    return self.sm.recv_frame[service] >= self.started_frame
+
   def update(self) -> None:
     self.prime_state.start()  # start thread after manager forks ui
     self.notifications.start()
@@ -230,7 +233,7 @@ class UIState:
                              ChestnutState.UNCOMPILED if detected else ChestnutState.DISCONNECTED)
       return
 
-    model_seen = self.sm.recv_frame["modelV2"] > self.started_frame
+    model_seen = self.received_since_started("modelV2")
     if not self.chestnut_present:
       self.chestnut_state = ChestnutState.DISCONNECTED
     elif not self.chestnut_compiled:
