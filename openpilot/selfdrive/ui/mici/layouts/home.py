@@ -260,13 +260,14 @@ class MiciHomeLayout(Widget):
     usb_connected = ui_state.usb_connected
     usb_unknown = ui_state.usb_unknown
     chestnut_state = ui_state.chestnut_state
-    self._usb_icon.set_visible(usb_connected and usb_unknown)
+    chestnut_failed = chestnut_state in (ChestnutState.UNCOMPILED, ChestnutState.FAILED)
+    self._usb_icon.set_visible(usb_connected and usb_unknown and not chestnut_failed)
     self._chestnut_icon.set_visible(not usb_unknown and chestnut_state not in
                                     (ChestnutState.LOADING, ChestnutState.UNCOMPILED, ChestnutState.FAILED) and
                                     (usb_connected or chestnut_state in (ChestnutState.READY, ChestnutState.ACTIVE)))
     self._chestnut_loading_icon.set_visible(not usb_unknown and chestnut_state == ChestnutState.LOADING)
     self._chestnut_loading_icon.set_opacity(0.35 + 0.65 * (0.5 - 0.5 * math.cos(rl.get_time() * 6.0)))
-    self._chestnut_failed_icon.set_visible(not usb_unknown and chestnut_state in (ChestnutState.UNCOMPILED, ChestnutState.FAILED))
+    self._chestnut_failed_icon.set_visible(chestnut_failed)
     self._mic_icon.set_visible(ui_state.recording_audio)
     self._body_icon.set_visible(bool(ui_state.is_body))
 
