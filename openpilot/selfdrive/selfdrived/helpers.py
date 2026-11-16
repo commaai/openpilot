@@ -42,8 +42,8 @@ class ExcessiveActuationCheck:
 
     # Prevent false positives after overriding
     excessive_lat_actuation = False
-    self._lat_engaged_counter = self._lat_engaged_counter + 1 if sm['carControl'].latActive and not CS.steeringPressed else 0
-    if self._lat_engaged_counter > MIN_ENGAGE_BUFFER and sm['vehicleParameters'].valid:
+    self._lat_engaged_counter = self._lat_engaged_counter + 1 if sm['carControl'].latActive and not CS.steeringPressed and sm['vehicleParameters'].valid else 0
+    if self._lat_engaged_counter > MIN_ENGAGE_BUFFER:
       if abs(roll_compensated_lateral_accel) > ISO_LATERAL_ACCEL * 2 and steering_agrees:
         excessive_lat_actuation = True
 
