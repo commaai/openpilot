@@ -79,7 +79,7 @@ class DriverStateRenderer(Widget):
     self.disengaged_color = rl.Color(139, 139, 139, 255)
 
     self.set_visible(lambda: (ui_state.sm["selfdriveState"].alertSize == AlertSize.none and
-                              ui_state.received_since_started("driverStateV2")))
+                              ui_state.sm.recv_frame["driverStateV2"] > ui_state.started_frame))
 
   def _render(self, rect):
     # Set opacity based on active state

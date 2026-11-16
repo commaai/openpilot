@@ -233,7 +233,7 @@ class UIState:
                              ChestnutState.UNCOMPILED if detected else ChestnutState.DISCONNECTED)
       return
 
-    model_seen = self.received_since_started("modelV2")
+    model_seen = self.sm.recv_frame["modelV2"] > self.started_frame
     if not self.chestnut_present:
       self.chestnut_state = ChestnutState.DISCONNECTED
     elif not self.chestnut_compiled:
