@@ -22,7 +22,7 @@ def dmonitoringd_thread():
       # iterate when model has new output
       continue
 
-    valid = sm.all_checks()
+    valid = sm.all_checks(['driverStateV2', 'extrinsicsCalibration', 'carState', 'selfdriveState'])
     if demo_mode and sm.valid['driverStateV2']:
       DM.run_step(sm, demo=True)
     elif valid:
