@@ -168,11 +168,9 @@ class GuiScrollPanel2:
           self._initial_click_event = mouse_event
 
     elif self._state == ScrollState.PRESSED:
-      initial_click_event = cast(MouseEvent, self._initial_click_event)
-      initial_click_pos = self._get_mouse_pos(initial_click_event)
+      initial_click_pos = self._get_mouse_pos(cast(MouseEvent, self._initial_click_event))
       diff = abs(mouse_pos - initial_click_pos)
-      if math.hypot(mouse_event.pos.x - initial_click_event.pos.x, mouse_event.pos.y - initial_click_event.pos.y) > MIN_DRAG_PIXELS:
-        self._moved_past_slop = True
+      self._moved_past_slop |= math.dist(mouse_event.pos, cast(MouseEvent, self._initial_click_event).pos) > MIN_DRAG_PIXELS
       if mouse_event.left_released:
         # Special handling for down and up clicks across two frames
         # TODO: not sure what that means or if it's accurate anymore
