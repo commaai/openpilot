@@ -1,3 +1,4 @@
+import queue
 import time
 import threading
 from collections.abc import Callable
@@ -29,6 +30,14 @@ class CellularManager:
 
     self._last_profile_poll: float = 0.0
     self._polling: bool = False
+
+    # one thread does the work: starting one waits for it to run, which can take the UI a frame
+    self._requests: queue.Queue[Callable[[], None]] = queue.Queue()
+    threading.Thread(target=self._handle_requests, daemon=True).start()
+
+  def _handle_requests(self):
+    while True:
+      self._requests.get()()
 
   @property
   def modem_state(self) -> dict:
@@ -104,7 +113,7 @@ class CellularManager:
         err = str(e)
         self._enqueue(lambda: self._finish(error=err))
 
-    threading.Thread(target=worker, daemon=True).start()
+    self._requests.put(worker)
 
   def refresh_profiles(self):
     # next process_callbacks tick polls, respecting busy/polling guards
@@ -123,7 +132,7 @@ class CellularManager:
         cloudlog.exception("Failed to poll eSIM profiles")
         self._enqueue(self._stop_polling)
 
-    threading.Thread(target=worker, daemon=True).start()
+    self._requests.put(worker)
 
   def _finish_poll(self, is_euicc: bool, profiles: list[Profile]):
     self._polling = False

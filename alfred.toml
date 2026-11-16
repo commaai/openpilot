@@ -20,7 +20,7 @@ QCOM_PRIORITY = "12"
 name = "Build openpilot"
 run = """
 for p in msgq_repo/msgq opendbc_repo/opendbc rednose_repo/rednose teleoprtc_repo/teleoprtc tinygrad_repo/tinygrad; do ln -sfn "$p" "${p#*/}"; done
-cd openpilot/system/manager && ./build.py
+tools/op.sh build
 """
 
 [steps.flash-chestnut]

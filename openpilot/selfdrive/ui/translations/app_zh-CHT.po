@@ -147,7 +147,7 @@ msgstr "若車輛通電，變更此設定將重新啟動 openpilot。"
 
 #: openpilot/selfdrive/ui/widgets/pairing_dialog.py
 msgid "Click \"add new device\" and scan the QR code on the right"
-msgstr "點選「新增裝置」，掃描右側 QR 碼"
+msgstr "點選「add new device」，掃描右側 QR 碼"
 
 #: openpilot/selfdrive/ui/widgets/offroad_alerts.py
 msgid "Close"

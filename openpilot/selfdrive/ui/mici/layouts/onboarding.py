@@ -9,7 +9,7 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import SmallCircleIconButton
 from openpilot.system.ui.widgets.scroller import NavScroller, Scroller
 from openpilot.system.ui.widgets.nav_widget import NavWidget
-from openpilot.system.ui.mici_setup import GreyBigButton, BigPillButton
+from openpilot.selfdrive.ui.mici.widgets.button import GreyBigButton, BigPillButton
 from openpilot.system.ui.widgets.label import gui_label
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.common.version import terms_version, training_version

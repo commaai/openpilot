@@ -612,6 +612,7 @@ struct PandaState @0xa7649e2575e4591e {
     interruptRateSoundDma @27;
     mpu @28;
     timer @29;
+    safetyRedundancy @30;
     # Update max fault type in pandad when adding faults
   }
 
@@ -836,7 +837,8 @@ struct SelfdriveState {
     refuse @3;
 
     warningSoft @4;
-    warningImmediate @5;
+    warningImmediateSystem @5;
+    warningImmediateUser @11;
 
     prompt @6;
     promptRepeat @7;

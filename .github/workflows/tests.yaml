@@ -74,7 +74,7 @@ jobs:
         echo "PATH=${FILTERED}/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin" >> $GITHUB_ENV
     - run: ./tools/op.sh setup
     - name: Building openpilot
-      run: scons
+      run: tools/op.sh build
 
   static_analysis:
     name: static analysis
@@ -103,7 +103,7 @@ jobs:
     - uses: actions/checkout@v7
     - run: ./tools/op.sh setup
     - name: Build openpilot
-      run: scons
+      run: tools/op.sh build
     - name: Run unit tests
       timeout-minutes: ${{ contains(runner.name, 'nsc') && 2 || 20 }}
       env:
