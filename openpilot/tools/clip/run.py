@@ -112,6 +112,8 @@ def load_logs_parallel(log_paths: list[str], fps: int = 20) -> list[dict]:
 
 
 def patch_submaster(message_chunks, ui_state):
+  ui_state.started_time = time.monotonic()
+
   def mock_update(timeout=None):
     sm, t = ui_state.sm, time.monotonic()
     sm.updated = dict.fromkeys(sm.services, False)
