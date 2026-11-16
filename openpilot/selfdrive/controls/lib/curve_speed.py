@@ -18,8 +18,9 @@ class CurveSpeed:
 
   def update(self, model, roll):
     target = 0.0
-    for t, v, yaw_rate, predicted_roll in zip(model.position.t, model.velocity.x, model.orientationRate.z, model.orientation.x, strict=False):
-      lat_accel = v * yaw_rate - ACCELERATION_DUE_TO_GRAVITY * (roll + predicted_roll)
+    for t, v, yaw_rate in zip(model.position.t, model.velocity.x, model.orientationRate.z, strict=False):
+      # lat_accel = v * yaw_rate - ACCELERATION_DUE_TO_GRAVITY * (roll + predicted_roll)
+      lat_accel = v * yaw_rate - ACCELERATION_DUE_TO_GRAVITY * roll
       if t < LOOKAHEAD_TIME and abs(lat_accel) >= MAX_LAT_ACCEL:
         target = -MAX_ACCEL_OFFSET
         break
