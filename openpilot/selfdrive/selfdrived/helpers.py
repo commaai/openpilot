@@ -36,7 +36,7 @@ class ExcessiveActuationCheck:
     roll = sm['vehicleParameters'].roll
     roll_compensated_lateral_accel = (CS.vEgo * yaw_rate) - (math.sin(roll) * ACCELERATION_DUE_TO_GRAVITY)
 
-    # A loose mount gives a false yaw rate, so the steering angle must agree. Both need a valid paramsd roll and angle offset
+    # A loose mount can give a false yaw rate, so the steering angle must agree. Both need a valid paramsd roll and angle offset
     steering_lateral_accel = (CS.vEgo ** 2 * sm['controlsState'].curvature) - (math.sin(roll) * ACCELERATION_DUE_TO_GRAVITY)
     steering_agrees = roll_compensated_lateral_accel * steering_lateral_accel > 0 and abs(steering_lateral_accel) > ISO_LATERAL_ACCEL
 
