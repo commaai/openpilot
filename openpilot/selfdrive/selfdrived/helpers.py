@@ -10,7 +10,7 @@ from opendbc.car.lateral import ISO_LATERAL_ACCEL
 from opendbc.car.interfaces import ACCEL_MIN, ACCEL_MAX
 
 MIN_EXCESSIVE_ACTUATION_COUNT = int(0.25 / DT_CTRL)
-MIN_LATERAL_ENGAGE_BUFFER = int(1 / DT_CTRL)
+MIN_ENGAGE_BUFFER = int(1 / DT_CTRL)
 
 
 class ExcessiveActuationType(StrEnum):
@@ -22,23 +22,27 @@ class ExcessiveActuationCheck:
   def __init__(self):
     self._excessive_counter = 0
     self._engaged_counter = 0
+    self._long_engaged_counter = 0
 
   def update(self, sm: messaging.SubMaster, CS: car.CarState, calibrated_pose: Pose) -> ExcessiveActuationType | None:
     # CS.aEgo can be noisy to bumps in the road, transitioning from standstill, losing traction, etc.
     # longitudinal
     accel_calibrated = calibrated_pose.acceleration.x
-    excessive_long_actuation = sm['carControl'].longActive and (accel_calibrated > ACCEL_MAX * 2 or accel_calibrated < ACCEL_MIN * 2)
+    self._long_engaged_counter = self._long_engaged_counter + 1 if sm['carControl'].longActive else 0
+    excessive_long_actuation = self._long_engaged_counter > MIN_ENGAGE_BUFFER and (accel_calibrated > ACCEL_MAX * 2 or accel_calibrated < ACCEL_MIN * 2)
 
     # lateral
     yaw_rate = calibrated_pose.angular_velocity.yaw
     roll = sm['vehicleParameters'].roll
     roll_compensated_lateral_accel = (CS.vEgo * yaw_rate) - (math.sin(roll) * ACCELERATION_DUE_TO_GRAVITY)
+    steering_lateral_accel = (CS.vEgo ** 2 * sm['controlsState'].curvature) - (math.sin(roll) * ACCELERATION_DUE_TO_GRAVITY)
+    steering_agrees = roll_compensated_lateral_accel * steering_lateral_accel > 0 and abs(steering_lateral_accel) > ISO_LATERAL_ACCEL
 
     # Prevent false positives after overriding
     excessive_lat_actuation = False
     self._engaged_counter = self._engaged_counter + 1 if sm['carControl'].latActive and not CS.steeringPressed else 0
-    if self._engaged_counter > MIN_LATERAL_ENGAGE_BUFFER:
-      if abs(roll_compensated_lateral_accel) > ISO_LATERAL_ACCEL * 2:
+    if self._engaged_counter > MIN_ENGAGE_BUFFER and sm['vehicleParameters'].valid:
+      if abs(roll_compensated_lateral_accel) > ISO_LATERAL_ACCEL * 2 and steering_agrees:
         excessive_lat_actuation = True
 
     # deviceMotion acceleration can be noisy due to bad mounting or aliased deviceMotion measurements
