@@ -210,7 +210,7 @@ class HudRenderer(Widget):
     # pos
     pos_x = int(rect.x + rect.width / 2)
     pos_y = int(rect.y + rect.height - 10 - wheel_txt.height / 2)
-    car_state_fresh = ui_state.started and ui_state.sm.recv_frame['carState'] >= ui_state.started_frame
+    car_state_fresh = ui_state.started and ui_state.received_since_started('carState')
     rotation = -ui_state.sm['carState'].steeringAngleDeg if car_state_fresh else 0.0
 
     alpha = 255 * (1 - (1 - DIMMED_ICON_ALPHA) * status_fade.weight(UIStatus.DISENGAGED) * (1 - critical))
