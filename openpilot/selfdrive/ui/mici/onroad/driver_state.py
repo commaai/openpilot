@@ -87,7 +87,7 @@ class DriverStateRenderer(Widget):
   def should_draw(self):
     # dimmed doesn't need driver data, so it also shows offroad
     return (self._should_draw and (self._show_under_alerts or ui_state.sm["selfdriveState"].alertSize == AlertSize.none) and
-            (self._dimmed > 0 or ui_state.sm.recv_frame["driverStateV2"] > ui_state.started_frame))
+            (self._dimmed > 0 or ui_state.received_since_started("driverStateV2")))
 
   def set_force_active(self, force_active: bool):
     """Force the dmoji to always appear active (green) regardless of actual state"""
