@@ -284,14 +284,14 @@ class LongitudinalMpc:
     lead_xv = np.column_stack((x_lead_traj, v_lead_traj))
     return lead_xv
 
-  def process_lead(self, model_lead, radar_lead):
+  def process_lead(self, model_lead, radar_lead, use_model=True):
     v_ego = self.x0[1]
     v_lead = radar_lead.vLead if radar_lead.present else v_ego + 10.0
     # MPC will not converge if immediate crash is expected
     # Clip lead distance to what is still possible to brake for
     min_x_lead = MIN_X_LEAD_FACTOR * (v_ego + v_lead) * (v_ego - v_lead) / (-ACCEL_MIN * 2)
 
-    if radar_lead.present and radar_lead.modelProb <= 0.5:
+    if radar_lead.present and (not use_model or radar_lead.modelProb <= 0.5):
       # Radar-only overrides have no matching model trajectory.
       x_lead = np.clip(radar_lead.dRel, min_x_lead, 1e8)
       v_lead = np.clip(v_lead, 0.0, 1e8)
@@ -342,8 +342,10 @@ class LongitudinalMpc:
     self.params[:,4] = t_follow
     self.params[:,5] = LEAD_DANGER_FACTOR
 
+    # use conservative acceleration-decay lead prediction for FCW.
+    lead_xv_fcw = self.process_lead(model_leads[0], radarstate.leadOne, use_model=False)
     self.run()
-    if (np.any(lead_xv_0[FCW_IDXS,0] - self.x_sol[FCW_IDXS,0] < CRASH_DISTANCE) and
+    if (np.any(lead_xv_fcw[FCW_IDXS,0] - self.x_sol[FCW_IDXS,0] < CRASH_DISTANCE) and
             radarstate.leadOne.modelProb > 0.9):
       self.crash_cnt += 1
     else:
