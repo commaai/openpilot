@@ -27,18 +27,17 @@ class AccelBoost:
     self.lift_filter.x = 0.0
     self.total_boost = 0.0
 
-  def update(self, sm, output_a_target_e2e):
+  def update(self, sm, output_a_target_e2e, curve_offset):
     lift, gas_gain = get_accel_boost(sm['selfdriveState'].personality)
     v_ego = max(sm['carState'].vEgo, 1.0)
-    curve_scale = np.interp(abs(sm['controlsState'].curvature) * v_ego**2, [1.0, 2.5], [1.0, 0.0])  # fade out boost on curves
 
     pos = sm['modelV2'].position
     t, x, x_std = np.array(pos.t), np.array(pos.x), np.array(pos.xStd)
     # how many stds the plan is ahead compared to holding the current speed, at its worst point after 1 s
     plan_ahead = ((x - v_ego * t) / x_std)[t >= 1.0].min() if len(x_std) else LIFT_GATE_STDS[0]
     gate = np.interp(plan_ahead, LIFT_GATE_STDS, [0.0, 1.0])
-    lift = self.lift_filter.update(curve_scale * lift * gate)
+    lift = self.lift_filter.update(lift * gate if curve_offset == 0.0 else 0.0)  # no lift while slowing for a curve ahead
 
-    gain = 1.0 + (gas_gain - 1.0) * curve_scale if output_a_target_e2e > 0.0 else 1.0  # boost gas only, braking is left to the model
+    gain = gas_gain if output_a_target_e2e > 0.0 else 1.0  # boost gas only, braking is left to the model
     self.total_boost = output_a_target_e2e * (gain - 1.0) + lift
     return output_a_target_e2e + self.total_boost
