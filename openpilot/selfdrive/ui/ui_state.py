@@ -107,6 +107,7 @@ class UIState:
     self.usb_unknown: bool = False
     self.chestnut_state = ChestnutState.DISCONNECTED
     self.started: bool = False
+    self.dashcam_active: bool = False
     self.ignition: bool = False
     self.recording_audio: bool = False
     self.panda_type: log.PandaState.PandaType = log.PandaState.PandaType.unknown
@@ -145,6 +146,10 @@ class UIState:
 
   def received_since_started(self, service: str) -> bool:
     return self.sm.recv_frame[service] > self._started_frame
+
+  @property
+  def display_onroad(self) -> bool:
+    return self.started or self.dashcam_active
 
   def update(self) -> None:
     self.prime_state.start()  # start thread after manager forks ui
@@ -259,6 +264,7 @@ class UIState:
         self.has_longitudinal_control = self.CP.openpilotLongitudinalControl
 
     self.recording_audio = self.params.get_bool("RecordAudio") and self.started
+    self.dashcam_active = self.params.get_bool("DashcamActive")
     self.is_metric = self.params.get_bool("IsMetric")
     self.initial_cruise_speed = self.params.get("InitialCruiseSpeedKph", return_default=True)
     self.always_on_dm = self.params.get_bool("AlwaysOnDM")
@@ -392,7 +398,7 @@ class Device:
         callback()
     self._prev_timed_out = interaction_timeout
 
-    self._set_awake(ui_state.ignition or not interaction_timeout or PC)
+    self._set_awake(ui_state.display_onroad or not interaction_timeout or PC)
 
   def _set_awake(self, on: bool):
     if on != self._awake:
