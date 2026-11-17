@@ -117,6 +117,10 @@ class TestLoggerd(OpenpilotTestCase):
       (VisionStreamType.VISION_STREAM_WIDE_ROAD, frame_spec, "wideRoadCameraState"),
     ]
 
+    # set env before start_listener(), its thread calls getenv() which races with setenv()
+    os.environ["LOGGERD_TEST"] = "1"
+    os.environ["LOGGERD_SEGMENT_LENGTH"] = str(segment_length)
+
     sm = messaging.SubMaster(["narrowRoadEncodeData"])
     pm = messaging.PubMaster([s for _, _, s in streams] + ["rawAudioData"])
     vipc_server = VisionIpcServer("camerad")
@@ -124,8 +128,6 @@ class TestLoggerd(OpenpilotTestCase):
       vipc_server.create_buffers_with_sizes(stream_type, 40, *(frame_spec))
     vipc_server.start_listener()
 
-    os.environ["LOGGERD_TEST"] = "1"
-    os.environ["LOGGERD_SEGMENT_LENGTH"] = str(segment_length)
     managed_processes["loggerd"].start()
     managed_processes["encoderd"].start()
     assert pm.wait_for_readers_to_update("narrowRoadCameraState", timeout=5, dt=0.001)

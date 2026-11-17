@@ -89,6 +89,7 @@ void setDir(const fs::path &dir) {
   std::error_code ec;
   fs::path d = fs::is_directory(dir, ec) ? fs::absolute(dir, ec) : fs::current_path(ec);
   g_state.dir = d.lexically_normal();
+  if (g_state.mode == Mode::Directory) g_state.filename.clear();
   listDir();
 }
 
@@ -164,7 +165,7 @@ void draw() {
     const std::string name = entry.path().filename().string();
     const std::string label = (is_dir ? std::string(icon::FOLDER) : std::string(icon::FILE_EARMARK)) + "  " + name;
     ImGui::PushID(static_cast<int>(i));
-    const bool selected = !is_dir && name == s.filename;
+    const bool selected = (is_dir == (s.mode == Mode::Directory)) && name == s.filename;
     if (selectable(label.c_str(), selected, ImGuiSelectableFlags_AllowDoubleClick)) {
       const bool double_clicked = ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
       if (is_dir) {
@@ -172,6 +173,7 @@ void draw() {
           pending_dir = entry.path();
         } else if (s.mode == Mode::Directory) {
           s.filename = name;
+          s.dir_input = (s.dir / name).string();
         }
       } else {
         s.filename = name;
@@ -200,7 +202,9 @@ void draw() {
 
   if (ok && result.empty()) {
     if (s.mode == Mode::Directory) {
-      result = s.filename.empty() ? s.dir : s.dir / s.filename;
+      // the path field shows the selected folder, and may have been edited by hand
+      result = fs::path(s.dir_input);
+      if (!fs::is_directory(result, dir_ec)) ok = false;
     } else if (!s.filename.empty()) {
       result = fs::path(s.filename).is_absolute() ? fs::path(s.filename) : s.dir / s.filename;
       if (s.mode == Mode::SaveFile && !s.extension.empty() && result.extension().empty()) result += s.extension;

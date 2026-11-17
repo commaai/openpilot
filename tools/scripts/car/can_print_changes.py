@@ -18,23 +18,24 @@ def update(msgs, bus, dat, low_to_high, high_to_low, quiet=False):
 
     for y in x.can:
       if y.src == bus:
-        dat[y.address] = y.dat
+        addr, d = y.address, y.dat
+        dat[addr] = d
 
-        i = int.from_bytes(y.dat, byteorder='big')
-        l_h = low_to_high[y.address]
-        h_l = high_to_low[y.address]
+        i = int.from_bytes(d, byteorder='big')
+        l_h = low_to_high[addr]
+        h_l = high_to_low[addr]
 
         change = None
         if (i | l_h) != l_h:
-          low_to_high[y.address] = i | l_h
+          low_to_high[addr] = i | l_h
           change = "+"
 
         if (~i | h_l) != h_l:
-          high_to_low[y.address] = ~i | h_l
+          high_to_low[addr] = ~i | h_l
           change = "-"
 
         if change and not quiet:
-          print(f"{time.monotonic():.2f}\t{hex(y.address)} ({y.address})\t{change}{binascii.hexlify(y.dat)}")
+          print(f"{time.monotonic():.2f}\t{hex(addr)} ({addr})\t{change}{binascii.hexlify(d)}")
 
 
 def can_printer(bus=0, init_msgs=None, new_msgs=None, table=False):
