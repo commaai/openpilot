@@ -174,6 +174,46 @@ jobs:
         max_attempts: 3
         command: cd ${{ github.workspace }}/ci-artifacts && git push origin process-replay --force
 
+  safety_replay:
+    name: safety replay
+    runs-on: ${{
+      (github.repository == 'commaai/openpilot') &&
+      ((github.event_name != 'pull_request') ||
+      (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
+      && fromJSON('["namespace-profile-amd64-8x16"]')
+      || fromJSON('["ubuntu-24.04"]') }}
+    env:
+      COMMA_CACHE: /tmp/comma_download_cache
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        # the parent is master, or the previous master commit on a push
+        fetch-depth: 2
+    - run: ./tools/op.sh setup
+    - name: Check for an opendbc change
+      id: opendbc
+      run: openpilot/selfdrive/pandad/tests/diff_safety.py check >> "$GITHUB_OUTPUT"
+    - name: Cache the test routes
+      if: steps.opendbc.outputs.changed == 'true'
+      uses: actions/cache@v6
+      with:
+        path: /tmp/comma_download_cache
+        key: safety-replay-${{ hashFiles('opendbc_repo/opendbc/car/tests/routes.py') }}
+        restore-keys: safety-replay-
+    - name: Compare safety with the previous opendbc
+      if: steps.opendbc.outputs.changed == 'true'
+      timeout-minutes: 20
+      run: openpilot/selfdrive/pandad/tests/diff_safety.py
+    - name: Upload diff report
+      if: always() && github.event_name == 'pull_request'
+      uses: actions/upload-artifact@v7
+      with:
+        name: diff_safety_${{ github.event.number }}
+        path: |
+          diff_safety.txt
+          diff_safety_full.txt
+        if-no-files-found: ignore
+
   simulator_driving:
     name: simulator driving
     runs-on: ${{

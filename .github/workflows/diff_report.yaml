@@ -48,11 +48,40 @@ jobs:
         run-id: ${{ steps.tests-run.outputs.run-id }}
         name: diff_report_${{ github.event.number }}
         path: .
+    - name: Wait for safety replay
+      if: steps.wait.outcome == 'success'
+      id: wait-safety
+      continue-on-error: true
+      uses: lewagon/wait-on-check-action@1d57e2c51a58d812d2765e036a028b6bdb5a6154
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        check-name: safety replay
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        allowed-conclusions: success,failure
+        wait-interval: 20
+    - name: Download safety diff
+      if: steps.wait-safety.outcome == 'success'
+      continue-on-error: true
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        repository: ${{ github.repository }}
+        run-id: ${{ steps.tests-run.outputs.run-id }}
+        name: diff_safety_${{ github.event.number }}
+        path: .
+    # one comment for both reports, the safety one only when this PR changes opendbc
+    - name: Combine reports
+      if: steps.wait.outcome == 'success'
+      run: |
+        for f in diff_report.txt diff_safety.txt; do
+          if [ -f "$f" ]; then cat "$f"; printf '\n\n'; fi
+        done > comment.md
+        [ -s comment.md ] || rm -f comment.md
     - name: Comment on PR
-      if: steps.wait.outcome == 'success' && hashFiles('diff_report.txt') != ''
+      if: steps.wait.outcome == 'success' && hashFiles('comment.md') != ''
       uses: thollander/actions-comment-pull-request@24bffb9b452ba05a4f3f77933840a6a841d1b32b
       with:
-        file-path: diff_report.txt
+        file-path: comment.md
         comment-tag: diff_report
         pr-number: ${{ github.event.number }}
         github-token: ${{ secrets.GITHUB_TOKEN }}
