@@ -243,8 +243,6 @@ class LongitudinalMpc:
     # timers
     self.solve_time = 0.0
     self.x0 = np.zeros(X_DIM)
-    self.lead_xv_0 = np.zeros((N+1, 2))
-    self.lead_xv_1 = np.zeros((N+1, 2))
     self.set_weights()
 
   def set_cost_weights(self, cost_weights, constraint_cost_weights):
@@ -308,8 +306,6 @@ class LongitudinalMpc:
 
     lead_xv_0 = self.process_lead(model_leads[0], radarstate.leadOne)
     lead_xv_1 = self.process_lead(model_leads[1], radarstate.leadTwo)
-    self.lead_xv_0 = lead_xv_0
-    self.lead_xv_1 = lead_xv_1
 
     # To estimate a safe distance from a moving lead, we calculate how much stopping
     # distance that lead needs as a minimum. We can add that to the current distance
