@@ -1,5 +1,6 @@
 import numpy as np
 from openpilot.selfdrive.test.longitudinal_maneuvers.plant import Plant
+from openpilot.selfdrive.modeld.constants import ModelConstants
 
 
 class Maneuver:
@@ -39,11 +40,17 @@ class Maneuver:
     valid = True
     logs = []
     not_starting_t = 0.0
+    lead_steps = np.rint(np.asarray(ModelConstants.LEAD_T_IDXS) / plant.ts).astype(int)
     while plant.current_time < self.duration:
-      speed_lead = np.interp(plant.current_time, self.breakpoints, self.speed_lead_values)
+      future_times = (plant.frame + np.arange(lead_steps[-1] + 1)) / plant.rate
+      future_speed = np.interp(future_times, self.breakpoints, self.speed_lead_values)
+      # Match the plant's distance update: current speed is held for one timestep.
+      future_distance = np.r_[0., np.cumsum(future_speed[:-1]) * plant.ts]
+      lead_trajectory = (future_distance[lead_steps], future_speed[lead_steps])
+      speed_lead = future_speed[0]
       prob_lead = np.interp(plant.current_time, self.breakpoints, self.prob_lead_values)
       cruise = np.interp(plant.current_time, self.breakpoints, self.cruise_values)
-      log = plant.step(speed_lead, prob_lead, cruise)
+      log = plant.step(speed_lead, prob_lead, cruise, lead_trajectory=lead_trajectory)
 
       d_rel = log['distance_lead'] - log['distance'] if self.lead_relevancy else 200.
       v_rel = speed_lead - log['speed'] if self.lead_relevancy else 0.

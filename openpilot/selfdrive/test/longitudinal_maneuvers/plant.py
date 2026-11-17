@@ -6,7 +6,8 @@ import openpilot.cereal.messaging as messaging
 from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
 from openpilot.selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner
-from openpilot.selfdrive.controls.radard import _LEAD_ACCEL_TAU
+from openpilot.selfdrive.controls.radard import _LEAD_ACCEL_TAU, RADAR_TO_CAMERA
+from openpilot.selfdrive.modeld.constants import ModelConstants
 
 
 
@@ -43,7 +44,7 @@ class Plant:
   def current_time(self):
     return float(self.frame) / self.rate
 
-  def step(self, v_lead=0.0, prob_lead=1.0, v_cruise=50.):
+  def step(self, v_lead=0.0, prob_lead=1.0, v_cruise=50., *, lead_trajectory):
     radar = messaging.new_message('radarState')
     control = messaging.new_message('controlsState')
     ss = messaging.new_message('selfdriveState')
@@ -82,6 +83,13 @@ class Plant:
     if not self.only_lead2:
       radar.radarState.leadOne = lead
     radar.radarState.leadTwo = lead
+
+    lead_times = np.asarray(ModelConstants.LEAD_T_IDXS)
+    for i, model_lead in enumerate(model.modelV2.init('leadsV3', 2)):
+      model_lead.prob = float(prob_lead if not self.only_radar and (i == 1 or not self.only_lead2) else 0.)
+      model_lead.t = lead_times.tolist()
+      model_lead.x = (d_rel + RADAR_TO_CAMERA + lead_trajectory[0]).tolist()
+      model_lead.v = lead_trajectory[1].tolist()
 
     # Model requests more acceleration so the lead policy must handle slowdowns.
     model.modelV2.action.desiredAcceleration = float(self.acceleration + 0.5)
@@ -129,8 +137,9 @@ class Plant:
 # simple engage in standalone mode
 def plant_thread():
   plant = Plant()
+  lead_trajectory = (np.zeros(len(ModelConstants.LEAD_T_IDXS)), np.zeros(len(ModelConstants.LEAD_T_IDXS)))
   while 1:
-    plant.step()
+    plant.step(lead_trajectory=lead_trajectory)
 
 
 if __name__ == "__main__":
