@@ -6,7 +6,7 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.selfdrive.ui.layouts.sidebar import Sidebar, SIDEBAR_WIDTH
 from openpilot.selfdrive.ui.layouts.home import HomeLayout
 from openpilot.selfdrive.ui.layouts.settings.settings import SettingsLayout, PanelType
-from openpilot.selfdrive.ui.onroad.augmented_road_view import AugmentedRoadView
+from openpilot.selfdrive.ui.onroad.dashcam_view import DashcamView
 from openpilot.selfdrive.ui.ui_state import device, ui_state
 from openpilot.selfdrive.ui.layouts.onboarding import OnboardingWindow
 from openpilot.selfdrive.ui.body.layouts.onroad import BodyLayout
@@ -34,7 +34,7 @@ class MainLayout(Widget):
     self._layouts: dict[MainState, Widget] = {
       MainState.HOME: self._home_layout,
       MainState.SETTINGS: SettingsLayout(),
-      MainState.ONROAD: AugmentedRoadView(),
+      MainState.ONROAD: DashcamView(),
     }
 
     self._sidebar_rect = rl.Rectangle(0, 0, 0, 0)
@@ -74,8 +74,8 @@ class MainLayout(Widget):
     self._content_rect = rl.Rectangle(self._rect.x + x_offset, self._rect.y, self._rect.width - x_offset, self._rect.height)
 
   def _handle_onroad_transition(self):
-    if ui_state.started != self._prev_onroad:
-      self._prev_onroad = ui_state.started
+    if ui_state.display_onroad != self._prev_onroad:
+      self._prev_onroad = ui_state.display_onroad
 
       self._set_mode_for_state()
 
@@ -83,10 +83,10 @@ class MainLayout(Widget):
     # Don't go onroad if body, home is onroad
     if ui_state.is_body:
       self._set_current_layout(MainState.HOME)
-      self._sidebar.set_visible(not ui_state.ignition)
+      self._sidebar.set_visible(not (ui_state.ignition or ui_state.dashcam_active))
       return
 
-    if ui_state.started:
+    if ui_state.display_onroad:
       # Don't hide sidebar from interactive timeout
       if self._current_mode != MainState.ONROAD:
         self._sidebar.set_visible(False)
@@ -115,6 +115,8 @@ class MainLayout(Widget):
       self._pm.send(service, msg)
 
   def _on_onroad_clicked(self):
+    if self._current_mode == MainState.ONROAD and self._layouts[MainState.ONROAD].open_signin_if_tapped():
+      return
     self._sidebar.set_visible(not self._sidebar.is_visible)
 
   def _on_body_changed(self):
