@@ -304,10 +304,10 @@ class LongitudinalMpc:
       v_lead_traj = float(radar_lead.vLead) + (np.asarray(model_lead.v, dtype=np.float64) - model_lead.v[0])
     else:
       # Fake a fast lead so MPC stays in the same mode.
-      x_lead_traj = 50.0 + (v_ego + 10.0) * LEAD_T_IDXS_MODEL
-      v_lead_traj = np.full_like(LEAD_T_IDXS_MODEL, v_ego + 10.0)
+      x_lead_traj = 50.0 + v_lead * LEAD_T_IDXS_MODEL
+      v_lead_traj = np.full_like(LEAD_T_IDXS_MODEL, v_lead)
 
-    x_lead_traj[0] = max(x_lead_traj[0], min_x_lead)
+    x_lead_traj[0] = np.clip(x_lead_traj[0], min_x_lead, 1e8)
     v_lead_traj = np.clip(v_lead_traj, 0.0, 1e8)
 
     x_lead_mpc = np.maximum.accumulate(np.interp(T_IDXS, LEAD_T_IDXS_MODEL, x_lead_traj))
