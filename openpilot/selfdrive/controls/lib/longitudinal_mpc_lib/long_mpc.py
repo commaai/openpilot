@@ -276,9 +276,28 @@ class LongitudinalMpc:
       for i in range(N+1):
         self.solver.set(i, 'x', self.x0)
 
+  @staticmethod
+  def extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau):
+    a_lead_traj = a_lead * np.exp(-a_lead_tau * (T_IDXS**2)/2.)
+    v_lead_traj = np.clip(v_lead + np.cumsum(T_DIFFS * a_lead_traj), 0.0, 1e8)
+    x_lead_traj = x_lead + np.cumsum(T_DIFFS * v_lead_traj)
+    lead_xv = np.column_stack((x_lead_traj, v_lead_traj))
+    return lead_xv
+
   def process_lead(self, model_lead, radar_lead):
     v_ego = self.x0[1]
-    if model_lead.prob > 0.5 and radar_lead.present:
+    if radar_lead.present and radar_lead.modelProb <= 0.5:
+      # Radar-only overrides have no matching model trajectory.
+      v_lead = radar_lead.vLead
+      # MPC will not converge if immediate crash is expected
+      # Clip lead distance to what is still possible to brake for
+      min_x_lead = MIN_X_LEAD_FACTOR * (v_ego + v_lead) * (v_ego - v_lead) / (-ACCEL_MIN * 2)
+      x_lead = np.clip(radar_lead.dRel, min_x_lead, 1e8)
+      v_lead = np.clip(v_lead, 0.0, 1e8)
+      a_lead = np.clip(radar_lead.aLeadK, -10., 5.)
+      return self.extrapolate_lead(x_lead, v_lead, a_lead, radar_lead.aLeadTau)
+
+    if radar_lead.present:
       # Anchor at radar's trusted h=0, use model's delta for h>0. On radarless, radarState
       # is synthesized from the model (radard.get_RadarState_from_vision), so this collapses
       # to `x - RADAR_TO_CAMERA` and `v_ego + (model.v - model_v_ego)` — identical to the
@@ -290,7 +309,8 @@ class LongitudinalMpc:
       x_lead_traj = 50.0 + (v_ego + 10.0) * LEAD_T_IDXS_MODEL
       v_lead_traj = np.full_like(LEAD_T_IDXS_MODEL, v_ego + 10.0)
 
-    # MPC won't converge on immediate crashes; lift h=0 to the minimum braking distance.
+    # MPC will not converge if immediate crash is expected
+    # Clip lead distance to what is still possible to brake for
     v_lead_0 = v_lead_traj[0]
     min_x_lead = MIN_X_LEAD_FACTOR * (v_ego + v_lead_0) * (v_ego - v_lead_0) / (-ACCEL_MIN * 2)
     x_lead_traj[0] = max(x_lead_traj[0], min_x_lead)
