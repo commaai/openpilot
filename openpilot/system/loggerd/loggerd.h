@@ -1,6 +1,8 @@
 #pragma once
 
+#include <algorithm>
 #include <cstdlib>
+#include <string>
 #include <vector>
 
 #include "openpilot/cereal/messaging/messaging.h"
@@ -51,12 +53,9 @@ struct EncoderSettings {
   int gop_size;
   int b_frames = 0; // we don't use b frames
 
-  static EncoderSettings MainEncoderSettings(int in_width) {
-    if (in_width <= 1344) {
-      return EncoderSettings{.encode_type = MAIN_ENCODE_TYPE, .bitrate = 5'000'000, .gop_size = 20};
-    } else {
-      return EncoderSettings{.encode_type = MAIN_ENCODE_TYPE, .bitrate = 10'000'000, .gop_size = 30};
-    }
+  // DashC: bitrate is chosen per camera from the "Recording Quality" setting
+  static EncoderSettings MainEncoderSettings(int in_width, int bitrate) {
+    return EncoderSettings{.encode_type = MAIN_ENCODE_TYPE, .bitrate = bitrate, .gop_size = (in_width <= 1344) ? 20 : 30};
   }
 
   static EncoderSettings QcamEncoderSettings() {
@@ -95,26 +94,38 @@ public:
   std::vector<EncoderInfo> encoder_infos;
 };
 
+// DashC bitrate presets in bits/sec, indexed by DashcamQuality: 0 Standard, 1 High, 2 Max.
+// High is about 22 GB per hour of driving across the three cameras; Max is about 34 GB per hour.
+constexpr int DASHC_ROAD_BITRATES[3]  = {10'000'000, 20'000'000, 30'000'000};
+constexpr int DASHC_WIDE_BITRATES[3]  = {10'000'000, 20'000'000, 30'000'000};
+constexpr int DASHC_CABIN_BITRATES[3] = { 5'000'000, 10'000'000, 15'000'000};
+
+inline int dashc_quality() {
+  std::string v = Params().get("DashcamQuality");
+  int q = v.empty() ? 2 : atoi(v.c_str());
+  return std::clamp(q, 0, 2);
+}
+
 const EncoderInfo main_road_encoder_info = {
   .publish_name = "narrowRoadEncodeData",
   .thumbnail_name = "thumbnail",
   .filename = "fcamera.hevc",
-  .get_settings = [](int in_width){return EncoderSettings::MainEncoderSettings(in_width);},
+  .get_settings = [](int in_width){return EncoderSettings::MainEncoderSettings(in_width, DASHC_ROAD_BITRATES[dashc_quality()]);},
   INIT_ENCODE_FUNCTIONS(NarrowRoadEncode),
 };
 
 const EncoderInfo main_wide_road_encoder_info = {
   .publish_name = "wideRoadEncodeData",
   .filename = "ecamera.hevc",
-  .get_settings = [](int in_width){return EncoderSettings::MainEncoderSettings(in_width);},
+  .get_settings = [](int in_width){return EncoderSettings::MainEncoderSettings(in_width, DASHC_WIDE_BITRATES[dashc_quality()]);},
   INIT_ENCODE_FUNCTIONS(WideRoadEncode),
 };
 
 const EncoderInfo main_cabin_encoder_info = {
   .publish_name = "cabinEncodeData",
   .filename = "dcamera.hevc",
-  .record = Params().getBool("RecordFront"),
-  .get_settings = [](int in_width){return EncoderSettings::MainEncoderSettings(in_width);},
+  .record = true,  // DashC: always record the cabin camera
+  .get_settings = [](int in_width){return EncoderSettings::MainEncoderSettings(in_width, DASHC_CABIN_BITRATES[dashc_quality()]);},
   INIT_ENCODE_FUNCTIONS(CabinEncode),
 };
 
