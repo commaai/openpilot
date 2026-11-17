@@ -2,6 +2,7 @@ import raylib_nb as rl
 from dataclasses import dataclass, field
 from enum import IntEnum
 from collections.abc import Callable
+from openpilot.selfdrive.ui.layouts.settings.dashcam import DashcamLayout
 from openpilot.selfdrive.ui.layouts.settings.developer import DeveloperLayout
 from openpilot.selfdrive.ui.layouts.settings.device import DeviceLayout
 from openpilot.selfdrive.ui.layouts.settings.firehose import FirehoseLayout
@@ -37,6 +38,7 @@ class PanelType(IntEnum):
   SOFTWARE = 3
   FIREHOSE = 4
   DEVELOPER = 5
+  DASHCAM = 6
 
 
 @dataclass
@@ -57,6 +59,7 @@ class SettingsLayout(Widget):
 
     self._panels = {
       PanelType.DEVICE: PanelInfo(tr_noop("Device"), DeviceLayout()),
+      PanelType.DASHCAM: PanelInfo(tr_noop("Dashcam"), DashcamLayout()),
       PanelType.NETWORK: PanelInfo(tr_noop("Network"), NetworkUI(wifi_manager)),
       PanelType.TOGGLES: PanelInfo(tr_noop("Toggles"), TogglesLayout()),
       PanelType.SOFTWARE: PanelInfo(tr_noop("Software"), SoftwareLayout()),
