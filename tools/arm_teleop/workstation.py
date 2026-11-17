@@ -243,7 +243,7 @@ def main():
   parser = argparse.ArgumentParser()
   parser.add_argument("--device", default="192.168.63.237")
   parser.add_argument("--key")
-  parser.add_argument("--game-url", help="Reservation gateway, e.g. https://mici.comma.life")
+  parser.add_argument("--game-url", help="Reservation gateway, e.g. https://balltoss.comma.life")
   parser.add_argument("--reservation", help="Reservation ID issued by the gateway")
   parser.add_argument("--token-file", help="File containing this reservation's API token")
   parser.add_argument("--leader", default="5CBC431223")

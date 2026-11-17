@@ -46,11 +46,11 @@ Neither server starts motion on its own. Probe and status reads do not enable to
 
 ## Reserved game sessions
 
-The companion [xx service](https://github.com/commaai/xx/pull/7492) books five-minute slots at `https://mici.comma.life` and issues a different API token for each reservation. Save its token file, stop any older workstation teleop service, and run:
+The companion [xx service](https://github.com/commaai/xx/pull/7492) books five-minute slots at `https://balltoss.comma.life` and issues a different API token for each reservation. Save its token file, stop any older workstation teleop service, and run:
 
 ```bash
-python tools/arm_teleop/workstation.py --game-url https://mici.comma.life \
-  --reservation <reservation-id> --token-file /path/to/mici-token.txt
+python tools/arm_teleop/workstation.py --game-url https://balltoss.comma.life \
+  --reservation <reservation-id> --token-file /path/to/balltoss-token.txt
 ```
 
 The local UI remains at `http://127.0.0.1:8070`. Live video and commands pass through the gateway and are available only during the reserved slot.
