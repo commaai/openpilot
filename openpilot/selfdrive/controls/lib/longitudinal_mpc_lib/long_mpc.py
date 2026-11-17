@@ -298,10 +298,7 @@ class LongitudinalMpc:
       return self.extrapolate_lead(x_lead, v_lead, a_lead, radar_lead.aLeadTau)
 
     if radar_lead.present:
-      # Anchor at radar's trusted h=0, use model's delta for h>0. On radarless, radarState
-      # is synthesized from the model (radard.get_RadarState_from_vision), so this collapses
-      # to `x - RADAR_TO_CAMERA` and `v_ego + (model.v - model_v_ego)` — identical to the
-      # prior formula. On radar cars, real radar measurements anchor the trajectory.
+      # anchor at radar's trusted h=0, use model's delta for h>0
       x_lead_traj = float(radar_lead.dRel) + (np.asarray(model_lead.x, dtype=np.float64) - model_lead.x[0])
       v_lead_traj = float(radar_lead.vLead) + (np.asarray(model_lead.v, dtype=np.float64) - model_lead.v[0])
     else:
