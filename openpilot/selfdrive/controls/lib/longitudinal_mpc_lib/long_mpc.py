@@ -286,12 +286,13 @@ class LongitudinalMpc:
 
   def process_lead(self, model_lead, radar_lead):
     v_ego = self.x0[1]
+    v_lead = radar_lead.vLead if radar_lead.present else v_ego + 10.0
+    # MPC will not converge if immediate crash is expected
+    # Clip lead distance to what is still possible to brake for
+    min_x_lead = MIN_X_LEAD_FACTOR * (v_ego + v_lead) * (v_ego - v_lead) / (-ACCEL_MIN * 2)
+
     if radar_lead.present and radar_lead.modelProb <= 0.5:
       # Radar-only overrides have no matching model trajectory.
-      v_lead = radar_lead.vLead
-      # MPC will not converge if immediate crash is expected
-      # Clip lead distance to what is still possible to brake for
-      min_x_lead = MIN_X_LEAD_FACTOR * (v_ego + v_lead) * (v_ego - v_lead) / (-ACCEL_MIN * 2)
       x_lead = np.clip(radar_lead.dRel, min_x_lead, 1e8)
       v_lead = np.clip(v_lead, 0.0, 1e8)
       a_lead = np.clip(radar_lead.aLeadK, -10., 5.)
@@ -306,10 +307,6 @@ class LongitudinalMpc:
       x_lead_traj = 50.0 + (v_ego + 10.0) * LEAD_T_IDXS_MODEL
       v_lead_traj = np.full_like(LEAD_T_IDXS_MODEL, v_ego + 10.0)
 
-    # MPC will not converge if immediate crash is expected
-    # Clip lead distance to what is still possible to brake for
-    v_lead_0 = v_lead_traj[0]
-    min_x_lead = MIN_X_LEAD_FACTOR * (v_ego + v_lead_0) * (v_ego - v_lead_0) / (-ACCEL_MIN * 2)
     x_lead_traj[0] = max(x_lead_traj[0], min_x_lead)
     v_lead_traj = np.clip(v_lead_traj, 0.0, 1e8)
 
