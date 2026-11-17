@@ -19,8 +19,8 @@
       <div class="metrics"><div class="metric"><strong id="fps">—</strong><span>fps</span></div><div class="metric"><strong id="controlRate">—</strong><span>control Hz</span></div><div class="metric"><strong id="latency">—</strong><span>command ms</span></div><div class="metric"><strong id="frameAge">—</strong><span>frame age ms</span></div></div>
     </div>
     <div class="panel joints">
-      <div class="panelhead"><h2>Joint positions</h2><div class="legend"><span><i></i>Leader</span><span><i class="green"></i>Left arm</span></div></div>
-      <table class="joint-table"><thead><tr><th>Joint</th><th>Leader °</th><th>Left arm °</th><th title="Reverse this joint's following direction">Reverse</th></tr></thead><tbody id="joints"></tbody></table>
+      <div class="panelhead"><h2>Joint positions</h2><div class="legend"><span><i></i>Leader</span><span><i class="green"></i><span id="armLegend">Left arm</span></span></div></div>
+      <table class="joint-table"><thead><tr><th>Joint</th><th>Leader °</th><th id="armHeading">Left arm °</th><th title="Reverse this joint's following direction">Reverse</th></tr></thead><tbody id="joints"></tbody></table>
       <div class="table-note">Encoder angles. Relative control starts from the current poses; these are not calibrated joint angles.</div>
     </div>
   </section>
@@ -30,8 +30,9 @@
       <div class="eyebrow">Control link</div>
       <div class="connection"><div class="device-icon">⌁</div><div><div class="connection-title" id="leaderTitle"><i class="dot"></i>Workstation leader</div><div class="mono" id="leaderSerial">5CBC431223</div><div class="connection-error" id="leaderError"></div></div></div>
       <div class="route"></div>
-      <div class="connection"><div class="device-icon">↗</div><div><div class="connection-title" id="followerTitle"><i class="dot"></i>Left follower</div><div class="mono" id="followerSerial">5CBC431994</div><div class="connection-error" id="followerError"></div></div></div>
+      <div class="connection"><div class="device-icon">↗</div><div><div class="connection-title" id="followerTitle"><i class="dot"></i><span id="armTitle">Left follower</span></div><div class="mono" id="followerSerial">5CBC431994</div><div class="connection-error" id="followerError"></div></div></div>
       <div class="divider"></div>
+      <label class="labelrow" for="arm">Follower arm</label><select id="arm" class="select"><option value="left">Left</option><option value="middle">Middle</option><option value="right">Right</option></select>
       <label class="labelrow" for="scale">Movement scale<output id="scaleLabel">0.50×</output></label>
       <input id="scale" type="range" min="0.1" max="1" step="0.05" value="0.5"><div class="range-ends"><span>PRECISE</span><span>1:1</span></div>
       <label class="labelrow" for="speed">Maximum joint speed</label><select id="speed" class="select"><option value="10">10° / sec · gentle</option><option value="20">20° / sec</option><option value="30" selected>30° / sec · standard</option><option value="45">45° / sec</option><option value="60">60° / sec</option></select>
@@ -42,7 +43,7 @@
       <p class="hint" style="margin-top:3px;text-align:center">Support the arm before releasing torque.</p>
       <div class="session-note" id="note" role="status">Connecting to the device…</div>
     </div>
-    <div class="panel settings"><div class="eyebrow">Device session</div><div class="setting"><span>Operating mode</span><span id="power">Connecting</span></div><div class="setting"><span>Idle shutdown</span><span id="shutdown">—</span></div><div class="setting"><span>Network address</span><span>Permanent MAC</span></div><div class="setting"><span>Control transport</span><span>SSH tunnel</span></div><p>Only the left arm receives commands. Other arms remain independent. A lost command link stops motion and holds the current pose.</p></div>
+    <div class="panel settings"><div class="eyebrow">Device session</div><div class="setting"><span>Operating mode</span><span id="power">Connecting</span></div><div class="setting"><span>Idle shutdown</span><span id="shutdown">—</span></div><div class="setting"><span>Network address</span><span>Permanent MAC</span></div><div class="setting"><span>Control transport</span><span>SSH tunnel</span></div><p>The selected arm follows your leader. Pause before switching arms. A lost command link stops motion and holds the current pose.</p></div>
     <div class="footer"><span>robot-arm-teleop</span><span>LOCAL SESSION</span></div>
   </aside>
 </main>
@@ -54,20 +55,22 @@ function badge(id,text,good){const el=$(id);el.classList.toggle('good',good);el.
 function send(op,extra={}){if(ws?.readyState===WebSocket.OPEN)ws.send(JSON.stringify({op,...extra}));}
 function stop(){send('stop');}
 function render(s){
-  state=s;const device=s.device||{},arm=device.arm||{},camera=device.camera||{},online=!s.device_error&&arm.connected,live=!s.device_error&&camera.age!==null&&camera.age<1;
+  state=s;const device=s.device||{},arm=device.arms?.[s.follower]||(s.follower==='left'?device.arm:{} )||{},camera=device.camera||{},online=!s.device_error&&arm.connected,live=!s.device_error&&camera.age!==null&&camera.age<1;
   if(live&&!wasLive)video();wasLive=live;
   badge('sessionBadge',s.active?'Following':online&&s.leader.connected?'Ready · paused':'Connecting',s.active||online&&s.leader.connected);
   badge('videoBadge',live?'Live':'Waiting for video',live);$('videoOverlay').classList.toggle('hidden',live);
   $('videoOverlay').textContent=s.device_error||camera.error||'Waiting for wide-camera frames…';
   $('fps').textContent=live?camera.fps.toFixed(1):'—';$('controlRate').textContent=s.active?s.rate.toFixed(1):'—';$('latency').textContent=s.active?s.latency.toFixed(0):'—';$('frameAge').textContent=live?Math.round(camera.age*1000):'—';
   $('leaderTitle').classList.toggle('good',s.leader.connected);$('followerTitle').classList.toggle('good',!!online);
-  $('leaderSerial').textContent=s.leader.serial;$('followerSerial').textContent=arm.serial||'5CBC431994';
+  $('leaderSerial').textContent=s.leader.serial;$('followerSerial').textContent=arm.serial||'—';
+  const title=s.follower[0].toUpperCase()+s.follower.slice(1);$('armLegend').textContent=title+' arm';$('armHeading').textContent=title+' arm °';$('armTitle').textContent=title+' follower';$('arm').value=s.follower;
+  for(const option of $('arm').options)option.disabled=!Object.hasOwn(device.arms||{left:device.arm},option.value);
   $('leaderError').textContent=s.leader.error||'';$('followerError').textContent=s.device_error||arm.error||'';
   $('start').disabled=s.active||!online||!!arm.error||!s.leader.connected||!live;$('start').textContent=s.active?'● Following leader':'Start following';
   $('release').disabled=s.active||!online;$('note').textContent=s.note;
   $('power').textContent=device.performance?'Always on':'Connecting';$('shutdown').textContent=device.performance?'Disabled':'—';
   for(let i=0;i<6;i++){$('l'+i).textContent=s.leader.connected&&s.leader.positions.length?(s.leader.positions[i]*360/4096).toFixed(1):'—';$('f'+i).textContent=online&&arm.positions.length?(arm.positions[i]*360/4096).toFixed(1):'—';$('r'+i).disabled=s.active;}
-  $('scale').disabled=s.active;$('speed').disabled=s.active;
+  $('scale').disabled=s.active;$('speed').disabled=s.active;$('arm').disabled=s.active;
 }
 function connect(){
   ws=new WebSocket(`ws://${location.host}/ws`);
@@ -77,6 +80,7 @@ function connect(){
 function video(){clearTimeout(videoRetry);$('video').src='/video?t='+Date.now();}
 $('video').onerror=()=>{videoRetry=setTimeout(video,2000);};
 $('start').onclick=()=>{$('error').textContent='';send('start',{scale:+$('scale').value,speed:+$('speed').value,signs:names.map((_,i)=>$('r'+i).checked?-1:1)});};
+$('arm').onchange=()=>send('select',{arm:$('arm').value});
 $('stop').onclick=stop;$('release').onclick=()=>{$('error').textContent='';send('release');};
 $('scale').oninput=()=>{$('scaleLabel').textContent=(+$('scale').value).toFixed(2)+'×';};
 document.addEventListener('keydown',e=>{if(e.code==='Space'||e.code==='Escape'){e.preventDefault();stop();}});

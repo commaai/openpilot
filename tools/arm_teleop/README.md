@@ -2,7 +2,7 @@
 
 Wide-camera video from a comma four and relative leader/follower control for a six-servo LeRobot SO arm. The device runs the `robot-arm-teleop` openpilot branch. The workstation serves a local UI and reads the USB leader; video and commands travel through SSH.
 
-This setup uses leader `5CBC431223` on the workstation and left follower `5CBC431994` on the device. The follower was identified by observing a manual change in its joint positions. USB serial numbers are used instead of changing `/dev/ttyACM` numbers. The two other follower arms are not opened by the service.
+This setup uses leader `5CBC431223` on the workstation and three followers on the device: left `5CBC431994`, middle `5CBC431998`, and right `5CBC453422`. Names refer to the wide-camera view. USB serial numbers are used instead of changing `/dev/ttyACM` numbers.
 
 ## Workstation
 
@@ -10,12 +10,12 @@ This setup uses leader `5CBC431223` on the workstation and left follower `5CBC43
 tools/arm_teleop/run.sh --device 192.168.63.237 --key ~/xx/private/key/id_rsa
 ```
 
-Open http://127.0.0.1:8070. `uv` installs the small Python environment on the first run. The SSH host key must already be trusted. `--leader`, `--port`, and `--tunnel-port` override the defaults.
+Open http://127.0.0.1:8070. `uv` installs the small Python environment on the first run. The SSH host key must already be trusted. `--leader`, `--follower left|middle|right`, `--port`, and `--tunnel-port` override the defaults.
 
 1. Wait for live video and both arm connections.
-2. Select movement scale and maximum speed. Start with 0.5× and 30°/s.
-3. Click **Start following**. Moving the leader moves the left follower relative to their starting poses.
-4. **Pause / hold position**, Space, or Escape stops following and holds the follower's current position. Pause and restart to recenter the leader.
+2. Select the follower arm, movement scale, and maximum speed. Start with 0.5× and 30°/s.
+3. Click **Start following**. Moving the leader moves the selected follower relative to their starting poses.
+4. **Pause / hold position**, Space, or Escape stops following and holds the follower's current position. Pause before selecting another arm. Restart to recenter the leader.
 5. **Release follower torque** makes the follower free to move by hand. Support it before releasing.
 
 Changing tabs, leaving the browser window, closing the page, losing the camera, or losing the command connection stops following. Reconnection never resumes motion automatically. The device independently expires commands after 400 ms. Speed and position limits are enforced on the device, and encoder jumps are rejected on the workstation.
@@ -40,7 +40,7 @@ Automatic openpilot updates are disabled in this mode. Switch to a stock branch 
 
 ## Development
 
-`device.py` owns the follower bus, command watchdog, and MJPEG encoder. `workstation.py` owns the leader bus, SSH tunnel, and browser session. `servos.py` is a small wrapper around the Feetech SDK with read-only discovery. `power.py` applies the device runtime settings and maintains USB power/permissions after reconnects.
+`device.py` owns one bus, control session, and command watchdog per follower, plus the shared MJPEG encoder. `workstation.py` owns the leader bus, SSH tunnel, and browser session. `servos.py` is a small wrapper around the Feetech SDK with read-only discovery. `power.py` applies the device runtime settings and maintains USB power/permissions after reconnects.
 
 Neither server starts motion on its own. Probe and status reads do not enable torque. Motion commands are accepted only after an explicit Start and require the current session ID and increasing sequence numbers.
 
@@ -60,3 +60,11 @@ On the device, `/data/arm_teleop_gateway_key` enables managed mode. It must cont
 Without the key file, the original direct workstation mode is available. Do not remove this file from a device assigned to the reservation service.
 
 Place the gateway's dedicated Ed25519 SSH public key at `/data/arm_teleop_gateway.pub`. At teleop startup, the power setup installs it into AGNOS's `/tmp/authorized_keys` with a restricted forwarding destination and a disabled shell. Existing administrative SSH keys are preserved. The private key stays on the gateway host.
+
+## Multi-arm API
+
+`GET /status` returns `arms.left`, `arms.middle`, and `arms.right`, each with its serial, connection state, positions, limits, faults, and control state. The legacy `arm` field remains an alias for the left arm.
+
+Include `"arm":"left"`, `"arm":"middle"`, or `"arm":"right"` on `start`, `target`, `stop`, and `release`. Start each arm separately and stream targets with that arm's session and increasing sequence numbers. Sessions and the 400 ms watchdog are independent; an expired session cannot command another arm.
+
+Omitting `arm` selects the left arm, except for `stop`, which stops all arms. `{"op":"stop","arm":"all"}` also stops all arms. Torque release always applies to one arm. In managed mode all three arms use the same reservation deadline; expiry, cancellation, and gateway shutdown stop all three.

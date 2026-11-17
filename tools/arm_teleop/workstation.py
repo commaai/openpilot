@@ -15,6 +15,7 @@ from servos import Arm, JOINTS
 class Station:
   def __init__(self, args):
     self.args = args
+    self.follower = args.follower
     self.leader = None
     self.leader_positions = []
     self.leader_error = "Connecting to leader"
@@ -36,7 +37,9 @@ class Station:
     self.headers = {"Authorization": "Bearer " + Path(args.token_file).read_text().strip()} if args.game_url else {}
 
   async def command(self, body):
-    async with self.http.post(self.base + "/command", json=body, timeout=ClientTimeout(total=0.7)) as response:
+    if self.follower != "left" and self.follower not in self.device.get("arms", {}):
+      raise ValueError("The device does not expose the selected arm")
+    async with self.http.post(self.base + "/command", json={**body, "arm": self.follower}, timeout=ClientTimeout(total=0.7)) as response:
       result = await response.json()
       if response.status != 200:
         raise ValueError(result.get("error", "Device command failed"))
@@ -57,6 +60,14 @@ class Station:
       op = body["op"]
       if op == "stop":
         await self.stop("Paused; restart to recenter the leader")
+      elif op == "select":
+        if self.active:
+          raise ValueError("Pause before selecting another arm")
+        name = body.get("arm")
+        if name not in self.device.get("arms", {"left": self.device.get("arm", {})}):
+          raise ValueError("Choose an available follower arm")
+        self.follower = name
+        self.note = f"{name.capitalize()} arm selected; start to recenter the leader"
       elif op == "release":
         await self.stop("Motors released")
         await self.command({"op": "release"})
@@ -87,7 +98,7 @@ class Station:
         self.owner = ws
         self.heartbeat = time.monotonic()
         self.active = True
-        self.note = "Following your leader arm"
+        self.note = f"{self.follower.capitalize()} arm following your leader"
       else:
         raise ValueError("Unknown command")
 
@@ -136,7 +147,7 @@ class Station:
   def status(self):
     return {"leader": {"serial": self.args.leader, "connected": self.leader is not None and not self.leader_error,
                        "positions": self.leader_positions, "error": self.leader_error},
-            "device": self.device, "device_error": self.device_error, "active": self.active, "note": self.note,
+            "device": self.device, "device_error": self.device_error, "follower": self.follower, "active": self.active, "note": self.note,
             "rate": round(self.rate, 1) if self.active else 0, "latency": round(self.latency, 1), "joints": JOINTS}
 
   async def monitor(self):
@@ -233,6 +244,7 @@ def main():
   parser.add_argument("--reservation", help="Reservation ID issued by the gateway")
   parser.add_argument("--token-file", help="File containing this reservation's API token")
   parser.add_argument("--leader", default="5CBC431223")
+  parser.add_argument("--follower", choices=("left", "middle", "right"), default="left")
   parser.add_argument("--port", type=int, default=8070)
   parser.add_argument("--tunnel-port", type=int, default=18022)
   args = parser.parse_args()

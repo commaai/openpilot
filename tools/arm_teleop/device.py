@@ -20,7 +20,7 @@ from servos import Arm, IDS, JOINTS
 from msgq.visionipc import VisionIpcClient
 from openpilot.cereal.visionipc import VisionStreamType
 
-FOLLOWER = "5CBC431994"
+FOLLOWERS = {"left": "5CBC431994", "middle": "5CBC431998", "right": "5CBC453422"}
 WATCHDOG = 0.4
 TICKS_PER_DEGREE = 4096 / 360
 
@@ -73,10 +73,12 @@ class Camera:
 
 
 class Robot:
-  def __init__(self, managed=False):
+  def __init__(self, name="left", managed=False):
+    self.name = name
+    self.serial = FOLLOWERS[name]
     self.lock = threading.RLock()
     self.arm = None
-    self.state = {"serial": FOLLOWER, "connected": False, "positions": [], "error": "Connecting to left arm"}
+    self.state = {"serial": self.serial, "connected": False, "positions": [], "error": f"Connecting to {name} arm"}
     self.active = False
     self.holding = False
     self.session = None
@@ -106,7 +108,7 @@ class Robot:
         self.stop(body.get("reason", "Stopped by operator"))
         return {"ok": True}
       if not self.arm:
-        raise ValueError("Left arm is not connected")
+        raise ValueError(f"{self.name.capitalize()} arm is not connected")
       if op == "release":
         self.stop("Torque released")
         self.arm.torque(False)
@@ -178,7 +180,7 @@ class Robot:
         try:
           if self.arm is None and now >= retry_at:
             retry_at = now + 2
-            self.arm = Arm(FOLLOWER)
+            self.arm = Arm(self.serial)
             self.holding = any(self.arm.read(i, 40, 1) for i in IDS)
             self.state.update(connected=True, port=self.arm.path, limits=self.arm.limits, models=self.arm.models, error="")
           if self.arm is not None:
@@ -202,7 +204,7 @@ class Robot:
           self.active = False
           self.session = None
           self.reason = "Arm communication lost"
-          self.state.update(connected=False, error=str(e) or "Left arm not found")
+          self.state.update(connected=False, error=str(e) or f"{self.name.capitalize()} arm not found")
           if self.arm:
             try:
               if self.holding:
@@ -220,6 +222,28 @@ class Robot:
       return {**self.state, "active": self.active, "holding": self.holding, "reason": self.reason,
               "managed": self.managed, "lease_remaining": max(0, self.lease_deadline - time.monotonic()) if self.active and self.managed else None,
               "target": self.commanded, "command_age": time.monotonic() - self.last_command if self.active else None}
+
+
+def stop_all(reason):
+  errors = []
+  for robot in robots.values():
+    with robot.lock:
+      try:
+        robot.stop(reason)
+      except OSError as e:
+        errors.append(str(e))
+  if errors:
+    raise OSError("; ".join(errors))
+
+
+def command(body):
+  name = body.get("arm", "all" if body["op"] == "stop" else "left")
+  if name == "all" and body["op"] == "stop":
+    stop_all(body.get("reason", "Stopped by operator"))
+    return {"ok": True}
+  if not isinstance(name, str) or name not in robots:
+    raise ValueError("Choose left, middle, or right; all is only supported for stop")
+  return robots[name].command(body)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -245,7 +269,8 @@ class Handler(BaseHTTPRequestHandler):
     if not self.authorized():
       return
     if self.path == "/status":
-      self.json({"arm": robot.status(), "joints": JOINTS, "camera": {"fps": round(camera.fps, 1), "frames": camera.frame,
+      arms = {name: robot.status() for name, robot in robots.items()}
+      self.json({"arm": arms["left"], "arms": arms, "joints": JOINTS, "camera": {"fps": round(camera.fps, 1), "frames": camera.frame,
                  "age": time.monotonic() - camera.updated if camera.updated else None, "error": camera.error},
                  "os": Path("/VERSION").read_text().strip(), "performance": os.getenv("ARM_TELEOP") == "1"})
     elif self.path == "/video":
@@ -282,7 +307,7 @@ class Handler(BaseHTTPRequestHandler):
       size = int(self.headers.get("Content-Length", "0"))
       if not 0 < size < 8192:
         raise ValueError("Invalid command length")
-      self.json(robot.command(json.loads(self.rfile.read(size))))
+      self.json(command(json.loads(self.rfile.read(size))))
     except (ValueError, KeyError, TypeError, OSError) as e:
       self.json({"error": str(e)}, 400)
 
@@ -300,13 +325,15 @@ if __name__ == "__main__":
   if gateway_key is not None and len(gateway_key) < 32:
     raise ValueError("Invalid reservation gateway key")
   camera = Camera()
-  robot = Robot(managed=gateway_key is not None)
+  robots = {name: Robot(name, managed=gateway_key is not None) for name in FOLLOWERS}
   server = ThreadingHTTPServer(("127.0.0.1", 8022), Handler)
   signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
   try:
     server.serve_forever()
   finally:
-    with robot.lock:
+    for robot in robots.values():
       robot.running = False
-      robot.stop("Device service stopped")
-    server.server_close()
+    try:
+      stop_all("Device service stopped")
+    finally:
+      server.server_close()
