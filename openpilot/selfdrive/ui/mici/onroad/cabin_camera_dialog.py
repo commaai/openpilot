@@ -233,7 +233,9 @@ class BaseCabinCameraDialog(Widget):
       self._draw_meter(rl.Rectangle(meter_x, row_y + 10, meter_w, 6), value, with_alpha(meter_color, 0.9))
       row_y += ROW_HEIGHT
 
-    awareness = self._awareness.update(max(0, dm_state.visionPolicyState.awarenessPercent) / 100)
+    is_vision = dm_state.activePolicy == log.DriverMonitoringState.MonitoringPolicy.vision
+    policy_state = dm_state.visionPolicyState if is_vision else dm_state.wheeltouchPolicyState
+    awareness = self._awareness.update(max(0, policy_state.awarenessPercent) / 100)
     row_y += 6
     pct = f"{round(awareness * 100)}%"
     draw_text("awareness", x + 16, row_y, 20, FontWeight.ROMAN, with_alpha(rl.WHITE, 0.85))

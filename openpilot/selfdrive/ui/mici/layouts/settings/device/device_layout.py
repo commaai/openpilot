@@ -34,7 +34,6 @@ class ReviewTermsPage(TermsPage, NavScroller):
 class ReviewTrainingGuide(TrainingGuide):
   def show_event(self):
     super().show_event()
-    self._update_toggles()
     device.set_override_interactive_timeout(300)
 
   def hide_event(self):
@@ -200,7 +199,8 @@ class DeviceLayoutMici(NavScroller):
     cabin_cam_btn.set_enabled(lambda: ui_state.is_offroad())
 
     review_training_guide_btn = BigButton("review\ntraining guide", "", gui_app.texture("icons_mici/settings/device/info.png", 64, 64))
-    review_training_guide_btn.set_click_callback(lambda: gui_app.push_widget(ReviewTrainingGuide(completed_callback=lambda: gui_app.pop_widgets_to(self))))
+    review_training_guide_btn.set_click_callback(lambda: gui_app.push_widget(
+      ReviewTrainingGuide(completed_callback=lambda: gui_app.pop_widgets_to(self, self._update_toggles))))
     review_training_guide_btn.set_enabled(lambda: ui_state.is_offroad())
 
     terms_btn = BigButton("terms &\nconditions", "", gui_app.texture("icons_mici/settings/device/info.png", 64, 64))
