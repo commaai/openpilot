@@ -63,7 +63,7 @@ function op_get_openpilot_dir() {
 
   # Fallback to hardcoded directories if not found
   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
-  for dir in "$(readlink -f "$SCRIPT_DIR/../..")" "$HOME/openpilot" "/data/openpilot"; do
+  for dir in "$(readlink -f "$SCRIPT_DIR/..")" "$HOME/openpilot" "/data/openpilot"; do
     if [[ -f "$dir/launch_openpilot.sh" ]]; then
       OPENPILOT_ROOT="$dir"
       return 0
@@ -118,7 +118,8 @@ function op_check_git() {
   fi
 
   echo "Checking for LFS files..."
-  if [[ $(file -b "$OPENPILOT_ROOT/openpilot/selfdrive/modeld/models/dmonitoring_model.onnx") == "data" ]]; then
+  local model="$OPENPILOT_ROOT/openpilot/selfdrive/modeld/models/dmonitoring_model.onnx"
+  if [[ -s "$model" && -r "$model" ]] && ! grep -aq '^version https://git-lfs.github.com/spec/v1$' "$model"; then
     echo -e " ↳ [${GREEN}✔${NC}] LFS files found."
   else
     echo -e " ↳ [${RED}✗${NC}] LFS files not found! Run './lfs.py pull'"
