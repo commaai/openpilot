@@ -34,6 +34,7 @@ class Station:
     self.clients = set()
     self.lock = asyncio.Lock()
     self.base = f"{args.game_url.rstrip('/')}/api/reservations/{args.reservation}" if args.game_url else f"http://127.0.0.1:{args.tunnel_port}"
+    self.video_base = self.base if args.game_url else f"http://127.0.0.1:{args.video_tunnel_port}"
     self.headers = {"Authorization": "Bearer " + Path(args.token_file).read_text().strip()} if args.game_url else {}
 
   async def command(self, body):
@@ -165,13 +166,14 @@ class Station:
           await ws.send_json(state)
       await asyncio.sleep(0.1)
 
-  async def tunnel(self):
+  async def tunnel(self, port, qos):
     while True:
       proc = await asyncio.create_subprocess_exec(
         "ssh", "-N", "-T", "-i", self.args.key, "-o", "IdentitiesOnly=yes", "-o", "BatchMode=yes",
         "-o", "StrictHostKeyChecking=yes", "-o", "ExitOnForwardFailure=yes", "-o", "ConnectTimeout=5",
         "-o", "ServerAliveInterval=2", "-o", "ServerAliveCountMax=2",
-        "-L", f"127.0.0.1:{self.args.tunnel_port}:127.0.0.1:8022", f"comma@{self.args.device}")
+        "-o", "ControlMaster=no", "-o", "ControlPath=none", "-o", f"IPQoS={qos}",
+        "-L", f"127.0.0.1:{port}:127.0.0.1:8022", f"comma@{self.args.device}")
       try:
         await proc.wait()
       finally:
@@ -184,7 +186,8 @@ class Station:
     self.http = ClientSession(headers=self.headers)
     tasks = [asyncio.create_task(fn()) for fn in (self.controls, self.monitor)]
     if not self.args.game_url:
-      tasks.append(asyncio.create_task(self.tunnel()))
+      tasks.extend(asyncio.create_task(self.tunnel(port, qos)) for port, qos in
+                   [(self.args.tunnel_port, "lowdelay"), (self.args.video_tunnel_port, "throughput")])
     yield
     async with self.lock:
       await self.stop("Workstation service stopped")
@@ -222,7 +225,7 @@ class Station:
 
   async def video(self, request):
     try:
-      upstream = await self.http.get(self.base + "/video", timeout=ClientTimeout(total=None, connect=2, sock_read=4))
+      upstream = await self.http.get(self.video_base + "/video", timeout=ClientTimeout(total=None, connect=2, sock_read=4))
     except Exception:
       raise web.HTTPServiceUnavailable(text="Waiting for wide camera") from None
     async with upstream:
@@ -247,6 +250,7 @@ def main():
   parser.add_argument("--follower", choices=("left", "middle", "right"), default="left")
   parser.add_argument("--port", type=int, default=8070)
   parser.add_argument("--tunnel-port", type=int, default=18022)
+  parser.add_argument("--video-tunnel-port", type=int, default=18023)
   args = parser.parse_args()
   if args.game_url:
     if not args.reservation or not args.token_file:

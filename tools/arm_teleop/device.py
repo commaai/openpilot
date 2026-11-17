@@ -23,6 +23,7 @@ from openpilot.cereal.visionipc import VisionStreamType
 FOLLOWERS = {"left": "5CBC431994", "middle": "5CBC431998", "right": "5CBC453422"}
 WATCHDOG = 0.4
 TICKS_PER_DEGREE = 4096 / 360
+LUMA = [max(0, min(255, int((value - 16) * 255 / 219))) for value in range(256)]
 
 
 class Camera:
@@ -31,6 +32,7 @@ class Camera:
     self.jpeg = b""
     self.frame = 0
     self.updated = 0.
+    self.captured_at = 0.
     self.fps = 0.
     self.error = "Waiting for wide camera"
     threading.Thread(target=self.run, daemon=True).start()
@@ -48,14 +50,13 @@ class Camera:
               raise TimeoutError("Wide camera stopped sending frames")
             continue
           data = np.asarray(buf.data, dtype=np.uint8)
+          captured_at = time.time() - (time.monotonic() - client.timestamp_sof / 1e9)  # noqa: TID251
           y = data[:buf.uv_offset].reshape(-1, buf.stride)[:buf.height, :buf.width]
           uv = data[buf.uv_offset:buf.uv_offset + buf.stride * (buf.height // 2)].reshape(-1, buf.stride)[:, :buf.width]
-          yuv = np.empty((buf.height, buf.width, 3), dtype=np.uint8)
-          yuv[:, :, 0] = np.clip((y.astype(np.float32) - 16) * (255 / 219), 0, 255).astype(np.uint8)
-          yuv[:, :, 1] = uv[:, ::2].repeat(2, axis=0).repeat(2, axis=1)
-          yuv[:, :, 2] = uv[:, 1::2].repeat(2, axis=0).repeat(2, axis=1)
-          image = Image.frombytes("YCbCr", (buf.width, buf.height), yuv.tobytes()).convert("RGB")
-          image.thumbnail((1008, 570))
+          size = (1008, round(buf.height * 1008 / buf.width))
+          planes = [Image.fromarray(plane).resize(size, Image.Resampling.BILINEAR) for plane in (y, uv[:, ::2], uv[:, 1::2])]
+          planes[0] = planes[0].point(LUMA)
+          image = Image.merge("YCbCr", planes).convert("RGB")
           output = io.BytesIO()
           image.save(output, "JPEG", quality=75)
           now = time.monotonic()
@@ -64,6 +65,7 @@ class Camera:
             self.frame += 1
             self.fps = 0.9 * self.fps + 0.1 / max(now - last, 0.001)
             self.updated = now
+            self.captured_at = captured_at
             self.error = ""
             self.condition.notify_all()
           last = now
@@ -248,6 +250,7 @@ def command(body):
 
 class Handler(BaseHTTPRequestHandler):
   protocol_version = "HTTP/1.1"
+  disable_nagle_algorithm = True
 
   def setup(self):
     super().setup()
@@ -271,10 +274,26 @@ class Handler(BaseHTTPRequestHandler):
     if self.path == "/status":
       arms = {name: robot.status() for name, robot in robots.items()}
       self.json({"arm": arms["left"], "arms": arms, "joints": JOINTS, "camera": {"fps": round(camera.fps, 1), "frames": camera.frame,
-                 "age": time.monotonic() - camera.updated if camera.updated else None, "error": camera.error},
+                 "age": time.monotonic() - camera.updated if camera.updated else None, "captured_at": camera.captured_at, "error": camera.error},
+                 "device_time": time.time(),  # noqa: TID251
                  "os": Path("/VERSION").read_text().strip(), "performance": os.getenv("ARM_TELEOP") == "1"})
+    elif self.path == "/frame":
+      with camera.condition:
+        jpeg, frame, captured_at = camera.jpeg, camera.frame, camera.captured_at
+      if not jpeg or time.monotonic() - camera.updated > 1:
+        self.json({"error": "Waiting for wide camera"}, 503)
+        return
+      self.send_response(200)
+      self.send_header("Content-Type", "image/jpeg")
+      self.send_header("Content-Length", str(len(jpeg)))
+      self.send_header("X-Frame-Id", str(frame))
+      self.send_header("X-Capture-Time", str(captured_at))
+      self.send_header("Cache-Control", "no-store")
+      self.end_headers()
+      self.wfile.write(jpeg)
     elif self.path == "/video":
-      self.connection.settimeout(2)
+      self.connection.settimeout(.2)
+      self.connection.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 32768)
       self.send_response(200)
       self.send_header("Content-Type", "multipart/x-mixed-replace; boundary=frame")
       self.send_header("Cache-Control", "no-store")
@@ -287,8 +306,9 @@ class Handler(BaseHTTPRequestHandler):
             camera.condition.wait_for(lambda previous=frame: camera.frame != previous and camera.jpeg, timeout=3)
             if not camera.jpeg or time.monotonic() - camera.updated > 2:
               break
-            frame, jpeg = camera.frame, camera.jpeg
-          self.wfile.write(b"--frame\r\nContent-Type: image/jpeg\r\nContent-Length: " + str(len(jpeg)).encode() + b"\r\n\r\n" + jpeg + b"\r\n")
+            frame, jpeg, captured_at = camera.frame, camera.jpeg, camera.captured_at
+          header = f"--frame\r\nContent-Type: image/jpeg\r\nContent-Length: {len(jpeg)}\r\nX-Capture-Time: {captured_at}\r\n\r\n".encode()
+          self.wfile.write(header + jpeg + b"\r\n")
           self.wfile.flush()
       except (BrokenPipeError, ConnectionResetError, TimeoutError):
         pass
