@@ -39,6 +39,15 @@ DISCONNECT_TIMEOUT = 5.  # wait 5 seconds before going offroad after disconnect 
 PANDA_STATES_TIMEOUT = round(1000 / SERVICE_LIST['pandaStates'].frequency * 1.5)  # 1.5x the expected pandaState frequency
 ONROAD_CYCLE_TIME = 1  # seconds to wait offroad after requesting an onroad cycle
 
+
+def update_dashcam_active(params, cable_connected: bool, ignition: bool, prev: bool) -> bool:
+  """Publish DashcamActive only when USB power/car ignition changes."""
+  active = cable_connected and not ignition
+  if active != prev:
+    params.put_bool("DashcamActive", active, block=True)
+  return active
+
+
 class Chestnut:
   # flash before going onroad, modeld ignores chestnut until the product string matches
   MAX_ATTEMPTS = 3
@@ -232,6 +241,7 @@ def hardware_thread(end_event, hw_queue) -> None:
   all_temp_filter = FirstOrderFilter(0., TEMP_TAU, DT_HW, initialized=False)
   offroad_temp_filter = FirstOrderFilter(0., TEMP_TAU, DT_HW, initialized=False)
   should_start_prev = False
+  dashcam_active_prev = False
   in_car = False
   engaged_prev = False
   pwrsave = False
@@ -314,6 +324,10 @@ def hardware_thread(end_event, hw_queue) -> None:
     msg.deviceState.screenBrightnessPercent = HARDWARE.get_screen_brightness()
 
     set_usb_state(msg.deviceState, last_hw_state.usb_state)
+
+    dashcam_active_prev = update_dashcam_active(params, msg.deviceState.usbState.connected,
+                                                onroad_conditions["ignition"], dashcam_active_prev)
+
     chestnut.update(started_ts is None, last_hw_state.usb_state)
     chestnut_state = sm["chestnutState"]
     chestnut_valid = sm.alive["chestnutState"] and sm.valid["chestnutState"]
