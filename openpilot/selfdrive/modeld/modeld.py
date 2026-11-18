@@ -209,7 +209,7 @@ class ModelState:
     self.npy['desire'][:] = np.where(inputs['desire_pulse'] - self.prev_desire > .99, inputs['desire_pulse'], 0)
     self.prev_desire[:] = inputs['desire_pulse']
     self.npy['traffic_convention'][:] = inputs['traffic_convention']
-    self.npy['action_t'][:] = inputs['action_t']
+    np.minimum(inputs['action_t'], 0.4, out=self.npy['action_t'])
 
     self.copy_inputs()
     self.input_queues['new_img'] = self.run_warp(**self.warp_inputs)
