@@ -1,4 +1,13 @@
 # the rules a drive's recording passes, each a (passed, evidence) check
+import os
+
+from opendbc.safety.tests.safety_replay.replay_drive import replay_drive
+
+# safety modes without a car, libsafety has no rx checks to replay them with
+NO_CAR_MODES = ('noOutput', 'silent', 'elm327', 'allOutput')
+# libsafety builds on first use, comma devices have no UBSan runtime
+os.environ.setdefault("SAFETY_UBSAN_TRAP", "1")
+
 # seconds after the DUT panda's controls_allowed edge by which openpilot must be enabled
 ENGAGE_LIMIT = 2.
 # seconds at the end of a recording carState has to be canValid
@@ -86,11 +95,27 @@ def no_new_faults(msgs) -> Check:
   return not new, f"new panda faults {', '.join(new)}" if new else "no new panda faults"
 
 
+def libsafety_agrees(msgs) -> Check:
+  # opendbc's safety replay of the recording: libsafety allows what openpilot sent while controls were allowed, and every message it received is valid
+  cps = _of(msgs, 'carParams')
+  if not cps:
+    return False, "no carParams to replay with"
+  CP = cps[-1].carParams
+  if not len(CP.safetyConfigs):
+    return False, "no safety config to replay with"
+  cfg = CP.safetyConfigs[-1]
+  if str(cfg.safetyModel) in NO_CAR_MODES:
+    return True, f"no car safety mode to replay ({cfg.safetyModel})"
+  ok = replay_drive(list(msgs), cfg.safetyModel.raw, cfg.safetyParam, CP.alternativeExperience)
+  return ok, f"libsafety replay with {cfg.safetyModel} param {cfg.safetyParam}: {'agrees' if ok else 'blocks or rejects, its counts are printed above'}"
+
+
 def check(msgs, car_model: str, edge: bool) -> list[Check]:
   msgs = sorted(msgs, key=lambda m: m.logMonoTime)
   if not msgs:
     return [(False, "nothing recorded")]
   checks = [fingerprinted(msgs, car_model), can_valid(msgs)]
-  if edge:
+  cps = _of(msgs, 'carParams')
+  if edge and cps and not cps[-1].carParams.dashcamOnly:
     checks.append(engaged_at_edge(msgs))
-  return checks + [stayed_engaged(msgs), none_blocked(msgs), no_new_faults(msgs)]
+  return checks + [stayed_engaged(msgs), none_blocked(msgs), no_new_faults(msgs), libsafety_agrees(msgs)]

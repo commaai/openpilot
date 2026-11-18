@@ -17,7 +17,7 @@ from openpilot.selfdrive.test.helpers import set_params_enabled
 
 PANDA_LIMIT = 45.
 ROAD_CAMERAS = ('narrowRoadCameraState', 'wideRoadCameraState')
-RECORD = ('can', 'pandaStates', 'selfdriveState', 'carState', 'carParams', 'cabinCameraState', *ROAD_CAMERAS)
+RECORD = ('can', 'sendcan', 'pandaStates', 'selfdriveState', 'carState', 'carParams', 'cabinCameraState', *ROAD_CAMERAS)
 
 
 class RigProblem(Exception):

@@ -1,4 +1,5 @@
-from openpilot.selfdrive.test.cars.rules import (can_valid, check, engaged_at_edge, fingerprinted, no_new_faults, none_blocked,
+from opendbc.car.structs import CarParams
+from openpilot.selfdrive.test.cars.rules import (can_valid, check, engaged_at_edge, fingerprinted, libsafety_agrees, no_new_faults, none_blocked,
                                                  stayed_engaged)
 from openpilot.selfdrive.test.cars.tests.helpers import can, msg, panda
 
@@ -7,7 +8,9 @@ CAR = 'TOYOTA_COROLLA_TSS2'
 
 def drive(engage_at: float = 2.5, allowed_at: float = 2., end: float = 15.) -> list:
   # 10 Hz from t=0, the panda allows controls at allowed_at, openpilot engages at engage_at
-  msgs = [msg('carParams', 0., carFingerprint=CAR)]
+  cp = msg('carParams', 0., carFingerprint=CAR)
+  cp.carParams.safetyConfigs = [{'safetyModel': int(CarParams.SafetyModel.noOutput)}]
+  msgs = [cp]
   for i in range(int(end * 10)):
     t = i / 10
     msgs += [panda(t, t >= allowed_at), msg('selfdriveState', t, enabled=t >= engage_at), msg('carState', t, canValid=t >= 1.),
@@ -18,6 +21,14 @@ def drive(engage_at: float = 2.5, allowed_at: float = 2., end: float = 15.) -> l
 class TestRules:
   def test_clean(self):
     assert all(ok for ok, _ in check(drive(), CAR, edge=True))
+
+  def test_libsafety(self):
+    assert libsafety_agrees(drive())[0]
+    assert not libsafety_agrees([msg('carParams', 0., carFingerprint=CAR), can(0., [(0x2e4, 0)])])[0]
+    # a toyota recording without the messages toyota's rx checks need
+    cp = msg('carParams', 0., carFingerprint=CAR)
+    cp.carParams.safetyConfigs = [{'safetyModel': int(CarParams.SafetyModel.toyota)}]
+    assert not libsafety_agrees([cp] + [can(t / 10, [(0x2e4, 0)]) for t in range(50)])[0]
 
   def test_fingerprint(self):
     assert not fingerprinted(drive(), 'HONDA_CIVIC')[0]
@@ -36,7 +47,7 @@ class TestRules:
     assert not engaged_at_edge(drive(allowed_at=10.))[0]
 
   def test_no_edge_skips_engage(self):
-    assert len(check(drive(engage_at=10.), CAR, edge=False)) == 5
+    assert len(check(drive(engage_at=10.), CAR, edge=False)) == 6
     assert all(ok for ok, _ in check(drive(engage_at=10., allowed_at=10.), CAR, edge=False))
 
   def test_disengaged(self):
