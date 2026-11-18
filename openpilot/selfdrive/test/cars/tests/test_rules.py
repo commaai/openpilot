@@ -5,7 +5,7 @@ from openpilot.selfdrive.test.cars.tests.helpers import can, msg, panda
 CAR = 'TOYOTA_COROLLA_TSS2'
 
 
-def drive(engage_at: float = 2.5, allowed_at: float = 2., end: float = 6.) -> list:
+def drive(engage_at: float = 2.5, allowed_at: float = 2., end: float = 15.) -> list:
   # 10 Hz from t=0, the panda allows controls at allowed_at, openpilot engages at engage_at
   msgs = [msg('carParams', 0., carFingerprint=CAR)]
   for i in range(int(end * 10)):
@@ -25,7 +25,9 @@ class TestRules:
 
   def test_can_valid(self):
     assert not can_valid([msg('carState', 0., canValid=False)])[0]
-    assert not can_valid(drive() + [msg('carState', 5.55, canValid=False)])[0]
+    assert not can_valid(drive() + [msg('carState', 14.55, canValid=False)])[0]
+    # the panda's switch to the car's safety mode drops it before the last 10 s
+    assert can_valid(drive() + [msg('carState', 4.55, canValid=False)])[0]
 
   def test_engage_late(self):
     assert engaged_at_edge(drive(engage_at=3.9))[0]

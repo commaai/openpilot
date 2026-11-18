@@ -2,6 +2,7 @@
 from dataclasses import dataclass
 
 from opendbc.car.car_helpers import interfaces
+from opendbc.car.fw_versions import match_fw_to_car
 from opendbc.car.logreader import LogReader
 from opendbc.car.tests.routes import CarTestRoute
 from opendbc.car.tests.test_models import TestCarModelBase, get_cached_segment
@@ -25,7 +26,7 @@ class Window:
   seconds: float
   edge: bool
   frames: list[Frame]
-  # the route's carParams for CarParamsCache, None when card wouldn't take its firmware
+  # the route's carParams for CarParamsCache, None when card wouldn't take its firmware or it doesn't identify the car
   cache: bytes | None
   alpha_long: bool
 
@@ -71,14 +72,14 @@ def load_segment(route: CarTestRoute, segment: int):
   car = type("Car", (TestCarModelBase,), {"platform": route.car_model})
   car_fw, _, alpha_long = car.get_testing_data_from_logreader(msgs)
   CP = interfaces[route.car_model].get_params(route.car_model, car.fingerprint, car_fw, alpha_long, False, docs=False)
-  return msgs, CP.dashcamOnly, alpha_long
+  return msgs, CP.dashcamOnly, alpha_long, car_fw
 
 
-def make_window(segment: int, msgs, alpha_long: bool, start: float, seconds: float, edge: bool) -> Window:
+def make_window(route: CarTestRoute, segment: int, msgs, alpha_long: bool, car_fw, start: float, seconds: float, edge: bool) -> Window:
   can_start = next(m.logMonoTime * 1e-9 for m in msgs if m.which() == 'can')
   logged = next((m.carParams for m in reversed(msgs) if m.which() == 'carParams'), None)
   cache = None
-  if logged is not None and len(logged.carFw) and logged.carVin != VIN_UNKNOWN:
+  if logged is not None and logged.carVin != VIN_UNKNOWN and match_fw_to_car(car_fw, logged.carVin, log=False)[1] == {route.car_model}:
     cache = logged.as_builder().to_bytes()
   return Window(segment, start - can_start, seconds, edge, bin_frames(msgs, start, seconds), cache, alpha_long)
 
@@ -87,18 +88,18 @@ def find_window(route: CarTestRoute) -> Window:
   fallback = None
   for segment in segments_to_try(route):
     try:
-      msgs, dashcam_only, alpha_long = load_segment(route, segment)
+      msgs, dashcam_only, alpha_long, car_fw = load_segment(route, segment)
     except (OSError, AssertionError):
       continue
     can = [m.logMonoTime * 1e-9 for m in msgs if m.which() == 'can']
     if fallback is None:
-      fallback = (segment, msgs, alpha_long, can[0])
+      fallback = (segment, msgs, alpha_long, car_fw, can[0])
     if dashcam_only:
       break
     edge = find_edge(allowed_samples(msgs), can[0], can[-1])
     if edge is not None:
-      return make_window(segment, msgs, alpha_long, edge - LEAD, LEAD + ENGAGED, True)
+      return make_window(route, segment, msgs, alpha_long, car_fw, edge - LEAD, LEAD + ENGAGED, True)
   if fallback is None:
     raise FileNotFoundError(f"no loadable segment of {route.route}")
-  segment, msgs, alpha_long, can_start = fallback
-  return make_window(segment, msgs, alpha_long, can_start, NO_EDGE, False)
+  segment, msgs, alpha_long, car_fw, can_start = fallback
+  return make_window(route, segment, msgs, alpha_long, car_fw, can_start, NO_EDGE, False)

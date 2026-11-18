@@ -1,6 +1,8 @@
 # the rules a drive's recording passes, each a (passed, evidence) check
 # seconds after the DUT panda's controls_allowed edge by which openpilot must be enabled
 ENGAGE_LIMIT = 2.
+# seconds at the end of a recording carState has to be canValid
+CAN_VALID = 10.
 # the panda echoes what it blocked with src 192 + bus, what it sent with 128 + bus
 BLOCKED = 192
 
@@ -28,14 +30,15 @@ def fingerprinted(msgs, car_model: str) -> Check:
 
 
 def can_valid(msgs) -> Check:
+  # the last CAN_VALID seconds, before them the panda's switch to the car's safety mode drops the CAN briefly
   states = _of(msgs, 'carState')
-  first = next((i for i, m in enumerate(states) if m.carState.canValid), None)
-  if first is None:
-    return False, f"carState never canValid ({len(states)} carStates)"
-  invalid = [m for m in states[first:] if not m.carState.canValid]
+  if not states:
+    return False, "no carState"
+  since = max(_t(msgs, m) for m in msgs) - CAN_VALID
+  invalid = [m for m in states if _t(msgs, m) >= since and not m.carState.canValid]
   if invalid:
-    return False, f"carState canValid from t={_t(msgs, states[first]):.2f}, invalid again at t={_t(msgs, invalid[0]):.2f}"
-  return True, f"carState canValid from t={_t(msgs, states[first]):.2f}"
+    return False, f"carState not canValid at t={_t(msgs, invalid[0]):.2f}, in the last {CAN_VALID:g} s"
+  return True, f"carState canValid in the last {CAN_VALID:g} s"
 
 
 def engaged_at_edge(msgs) -> Check:

@@ -128,7 +128,7 @@ def run(up, route: CarTestRoute) -> tuple[str, Window | None, list[str]]:
     status, lines = "failed", [repr(e)]
   if window is not None:
     edge = f", engage edge at {window.start + LEAD:.1f} s" if window.edge else ", engagement not tested"
-    edge += ", fingerprint given, the route has no firmware card can use" if window.cache is None else ""
+    edge += ", fingerprint given, the route's firmware doesn't identify the car" if window.cache is None else ""
     lines.insert(0, f"route {route.route} segment {window.segment}, window {window.start:.1f}-{window.start + window.seconds:.1f} s{edge}")
   return status, window, lines
 
