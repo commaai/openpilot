@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# every test route's engagement on a DUT in an ultimate provisioning (UP) station, the UP plays the route's CAN raw.
-# ALFRED_SHARD/ALFRED_SHARDS drive every Nth route, SCENARIOS=TOYOTA_COROLLA_TSS2,HONDA_CIVIC only those car models or routes
+# one test route per safety mode and param on a DUT in an ultimate provisioning (UP) station, the UP plays its engagement's CAN raw.
+# ALFRED_SHARD/ALFRED_SHARDS drive every Nth safety mode, SCENARIOS=TOYOTA_COROLLA_TSS2,HONDA_CIVIC only those car models or routes
 import os
 import signal
 import subprocess
@@ -8,16 +8,17 @@ import sys
 import time
 
 import openpilot.cereal.messaging as messaging
+from opendbc.car.car_helpers import interfaces
 from opendbc.car.tests.routes import CarTestRoute, routes
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
-from openpilot.selfdrive.test.cars.route import DT, LEAD, Window, find_window
-from openpilot.selfdrive.test.cars.rules import check
+from openpilot.selfdrive.test.safety_modes.route import DT, LEAD, Window, find_window
+from openpilot.selfdrive.test.safety_modes.rules import check
 from openpilot.selfdrive.test.helpers import set_params_enabled
 
 PANDA_LIMIT = 45.
 ROAD_CAMERAS = ('narrowRoadCameraState', 'wideRoadCameraState')
-RECORD = ('can', 'sendcan', 'pandaStates', 'selfdriveState', 'carState', 'carParams', 'cabinCameraState', *ROAD_CAMERAS)
+RECORD = ('can', 'pandaStates', 'selfdriveState', 'carParams', 'cabinCameraState', *ROAD_CAMERAS)
 
 
 class RigProblem(Exception):
@@ -118,53 +119,65 @@ def end_manager_output() -> None:
   sys.stdout.flush()
 
 
-def run(up, route: CarTestRoute) -> tuple[str, Window | None, list[str]]:
-  window = None
+def safety_groups(selected: list[str]) -> dict[tuple[str, int], list[CarTestRoute]]:
+  # the test routes of each safety mode and param opendbc gives their platforms, dashcamOnly ones aren't driven
+  groups: dict[tuple[str, int], list[CarTestRoute]] = {}
+  for route in sorted(routes, key=lambda r: r.route):
+    if route.car_model is None or (selected and str(route.car_model) not in selected and route.route not in selected):
+      continue
+    CP = interfaces[route.car_model].get_non_essential_params(route.car_model)
+    if not CP.dashcamOnly:
+      cfg = CP.safetyConfigs[-1]
+      groups.setdefault((str(cfg.safetyModel), cfg.safetyParam), []).append(route)
+  return dict(sorted(groups.items()))
+
+
+def run(up, route: CarTestRoute, window: Window) -> tuple[str, list[str]]:
   try:
-    window = find_window(route)
-    checks = check(drive(up, route, window), str(route.car_model), window.edge)
+    checks = check(drive(up, route, window), str(route.car_model))
     status = "passed" if all(ok for ok, _ in checks) else "failed"
     lines = [f"{'✓' if ok else '✗'} {text}" for ok, text in checks]
   except RigProblem as e:
     status, lines = "rig problem", [str(e)]
   except Exception as e:
     status, lines = "failed", [repr(e)]
-  if window is not None:
-    edge = f", engage edge at {window.start + LEAD:.1f} s" if window.edge else ", engagement not tested"
-    edge += ", fingerprint given, the route's firmware doesn't identify the car" if window.given else ""
-    lines.insert(0, f"route {route.route} segment {window.segment}, window {window.start:.1f}-{window.start + window.seconds:.1f} s{edge}")
-  return status, window, lines
+  given = ", fingerprint given, the route's firmware doesn't identify the car" if window.given else ""
+  lines.insert(0, f"route {route.route} segment {window.segment}, engage edge at {window.start + LEAD:.1f} s{given}")
+  return status, lines
 
 
 def main() -> None:
   from ultimate_provisioning import UP  # only on a DUT
   shard, shards = int(os.getenv("ALFRED_SHARD", "0")), int(os.getenv("ALFRED_SHARDS", "1"))
-  job = f"cars{shard}" if "ALFRED_SHARDS" in os.environ else "cars"
+  job = f"safety_modes{shard}" if "ALFRED_SHARDS" in os.environ else "safety_modes"
   selected = [s.strip() for s in os.getenv("SCENARIOS", "").split(",") if s.strip()]
-  todo = sorted((r for r in routes if not selected or str(r.car_model) in selected or r.route in selected), key=lambda r: r.route)
-  todo = [r for i, r in enumerate(todo) if i % shards == shard]
+  groups = [g for i, g in enumerate(safety_groups(selected).items()) if i % shards == shard]
 
   up = UP.remote()
   start = time.monotonic()
-  counts = {"passed": 0, "failed": 0, "rig problem": 0}
-  for route in todo:
-    print(f"=== {route.car_model} {route.route} ===", flush=True)
+  counts = {"passed": 0, "failed": 0, "rig problem": 0, "not driven": 0}
+  for (mode, param), group in groups:
     t = time.monotonic()
-    status, window, lines = run(up, route)
+    route, window = next(((r, w) for r in group if (w := find_window(r)) is not None), (None, None))
+    if route is None or window is None:
+      counts["not driven"] += 1
+      print(f"⚪ {mode} {param}  none of its {len(group)} routes engages in its test segments", flush=True)
+      continue
+    print(f"=== {mode} {param} {route.car_model} {route.route} ===", flush=True)
+    status, lines = run(up, route, window)
     counts[status] += 1
     end_manager_output()
-    untested = "  engagement not tested" if window is not None and not window.edge else ""
-    print(f"{'✅' if status == 'passed' else '❌'} {route.car_model} {route.route}{untested}  {time.monotonic() - t:.0f} s")
+    print(f"{'✅' if status == 'passed' else '❌'} {mode} {param} {route.car_model}  {time.monotonic() - t:.0f} s")
     if status != "passed":
       print("\n".join(f"    {line}" for line in lines))
-      print(f"    repeat: SCENARIOS={route.route} ./openpilot/selfdrive/test/test_cars.py", flush=True)
+      print(f"    repeat: SCENARIOS={route.route} ./openpilot/selfdrive/test/test_safety_modes.py", flush=True)
     if status == "rig problem":
       break
 
   end_manager_output()
-  rig = f", {counts['rig problem']} rig problem" if counts['rig problem'] else ""
-  print(f"{job}: {counts['passed']} passed, {counts['failed']} failed{rig}, {(time.monotonic() - start) / 60:.1f} min", flush=True)
-  sys.exit(counts["passed"] != len(todo))
+  extra = "".join(f", {counts[k]} {k}" for k in ("rig problem", "not driven") if counts[k])
+  print(f"{job}: {counts['passed']} passed, {counts['failed']} failed{extra}, {(time.monotonic() - start) / 60:.1f} min", flush=True)
+  sys.exit(counts["failed"] + counts["rig problem"] > 0)
 
 
 if __name__ == "__main__":

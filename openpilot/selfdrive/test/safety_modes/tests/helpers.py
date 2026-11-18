@@ -9,8 +9,8 @@ def msg(which: str, t: float, size: int | None = None, **fields):
   return m
 
 
-def panda(t: float, allowed: bool, faults: list[str] | None = None):
-  m = msg('pandaStates', t, 1, controlsAllowed=allowed)
+def panda(t: float, allowed: bool, faults: list[str] | None = None, mode: str = 'toyota'):
+  m = msg('pandaStates', t, 1, controlsAllowed=allowed, safetyModel=mode)
   m.pandaStates[0].faults = faults or []
   return m
 
