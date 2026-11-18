@@ -38,10 +38,11 @@ def start_manager(route: CarTestRoute, window: Window) -> subprocess.Popen:
   params.remove("CarParamsPersistent")
   params.remove("CarParamsPrevRoute")
   params.put_bool("AlphaLongitudinalEnabled", window.alpha_long)
-  env = os.environ | {'FINGERPRINT': str(route.car_model), 'TESTING_CLOSET': '1', 'BLOCK': 'soundd'}
-  # without the route's firmware card would query the UP, which doesn't answer
+  env = os.environ | {'TESTING_CLOSET': '1', 'BLOCK': 'soundd'}
+  # card fingerprints from the CAN and the route's firmware. without firmware it would query the UP, which doesn't answer, so the car is given
+  env.pop('FINGERPRINT')
   if window.cache is None:
-    env['SKIP_FW_QUERY'] = '1'
+    env |= {'FINGERPRINT': str(route.car_model), 'SKIP_FW_QUERY': '1'}
   return subprocess.Popen([sys.executable, os.path.join(BASEDIR, "openpilot/system/manager/manager.py")], env=env, start_new_session=True)
 
 
@@ -127,6 +128,7 @@ def run(up, route: CarTestRoute) -> tuple[str, Window | None, list[str]]:
     status, lines = "failed", [repr(e)]
   if window is not None:
     edge = f", engage edge at {window.start + LEAD:.1f} s" if window.edge else ", engagement not tested"
+    edge += ", fingerprint given, the route has no firmware card can use" if window.cache is None else ""
     lines.insert(0, f"route {route.route} segment {window.segment}, window {window.start:.1f}-{window.start + window.seconds:.1f} s{edge}")
   return status, window, lines
 
