@@ -281,38 +281,37 @@ class LongitudinalMpc:
     a_lead_traj = a_lead * np.exp(-a_lead_tau * (T_IDXS**2)/2.)
     v_lead_traj = np.clip(v_lead + np.cumsum(T_DIFFS * a_lead_traj), 0.0, 1e8)
     x_lead_traj = x_lead + np.cumsum(T_DIFFS * v_lead_traj)
-    lead_xv = np.column_stack((x_lead_traj, v_lead_traj))
-    return lead_xv
+    return x_lead_traj, v_lead_traj
 
   def process_lead(self, model_lead, radar_lead):
     v_ego = self.x0[1]
-    v_lead = radar_lead.vLead if radar_lead.present else v_ego + 10.0
-    # MPC will not converge if immediate crash is expected
-    # Clip lead distance to what is still possible to brake for
-    min_x_lead = MIN_X_LEAD_FACTOR * (v_ego + v_lead) * (v_ego - v_lead) / (-ACCEL_MIN * 2)
-
-    if radar_lead.present and radar_lead.modelProb <= 0.5:
-      # Radar-only overrides have no matching model trajectory.
-      x_lead = np.clip(radar_lead.dRel, min_x_lead, 1e8)
-      v_lead = np.clip(v_lead, 0.0, 1e8)
-      a_lead = np.clip(radar_lead.aLeadK, -10., 5.)
-      return self.extrapolate_lead(x_lead, v_lead, a_lead, radar_lead.aLeadTau)
-
     if radar_lead.present:
-      # anchor at radar's trusted h=0, use model's delta for h>0
-      x_lead_traj = float(radar_lead.dRel) + (np.asarray(model_lead.x, dtype=np.float64) - model_lead.x[0])
-      v_lead_traj = float(radar_lead.vLead) + (np.asarray(model_lead.v, dtype=np.float64) - model_lead.v[0])
+      x_lead, v_lead = radar_lead.dRel, radar_lead.vLead
+      a_lead, a_lead_tau = radar_lead.aLeadK, radar_lead.aLeadTau
+      # no radar override + model prob > 0.5
+      use_model_traj = radar_lead.modelProb > 0 and model_lead.prob > 0.5
     else:
       # Fake a fast lead so MPC stays in the same mode.
-      x_lead_traj = 50.0 + v_lead * LEAD_T_IDXS_MODEL
-      v_lead_traj = np.full_like(LEAD_T_IDXS_MODEL, v_lead)
+      x_lead, v_lead = 50.0, v_ego + 10.0
+      a_lead, a_lead_tau = 0.0, 0.0
+      use_model_traj = False
 
-    x_lead_traj[0] = np.clip(x_lead_traj[0], min_x_lead, 1e8)
-    v_lead_traj = np.clip(v_lead_traj, 0.0, 1e8)
+    # MPC will not converge if immediate crash is expected
+    # Clip the initial distance to what is still possible to brake for.
+    min_x_lead = MIN_X_LEAD_FACTOR * (v_ego + v_lead) * (v_ego - v_lead) / (-ACCEL_MIN * 2)
+    x_start = np.clip(x_lead, min_x_lead, 1e8)
 
-    x_lead_mpc = np.maximum.accumulate(np.interp(T_IDXS, LEAD_T_IDXS_MODEL, x_lead_traj))
-    v_lead_mpc = np.interp(T_IDXS, LEAD_T_IDXS_MODEL, v_lead_traj)
-    return np.column_stack((x_lead_mpc, v_lead_mpc))
+    if use_model_traj:
+      # Anchor the model's predicted deltas at the radar measurement.
+      x_traj = x_lead + (np.asarray(model_lead.x, dtype=np.float64) - model_lead.x[0])
+      v_traj = v_lead + (np.asarray(model_lead.v, dtype=np.float64) - model_lead.v[0])
+      x_traj[0] = x_start
+      x_mpc = np.interp(T_IDXS, LEAD_T_IDXS_MODEL, x_traj)
+      v_mpc = np.interp(T_IDXS, LEAD_T_IDXS_MODEL, np.clip(v_traj, 0.0, 1e8))
+    else:
+      x_mpc, v_mpc = self.extrapolate_lead(x_start, np.clip(v_lead, 0.0, 1e8), np.clip(a_lead, -10., 5.), a_lead_tau)
+
+    return np.column_stack((np.maximum.accumulate(x_mpc), v_mpc))
 
   def update(self, modelV2, radarstate, personality=log.LongitudinalPersonality.standard):
     t_follow = get_T_FOLLOW(personality)
