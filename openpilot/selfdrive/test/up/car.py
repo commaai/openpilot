@@ -1,4 +1,8 @@
-# the car for test_faults.py, a Toyota route's CAN for the UP's can_replay(), its controls and faults as overrides
+# the car for test_faults.py, a Toyota route's CAN sent through the UP, its controls and faults as overrides
+import itertools
+import threading
+import time
+
 from opendbc.can.packer import CANPacker
 from opendbc.car.can_definitions import CanData
 from opendbc.car.toyota.interface import CarInterface
@@ -12,7 +16,7 @@ ROUTE = "5f5afb36036506e4/2019-05-14--02-09-54/0:2"
 CAR_FINGERPRINT = CAR.TOYOTA_COROLLA_TSS2
 # the route is parked for its first 34 s and stops twice, loop where it keeps moving (5-11 m/s)
 WINDOW = (60., 102.)
-DT = 0.01  # can_replay()'s frame period
+DT = 0.01  # the frame period
 # master's toyota parser wants these on the cam bus, the 2019 route only has them as tx echoes
 CAM_ECHOES = {0x343, 0x412}
 
@@ -123,9 +127,27 @@ class Car:
         elif addr == BRAKE_MODULE:
           dat = brake(dat, False)
         msgs[j] = (addr, dat, bus)
+    self.frames = frames
+    self.overrides: dict[tuple[int, int], bytes | None] = {}
+    self.error: Exception | None = None
     # the harness in, ignition off
     up.reset()
-    up.can_replay(frames)
+    threading.Thread(target=self._send, daemon=True).start()
+
+  def _send(self) -> None:
+    # the UP's can_replay() can't change a frame once it runs, so every frame goes out from here
+    try:
+      t = time.monotonic()
+      for i, frame in enumerate(itertools.cycle(self.frames)):
+        o = self.overrides
+        self.up.can_send_many([(a, o.get((a, b), d), b) for a, d, b in frame if o.get((a, b), d) is not None])
+        if i % 10 == 0:
+          # drops what the DUT sent, nothing reads it
+          self.up.can_clear(0xFFFF)
+        t += DT
+        time.sleep(max(0., t - time.monotonic()))
+    except Exception as e:
+      self.error = e
 
   def set(self, **state) -> None:
     self.state |= state
@@ -142,4 +164,6 @@ class Car:
       o[(BRAKE_MODULE, 0)] = brake(self.messages[(BRAKE_MODULE, 0)], True)
     silent = OUTAGES.get(fault, ())
     o |= {(a, b): None for a, b in self.messages if b in silent}
-    self.up.can_replay_set(o)
+    if self.error is not None:
+      raise RuntimeError(f"sending the car's CAN failed: {self.error!r}")
+    self.overrides = o
