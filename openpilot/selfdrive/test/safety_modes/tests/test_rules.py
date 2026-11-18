@@ -1,15 +1,26 @@
-from openpilot.selfdrive.test.safety_modes.rules import check, engaged_at_edge, fingerprinted, no_new_faults, none_blocked
+from openpilot.selfdrive.test.safety_modes.rules import check, dropped_on_can_loss, engaged_at_edge, fingerprinted, no_new_faults, none_blocked
 from openpilot.selfdrive.test.safety_modes.tests.helpers import can, msg, panda
 
 CAR = 'TOYOTA_COROLLA_TSS2'
 
 
-def drive(engage_at: float = 2.5, allowed_at: float = 2., end: float = 15.) -> list:
+QUIET = 3.
+DT_LAST = 0.1
+
+
+def drive(engage_at: float = 2.5, allowed_at: float = 2., end: float = 15., drop_after: float = 1.5) -> list:
   # 10 Hz from t=0, the panda allows controls at allowed_at, openpilot engages at engage_at
   msgs = [msg('carParams', 0., carFingerprint=CAR)]
   for i in range(int(end * 10)):
     t = i / 10
     msgs += [panda(t, t >= allowed_at), msg('selfdriveState', t, enabled=t >= engage_at), can(t, [(0x2e4, 128)])]
+    if t < end - QUIET:
+      msgs.append(can(t, [(0xaa, 0)]))
+  # the panda drops controls drop_after s after the car's last frame
+  for m in msgs:
+    if m.which() == 'pandaStates' and m.logMonoTime * 1e-9 > end - QUIET - DT_LAST + drop_after:
+      m.pandaStates[0].controlsAllowed = False
+      m.pandaStates[0].safetyRxChecksInvalid = True
   return msgs
 
 
@@ -30,8 +41,17 @@ class TestRules:
   def test_blocked(self):
     assert none_blocked(drive() + [can(1., [(0x2e4, 192)])])[0]
     assert not none_blocked(drive() + [can(3., [(0x2e4, 192)])])[0]
+    # after the car's CAN stops the panda drops controls and blocks what openpilot still sends
+    assert none_blocked(drive() + [can(14., [(0x2e4, 192)])])[0]
 
   def test_faults(self):
     msgs = sorted(drive(), key=lambda m: m.logMonoTime)
     assert no_new_faults([panda(0., False, ['heartbeatLoopWatchdog'])] + msgs + [panda(9., True, ['heartbeatLoopWatchdog'])])[0]
     assert not no_new_faults(msgs + [panda(9., True, ['relayMalfunction'])])[0]
+
+  def test_can_loss(self):
+    assert dropped_on_can_loss(drive())[0]
+    # a timer running fast or slow, or no tick at all
+    assert not dropped_on_can_loss(drive(drop_after=0.5))[0]
+    assert not dropped_on_can_loss(drive(drop_after=2.8))[0]
+    assert not dropped_on_can_loss(drive(drop_after=10.))[0]

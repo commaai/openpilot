@@ -17,6 +17,8 @@ from openpilot.selfdrive.test.safety_modes.rules import check
 from openpilot.selfdrive.test.helpers import set_params_enabled
 
 PANDA_LIMIT = 45.
+# seconds recorded after the car's CAN stops, the panda drops controls within 2 s
+QUIET = 3.
 ROAD_CAMERAS = ('narrowRoadCameraState', 'wideRoadCameraState')
 RECORD = ('can', 'pandaStates', 'selfdriveState', 'carParams', 'cabinCameraState', *ROAD_CAMERAS)
 
@@ -91,10 +93,11 @@ def drive(up, route: CarTestRoute, window: Window) -> list:
 
     for sock in socks:
       messaging.drain_sock_raw(sock)
-    # once, a second call plays a second loop, the window ends before it wraps
-    up_call(up, 'can_replay', window.frames)
+    # once, a second call plays a second loop. then QUIET s without the car's CAN, ignition still on, the drive ends before it wraps
+    frames = window.frames + [[] for _ in range(round(QUIET / DT))]
+    up_call(up, 'can_replay', frames)
     msgs = []
-    end = time.monotonic() + len(window.frames) * DT
+    end = time.monotonic() + len(frames) * DT
     while time.monotonic() < end:
       check_manager(manager)
       for sock in socks:

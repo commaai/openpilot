@@ -3,6 +3,8 @@
 ENGAGE_LIMIT = 2.
 # the panda echoes what it blocked with src 192 + bus
 BLOCKED = 192
+# once the car's CAN stops, the panda flags its rx checks lagging after 1 s, checked at 1 Hz, and drops controls_allowed
+CAN_LOSS_DROP = (1., 2.5)
 
 Check = tuple[bool, str]
 
@@ -42,7 +44,9 @@ def none_blocked(msgs) -> Check:
   engaged = _first_engaged(msgs)
   if engaged is None:
     return True, "never engaged, no TX checked"
-  blocked = [(_t(msgs, m), c.address, c.src - BLOCKED) for m in _of(msgs, 'can') if _t(msgs, m) >= engaged for c in m.can if c.src >= BLOCKED]
+  # until the car's CAN stops, after it the panda rightly blocks what openpilot still sends
+  last = max((_t(msgs, m) for m in _of(msgs, 'can') if any(c.src < 3 for c in m.can)), default=0.)
+  blocked = [(_t(msgs, m), c.address, c.src - BLOCKED) for m in _of(msgs, 'can') if engaged <= _t(msgs, m) <= last for c in m.can if c.src >= BLOCKED]
   if blocked:
     t, addr, bus = blocked[0]
     return False, f"{len(blocked)} TX frames blocked while engaged, first {addr:#x} bus {bus} at t={t:.2f}"
@@ -58,8 +62,27 @@ def no_new_faults(msgs) -> Check:
   return not new, f"new panda faults {', '.join(new)}" if new else "no new panda faults"
 
 
+def dropped_on_can_loss(msgs) -> Check:
+  # the panda's own timer and safety tick: controls_allowed drops CAN_LOSS_DROP s after the last car frame it received
+  received = [_t(msgs, m) for m in _of(msgs, 'can') if any(c.src < 3 for c in m.can)]
+  if not received:
+    return False, "no car CAN received"
+  last = received[-1]
+  after = [m for m in _of(msgs, 'pandaStates') if _t(msgs, m) > last]
+  if not after or not after[0].pandaStates[0].controlsAllowed:
+    return True, f"controls weren't allowed when the car's CAN stopped at t={last:.2f}, nothing to time"
+  drop = next((m for m in after if not m.pandaStates[0].controlsAllowed), None)
+  if drop is None:
+    return False, f"car CAN stopped at t={last:.2f}, the panda still allowed controls {_t(msgs, after[-1]) - last:.2f} s later"
+  delay = _t(msgs, drop) - last
+  rx_invalid = drop.pandaStates[0].safetyRxChecksInvalid
+  ok = CAN_LOSS_DROP[0] <= delay <= CAN_LOSS_DROP[1] and rx_invalid
+  expected = f"{CAN_LOSS_DROP[0]:g}-{CAN_LOSS_DROP[1]:g} s"
+  return ok, f"car CAN stopped at t={last:.2f}, controls dropped {delay:.2f} s later (expected {expected}), rx checks invalid {rx_invalid}"
+
+
 def check(msgs, car_model: str) -> list[Check]:
   msgs = sorted(msgs, key=lambda m: m.logMonoTime)
   if not msgs:
     return [(False, "nothing recorded")]
-  return [fingerprinted(msgs, car_model), engaged_at_edge(msgs), none_blocked(msgs), no_new_faults(msgs)]
+  return [fingerprinted(msgs, car_model), engaged_at_edge(msgs), none_blocked(msgs), no_new_faults(msgs), dropped_on_can_loss(msgs)]
