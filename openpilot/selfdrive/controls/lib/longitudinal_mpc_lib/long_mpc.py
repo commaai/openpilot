@@ -286,18 +286,22 @@ class LongitudinalMpc:
   def process_lead(self, model_lead, radar_lead):
     v_ego = self.x0[1]
     if radar_lead.present:
-      x_lead, v_lead = radar_lead.dRel, radar_lead.vLead
-      a_lead, a_lead_tau = radar_lead.aLeadK, radar_lead.aLeadTau
+      x_lead = radar_lead.dRel
+      v_lead = radar_lead.vLead
+      a_lead = radar_lead.aLeadK
+      a_lead_tau = radar_lead.aLeadTau
       # no radar override + model prob > 0.5
       use_model_traj = radar_lead.modelProb > 0 and model_lead.prob > 0.5
     else:
-      # Fake a fast lead so MPC stays in the same mode.
-      x_lead, v_lead = 50.0, v_ego + 10.0
-      a_lead, a_lead_tau = 0.0, 0.0
+      # Fake a fast lead car, so mpc can keep running in the same mode
+      x_lead = 50.0
+      v_lead = v_ego + 10.0
+      a_lead = 0.0
+      a_lead_tau = 0.0
       use_model_traj = False
 
     # MPC will not converge if immediate crash is expected
-    # Clip the initial distance to what is still possible to brake for.
+    # Clip lead distance to what is still possible to brake for
     min_x_lead = MIN_X_LEAD_FACTOR * (v_ego + v_lead) * (v_ego - v_lead) / (-ACCEL_MIN * 2)
     x_start = np.clip(x_lead, min_x_lead, 1e8)
 
