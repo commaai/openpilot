@@ -17,7 +17,8 @@ from openpilot.common.params import Params
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.system.manager.manager import manager_cleanup
 
-SAMPLE_TIME = 2       # seconds to sample power
+SAMPLE_TIME = 3       # seconds to sample power
+MAX_SPREAD = 0.1      # W, a wider window caught a ramp or a spike, so it isn't settled
 MAX_WARMUP_TIME = 30  # seconds to wait for SAMPLE_TIME consecutive valid samples
 MICI = HARDWARE.get_device_type() == "mici"
 
@@ -72,7 +73,7 @@ class TestPowerDraw(OpenpilotTestCase):
         msg_counts[msg] += count
     return msg_counts
 
-  def get_power_with_warmup_for_target(self, proc, prev):
+  def get_settled_power(self, proc):
     socks = {msg: messaging.sub_sock(msg) for msg in proc.msgs}
     for sock in socks.values():
       messaging.drain_sock_raw(sock)
@@ -92,16 +93,17 @@ class TestPowerDraw(OpenpilotTestCase):
         continue
 
       msg_counts = self.tabulate_msg_counts(msgs_and_power)
-      now = np.mean([m[0] for m in msgs_and_power])
+      powers = [m[0] for m in msgs_and_power]
+      now = np.mean(powers)
 
-      if self.valid_msg_count(proc, msg_counts) and self.valid_power_draw(proc, now - prev):
+      if self.valid_msg_count(proc, msg_counts) and np.ptp(powers) < MAX_SPREAD:
         break
 
     return now, msg_counts, time.monotonic() - start_time - SAMPLE_TIME
 
   @mock_messages(['deviceMotion'])
   def test_camera_procs(self, subtests):
-    baseline = self.up.get_power()
+    baseline, _, _ = self.get_settled_power(Proc([], 0., msgs=[]))
 
     prev = baseline
     used = {}
@@ -111,7 +113,7 @@ class TestPowerDraw(OpenpilotTestCase):
     for proc in PROCS:
       for p in proc.procs:
         managed_processes[p].start()
-      now, local_msg_counts, warmup_time[proc.name] = self.get_power_with_warmup_for_target(proc, prev)
+      now, local_msg_counts, warmup_time[proc.name] = self.get_settled_power(proc)
       msg_counts.update(local_msg_counts)
 
       used[proc.name] = now - prev
