@@ -45,6 +45,69 @@ name = "Onroad tests"
 run = "openpilot/tools/replay/can_replay.py --up && ./openpilot/selfdrive/test/test_onroad.py TestOnroad"
 timeout-minutes = 1.5
 
+# every test route's first engagement end to end, the UP plays the route's CAN raw. the route logs live in the cache
+[steps.cars]
+name = "Cars"
+run = "./openpilot/selfdrive/test/test_cars.py"
+
+# every route, split over 8 stations, the most alfred's 20 job limit leaves: each job drives every 8th route (ALFRED_SHARD, see test_cars.py)
+# every master commit, a PR only when it changes the test, a route or a car port
+[jobs.cars0]
+runs-on = "up-mici"
+timeout-minutes = 45
+paths = ["openpilot/selfdrive/test/cars/**", "openpilot/selfdrive/test/test_cars.py", "opendbc_repo"]
+env = { COMMA_CACHE = "/data/scons_cache/cars_routes", ALFRED_SHARD = "0", ALFRED_SHARDS = "8" }
+steps = [{ uses = "build" }, { uses = "cars" }]
+
+[jobs.cars1]
+runs-on = "up-mici"
+timeout-minutes = 45
+paths = ["openpilot/selfdrive/test/cars/**", "openpilot/selfdrive/test/test_cars.py", "opendbc_repo"]
+env = { COMMA_CACHE = "/data/scons_cache/cars_routes", ALFRED_SHARD = "1", ALFRED_SHARDS = "8" }
+steps = [{ uses = "build" }, { uses = "cars" }]
+
+[jobs.cars2]
+runs-on = "up-mici"
+timeout-minutes = 45
+paths = ["openpilot/selfdrive/test/cars/**", "openpilot/selfdrive/test/test_cars.py", "opendbc_repo"]
+env = { COMMA_CACHE = "/data/scons_cache/cars_routes", ALFRED_SHARD = "2", ALFRED_SHARDS = "8" }
+steps = [{ uses = "build" }, { uses = "cars" }]
+
+[jobs.cars3]
+runs-on = "up-mici"
+timeout-minutes = 45
+paths = ["openpilot/selfdrive/test/cars/**", "openpilot/selfdrive/test/test_cars.py", "opendbc_repo"]
+env = { COMMA_CACHE = "/data/scons_cache/cars_routes", ALFRED_SHARD = "3", ALFRED_SHARDS = "8" }
+steps = [{ uses = "build" }, { uses = "cars" }]
+
+[jobs.cars4]
+runs-on = "up-mici"
+timeout-minutes = 45
+paths = ["openpilot/selfdrive/test/cars/**", "openpilot/selfdrive/test/test_cars.py", "opendbc_repo"]
+env = { COMMA_CACHE = "/data/scons_cache/cars_routes", ALFRED_SHARD = "4", ALFRED_SHARDS = "8" }
+steps = [{ uses = "build" }, { uses = "cars" }]
+
+[jobs.cars5]
+runs-on = "up-mici"
+timeout-minutes = 45
+paths = ["openpilot/selfdrive/test/cars/**", "openpilot/selfdrive/test/test_cars.py", "opendbc_repo"]
+env = { COMMA_CACHE = "/data/scons_cache/cars_routes", ALFRED_SHARD = "5", ALFRED_SHARDS = "8" }
+steps = [{ uses = "build" }, { uses = "cars" }]
+
+[jobs.cars6]
+runs-on = "up-mici"
+timeout-minutes = 45
+paths = ["openpilot/selfdrive/test/cars/**", "openpilot/selfdrive/test/test_cars.py", "opendbc_repo"]
+env = { COMMA_CACHE = "/data/scons_cache/cars_routes", ALFRED_SHARD = "6", ALFRED_SHARDS = "8" }
+steps = [{ uses = "build" }, { uses = "cars" }]
+
+[jobs.cars7]
+runs-on = "up-mici"
+timeout-minutes = 45
+paths = ["openpilot/selfdrive/test/cars/**", "openpilot/selfdrive/test/test_cars.py", "opendbc_repo"]
+env = { COMMA_CACHE = "/data/scons_cache/cars_routes", ALFRED_SHARD = "7", ALFRED_SHARDS = "8" }
+steps = [{ uses = "build" }, { uses = "cars" }]
+
 [jobs.hardware]
 runs-on = "up-mici"
 timeout-minutes = 35
