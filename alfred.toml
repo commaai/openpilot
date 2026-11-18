@@ -55,56 +55,56 @@ run = "./openpilot/selfdrive/test/test_safety_modes.py"
 [jobs.safety_modes0]
 runs-on = "up-mici"
 timeout-minutes = 15
-paths = ["openpilot/selfdrive/test/safety_modes/**", "openpilot/selfdrive/test/test_safety_modes.py", "opendbc_repo"]
+paths = ["openpilot/selfdrive/test/safety_modes/**", "openpilot/selfdrive/test/test_safety_modes.py", "opendbc_repo", "panda"]
 env = { COMMA_CACHE = "/data/scons_cache/safety_modes_routes", ALFRED_SHARD = "0", ALFRED_SHARDS = "8" }
 steps = [{ uses = "build" }, { uses = "safety_modes" }]
 
 [jobs.safety_modes1]
 runs-on = "up-mici"
 timeout-minutes = 15
-paths = ["openpilot/selfdrive/test/safety_modes/**", "openpilot/selfdrive/test/test_safety_modes.py", "opendbc_repo"]
+paths = ["openpilot/selfdrive/test/safety_modes/**", "openpilot/selfdrive/test/test_safety_modes.py", "opendbc_repo", "panda"]
 env = { COMMA_CACHE = "/data/scons_cache/safety_modes_routes", ALFRED_SHARD = "1", ALFRED_SHARDS = "8" }
 steps = [{ uses = "build" }, { uses = "safety_modes" }]
 
 [jobs.safety_modes2]
 runs-on = "up-mici"
 timeout-minutes = 15
-paths = ["openpilot/selfdrive/test/safety_modes/**", "openpilot/selfdrive/test/test_safety_modes.py", "opendbc_repo"]
+paths = ["openpilot/selfdrive/test/safety_modes/**", "openpilot/selfdrive/test/test_safety_modes.py", "opendbc_repo", "panda"]
 env = { COMMA_CACHE = "/data/scons_cache/safety_modes_routes", ALFRED_SHARD = "2", ALFRED_SHARDS = "8" }
 steps = [{ uses = "build" }, { uses = "safety_modes" }]
 
 [jobs.safety_modes3]
 runs-on = "up-mici"
 timeout-minutes = 15
-paths = ["openpilot/selfdrive/test/safety_modes/**", "openpilot/selfdrive/test/test_safety_modes.py", "opendbc_repo"]
+paths = ["openpilot/selfdrive/test/safety_modes/**", "openpilot/selfdrive/test/test_safety_modes.py", "opendbc_repo", "panda"]
 env = { COMMA_CACHE = "/data/scons_cache/safety_modes_routes", ALFRED_SHARD = "3", ALFRED_SHARDS = "8" }
 steps = [{ uses = "build" }, { uses = "safety_modes" }]
 
 [jobs.safety_modes4]
 runs-on = "up-mici"
 timeout-minutes = 15
-paths = ["openpilot/selfdrive/test/safety_modes/**", "openpilot/selfdrive/test/test_safety_modes.py", "opendbc_repo"]
+paths = ["openpilot/selfdrive/test/safety_modes/**", "openpilot/selfdrive/test/test_safety_modes.py", "opendbc_repo", "panda"]
 env = { COMMA_CACHE = "/data/scons_cache/safety_modes_routes", ALFRED_SHARD = "4", ALFRED_SHARDS = "8" }
 steps = [{ uses = "build" }, { uses = "safety_modes" }]
 
 [jobs.safety_modes5]
 runs-on = "up-mici"
 timeout-minutes = 15
-paths = ["openpilot/selfdrive/test/safety_modes/**", "openpilot/selfdrive/test/test_safety_modes.py", "opendbc_repo"]
+paths = ["openpilot/selfdrive/test/safety_modes/**", "openpilot/selfdrive/test/test_safety_modes.py", "opendbc_repo", "panda"]
 env = { COMMA_CACHE = "/data/scons_cache/safety_modes_routes", ALFRED_SHARD = "5", ALFRED_SHARDS = "8" }
 steps = [{ uses = "build" }, { uses = "safety_modes" }]
 
 [jobs.safety_modes6]
 runs-on = "up-mici"
 timeout-minutes = 15
-paths = ["openpilot/selfdrive/test/safety_modes/**", "openpilot/selfdrive/test/test_safety_modes.py", "opendbc_repo"]
+paths = ["openpilot/selfdrive/test/safety_modes/**", "openpilot/selfdrive/test/test_safety_modes.py", "opendbc_repo", "panda"]
 env = { COMMA_CACHE = "/data/scons_cache/safety_modes_routes", ALFRED_SHARD = "6", ALFRED_SHARDS = "8" }
 steps = [{ uses = "build" }, { uses = "safety_modes" }]
 
 [jobs.safety_modes7]
 runs-on = "up-mici"
 timeout-minutes = 15
-paths = ["openpilot/selfdrive/test/safety_modes/**", "openpilot/selfdrive/test/test_safety_modes.py", "opendbc_repo"]
+paths = ["openpilot/selfdrive/test/safety_modes/**", "openpilot/selfdrive/test/test_safety_modes.py", "opendbc_repo", "panda"]
 env = { COMMA_CACHE = "/data/scons_cache/safety_modes_routes", ALFRED_SHARD = "7", ALFRED_SHARDS = "8" }
 steps = [{ uses = "build" }, { uses = "safety_modes" }]
 
