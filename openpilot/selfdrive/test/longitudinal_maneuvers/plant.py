@@ -133,14 +133,3 @@ class Plant:
       "distance_lead": self.distance_lead,
       "fcw": fcw,
     }
-
-# simple engage in standalone mode
-def plant_thread():
-  plant = Plant()
-  lead_trajectory = (np.zeros(len(ModelConstants.LEAD_T_IDXS)), np.zeros(len(ModelConstants.LEAD_T_IDXS)))
-  while 1:
-    plant.step(lead_trajectory=lead_trajectory)
-
-
-if __name__ == "__main__":
-  plant_thread()
