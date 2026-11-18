@@ -26,8 +26,10 @@ class Window:
   seconds: float
   edge: bool
   frames: list[Frame]
-  # the route's carParams for CarParamsCache, None when card wouldn't take its firmware or it doesn't identify the car
+  # the route's carParams for CarParamsCache, None when card wouldn't take its firmware
   cache: bytes | None
+  # card can't tell the car from the route's firmware, it's given
+  given: bool
   alpha_long: bool
 
 
@@ -79,9 +81,10 @@ def make_window(route: CarTestRoute, segment: int, msgs, alpha_long: bool, car_f
   can_start = next(m.logMonoTime * 1e-9 for m in msgs if m.which() == 'can')
   logged = next((m.carParams for m in reversed(msgs) if m.which() == 'carParams'), None)
   cache = None
-  if logged is not None and logged.carVin != VIN_UNKNOWN and match_fw_to_car(car_fw, logged.carVin, log=False)[1] == {route.car_model}:
+  if logged is not None and len(logged.carFw) and logged.carVin != VIN_UNKNOWN:
     cache = logged.as_builder().to_bytes()
-  return Window(segment, start - can_start, seconds, edge, bin_frames(msgs, start, seconds), cache, alpha_long)
+  given = cache is None or match_fw_to_car(car_fw, logged.carVin, log=False)[1] != {route.car_model}
+  return Window(segment, start - can_start, seconds, edge, bin_frames(msgs, start, seconds), cache, given, alpha_long)
 
 
 def find_window(route: CarTestRoute) -> Window:
