@@ -69,9 +69,10 @@ def check_manager(manager: subprocess.Popen) -> None:
     raise RuntimeError(f"manager died: rc {manager.returncode}")
 
 
-def drive(up, route: CarTestRoute, window: Window) -> list:
+def drive(up, route: CarTestRoute, window: Window, times: dict[str, float]) -> list:
   sm = messaging.SubMaster(['pandaStates'])
   socks = [messaging.sub_sock(s, conflate=False) for s in RECORD]
+  t = time.monotonic()
   manager = start_manager(route, window)
   try:
     up_call(up, 'reset')
@@ -82,6 +83,7 @@ def drive(up, route: CarTestRoute, window: Window) -> list:
       if time.monotonic() > end:
         raise RigProblem("rig problem: panda not answering")
       sm.update(10)
+    times['panda'] = time.monotonic() - t
     # manager start clears CarParamsCache, card reads it on the first CAN
     if window.cache is not None:
       Params().put("CarParamsCache", window.cache)
@@ -96,6 +98,7 @@ def drive(up, route: CarTestRoute, window: Window) -> list:
     # once, a second call plays a second loop. then QUIET s without the car's CAN, ignition still on, the drive ends before it wraps
     frames = window.frames + [[] for _ in range(round(QUIET / DT))]
     up_call(up, 'can_replay', frames)
+    times['replay_start'] = t = time.monotonic()
     msgs = []
     end = time.monotonic() + len(frames) * DT
     while time.monotonic() < end:
@@ -103,11 +106,14 @@ def drive(up, route: CarTestRoute, window: Window) -> list:
       for sock in socks:
         msgs += messaging.drain_sock(sock)
       time.sleep(DT)
+    times['replay'] = time.monotonic() - t
   finally:
+    t = time.monotonic()
     try:
       up_call(up, 'reset')
     finally:
       stop_manager(manager)
+    times['stop'] = time.monotonic() - t
 
   seen = {m.which() for m in msgs}
   if 'cabinCameraState' not in seen or not seen & set(ROAD_CAMERAS):
@@ -135,9 +141,25 @@ def safety_groups(selected: list[str]) -> dict[tuple[str, int], list[CarTestRout
   return dict(sorted(groups.items()))
 
 
+def first(msgs, service: str, since: float) -> str:
+  t = next((m.logMonoTime * 1e-9 for m in msgs if m.which() == service), None)
+  return "never" if t is None else f"+{t - since:.1f} s"
+
+
+def timing(times: dict[str, float], msgs) -> str:
+  # where a drive's time goes, the replay's first CAN is at +0
+  steps = [f"{k} {times[k]:.0f} s" for k in ('panda', 'replay', 'stop') if k in times]
+  if 'replay_start' in times:
+    steps += [f"{s} {first(msgs, s, times['replay_start'])}" for s in ('carParams', 'selfdriveState')]
+  return ", ".join(steps)
+
+
 def run(up, route: CarTestRoute, window: Window) -> tuple[str, list[str]]:
+  times: dict[str, float] = {}
+  msgs = []
   try:
-    checks = check(drive(up, route, window), str(route.car_model))
+    msgs = drive(up, route, window, times)
+    checks = check(msgs, str(route.car_model))
     status = "passed" if all(ok for ok, _ in checks) else "failed"
     lines = [f"{'✓' if ok else '✗'} {text}" for ok, text in checks]
   except RigProblem as e:
@@ -146,6 +168,7 @@ def run(up, route: CarTestRoute, window: Window) -> tuple[str, list[str]]:
     status, lines = "failed", [repr(e)]
   given = ", fingerprint given, the route's firmware doesn't identify the car" if window.given else ""
   lines.insert(0, f"route {route.route} segment {window.segment}, engage edge at {window.start + LEAD:.1f} s{given}")
+  lines.insert(1, timing(times, msgs))
   return status, lines
 
 
@@ -170,7 +193,7 @@ def main() -> None:
     status, lines = run(up, route, window)
     counts[status] += 1
     end_manager_output()
-    print(f"{'✅' if status == 'passed' else '❌'} {mode} {param} {route.car_model}  {time.monotonic() - t:.0f} s")
+    print(f"{'✅' if status == 'passed' else '❌'} {mode} {param} {route.car_model}  {time.monotonic() - t:.0f} s: {lines[1]}")
     if status != "passed":
       print("\n".join(f"    {line}" for line in lines))
       print(f"    repeat: SCENARIOS={route.route} ./openpilot/selfdrive/test/test_safety_modes.py", flush=True)

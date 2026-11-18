@@ -724,7 +724,7 @@ requires-dist = [
     { name = "comma-deps-gcc-arm-none-eabi", marker = "extra == 'dev'" },
     { name = "libusb-package" },
     { name = "libusb1" },
-    { name = "opendbc", git = "https://github.com/commaai/opendbc.git?rev=master" },
+    { name = "opendbc", git = "https://github.com/commaai/opendbc.git?rev=6cd8a71d18019b50173f107018b98f8293813858" },
     { name = "ruff", marker = "extra == 'dev'" },
     { name = "scons", marker = "extra == 'dev'" },
     { name = "setuptools", marker = "extra == 'dev'" },
