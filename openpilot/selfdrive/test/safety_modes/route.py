@@ -8,8 +8,8 @@ from opendbc.car.tests.test_models import get_cached_segment
 from opendbc.car.vin import VIN_UNKNOWN
 
 DT = 0.01
-# seconds of CAN before the panda's controls_allowed edge, openpilot is ready ~8 s after the first CAN, and after it
-LEAD = 10.
+# seconds of CAN before the panda's controls_allowed edge, on the rack openpilot is ready 2-4.5 s after the first CAN, and after it
+LEAD = 6.
 ENGAGED = 5.
 BUSES = 3
 # before the route's panda is in a car's safety mode the recording is the old device's relay and forwarding, not the car's

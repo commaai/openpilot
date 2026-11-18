@@ -185,15 +185,16 @@ def main() -> None:
   for (mode, param), group in groups:
     t = time.monotonic()
     route, window = next(((r, w) for r in group if (w := find_window(r)) is not None), (None, None))
+    load = time.monotonic() - t
     if route is None or window is None:
       counts["not driven"] += 1
-      print(f"⚪ {mode} {param}  none of its {len(group)} routes engages in its test segments", flush=True)
+      print(f"⚪ {mode} {param}  none of its {len(group)} routes engages in its test segments, load {load:.0f} s", flush=True)
       continue
     print(f"=== {mode} {param} {route.car_model} {route.route} ===", flush=True)
     status, lines = run(up, route, window)
     counts[status] += 1
     end_manager_output()
-    print(f"{'✅' if status == 'passed' else '❌'} {mode} {param} {route.car_model}  {time.monotonic() - t:.0f} s: {lines[1]}")
+    print(f"{'✅' if status == 'passed' else '❌'} {mode} {param} {route.car_model}  {time.monotonic() - t:.0f} s: load {load:.0f} s, {lines[1]}")
     if status != "passed":
       print("\n".join(f"    {line}" for line in lines))
       print(f"    repeat: SCENARIOS={route.route} ./openpilot/selfdrive/test/test_safety_modes.py", flush=True)
