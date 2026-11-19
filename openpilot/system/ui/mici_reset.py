@@ -131,7 +131,7 @@ class Reset(Scroller):
       self._previous_active_widget = active_widget
       self._timeout_st = time.monotonic()
     elif self._mode != ResetMode.RECOVER and active_widget != self._resetting_page and (time.monotonic() - self._timeout_st) > TIMEOUT:
-      exit(0)
+      sys.exit(0)
 
 
 def main():

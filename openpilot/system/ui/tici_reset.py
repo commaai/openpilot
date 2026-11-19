@@ -67,7 +67,7 @@ class Reset(Widget):
       self._previous_reset_state = self._reset_state
       self._timeout_st = time.monotonic()
     elif self._reset_state != ResetState.RESETTING and (time.monotonic() - self._timeout_st) > TIMEOUT:
-      exit(0)
+      sys.exit(0)
 
   def _render(self, _):
     content_rect = rl.Rectangle(45, 200, self._rect.width - 90, self._rect.height - 245)
