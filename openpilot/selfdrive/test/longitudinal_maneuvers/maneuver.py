@@ -46,7 +46,7 @@ class Maneuver:
     self.accel_lead = np.diff(self.speed_lead, prepend=0.0) / DT_MDL
     self.distance_lead = np.cumsum(np.r_[initial_distance_lead, self.speed_lead[:-1] * DT_MDL])
     self.prob_lead = np.interp(self.t, breakpoints, prob_lead_values)
-    self.lead_present = self.lead_relevancy & (only_radar | (self.prob_lead > 0.5))
+    self.lead_present = np.logical_and(self.lead_relevancy, np.logical_or(only_radar, self.prob_lead > 0.5))
     self.cruise = np.interp(self.t, breakpoints, cruise_values)
 
   def _make_messages(self, i):
