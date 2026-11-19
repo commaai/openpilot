@@ -529,11 +529,10 @@ class Setup(Widget):
         self._download_failed_reason = "Incompatible openpilot version."
       else:
         self._download_failed_reason = f"Server error ({e.code}): " + self.download_url.replace("https://", "", 1)
+    except OSError:
+      self._download_failed_reason = "No connection to " + self.download_url.replace("https://", "", 1)
     except Exception:
-      if self._network_monitor.network_connected.is_set():
-        self._download_failed_reason = "Invalid URL: " + self.download_url.replace("https://", "", 1)
-      else:
-        self._download_failed_reason = "No internet connection."
+      self._download_failed_reason = "Invalid URL: " + self.download_url.replace("https://", "", 1)
 
 
 def main():
