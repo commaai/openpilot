@@ -44,8 +44,13 @@ def none_blocked(msgs) -> Check:
   engaged = _first_engaged(msgs)
   if engaged is None:
     return True, "never engaged, no TX checked"
-  # until the car's CAN stops, after it the panda rightly blocks what openpilot still sends
+  # while the panda reports controls allowed and the car's CAN runs. once it disallows, what openpilot already sent is rightly blocked
   last = max((_t(msgs, m) for m in _of(msgs, 'can') if any(c.src < 3 for c in m.can)), default=0.)
+  allowed = [(_t(msgs, m), m.pandaStates[0].controlsAllowed) for m in _of(msgs, 'pandaStates') if _t(msgs, m) >= engaged]
+  for (t, a), (_, a_next) in zip(allowed, allowed[1:], strict=False):
+    if a and not a_next:
+      last = min(last, t)
+      break
   blocked = [(_t(msgs, m), c.address, c.src - BLOCKED) for m in _of(msgs, 'can') if engaged <= _t(msgs, m) <= last for c in m.can if c.src >= BLOCKED]
   if blocked:
     t, addr, bus = blocked[0]
@@ -76,9 +81,16 @@ def dropped_on_can_loss(msgs) -> Check:
     return False, f"car CAN stopped at t={last:.2f}, the panda still allowed controls {_t(msgs, after[-1]) - last:.2f} s later"
   delay = _t(msgs, drop) - last
   rx_invalid = drop.pandaStates[0].safetyRxChecksInvalid
-  ok = CAN_LOSS_DROP[0] <= delay <= CAN_LOSS_DROP[1] and rx_invalid
-  expected = f"{CAN_LOSS_DROP[0]:g}-{CAN_LOSS_DROP[1]:g} s"
-  return ok, f"car CAN stopped at t={last:.2f}, controls dropped {delay:.2f} s later (expected {expected}), rx checks invalid {rx_invalid}"
+  if rx_invalid:
+    # the panda's own timer
+    ok = CAN_LOSS_DROP[0] <= delay <= CAN_LOSS_DROP[1]
+    expected = f"{CAN_LOSS_DROP[0]:g}-{CAN_LOSS_DROP[1]:g} s"
+    return ok, f"car CAN stopped at t={last:.2f}, rx checks invalid, controls dropped {delay:.2f} s later (expected {expected})"
+  # else openpilot saw the CAN missing first and disengaged, the panda follows its heartbeat
+  disengaged = next((_t(msgs, m) for m in _of(msgs, 'selfdriveState') if _t(msgs, m) > last and not m.selfdriveState.enabled), None)
+  ok = disengaged is not None and disengaged < _t(msgs, drop) and delay <= CAN_LOSS_DROP[1]
+  after = "never disengaged" if disengaged is None else f"disengaged {disengaged - last:.2f} s later"
+  return ok, f"car CAN stopped at t={last:.2f}, openpilot {after}, controls dropped {delay:.2f} s later with rx checks valid (limit {CAN_LOSS_DROP[1]:g} s)"
 
 
 def check(msgs, car_model: str) -> list[Check]:
