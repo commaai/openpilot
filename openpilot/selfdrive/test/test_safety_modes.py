@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 # one test route per safety mode and param on a DUT in an ultimate provisioning (UP) station, the UP plays its engagement's CAN raw.
 # ALFRED_SHARD/ALFRED_SHARDS drive every Nth safety mode, SCENARIOS=TOYOTA_COROLLA_TSS2,HONDA_CIVIC only those car models or routes
+import multiprocessing
 import os
 import signal
 import subprocess
 import sys
 import time
+from concurrent.futures import ProcessPoolExecutor
 
 import openpilot.cereal.messaging as messaging
 from opendbc.car.car_helpers import interfaces
@@ -141,6 +143,10 @@ def safety_groups(selected: list[str]) -> dict[tuple[str, int], list[CarTestRout
   return dict(sorted(groups.items()))
 
 
+def first_window(group: list[CarTestRoute]) -> tuple[CarTestRoute | None, Window | None]:
+  return next(((r, w) for r in group if (w := find_window(r)) is not None), (None, None))
+
+
 def first(msgs, service: str, since: float) -> str:
   t = next((m.logMonoTime * 1e-9 for m in msgs if m.which() == service), None)
   return "never" if t is None else f"+{t - since:.1f} s"
@@ -179,22 +185,25 @@ def main() -> None:
   selected = [s.strip() for s in os.getenv("SCENARIOS", "").split(",") if s.strip()]
   groups = [g for i, g in enumerate(safety_groups(selected).items()) if i % shards == shard]
 
-  up = UP.remote()
   start = time.monotonic()
+  # parsing a route's logs takes seconds, all windows the cache doesn't have load in parallel before the first drive
+  with ProcessPoolExecutor(4, mp_context=multiprocessing.get_context("spawn")) as pool:
+    windows = list(pool.map(first_window, [group for _, group in groups]))
+  print(f"windows of {len(groups)} safety modes loaded in {time.monotonic() - start:.0f} s", flush=True)
+
+  up = UP.remote()
   counts = {"passed": 0, "failed": 0, "rig problem": 0, "not driven": 0}
-  for (mode, param), group in groups:
+  for ((mode, param), group), (route, window) in zip(groups, windows, strict=True):
     t = time.monotonic()
-    route, window = next(((r, w) for r in group if (w := find_window(r)) is not None), (None, None))
-    load = time.monotonic() - t
     if route is None or window is None:
       counts["not driven"] += 1
-      print(f"⚪ {mode} {param}  none of its {len(group)} routes engages in its test segments, load {load:.0f} s", flush=True)
+      print(f"⚪ {mode} {param}  none of its {len(group)} routes engages in its test segments", flush=True)
       continue
     print(f"=== {mode} {param} {route.car_model} {route.route} ===", flush=True)
     status, lines = run(up, route, window)
     counts[status] += 1
     end_manager_output()
-    print(f"{'✅' if status == 'passed' else '❌'} {mode} {param} {route.car_model}  {time.monotonic() - t:.0f} s: load {load:.0f} s, {lines[1]}")
+    print(f"{'✅' if status == 'passed' else '❌'} {mode} {param} {route.car_model}  {time.monotonic() - t:.0f} s: {lines[1]}")
     if status != "passed":
       print("\n".join(f"    {line}" for line in lines))
       print(f"    repeat: SCENARIOS={route.route} ./openpilot/selfdrive/test/test_safety_modes.py", flush=True)

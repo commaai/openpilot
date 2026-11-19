@@ -1,5 +1,6 @@
 # a test route's window the UP plays: its first engagement after the route's panda was in the car's safety mode
 import hashlib
+import os
 import pickle
 from dataclasses import dataclass
 from pathlib import Path
@@ -21,7 +22,8 @@ BUSES = 3
 NO_CAR_MODES = ('silent', 'noOutput', 'elm327', 'allOutput')
 
 Frame = list[tuple[int, bytes, int]]
-# parsing a route's segments takes seconds, what they give is kept next to the logs, per version of this file
+# parsing a route's segments takes seconds, what they give is kept, per version of this file. its own dir, so CI can cache it without the logs
+WINDOW_CACHE = Path(os.environ.get("SAFETY_MODES_CACHE", DOWNLOAD_CACHE_ROOT))
 CACHE_KEY = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()[:16]
 
 
@@ -128,7 +130,7 @@ def parse_window(route: CarTestRoute) -> tuple[int, float, list[Frame], bytes | 
 
 
 def find_window(route: CarTestRoute) -> Window | None:
-  path = DOWNLOAD_CACHE_ROOT / f"safety_modes_{CACHE_KEY}_{route.route.replace('/', '|')}.pkl"
+  path = WINDOW_CACHE / f"safety_modes_{CACHE_KEY}_{route.route.replace('/', '|')}.pkl"
   if path.exists():
     parsed = pickle.loads(path.read_bytes())
   else:
