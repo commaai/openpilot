@@ -42,6 +42,7 @@ class ModelRenderer(Widget):
   def __init__(self):
     super().__init__()
     self._longitudinal_control = False
+    self._experimental_mode = False
     self._lane_line_probs = np.zeros(4, dtype=np.float32)
     self._road_edge_stds = np.zeros(2, dtype=np.float32)
     self._lead_vehicles = [LeadVehicle(), LeadVehicle()]
@@ -95,6 +96,7 @@ class ModelRenderer(Widget):
 
     if sm.updated['carParams']:
       self._longitudinal_control = sm['carParams'].openpilotLongitudinalControl
+    self._experimental_mode = sm['selfdriveState'].experimentalMode
 
     model = sm['modelV2']
     radar_state = sm['radarState'] if sm.valid['radarState'] else None
@@ -271,7 +273,8 @@ class ModelRenderer(Widget):
     if not self._path.projected_points.size:
       return
 
-    if not self._longitudinal_control:
+    # the path is colored by the model's plan, which only drives the car in experimental mode
+    if not self._longitudinal_control or not self._experimental_mode:
       draw_polygon(self._rect, self._path.projected_points, gradient=STOCK_PATH_GRADIENT)
     elif len(self._path_gradient.colors) > 1:
       draw_polygon(self._rect, self._path.projected_points, gradient=self._path_gradient)
