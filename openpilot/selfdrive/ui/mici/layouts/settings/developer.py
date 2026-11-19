@@ -42,7 +42,7 @@ class DeveloperLayoutMici(NavScroller):
           if error is None:
             self._ssh_keys_btn.set_value(username)
           else:
-            self._ssh_keys_btn.set_value("not set")
+            self._ssh_keys_btn.set_value(ui_state.params.get("GithubUsername") or "not set")
             gui_app.push_widget(BigDialog("", error))
 
         self._ssh_fetcher.fetch(username, on_response)

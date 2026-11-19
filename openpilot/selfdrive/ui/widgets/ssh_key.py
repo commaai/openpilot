@@ -42,8 +42,6 @@ class SshKeyFetcher:
     if not self._done:
       return
     self._done = False
-    if self._error is not None:
-      self.clear()
     if self._on_response:
       self._on_response(self._error)
 
