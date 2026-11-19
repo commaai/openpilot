@@ -40,6 +40,10 @@ def manager_init() -> None:
   if params.get_bool("AlwaysOnDMLock"):
     params.put_bool("AlwaysOnDM", True, block=True)
 
+  # builds with #39043 turned experimental mode on by default, without the confirmation
+  if not params.get_bool("ExperimentalModeConfirmed"):
+    params.remove("ExperimentalMode")
+
   # set unset params to their default value
   for k in params.all_keys():
     default_value = params.get_default_value(k)
