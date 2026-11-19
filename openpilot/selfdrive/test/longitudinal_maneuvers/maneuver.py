@@ -8,7 +8,10 @@ from openpilot.common.constants import CV
 from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
 from openpilot.selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner
-from openpilot.selfdrive.controls.radard import _LEAD_ACCEL_TAU
+from openpilot.selfdrive.controls.radard import _LEAD_ACCEL_TAU, RADAR_TO_CAMERA
+from openpilot.selfdrive.modeld.constants import ModelConstants
+
+LEAD_STEPS = (np.asarray(ModelConstants.LEAD_T_IDXS) / DT_MDL).astype(int)
 
 
 class Maneuver:
@@ -44,10 +47,12 @@ class Maneuver:
     self.v_ego[0] = initial_v_ego
 
     # lead state, known in advance
-    self.v_lead = np.interp(self.t, breakpoints, v_lead_values)
+    # extend so we can populate fake model predicted traj
+    lead_t = np.arange(n_steps + LEAD_STEPS[-1] + 1) * DT_MDL
+    self.v_lead = np.interp(lead_t, breakpoints, v_lead_values)
     self.a_lead = np.diff(self.v_lead, prepend=0.0) / DT_MDL
     self.x_lead = np.cumsum(np.r_[initial_x_lead, self.v_lead[:-1] * DT_MDL])
-    self.prob_lead = np.interp(self.t, breakpoints, prob_lead_values)
+    self.prob_lead = np.zeros_like(self.t) if only_radar else np.interp(self.t, breakpoints, prob_lead_values)
     self.lead_present = np.logical_and(self.lead_relevancy, np.logical_or(only_radar, self.prob_lead > 0.5))
     self.v_cruise = np.interp(self.t, breakpoints, v_cruise_values)
 
@@ -65,8 +70,19 @@ class Maneuver:
     if not self.only_lead2:
       radar.leadOne = lead
 
-    # Model requests more acceleration so the lead policy must handle slowdowns.
     model = log.ModelDataV2()
+    future = i + LEAD_STEPS
+    camera_x = self.x_ego[i] - RADAR_TO_CAMERA
+    future_x = (self.x_lead[future] - camera_x).tolist()
+    future_v = self.v_lead[future].tolist()
+    for j, model_lead in enumerate(model.init('leadsV3', len(ModelConstants.LEAD_T_OFFSETS))):
+      model_lead.prob = 0.0 if self.only_lead2 and j != 1 else prob
+      model_lead.probTime = ModelConstants.LEAD_T_OFFSETS[j]
+      model_lead.t = ModelConstants.LEAD_T_IDXS
+      model_lead.x = future_x
+      model_lead.v = future_v
+
+    # Model requests more acceleration so the lead policy must handle slowdowns.
     model.action.desiredAcceleration = float(self.a_ego[i] + 0.5)
     return {
       'radarState': radar,
@@ -95,7 +111,8 @@ class Maneuver:
     for i in range(len(self.t) - 1):
       self._step(i)
 
-    d_rel = self.x_lead - self.x_ego
+    x_lead, v_lead = self.x_lead[:len(self.t)], self.v_lead[:len(self.t)]
+    d_rel = x_lead - self.x_ego
 
     valid = True
     if np.any(d_rel[self.lead_present] < 0.4):
@@ -104,7 +121,7 @@ class Maneuver:
 
     if self.ensure_start and self.lead_relevancy:
       not_starting_since = None
-      not_starting = (self.v_lead > self.v_ego) & (self.a_ego < 1e-3)
+      not_starting = (v_lead > self.v_ego) & (self.a_ego < 1e-3)
       for now, waiting in zip(self.t, not_starting, strict=True):
         if not waiting:
           not_starting_since = None
@@ -120,5 +137,5 @@ class Maneuver:
       valid = False
 
     print('maneuver end', valid)
-    logs = np.column_stack((self.t, self.x_ego, self.x_lead, self.v_ego, self.v_lead, self.a_ego, d_rel))
+    logs = np.column_stack((self.t, self.x_ego, x_lead, self.v_ego, v_lead, self.a_ego, d_rel))
     return valid, logs
