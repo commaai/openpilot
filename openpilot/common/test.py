@@ -21,6 +21,12 @@ def clean_env():
     os.environ.update(starting_env)
 
 
+def kill_leftover_processes():
+  # an interrupted run leaves its processes behind, holding the cameras and slowing the models
+  cmdlines = [p.module if hasattr(p, "module") else " ".join(p.cmdline) for p in manager.managed_processes.values()]
+  subprocess.run(["pkill", "-9", "-f", "-x", "|".join(cmdlines)], check=False)
+
+
 class OpenpilotTestCase(unittest.TestCase):
   """TestCase with openpilot's per-test isolation."""
 
@@ -82,6 +88,8 @@ class OpenpilotTestCase(unittest.TestCase):
     super().setUpClass()
     if cls.COMMA_HARDWARE_TEST and not COMMA_HARDWARE:
       raise unittest.SkipTest("Skipping comma hardware test on PC")
+    if cls.COMMA_HARDWARE_TEST:
+      kill_leftover_processes()
     cls._class_env = clean_env()
     cls._class_env.__enter__()
     setup_class = getattr(cls, "setup_class", None)
