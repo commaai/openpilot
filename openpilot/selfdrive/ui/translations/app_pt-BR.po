@@ -113,6 +113,10 @@ msgstr "ALTERAR"
 msgid "CHECK"
 msgstr "VERIFICAR"
 
+#: openpilot/selfdrive/ui/widgets/exp_mode_button.py
+msgid "CHILL MODE ON"
+msgstr "MODO CHILL ATIVO"
+
 #: openpilot/selfdrive/ui/layouts/sidebar.py
 #: openpilot/system/ui/widgets/network.py
 msgid "CONNECT"
@@ -220,6 +224,10 @@ msgstr "ERRO"
 #: openpilot/selfdrive/ui/layouts/sidebar.py
 msgid "ETH"
 msgstr "ETH"
+
+#: openpilot/selfdrive/ui/widgets/exp_mode_button.py
+msgid "EXPERIMENTAL MODE ON"
+msgstr "MODO EXPERIMENTAL ATIVO"
 
 #: openpilot/selfdrive/ui/layouts/settings/developer.py
 msgid "Enable"
