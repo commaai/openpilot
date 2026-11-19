@@ -14,8 +14,8 @@ from opendbc.car.vin import VIN_UNKNOWN
 from openpilot.tools.lib.logreader import LogReader
 
 DT = 0.01
-# seconds of CAN before the panda's controls_allowed edge, openpilot is ready ~8 s after the first CAN, and after it
-LEAD = 10.
+# seconds of CAN before the panda's controls_allowed edge, openpilot is engageable 3-6.5 s after the first CAN, and after it
+LEAD = 8.
 ENGAGED = 3.
 BUSES = 3
 # before the route's panda is in a car's safety mode the recording is the old device's relay and forwarding, not the car's
