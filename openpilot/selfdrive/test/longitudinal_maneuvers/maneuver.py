@@ -15,12 +15,12 @@ class Maneuver:
   def __init__(self, title, duration, **kwargs):
     # scenario
     self.title = title
-    initial_distance_lead = kwargs.get("initial_distance_lead", 200.0)
     initial_speed = kwargs.get("initial_speed", 0.0)
+    initial_distance_lead = kwargs.get("initial_distance_lead", 200.0)
 
     breakpoints = kwargs.get("breakpoints", [0.0, duration])
-    speed_lead_values = kwargs.get("speed_lead_values", [0.0 for i in range(len(breakpoints))])
-    cruise_values = kwargs.get("cruise_values", [50.0 for i in range(len(breakpoints))])
+    speed_lead_values = kwargs.get("speed_lead_values", [0.0] * len(breakpoints))
+    cruise_values = kwargs.get("cruise_values", [50.0] * len(breakpoints))
 
     self.enabled = kwargs.get("enabled", True)
     self.personality = kwargs.get("personality", 0)
@@ -33,7 +33,7 @@ class Maneuver:
     self.lead_relevancy = kwargs.get("lead_relevancy", False)
     self.only_lead2 = kwargs.get("only_lead2", False)
     only_radar = kwargs.get("only_radar", False)
-    prob_lead_values = kwargs.get("prob_lead_values", [1.0 for i in range(len(breakpoints))])
+    prob_lead_values = kwargs.get("prob_lead_values", [1.0] * len(breakpoints))
 
     n_steps = round(duration / DT_MDL)
     self.t = np.arange(n_steps + 1) * DT_MDL
@@ -46,7 +46,7 @@ class Maneuver:
     self.accel_lead = np.diff(self.speed_lead, prepend=0.0) / DT_MDL
     self.distance_lead = np.cumsum(np.r_[initial_distance_lead, self.speed_lead[:-1] * DT_MDL])
     self.prob_lead = np.interp(self.t, breakpoints, prob_lead_values)
-    self.lead_present = np.logical_and(self.lead_relevancy, only_radar | (self.prob_lead > 0.5))
+    self.lead_present = self.lead_relevancy & (only_radar | (self.prob_lead > 0.5))
     self.cruise = np.interp(self.t, breakpoints, cruise_values)
 
   def _make_messages(self, i):
@@ -81,9 +81,8 @@ class Maneuver:
     if self.planner.output_should_stop:
       accel = min(-0.5, accel)
     speed = self.speed[i] + accel * DT_MDL
-    if speed <= 0:
-      speed = 0
-      accel = 0
+    if speed <= 0.:
+      speed = accel = 0.
     self.speed[i + 1] = speed
     self.acceleration[i + 1] = accel
     self.distance[i + 1] = self.distance[i] + speed * DT_MDL
@@ -98,27 +97,26 @@ class Maneuver:
     logs = np.column_stack((self.t, self.distance, self.distance_lead, self.speed, self.speed_lead, self.acceleration, d_rel))
 
     valid = True
-    if np.any(d_rel[self.lead_present] < .4):
-      print("Crashed!!!!")
+    if np.any(d_rel[self.lead_present] < 0.4):
+      print('Crashed!!!!')
       valid = False
 
     if self.ensure_start and self.lead_relevancy:
-      not_starting_t = None
+      not_starting_since = None
       not_starting = (self.speed_lead > self.speed) & (self.acceleration < 1e-3)
       for now, waiting in zip(self.t, not_starting, strict=True):
         if not waiting:
-          not_starting_t = None
-        elif not_starting_t is None:
-          not_starting_t = now
-        elif now - not_starting_t > 0.5:
+          not_starting_since = None
+        elif not_starting_since is None:
+          not_starting_since = now
+        elif now - not_starting_since > 0.5:
           print('LongitudinalPlanner not starting!')
           valid = False
           break
 
-    if self.force_decel and self.speed[-1] > 1e-1 and self.acceleration[-1] > -0.04:
+    if self.force_decel and self.speed[-1] > 0.1 and self.acceleration[-1] > -0.04:
       print('Not stopping with force decel')
       valid = False
 
-
-    print("maneuver end", valid)
+    print('maneuver end', valid)
     return valid, logs
