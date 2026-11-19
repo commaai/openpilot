@@ -134,7 +134,9 @@ class MiciHomeLayout(Widget):
     self._alert_count_callback: Callable[[], int] | None = None
 
     self._version_text = self._get_version_text()
+    self.set_long_press_callback(ui_state.toggle_experimental_mode)
 
+    self._experimental_icon = IconWidget("icons_mici/experimental_mode.png", (48, 48))
     self._usb_icon = IconWidget("icons_mici/usb.png", (62, 40))
     self._chestnut_icon = IconWidget("icons_mici/chestnut_green.png", (54, 40))
     self._chestnut_loading_icon = IconWidget("icons_mici/chestnut.png", (68, 40))
@@ -147,6 +149,7 @@ class MiciHomeLayout(Widget):
     self._status_bar_layout = HBoxLayout([
       IconWidget("icons_mici/settings.png", (48, 48), opacity=0.9),
       NetworkIcon(),
+      self._experimental_icon,
       self._usb_icon,
       self._chestnut_icon,
       self._chestnut_loading_icon,
@@ -261,6 +264,7 @@ class MiciHomeLayout(Widget):
     usb_unknown = ui_state.usb_unknown
     chestnut_state = ui_state.chestnut_state
     chestnut_failed = chestnut_state in (ChestnutState.UNCOMPILED, ChestnutState.FAILED)
+    self._experimental_icon.set_visible(ui_state.experimental_mode)
     self._usb_icon.set_visible(usb_connected and usb_unknown and not chestnut_failed)
     self._chestnut_icon.set_visible(not usb_unknown and chestnut_state not in
                                     (ChestnutState.LOADING, ChestnutState.UNCOMPILED, ChestnutState.FAILED) and

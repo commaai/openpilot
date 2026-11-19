@@ -143,6 +143,12 @@ class UIState:
   def is_offroad(self) -> bool:
     return not self.started
 
+  def toggle_experimental_mode(self) -> None:
+    if self.has_longitudinal_control and self.params.get_bool("ExperimentalModeConfirmed"):
+      enabled = not self.params.get_bool("ExperimentalMode")
+      self.params.put_bool("ExperimentalMode", enabled, block=True)
+      self.experimental_mode = enabled
+
   def received_since_started(self, service: str) -> bool:
     return self.sm.recv_frame[service] > self._started_frame
 

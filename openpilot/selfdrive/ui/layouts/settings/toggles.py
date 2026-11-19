@@ -190,12 +190,11 @@ class TogglesLayout(Widget):
     else:
       self._toggles["ExperimentalMode"].set_description(e2e_description)
 
-    self._update_experimental_mode_icon()
-
     # TODO: make a param control list item so we don't need to manage internal state as much here
     # refresh toggles from params to mirror external changes
     for param in self._toggle_defs:
       self._toggles[param].action_item.set_state(self._params.get_bool(param))
+    self._update_experimental_mode_icon()
 
     # these toggles need restart, block while engaged
     for toggle_def in self._toggle_defs:

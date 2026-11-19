@@ -6,6 +6,7 @@ from openpilot.selfdrive.ui import UI_BORDER_SIZE
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 from openpilot.selfdrive.ui.onroad.alert_renderer import AlertRenderer
 from openpilot.selfdrive.ui.onroad.driver_state import DriverStateRenderer
+from openpilot.selfdrive.ui.onroad.exp_button import ExpButton
 from openpilot.selfdrive.ui.onroad.hud_renderer import HudRenderer
 from openpilot.selfdrive.ui.onroad.model_renderer import ModelRenderer
 from openpilot.selfdrive.ui.onroad.cameraview import CameraView
@@ -45,6 +46,7 @@ class AugmentedRoadView(CameraView):
 
     self.model_renderer = ModelRenderer()
     self._hud_renderer = HudRenderer()
+    self._exp_button = ExpButton()
     self.alert_renderer = AlertRenderer()
     self.driver_state_renderer = DriverStateRenderer()
 
@@ -81,6 +83,9 @@ class AugmentedRoadView(CameraView):
     # Draw all UI overlays
     self.model_renderer.render(self._content_rect)
     self._hud_renderer.render(self._content_rect)
+    self._exp_button.set_position(self._content_rect.x + self._content_rect.width - UI_BORDER_SIZE - self._exp_button.rect.width,
+                                  self._content_rect.y + UI_BORDER_SIZE)
+    self._exp_button.render()
     self.alert_renderer.render(self._content_rect)
     self.driver_state_renderer.render(self._content_rect)
 
@@ -93,8 +98,8 @@ class AugmentedRoadView(CameraView):
     # Draw colored border based on driving state
     self._draw_border(rect)
 
-  def _handle_mouse_press(self, _):
-    if self._click_callback is not None:
+  def _handle_mouse_press(self, mouse_pos):
+    if self._click_callback is not None and not rl.check_collision_point_rec(rl.Vector2(*mouse_pos), self._exp_button.rect):
       self._click_callback()
 
   def _handle_mouse_release(self, _):
