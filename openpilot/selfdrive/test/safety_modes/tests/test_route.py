@@ -1,5 +1,4 @@
-import pytest
-
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.selfdrive.test.safety_modes.route import ENGAGED, LEAD, bin_frames, car_mode_samples, find_edge
 from openpilot.selfdrive.test.safety_modes.tests.helpers import can, msg, panda
 
@@ -8,7 +7,7 @@ def samples(*states: tuple[float, bool]) -> list[tuple[float, bool]]:
   return car_mode_samples([panda(t, a) for t, a in states])
 
 
-class TestWindow:
+class TestWindow(OpenpilotTestCase):
   def test_old_logs(self):
     m = msg('pandaStateDEPRECATED', 1., controlsAllowed=True, safetyModel='toyota')
     assert car_mode_samples([m]) == [(1., True)]
@@ -18,11 +17,12 @@ class TestWindow:
     assert car_mode_samples([panda(0., False, mode='elm327'), panda(1., True)]) == [(1., True)]
 
   def test_edge(self):
-    assert find_edge(samples((0., False), (20., True), (40., True)), 60.) == pytest.approx(20.)
+    assert find_edge(samples((0., False), (20., True), (40., True)), 60.) == 20.
 
   def test_needs_lead_in_car_mode(self):
     assert find_edge(samples((5., False), (5. + LEAD - 1, True), (30., True)), 60.) is None
-    assert find_edge(samples((5., False), (5. + LEAD + 0.1, True), (30., True)), 60.) == pytest.approx(5. + LEAD + 0.1)
+    edge = find_edge(samples((5., False), (5. + LEAD + 0.1, True), (30., True)), 60.)
+    assert edge is not None and abs(edge - (5. + LEAD + 0.1)) < 1e-6
 
   def test_needs_room(self):
     assert find_edge(samples((0., False), (20., True)), 20. + ENGAGED - 1) is None
@@ -30,11 +30,11 @@ class TestWindow:
   def test_needs_cruise_off_lead(self):
     # the replay would start with cruise on
     assert find_edge(samples((0., False), (20., True), (40., True)), 60., cruise_on=[12.]) is None
-    assert find_edge(samples((0., False), (20., True), (40., True)), 60., cruise_on=[19.5]) == pytest.approx(20.)
+    assert find_edge(samples((0., False), (20., True), (40., True)), 60., cruise_on=[19.5]) == 20.
 
   def test_not_resumed(self):
     assert find_edge(samples((0., False), (20., True), (40., True)), 60., resumes=[19.5]) is None
-    assert find_edge(samples((0., False), (20., True), (40., True)), 60., resumes=[15.]) == pytest.approx(20.)
+    assert find_edge(samples((0., False), (20., True), (40., True)), 60., resumes=[15.]) == 20.
 
   def test_needs_hold(self):
     assert find_edge(samples((0., False), (20., True), (20. + ENGAGED - 1, False)), 60.) is None

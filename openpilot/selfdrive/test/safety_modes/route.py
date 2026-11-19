@@ -2,6 +2,7 @@
 import hashlib
 import os
 import pickle
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -68,7 +69,7 @@ def cruise_times(msgs, pcm_cruise: bool) -> tuple[list[float], list[float]]:
   return on, resumes
 
 
-def find_edge(samples: list[tuple[float, bool]], can_end: float, cruise_on: list[float] = (), resumes: list[float] = ()) -> float | None:
+def find_edge(samples: list[tuple[float, bool]], can_end: float, cruise_on: Sequence[float] = (), resumes: Sequence[float] = ()) -> float | None:
   # the first controls_allowed rising edge with LEAD s in the car's safety mode before it with cruise off until 1 s before,
   # not engaged by a resume, and ENGAGED s allowed after it
   for (_, before), (t, allowed) in zip(samples, samples[1:], strict=False):

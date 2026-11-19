@@ -1,3 +1,4 @@
+from openpilot.common.test import OpenpilotTestCase
 from openpilot.selfdrive.test.safety_modes.rules import check, dropped_on_can_loss, engaged_at_edge, fingerprinted, no_new_faults, none_blocked
 from openpilot.selfdrive.test.safety_modes.tests.helpers import can, msg, panda
 
@@ -24,7 +25,7 @@ def drive(engage_at: float = 2.5, allowed_at: float = 2., end: float = 15., drop
   return msgs
 
 
-class TestRules:
+class TestRules(OpenpilotTestCase):
   def test_clean(self):
     assert all(ok for ok, _ in check(drive(), CAR))
 
