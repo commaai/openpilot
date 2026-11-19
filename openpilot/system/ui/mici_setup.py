@@ -530,7 +530,10 @@ class Setup(Widget):
       else:
         self._download_failed_reason = f"Server error ({e.code}): " + self.download_url.replace("https://", "", 1)
     except Exception:
-      self._download_failed_reason = "Invalid URL: " + self.download_url.replace("https://", "", 1)
+      if self._network_monitor.network_connected.is_set():
+        self._download_failed_reason = "Invalid URL: " + self.download_url.replace("https://", "", 1)
+      else:
+        self._download_failed_reason = "No internet connection."
 
 
 def main():
