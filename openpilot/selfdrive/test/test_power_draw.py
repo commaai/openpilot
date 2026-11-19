@@ -17,7 +17,7 @@ from openpilot.common.params import Params
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.system.manager.manager import manager_cleanup
 
-SAMPLE_TIME = 3       # seconds to sample power
+SAMPLE_TIME = 5       # seconds to sample power, longer than the ~3 s power bumps the device has
 MAX_SPREAD = 0.1      # W, a wider window caught a ramp or a spike, so it isn't settled
 MAX_WARMUP_TIME = 30  # seconds to wait for SAMPLE_TIME consecutive valid samples
 MICI = HARDWARE.get_device_type() == "mici"
@@ -38,9 +38,9 @@ class Proc:
 # how much each adds to the DUT's power, which the UP measures on its OBD-C port
 PROCS = [
   Proc(['camerad'], 1.0 if MICI else 1.65, atol=0.4, msgs=['narrowRoadCameraState', 'wideRoadCameraState', 'cabinCameraState']),
-  Proc(['modeld'], 1.65 if MICI else 1.65, atol=0.2, msgs=['modelV2']),
+  Proc(['modeld'], 1.5 if MICI else 1.65, atol=0.2, msgs=['modelV2']),
   Proc(['dmonitoringmodeld'], 0.65, atol=0.35, msgs=['driverStateV2']),
-  Proc(['encoderd'], 0.23, msgs=[]),
+  Proc(['encoderd'], 0.23, msgs=['narrowRoadEncodeData', 'wideRoadEncodeData']),
 ]
 
 
