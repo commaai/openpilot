@@ -16,8 +16,8 @@ class CurveSpeed:
   def reset(self):
     self.accel_offset = 0.0
 
-  def update(self, model, roll):
-    target = 0.0
+  def update(self, model, roll, steer_saturated):
+    target = -MAX_ACCEL_OFFSET if steer_saturated else 0.0
     for t, v, yaw_rate in zip(model.position.t, model.velocity.x, model.orientationRate.z, strict=False):
       # lat_accel = v * yaw_rate - ACCELERATION_DUE_TO_GRAVITY * (roll + predicted_roll)
       lat_accel = v * yaw_rate - ACCELERATION_DUE_TO_GRAVITY * roll
