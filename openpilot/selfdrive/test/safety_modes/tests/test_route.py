@@ -27,6 +27,14 @@ class TestWindow:
   def test_needs_room(self):
     assert find_edge(samples((0., False), (20., True)), 20. + ENGAGED - 1) is None
 
+  def test_needs_clean_lead(self):
+    # controls were allowed in the lead, the replay would start with cruise on
+    assert find_edge(samples((0., False), (12., True), (14., False), (20., True), (40., True)), 60.) is None
+
+  def test_not_resumed(self):
+    assert find_edge(samples((0., False), (20., True), (40., True)), 60., resumes=[19.5]) is None
+    assert find_edge(samples((0., False), (20., True), (40., True)), 60., resumes=[15.]) == pytest.approx(20.)
+
   def test_needs_hold(self):
     assert find_edge(samples((0., False), (20., True), (20. + ENGAGED - 1, False)), 60.) is None
 

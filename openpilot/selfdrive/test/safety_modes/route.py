@@ -4,6 +4,7 @@ import pickle
 from dataclasses import dataclass
 from pathlib import Path
 
+from opendbc.car.car_helpers import interfaces
 from opendbc.car.fw_versions import match_fw_to_car
 from opendbc.car.logreader import LogReader
 from opendbc.car.structs import car
@@ -52,10 +53,21 @@ def car_mode_samples(msgs) -> list[tuple[float, bool]]:
   return samples
 
 
-def find_edge(samples: list[tuple[float, bool]], can_end: float) -> float | None:
-  # the first controls_allowed rising edge with LEAD s in the car's safety mode before it and ENGAGED s allowed after it
+def resume_presses(msgs, pcm_cruise: bool) -> list[float]:
+  # openpilot with its own longitudinal blocks resume until cruise was set once, a freshly started DUT never had it set
+  if pcm_cruise:
+    return []
+  return [m.logMonoTime * 1e-9 for m in msgs if m.which() == 'carState' and
+          any(str(b.type) in ('accelCruise', 'resumeCruise') for b in m.carState.buttonEvents)]
+
+
+def find_edge(samples: list[tuple[float, bool]], can_end: float, resumes: list[float] = ()) -> float | None:
+  # the first controls_allowed rising edge with LEAD s in the car's safety mode and controls not allowed before it,
+  # ENGAGED s allowed after it, and not engaged by a resume
   for (_, before), (t, allowed) in zip(samples, samples[1:], strict=False):
     if before or not allowed or t - LEAD < samples[0][0] or t + ENGAGED > can_end:
+      continue
+    if any(a for s, a in samples if t - LEAD <= s < t) or any(t - 1. <= r <= t for r in resumes):
       continue
     if all(a for s, a in samples if t <= s <= t + ENGAGED):
       return t
@@ -73,12 +85,21 @@ def bin_frames(msgs, start: float, seconds: float) -> list[Frame]:
   return frames
 
 
-def make_window(route: CarTestRoute, segment: int, start: float, frames: list[Frame], logged_bytes: bytes | None) -> Window:
+def make_window(route: CarTestRoute, segment: int, start: float, frames: list[Frame], logged_bytes: bytes | None) -> Window | None:
   if logged_bytes is None:
     return Window(segment, start, frames, None, True, False)
   with car.CarParams.from_bytes(logged_bytes) as logged:
     has_fw = len(logged.carFw) > 0 and logged.carVin != VIN_UNKNOWN
     given = not has_fw or match_fw_to_car(logged.carFw, logged.carVin, log=False)[1] != {route.car_model}
+    # the car's CAN depends on who did longitudinal, e.g. its radar is off for openpilot's. the DUT must get the same
+    fingerprint: dict[int, dict[int, int]] = {bus: {} for bus in range(8)}
+    for frame in frames:
+      for addr, dat, bus in frame:
+        fingerprint[bus][addr] = len(dat)
+    car_fw = list(logged.carFw) if has_fw else []
+    CP = interfaces[route.car_model].get_params(route.car_model, fingerprint, car_fw, logged.openpilotLongitudinalControl, False, docs=False)
+    if CP.openpilotLongitudinalControl != logged.openpilotLongitudinalControl:
+      return None
     return Window(segment, start, frames, logged_bytes if has_fw else None, given, logged.openpilotLongitudinalControl)
 
 
@@ -91,10 +112,11 @@ def parse_window(route: CarTestRoute) -> tuple[int, float, list[Frame], bytes | 
       continue
     samples = car_mode_samples(msgs)
     can = [m.logMonoTime * 1e-9 for m in msgs if m.which() == 'can']
-    edge = find_edge(samples, can[-1]) if samples and can else None
+    logged = next((m.carParams for m in reversed(msgs) if m.which() == 'carParams'), None)
+    resumes = resume_presses(msgs, logged is None or logged.pcmCruise)
+    edge = find_edge(samples, can[-1], resumes) if samples and can else None
     if edge is not None:
       start = edge - LEAD
-      logged = next((m.carParams for m in reversed(msgs) if m.which() == 'carParams'), None)
       logged_bytes = None if logged is None else logged.as_builder().to_bytes()
       return segment, start - can[0], bin_frames(msgs, start, LEAD + ENGAGED), logged_bytes
   return None
