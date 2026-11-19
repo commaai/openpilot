@@ -11,7 +11,8 @@ Version 0.11.4 (2026-XX-XX)
 Version 0.11.3 (2026-11-20)
 ========================
 * New driver monitoring model
-* New big driving model
+* comma four UI updates
+* Romanian translation thanks to adriantabirta!
 
 Version 0.11.2 (2026-10-14)
 =======================
