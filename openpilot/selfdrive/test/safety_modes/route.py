@@ -1,10 +1,14 @@
 # a test route's window the UP plays: its first engagement after the route's panda was in the car's safety mode
+import hashlib
+import pickle
 from dataclasses import dataclass
+from pathlib import Path
 
 from opendbc.car.fw_versions import match_fw_to_car
 from opendbc.car.logreader import LogReader
+from opendbc.car.structs import car
 from opendbc.car.tests.routes import CarTestRoute
-from opendbc.car.tests.test_models import get_cached_segment
+from opendbc.car.tests.test_models import DOWNLOAD_CACHE_ROOT, get_cached_segment
 from opendbc.car.vin import VIN_UNKNOWN
 
 DT = 0.01
@@ -16,6 +20,8 @@ BUSES = 3
 NO_CAR_MODES = ('silent', 'noOutput', 'elm327', 'allOutput')
 
 Frame = list[tuple[int, bytes, int]]
+# parsing a route's segments takes seconds, what they give is kept next to the logs, per version of this file
+CACHE_KEY = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()[:16]
 
 
 @dataclass
@@ -67,18 +73,16 @@ def bin_frames(msgs, start: float, seconds: float) -> list[Frame]:
   return frames
 
 
-def make_window(route: CarTestRoute, segment: int, msgs, start: float) -> Window:
-  can_start = next(m.logMonoTime * 1e-9 for m in msgs if m.which() == 'can')
-  logged = next((m.carParams for m in reversed(msgs) if m.which() == 'carParams'), None)
-  cache = None
-  if logged is not None and len(logged.carFw) and logged.carVin != VIN_UNKNOWN:
-    cache = logged.as_builder().to_bytes()
-  given = cache is None or match_fw_to_car(logged.carFw, logged.carVin, log=False)[1] != {route.car_model}
-  alpha_long = logged is not None and logged.openpilotLongitudinalControl
-  return Window(segment, start - can_start, bin_frames(msgs, start, LEAD + ENGAGED), cache, given, alpha_long)
+def make_window(route: CarTestRoute, segment: int, start: float, frames: list[Frame], logged_bytes: bytes | None) -> Window:
+  if logged_bytes is None:
+    return Window(segment, start, frames, None, True, False)
+  with car.CarParams.from_bytes(logged_bytes) as logged:
+    has_fw = len(logged.carFw) > 0 and logged.carVin != VIN_UNKNOWN
+    given = not has_fw or match_fw_to_car(logged.carFw, logged.carVin, log=False)[1] != {route.car_model}
+    return Window(segment, start, frames, logged_bytes if has_fw else None, given, logged.openpilotLongitudinalControl)
 
 
-def find_window(route: CarTestRoute) -> Window | None:
+def parse_window(route: CarTestRoute) -> tuple[int, float, list[Frame], bytes | None] | None:
   # in the segments test_models uses
   for segment in [route.segment] if route.segment is not None else [2, 1, 0]:
     try:
@@ -89,5 +93,19 @@ def find_window(route: CarTestRoute) -> Window | None:
     can = [m.logMonoTime * 1e-9 for m in msgs if m.which() == 'can']
     edge = find_edge(samples, can[-1]) if samples and can else None
     if edge is not None:
-      return make_window(route, segment, msgs, edge - LEAD)
+      start = edge - LEAD
+      logged = next((m.carParams for m in reversed(msgs) if m.which() == 'carParams'), None)
+      logged_bytes = None if logged is None else logged.as_builder().to_bytes()
+      return segment, start - can[0], bin_frames(msgs, start, LEAD + ENGAGED), logged_bytes
   return None
+
+
+def find_window(route: CarTestRoute) -> Window | None:
+  path = DOWNLOAD_CACHE_ROOT / f"safety_modes_{CACHE_KEY}_{route.route.replace('/', '|')}.pkl"
+  if path.exists():
+    parsed = pickle.loads(path.read_bytes())
+  else:
+    parsed = parse_window(route)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(pickle.dumps(parsed))
+  return None if parsed is None else make_window(route, *parsed)
