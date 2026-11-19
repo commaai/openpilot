@@ -44,11 +44,12 @@ if HARDWARE.get_device_type() == 'mici':
 else:
   PITCH_LIMITS = np.array([-0.09074112085129739, 0.17])
 YAW_LIMITS = np.array([-0.06912048084718224, 0.06912048084718235])
+LIMIT_HYSTERESIS = np.radians(0.25)  # once calibrated, the estimate wandering over a limit isn't a bad mount
 DEBUG = os.getenv("DEBUG") is not None
 
 
-def is_calibration_valid(rpy: np.ndarray) -> bool:
-  return (PITCH_LIMITS[0] < rpy[1] < PITCH_LIMITS[1]) and (YAW_LIMITS[0] < rpy[2] < YAW_LIMITS[1])
+def is_calibration_valid(rpy: np.ndarray, margin: float = 0.0) -> bool:
+  return (PITCH_LIMITS[0] - margin < rpy[1] < PITCH_LIMITS[1] + margin) and (YAW_LIMITS[0] - margin < rpy[2] < YAW_LIMITS[1] + margin)
 
 
 def sanity_clip(rpy: np.ndarray) -> np.ndarray:
@@ -83,6 +84,8 @@ class Calibrator:
           valid_blocks = msg.extrinsicsCalibration.validBlocks
           wide_from_device_euler = np.array(msg.extrinsicsCalibration.wideFromDeviceEuler)
           height = np.array(msg.extrinsicsCalibration.height)
+          if msg.extrinsicsCalibration.calStatus == log.ExtrinsicsCalibration.Status.calibrated:
+            self.cal_status = log.ExtrinsicsCalibration.Status.calibrated
       except Exception:
         cloudlog.exception("Error reading cached CalibrationParams")
 
@@ -154,7 +157,7 @@ class Calibrator:
         self.cal_status = log.ExtrinsicsCalibration.Status.recalibrating
       else:
         self.cal_status = log.ExtrinsicsCalibration.Status.uncalibrated
-    elif is_calibration_valid(self.rpy):
+    elif is_calibration_valid(self.rpy, LIMIT_HYSTERESIS if self.cal_status == log.ExtrinsicsCalibration.Status.calibrated else 0.0):
       self.cal_status = log.ExtrinsicsCalibration.Status.calibrated
     else:
       self.cal_status = log.ExtrinsicsCalibration.Status.invalid
