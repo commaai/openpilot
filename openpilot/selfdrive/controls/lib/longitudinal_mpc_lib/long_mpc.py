@@ -290,8 +290,7 @@ class LongitudinalMpc:
       v_lead = radar_lead.vLead
       a_lead = radar_lead.aLeadK
       a_lead_tau = radar_lead.aLeadTau
-      # no radar override + model prob > 0.5
-      use_model_traj = radar_lead.modelProb > 0 and model_lead.prob > 0.5
+      use_model_traj = radar_lead.modelProb > 0.5
     else:
       # Fake a fast lead car, so mpc can keep running in the same mode
       x_lead = 50.0
