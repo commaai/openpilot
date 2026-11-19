@@ -35,6 +35,7 @@ class Maneuver:
     only_radar = kwargs.get("only_radar", False)
     prob_lead_values = kwargs.get("prob_lead_values", [1.0] * len(breakpoints))
 
+    # ego state, to be simulated
     n_steps = round(duration / DT_MDL)
     self.t = np.arange(n_steps + 1) * DT_MDL
     self.x_ego = np.zeros_like(self.t)
@@ -42,6 +43,7 @@ class Maneuver:
     self.a_ego = np.zeros_like(self.t)
     self.v_ego[0] = initial_v_ego
 
+    # lead state, known in advance
     self.v_lead = np.interp(self.t, breakpoints, v_lead_values)
     self.a_lead = np.diff(self.v_lead, prepend=0.0) / DT_MDL
     self.x_lead = np.cumsum(np.r_[initial_x_lead, self.v_lead[:-1] * DT_MDL])
@@ -94,7 +96,6 @@ class Maneuver:
       self._step(i)
 
     d_rel = self.x_lead - self.x_ego
-    logs = np.column_stack((self.t, self.x_ego, self.x_lead, self.v_ego, self.v_lead, self.a_ego, d_rel))
 
     valid = True
     if np.any(d_rel[self.lead_present] < 0.4):
@@ -119,4 +120,5 @@ class Maneuver:
       valid = False
 
     print('maneuver end', valid)
+    logs = np.column_stack((self.t, self.x_ego, self.x_lead, self.v_ego, self.v_lead, self.a_ego, d_rel))
     return valid, logs
