@@ -230,7 +230,7 @@ def migrate_controlsState(msgs):
     m.logMonoTime = msg.logMonoTime
     ss = m.selfdriveState
     for field in ("enabled", "active", "state", "engageable", "alertText1", "alertText2",
-                  "alertStatus", "alertSize", "alertType", "personality"):
+                  "alertStatus", "alertSize", "alertType", "experimentalMode", "personality"):
       setattr(ss, field, getattr(msg.controlsState.deprecated, field))
     add_ops.append(as_reader(m))
   return [], add_ops, []

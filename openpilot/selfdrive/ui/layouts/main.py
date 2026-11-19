@@ -29,7 +29,7 @@ class MainLayout(Widget):
     self._prev_onroad = False
 
     # Initialize layouts
-    self._home_layout = HomeLayout()
+    self._home_layout = HomeLayout(lambda: self.open_settings(PanelType.TOGGLES))
     self._home_body_layout = BodyLayout()
     self._layouts: dict[MainState, Widget] = {
       MainState.HOME: self._home_layout,
