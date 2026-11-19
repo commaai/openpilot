@@ -6,11 +6,11 @@ from pathlib import Path
 
 from opendbc.car.car_helpers import interfaces
 from opendbc.car.fw_versions import match_fw_to_car
-from opendbc.car.logreader import LogReader
 from opendbc.car.structs import car
 from opendbc.car.tests.routes import CarTestRoute
 from opendbc.car.tests.test_models import DOWNLOAD_CACHE_ROOT, get_cached_segment
 from opendbc.car.vin import VIN_UNKNOWN
+from openpilot.tools.lib.logreader import LogReader
 
 DT = 0.01
 # seconds of CAN before the panda's controls_allowed edge, openpilot is ready ~8 s after the first CAN, and after it
@@ -53,21 +53,26 @@ def car_mode_samples(msgs) -> list[tuple[float, bool]]:
   return samples
 
 
-def resume_presses(msgs, pcm_cruise: bool) -> list[float]:
-  # openpilot with its own longitudinal blocks resume until cruise was set once, a freshly started DUT never had it set
-  if pcm_cruise:
-    return []
-  return [m.logMonoTime * 1e-9 for m in msgs if m.which() == 'carState' and
-          any(str(b.type) in ('accelCruise', 'resumeCruise') for b in m.carState.buttonEvents)]
+def cruise_times(msgs, pcm_cruise: bool) -> tuple[list[float], list[float]]:
+  # when the car's cruise was on, and when resume was pressed in a car with openpilot's longitudinal, which blocks resume
+  # until cruise was set once, never on a freshly started DUT
+  on, resumes = [], []
+  for m in msgs:
+    if m.which() == 'carState':
+      if m.carState.cruiseState.enabled:
+        on.append(m.logMonoTime * 1e-9)
+      if not pcm_cruise and any(str(b.type) in ('accelCruise', 'resumeCruise') for b in m.carState.buttonEvents):
+        resumes.append(m.logMonoTime * 1e-9)
+  return on, resumes
 
 
-def find_edge(samples: list[tuple[float, bool]], can_end: float, resumes: list[float] = ()) -> float | None:
-  # the first controls_allowed rising edge with LEAD s in the car's safety mode and controls not allowed before it,
-  # ENGAGED s allowed after it, and not engaged by a resume
+def find_edge(samples: list[tuple[float, bool]], can_end: float, cruise_on: list[float] = (), resumes: list[float] = ()) -> float | None:
+  # the first controls_allowed rising edge with LEAD s in the car's safety mode before it with cruise off until 1 s before,
+  # not engaged by a resume, and ENGAGED s allowed after it
   for (_, before), (t, allowed) in zip(samples, samples[1:], strict=False):
     if before or not allowed or t - LEAD < samples[0][0] or t + ENGAGED > can_end:
       continue
-    if any(a for s, a in samples if t - LEAD <= s < t) or any(t - 1. <= r <= t for r in resumes):
+    if any(t - LEAD <= c < t - 1. for c in cruise_on) or any(t - 1. <= r <= t for r in resumes):
       continue
     if all(a for s, a in samples if t <= s <= t + ENGAGED):
       return t
@@ -107,14 +112,14 @@ def parse_window(route: CarTestRoute) -> tuple[int, float, list[Frame], bytes | 
   # in the segments test_models uses
   for segment in [route.segment] if route.segment is not None else [2, 1, 0]:
     try:
-      msgs = list(LogReader(str(get_cached_segment(route.route, segment)), only_union_types=True, sort_by_time=True))
+      msgs = list(LogReader(str(get_cached_segment(route.route, segment)), sort_by_time=True))
     except OSError:
       continue
     samples = car_mode_samples(msgs)
     can = [m.logMonoTime * 1e-9 for m in msgs if m.which() == 'can']
     logged = next((m.carParams for m in reversed(msgs) if m.which() == 'carParams'), None)
-    resumes = resume_presses(msgs, logged is None or logged.pcmCruise)
-    edge = find_edge(samples, can[-1], resumes) if samples and can else None
+    cruise_on, resumes = cruise_times(msgs, logged is None or logged.pcmCruise)
+    edge = find_edge(samples, can[-1], cruise_on, resumes) if samples and can else None
     if edge is not None:
       start = edge - LEAD
       logged_bytes = None if logged is None else logged.as_builder().to_bytes()
