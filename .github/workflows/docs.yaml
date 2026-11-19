@@ -30,7 +30,7 @@ jobs:
       && fromJSON('["namespace-profile-amd64-8x16"]')
       || fromJSON('["ubuntu-24.04"]') }}
     steps:
-    - uses: commaai/timeout@v1
+    #- uses: commaai/timeout@v1  # TODO: figure out how to re-enable this. uv download is super slow right now...
     - uses: actions/checkout@v7
     - run: ./tools/op.sh setup
 
