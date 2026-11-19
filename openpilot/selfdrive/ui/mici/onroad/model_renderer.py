@@ -7,7 +7,7 @@ from openpilot.selfdrive.locationd.calibrationd import HEIGHT_INIT
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 from openpilot.selfdrive.ui.mici.onroad import blend_colors
 from openpilot.selfdrive.ui.mici.onroad.status import status_fade
-from openpilot.selfdrive.ui.onroad.model_renderer import ModelRenderer as BaseModelRenderer, CLIP_MARGIN, MAX_DRAW_DISTANCE, STOCK_PATH_GRADIENT
+from openpilot.selfdrive.ui.onroad.model_renderer import ModelRenderer as BaseModelRenderer, CLIP_MARGIN, MAX_DRAW_DISTANCE
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.polygon import Gradient, draw_polygon
 
@@ -247,7 +247,7 @@ class ModelRenderer(BaseModelRenderer):
 
     # the path is colored by the model's plan, which only drives the car in experimental mode
     if not self._longitudinal_control or not self._experimental_mode:
-      draw_polygon(self._rect, path_pts, gradient=_faded(STOCK_PATH_GRADIENT, self._visible))
+      draw_polygon(self._rect, path_pts, gradient=_faded(self._stock_path_gradient(), self._visible))
     elif len(self._path_gradient.colors) > 1:
       draw_polygon(self._rect, path_pts, gradient=_faded(self._path_gradient, self._visible))
     else:

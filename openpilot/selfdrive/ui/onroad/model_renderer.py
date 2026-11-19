@@ -4,9 +4,11 @@ import raylib_nb as rl
 from openpilot.cereal import messaging
 from opendbc.car.structs import car
 from dataclasses import dataclass, field
+from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
 from openpilot.selfdrive.locationd.calibrationd import HEIGHT_INIT
 from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.polygon import draw_polygon, Gradient
 from openpilot.system.ui.widgets import Widget
 
@@ -20,6 +22,7 @@ STOCK_PATH_GRADIENT = Gradient(
   colors=[rl.Color(13, 248, 122, 102), rl.Color(114, 255, 92, 89), rl.Color(114, 255, 92, 0)],
   stops=[0.0, 0.5, 1.0],
 )
+NO_THROTTLE_COLORS = [rl.Color(242, 242, 242, 102), rl.Color(242, 242, 242, 89), rl.Color(242, 242, 242, 0)]
 
 
 @dataclass
@@ -43,6 +46,7 @@ class ModelRenderer(Widget):
     super().__init__()
     self._longitudinal_control = False
     self._experimental_mode = False
+    self._throttle_filter = FirstOrderFilter(1.0, 0.25, 1 / gui_app.target_fps)
     self._lane_line_probs = np.zeros(4, dtype=np.float32)
     self._road_edge_stds = np.zeros(2, dtype=np.float32)
     self._lead_vehicles = [LeadVehicle(), LeadVehicle()]
@@ -275,7 +279,7 @@ class ModelRenderer(Widget):
 
     # the path is colored by the model's plan, which only drives the car in experimental mode
     if not self._longitudinal_control or not self._experimental_mode:
-      draw_polygon(self._rect, self._path.projected_points, gradient=STOCK_PATH_GRADIENT)
+      draw_polygon(self._rect, self._path.projected_points, gradient=self._stock_path_gradient())
     elif len(self._path_gradient.colors) > 1:
       draw_polygon(self._rect, self._path.projected_points, gradient=self._path_gradient)
     else:
@@ -390,6 +394,14 @@ class ModelRenderer(Widget):
       right_screen = right_screen[:, keep]
 
     return np.vstack((left_screen.T, right_screen[:, ::-1].T)).astype(np.float32)
+
+  def _stock_path_gradient(self) -> Gradient:
+    # in chill, the path turns white while the planner won't use throttle, like 0.11.2
+    allow_throttle = ui_state.sm['longitudinalPlan'].allowThrottle or not self._longitudinal_control
+    t = round(self._throttle_filter.update(allow_throttle), 2)
+    colors = [rl.Color(*(round(a + t * (b - a)) for a, b in zip((w.r, w.g, w.b, w.a), (g.r, g.g, g.b, g.a), strict=True)))
+              for w, g in zip(NO_THROTTLE_COLORS, STOCK_PATH_GRADIENT.colors, strict=True)]
+    return Gradient(STOCK_PATH_GRADIENT.start, STOCK_PATH_GRADIENT.end, colors, STOCK_PATH_GRADIENT.stops)
 
   @staticmethod
   def _hsla_to_color(h, s, l, a):
