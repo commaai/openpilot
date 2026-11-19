@@ -18,7 +18,8 @@ class TestBoarddSpi(OpenpilotTestCase):
   @classmethod
   def setup_class(cls):
     os.environ['STARTED'] = '1'
-    os.environ['SPI_ERR_PROB'] = '0.001'
+    # high enough that the panda counts some corrupted requests every run (~10 expected), and the link still holds up
+    os.environ['SPI_ERR_PROB'] = '0.01'
     os.environ['BOARDD_LOOPBACK'] = '1'
 
   @with_processes(['pandad'])
@@ -38,6 +39,7 @@ class TestBoarddSpi(OpenpilotTestCase):
 
     total_recv_count = 0
     total_sent_count = 0
+    spi_error_counts = []
     sent_msgs = {bus: [] for bus in range(3)}
 
     st = time.monotonic()
@@ -73,6 +75,7 @@ class TestBoarddSpi(OpenpilotTestCase):
             assert ps.ignitionLine
             assert not ps.ignitionCan
             assert 4000 < ps.voltage < 16000
+            spi_error_counts.append(ps.spiErrorCount)
           elif service == "peripheralState":
             ps = m.peripheralState
             assert ps.pandaType in ("tres", "cuatro")
@@ -91,6 +94,10 @@ class TestBoarddSpi(OpenpilotTestCase):
         assert edt*0.9 < np.mean(dts) < edt*1.1
         assert np.max(dts) < edt*8
         assert len(dts) >= ((et-0.5)*SERVICE_LIST[service].frequency*0.8)
+
+    with subtests.test(msg="SPI errors injected"):
+      # the panda counts the corrupted requests it got. without injection, the rest of this test passes on a clean link
+      assert spi_error_counts[-1] > spi_error_counts[0]
 
     with subtests.test(msg="CAN traffic"):
       print(f"Sent {total_sent_count} CAN messages, got {total_recv_count} back. {total_recv_count/(total_sent_count+1e-4):.2%} received")
