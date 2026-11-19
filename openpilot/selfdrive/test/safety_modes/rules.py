@@ -51,10 +51,10 @@ def none_blocked(msgs) -> Check:
     if a and not a_next:
       last = min(last, t)
       break
-  blocked = [(_t(msgs, m), c.address, c.src - BLOCKED) for m in _of(msgs, 'can') if engaged <= _t(msgs, m) <= last for c in m.can if c.src >= BLOCKED]
+  blocked = [(_t(msgs, m), c) for m in _of(msgs, 'can') if engaged <= _t(msgs, m) <= last for c in m.can if c.src >= BLOCKED]
   if blocked:
-    t, addr, bus = blocked[0]
-    return False, f"{len(blocked)} TX frames blocked while engaged, first {addr:#x} bus {bus} at t={t:.2f}"
+    t, c = blocked[0]
+    return False, f"{len(blocked)} TX frames blocked while engaged, first {c.address:#x} bus {c.src - BLOCKED} at t={t:.2f}, data {bytes(c.dat).hex()}"
   return True, "no TX frames blocked while engaged"
 
 
