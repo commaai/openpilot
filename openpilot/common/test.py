@@ -9,6 +9,7 @@ from unittest import mock
 from openpilot.common.hardware import HARDWARE, COMMA_HARDWARE
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.system.manager import manager
+from openpilot.system.manager.process import NativeProcess, PythonProcess
 
 
 @contextlib.contextmanager
@@ -23,7 +24,12 @@ def clean_env():
 
 def kill_leftover_processes():
   # an interrupted run leaves its processes behind, holding the cameras and slowing the models
-  cmdlines = [p.module if hasattr(p, "module") else " ".join(p.cmdline) for p in manager.managed_processes.values()]
+  cmdlines = []
+  for p in manager.managed_processes.values():
+    if isinstance(p, PythonProcess):
+      cmdlines.append(p.module)
+    elif isinstance(p, NativeProcess):
+      cmdlines.append(" ".join(p.cmdline))
   subprocess.run(["pkill", "-9", "-f", "-x", "|".join(cmdlines)], check=False)
 
 
