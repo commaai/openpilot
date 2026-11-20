@@ -32,8 +32,8 @@ class DrivingLayoutMici(NavScroller):
     self._scroller.add_widgets([
       self._personality_toggle,
       self._initial_cruise_speed,
-      ldw_toggle,
       always_on_dm_toggle,
+      ldw_toggle,
       enable_openpilot,
     ])
 
