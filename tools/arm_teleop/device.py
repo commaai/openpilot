@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from dataclasses import dataclass
 import io
 import json
 import math
@@ -74,6 +75,21 @@ class Camera:
         time.sleep(1)
 
 
+@dataclass
+class GripperContact:
+  position: int
+  request: float
+  direction: int
+  torque_off: bool = False
+
+  def retreat_requested(self, goal, position):
+    # Clear the contact only on deliberate input away from the obstruction, beyond encoder jitter.
+    retreat = 2 * TICKS_PER_DEGREE
+    direction = self.direction or (1 if goal < self.position else -1)
+    return (direction * (self.position - goal) >= retreat and direction * (self.request - goal) >= retreat
+            and direction * (position - goal) >= 0)
+
+
 class Robot:
   def __init__(self, name="left", managed=False):
     self.name = name
@@ -88,6 +104,7 @@ class Robot:
     self.lease_deadline = float("inf")
     self.sequence = -1
     self.last_command = 0.
+    self.gripper_contact = None
     self.goal = []
     self.commanded = []
     self.speed = 30.
@@ -100,6 +117,7 @@ class Robot:
     self.session = None
     self.lease_deadline = float("inf")
     self.reason = reason
+    self.gripper_contact = None
     if self.arm is not None and self.holding:
       self.arm.targets(self.arm.positions())
 
@@ -173,6 +191,27 @@ class Robot:
         return {"ok": True, "positions": self.state["positions"]}
       raise ValueError("Unknown command")
 
+  def gripper_goal(self, position, overload):
+    goal = self.goal[-1]
+    contact = self.gripper_contact
+    if contact is None:
+      if not overload:
+        return goal
+      drive = self.commanded[-1] - position or goal - position
+      self.gripper_contact = GripperContact(position, goal, (drive > 0) - (drive < 0))
+    elif overload and not contact.torque_off:
+      self.arm.write(IDS[-1], 40, 0)
+      contact.torque_off = True
+    elif not overload and contact.retreat_requested(goal, position):
+      if contact.torque_off:
+        self.arm.write(IDS[-1], 42, position, 2)
+        self.arm.write(IDS[-1], 40, 1)
+      self.gripper_contact = None
+      self.commanded[-1] = position
+      return goal
+    self.commanded[-1] = position
+    return position
+
   def run(self):
     last = time.monotonic()
     retry_at = 0.
@@ -188,8 +227,10 @@ class Robot:
           if self.arm is not None:
             positions = self.arm.positions()
             self.state["positions"] = positions
-            fault = "; ".join(f"{name}: {error}" for name, error in self.arm.errors.items())
-            self.state.update(error=fault, faults=self.arm.errors)
+            errors = self.arm.errors
+            overload = self.active and self.arm.gripper_overload_only
+            fault = "" if overload else "; ".join(f"{name}: {error}" for name, error in errors.items())
+            self.state.update(error=fault, faults=errors)
             if fault and self.reason != fault:
               self.stop(fault)
             if self.active:
@@ -199,12 +240,14 @@ class Robot:
                 self.stop("Command connection lost; holding pose")
               else:
                 step = self.speed * TICKS_PER_DEGREE * min(now - last, 0.05)
+                goals = [*self.goal[:-1], self.gripper_goal(positions[-1], overload)]
                 self.commanded = [max(p - 100, min(p + 100, c + max(-step, min(step, g - c))))
-                                  for p, c, g in zip(positions, self.commanded, self.goal, strict=True)]
-                self.arm.targets(self.commanded)
+                                  for p, c, g in zip(positions, self.commanded, goals, strict=True)]
+                self.arm.targets(self.commanded, gripper=not (self.gripper_contact and self.gripper_contact.torque_off))
         except Exception as e:
           self.active = False
           self.session = None
+          self.gripper_contact = None
           self.reason = "Arm communication lost"
           self.state.update(connected=False, error=str(e) or f"{self.name.capitalize()} arm not found")
           if self.arm:
@@ -223,7 +266,8 @@ class Robot:
     with self.lock:
       return {**self.state, "active": self.active, "holding": self.holding, "reason": self.reason,
               "managed": self.managed, "lease_remaining": max(0, self.lease_deadline - time.monotonic()) if self.active and self.managed else None,
-              "target": self.commanded, "command_age": time.monotonic() - self.last_command if self.active else None}
+              "gripper_limited": self.gripper_contact is not None, "target": self.commanded,
+              "command_age": time.monotonic() - self.last_command if self.active else None}
 
 
 def stop_all(reason):
