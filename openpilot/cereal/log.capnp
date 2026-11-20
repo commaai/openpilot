@@ -613,7 +613,6 @@ struct PandaState @0xa7649e2575e4591e {
     mpu @28;
     timer @29;
     safetyRedundancy @30;
-    # Update max fault type in pandad when adding faults
   }
 
   enum PandaType @0x8a58adf93e5b3751 {

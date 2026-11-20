@@ -3,7 +3,6 @@
 #include <cassert>
 #include <map>
 #include <string>
-#include <algorithm>  // for std::clamp
 
 #include "common/util.h"
 #include "common/hardware/base.h"
@@ -26,18 +25,6 @@ public:
     static const auto it = device_map.find(get_name());
     assert(it != device_map.end());
     return it->second;
-  }
-
-  static void set_ir_power(int percent) {
-    auto device = get_device_type();
-    if (device == cereal::InitData::DeviceType::TIZI) {
-      return;
-    }
-
-    int value = util::map_val(std::clamp(percent, 0, 100), 0, 100, 0, 300);
-    std::ofstream("/sys/class/leds/led:switch_2/brightness") << 0 << "\n";
-    std::ofstream("/sys/class/leds/led:torch_2/brightness") << value << "\n";
-    std::ofstream("/sys/class/leds/led:switch_2/brightness") << value << "\n";
   }
 
   static std::map<std::string, std::string> get_init_logs(bool route_log = false) {

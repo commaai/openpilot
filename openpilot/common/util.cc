@@ -10,7 +10,6 @@
 #include <cstring>
 #include <dirent.h>
 #include <fstream>
-#include <iomanip>
 #include <random>
 #include <sstream>
 #include <limits>
@@ -224,15 +223,6 @@ int getenv(const char* key, int default_val) {
 float getenv(const char* key, float default_val) {
   const char* val = ::getenv(key);
   return val ? atof(val) : default_val;
-}
-
-std::string hexdump(const uint8_t* in, const size_t size) {
-  std::stringstream ss;
-  ss << std::hex << std::setfill('0');
-  for (size_t i = 0; i < size; i++) {
-    ss << std::setw(2) << static_cast<unsigned int>(in[i]);
-  }
-  return ss.str();
 }
 
 

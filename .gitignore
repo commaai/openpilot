@@ -58,7 +58,6 @@ openpilot/selfdrive/modeld/models/tg_input_devices.json
 
 # build artifacts
 docs/_site/
-openpilot/selfdrive/pandad/pandad
 openpilot/cereal/services.h
 openpilot/cereal/gen
 openpilot/selfdrive/ui/translations/tmp
