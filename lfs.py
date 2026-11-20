@@ -415,13 +415,12 @@ def pull(exclude=None):
     git("update-index", "-q", "--refresh", check=False)
 
 
-def bucket_request(path, data=None):
-  headers = {"Content-Type": "application/x-ndjson"} if data is not None else {}
-  request = hf_request(f"https://huggingface.co/api/buckets/{BUCKET}/{path}", data=data, headers=headers)
+def bucket_request(request):
   for attempt in range(4):
     try:
       with urllib.request.urlopen(request, timeout=30) as response:
-        return response.read(), response.headers
+        response.read()
+        return response.headers
     except (urllib.error.URLError, http.client.HTTPException, TimeoutError, ConnectionError) as error:
       retryable = not isinstance(error, urllib.error.HTTPError) or error.code in (408, 429) or 500 <= error.code < 600
       if not retryable or attempt == 3:
@@ -429,21 +428,24 @@ def bucket_request(path, data=None):
       time.sleep(2 ** attempt)
 
 
-def upload_xet(objects, upload_files):
-  def connection():
-    _, headers = bucket_request("xet-write-token")
-    return headers["X-Xet-Cas-Url"], (headers["X-Xet-Access-Token"], int(headers["X-Xet-Token-Expiration"]))
-
+def upload_xet(objects, session):
+  bucket_url = f"https://huggingface.co/api/buckets/{BUCKET}"
+  refresh = hf_request(f"{bucket_url}/xet-write-token")
+  refresh_headers = dict(refresh.header_items())
   oids = list(objects)
   for start in range(0, len(oids), 100):
-    batch = oids[start:start + 100]
-    paths = [object_path(oid) for oid in batch]
-    endpoint, token = connection()
-    infos = upload_files([str(path) for path in paths], endpoint, token, lambda: connection()[1], None, "bucket", skip_sha256=True)
-    payload = b"".join(json.dumps({"type": "addFile", "path": f"sha256/{oid}", "xetHash": info.hash,
+    headers = bucket_request(refresh)
+    with session.new_upload_commit(endpoint=headers["X-Xet-Cas-Url"], token=headers["X-Xet-Access-Token"],
+                                   token_expiry_unix_secs=int(headers["X-Xet-Token-Expiration"]),
+                                   token_refresh_url=refresh.full_url, token_refresh_headers=refresh_headers) as commit:
+      uploads = []
+      for oid in oids[start:start + 100]:
+        path = object_path(oid)
+        uploads.append((oid, path, commit.start_upload_file(str(path), sha256=oid)))
+    payload = b"".join(json.dumps({"type": "addFile", "path": f"sha256/{oid}", "xetHash": handle.result().xet_info.hash,
                                   "mtime": int(path.stat().st_mtime * 1000)}).encode() + b"\n"
-                       for oid, path, info in zip(batch, paths, infos, strict=True))
-    bucket_request("batch", payload)
+                       for oid, path, handle in uploads)
+    bucket_request(hf_request(f"{bucket_url}/batch", data=payload, headers={"Content-Type": "application/x-ndjson"}))
 
 
 def upload(objects):
@@ -462,7 +464,7 @@ def upload(objects):
   if not pending:
     return
   try:
-    from hf_xet import upload_files
+    from hf_xet import XetSession
   except ImportError:
     raise RuntimeError("Missing hf-xet: run 'uv sync' and activate .venv.") from None
   for oid, size in pending.items():
@@ -471,7 +473,7 @@ def upload(objects):
       raise RuntimeError(f"missing local LFS object {oid}")
     if hash_file(path) != oid:
       raise RuntimeError(f"local sha256 mismatch for {oid}")
-  upload_xet(pending, upload_files)
+  upload_xet(pending, XetSession())
   uploaded = object_info(pending)
   for oid, size in pending.items():
     if uploaded.get(f"sha256/{oid}") != size:
