@@ -185,7 +185,8 @@ class ModelRenderer(BaseModelRenderer):
     planning_stop = self._stop_point.update(sm['modelV2'], sm.updated['modelV2'], cs.vEgo, lead_distances)
     d_stop = self._stop_point.d + RADAR_TO_CAMERA
     visible = available and planning_stop and d_stop < MAX_DRAW_DISTANCE and len(lane) > 0
-    self._stop_point.fade_filter.update(opacity if visible else 0.0)
+    # brighter than a lead bar to tell them apart
+    self._stop_point.fade_filter.update(opacity + 0.2 if visible else 0.0)
     if visible:
       # a planned stop spans the lane instead of a car
       path_y = np.interp(d_stop, lane[:, 0], lane[:, 1])
