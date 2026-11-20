@@ -291,7 +291,7 @@ class NotificationItem(Widget):
 
 class MiciOffroadAlerts(NavScroller):
   def __init__(self):
-    super().__init__(horizontal=False, spacing=12, pad=0)
+    super().__init__(horizontal=False, spacing=12, pad=30)
     self.params = Params()
     self.sorted_alerts: list[AlertData] = []
     self.alert_items: list[AlertItem] = []
