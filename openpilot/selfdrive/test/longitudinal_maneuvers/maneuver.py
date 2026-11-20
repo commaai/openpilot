@@ -35,7 +35,6 @@ class Maneuver:
     # perception
     self.lead_relevancy = kwargs.get("lead_relevancy", False)
     self.only_lead2 = kwargs.get("only_lead2", False)
-    only_radar = kwargs.get("only_radar", False)
     prob_lead_values = kwargs.get("prob_lead_values", [1.0] * len(breakpoints))
 
     # ego state, to be simulated
@@ -52,8 +51,8 @@ class Maneuver:
     self.v_lead = np.interp(lead_t, breakpoints, v_lead_values)
     self.a_lead = np.diff(self.v_lead, prepend=0.0) / DT_MDL
     self.x_lead = np.cumsum(np.r_[initial_x_lead, self.v_lead[:-1] * DT_MDL])
-    self.prob_lead = np.zeros_like(self.t) if only_radar else np.interp(self.t, breakpoints, prob_lead_values)
-    self.lead_present = np.logical_and(self.lead_relevancy, np.logical_or(only_radar, self.prob_lead > 0.5))
+    self.prob_lead = np.interp(self.t, breakpoints, prob_lead_values)
+    self.lead_present = self.lead_relevancy & (self.prob_lead > 0.5)
     self.v_cruise = np.interp(self.t, breakpoints, v_cruise_values)
 
   def _make_messages(self, i):
