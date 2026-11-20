@@ -3,6 +3,7 @@ import datetime
 import os
 import signal
 import sys
+import threading
 import time
 import traceback
 
@@ -88,6 +89,21 @@ def manager_init() -> None:
                        dirty=build_metadata.openpilot.is_dirty,
                        device=HARDWARE.get_device_type())
 
+def save_params() -> None:
+  # the params are in RAM on the device, this is what gets them to the disk
+  params = Params()
+  failed = False
+  while True:
+    params.wait_for_write(1.)
+    try:
+      ret = params.save()
+    except Exception:
+      ret = -1
+    if ret != 0 and not failed:
+      cloudlog.error("failed to save params")
+    failed = ret != 0
+
+
 def manager_cleanup() -> None:
   # send signals to kill all procs
   for p in managed_processes.values():
@@ -139,7 +155,7 @@ def manager_thread() -> None:
 
     # update offroad state for services that don't subscribe to deviceState
     if started != started_prev:
-      params.put_bool("IsOffroad", not started, block=True)
+      params.put_bool("IsOffroad", not started)
 
     started_prev = started
     ignition_prev = ignition
@@ -184,6 +200,8 @@ def main() -> None:
   # SystemExit on sigterm
   signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(1))
 
+  threading.Thread(target=save_params, daemon=True).start()
+
   try:
     manager_thread()
   except Exception:
@@ -191,6 +209,8 @@ def main() -> None:
     cloudlog.exception("crash")
   finally:
     manager_cleanup()
+    if Params().save() != 0:
+      cloudlog.error("failed to save params")
 
   params = Params()
   if params.get_bool("DoUninstall"):

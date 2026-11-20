@@ -115,21 +115,25 @@ bool params_get_bool(ParamsHandle *handle, const char *key, bool block) noexcept
 
 int params_put(ParamsHandle *handle, const char *key, const char *value, size_t size, bool block) noexcept {
   return translate_exceptions(-1, [&]() {
-    if (block) {
-      return handle->params.put(key, value, size);
-    }
-    handle->params.putNonBlocking(key, std::string(value, size));
-    return 0;
+    return handle->params.put(key, value, size, block);
   });
 }
 
 int params_put_bool(ParamsHandle *handle, const char *key, bool value, bool block) noexcept {
   return translate_exceptions(-1, [&]() {
-    if (block) {
-      return handle->params.putBool(key, value);
-    }
-    handle->params.putBoolNonBlocking(key, value);
-    return 0;
+    return handle->params.putBool(key, value, block);
+  });
+}
+
+int params_save(ParamsHandle *handle) noexcept {
+  return translate_exceptions(-1, [&]() {
+    return handle->params.save();
+  });
+}
+
+void params_wait_for_write(ParamsHandle *handle, int timeout_ms) noexcept {
+  translate_exceptions([&]() {
+    handle->params.waitForWrite(timeout_ms);
   });
 }
 

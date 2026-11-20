@@ -1,14 +1,11 @@
 #pragma once
 
-#include <future>
+#include <cstdint>
 #include <map>
 #include <optional>
 #include <string>
-#include <tuple>
 #include <utility>
 #include <vector>
-
-#include "common/queue.h"
 
 enum ParamKeyFlag {
   PERSISTENT = 0x02,
@@ -18,6 +15,7 @@ enum ParamKeyFlag {
   DONT_LOG = 0x20,
   DEVELOPMENT_ONLY = 0x40,
   CLEAR_ON_IGNITION_ON = 0x80,
+  WAIT_FOR_DISK = 0x100,  // a write or remove only returns once it's on the disk
   ALL = 0xFFFFFFFF
 };
 
@@ -66,25 +64,24 @@ public:
   std::map<std::string, std::string> readAll();
 
   // helpers for writing values
-  int put(const char *key, const char *val, size_t value_size);
-  inline int put(const std::string &key, const std::string &val) {
-    return put(key.c_str(), val.data(), val.size());
+  // on the device the params are in RAM, so nothing here waits for the disk unless block is set
+  int put(const char *key, const char *val, size_t value_size, bool block = false);
+  inline int put(const std::string &key, const std::string &val, bool block = false) {
+    return put(key.c_str(), val.data(), val.size(), block);
   }
-  inline int putBool(const std::string &key, bool val) {
-    return put(key.c_str(), val ? "1" : "0", 1);
+  inline int putBool(const std::string &key, bool val, bool block = false) {
+    return put(key.c_str(), val ? "1" : "0", 1, block);
   }
-  void putNonBlocking(const std::string &key, const std::string &val);
-  inline void putBoolNonBlocking(const std::string &key, bool val) {
-    putNonBlocking(key, val ? "1" : "0");
-  }
+
+  // copy what changed in RAM to the disk
+  int save();
+  // for whoever calls save(): returns when a param was written, or after the timeout
+  void waitForWrite(int timeout_ms);
 
 private:
-  void asyncWriteThread();
-
   std::string params_path;
   std::string params_prefix;
-
-  // for nonblocking write
-  std::future<void> future;
-  SafeQueue<std::pair<std::string, std::string>> queue;
+  std::string disk_path;  // empty if params_path is the disk
+  std::map<std::string, std::pair<uint64_t, int64_t>> saved;  // the files save() knows are on the disk
+  int watch_fd = -1;
 };

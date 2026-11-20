@@ -11,7 +11,7 @@ Test your vehicle's longitudinal control tuning with this tool. The tool will te
 3. Turn off the vehicle and set this parameter which will signal to openpilot to start the longitudinal maneuver daemon:
 
    ```sh
-   echo -n 1 > /data/params/d/LongitudinalManeuverMode
+   echo -n 1 > /dev/shm/params/d/LongitudinalManeuverMode
    ```
 
 4. Turn your vehicle back on. You will see the "Longitudinal Maneuver Mode" alert:

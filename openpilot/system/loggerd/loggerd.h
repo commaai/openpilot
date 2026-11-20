@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdlib>
+#include <functional>
 #include <vector>
 
 #include "openpilot/cereal/messaging/messaging.h"
