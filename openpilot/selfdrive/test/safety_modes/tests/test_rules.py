@@ -9,12 +9,16 @@ QUIET = 3.
 DT_LAST = 0.1
 
 
-def drive(engage_at: float = 2.5, allowed_at: float = 2., end: float = 15., drop_after: float = 1.5, disengage_at: float = 99.) -> list:
-  # 10 Hz from t=0, the panda allows controls at allowed_at, openpilot engages at engage_at
+def drive(engage_at: float = 2.5, allowed_at: float = 2., end: float = 15., drop_after: float = 1.5, disengage_at: float = 99.,
+          override: tuple[float, float] = (99., 99.)) -> list:
+  # 10 Hz from t=0, the panda allows controls at allowed_at, openpilot engages at engage_at, the driver overrides its longitudinal
   msgs = [msg('carParams', 0., carFingerprint=CAR)]
   for i in range(int(end * 10)):
     t = i / 10
-    msgs += [panda(t, t >= allowed_at), msg('selfdriveState', t, enabled=engage_at <= t < disengage_at), can(t, [(0x2e4, 128)])]
+    enabled = engage_at <= t < disengage_at
+    long_active = enabled and not override[0] <= t < override[1]
+    msgs += [panda(t, t >= allowed_at), msg('selfdriveState', t, enabled=enabled), msg('carControl', t, latActive=enabled, longActive=long_active),
+             can(t, [(0x2e4, 128)])]
     if t < end - QUIET:
       msgs.append(can(t, [(0xaa, 0)]))
   # the panda drops controls drop_after s after the car's last frame
@@ -56,6 +60,14 @@ class TestRules(OpenpilotTestCase):
     assert not blocked((7.5, 0x2e4))
     # without openpilot disengaging nothing is excused
     assert not none_blocked(drive() + [can(8.01, [(0x2e4, 192)])])[0]
+
+  def test_blocked_at_override(self):
+    # the driver presses gas at t=8, openpilot's accel it sent before it saw that is blocked
+    def blocked(*frames):
+      return none_blocked(drive(override=(8., 10.)) + [can(t, [(addr, 192)]) for t, addr in frames])[0]
+    assert blocked((8.01, 0x343))
+    assert not blocked((8.01, 0x343), (8.04, 0x343))
+    assert not blocked((9., 0x343))
 
   def test_faults(self):
     msgs = sorted(drive(), key=lambda m: m.logMonoTime)
