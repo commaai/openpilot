@@ -28,8 +28,9 @@ REFRESH_INTERVAL = 5.0  # seconds
 
 
 # Card background: translucent black squircle with inner shadows, like the Figma design
-CARD_RADIUS = 42
-CARD_CORNER_EXPONENT = 2.4  # superellipse corners, 2 would be circular
+# superellipse corners (2 would be circular), fit to the edges of the old card images within 0.5 px
+CARD_RADIUS = 44.2
+CARD_CORNER_EXPONENT = 2.58
 CARD_FILL_ALPHA = 0.8
 # inner shadows drawn in order over the fill: (gray, opacity, spread, blur sigma)
 CARD_SHADOWS = [(1.0, 0.36, 3.9, 7.9)]
