@@ -22,7 +22,7 @@ class Arm:
     self.path = next(p["port"] for p in ports() if p["serial"] == serial)
     self.port = scs.PortHandler(self.path)
     self.packet = scs.PacketHandler(0)
-    self.errors = {}
+    self.error_codes = {}
     if not self.port.openPort():
       raise OSError(f"Could not open {self.path}")
     try:
@@ -49,6 +49,14 @@ class Arm:
     self.check(result)
     return value
 
+  @property
+  def errors(self):
+    return {JOINTS[i - 1]: self.packet.getRxPacketError(code) for i, code in self.error_codes.items()}
+
+  @property
+  def gripper_overload_only(self):
+    return self.error_codes == {IDS[-1]: scs.ERRBIT_OVERLOAD}
+
   def positions(self):
     self.check(self.reader.txPacket())
     positions = []
@@ -57,9 +65,9 @@ class Arm:
       data, result, error = self.packet.readRx(self.port, i, 2)
       self.check(result)
       if error:
-        errors[JOINTS[i - 1]] = self.packet.getRxPacketError(error)
+        errors[i] = error
       positions.append(signed_position(data[0] | data[1] << 8))
-    self.errors = errors
+    self.error_codes = errors
     return positions
 
   def write(self, motor, address, value, size=1):
@@ -71,9 +79,11 @@ class Arm:
     for i in IDS:
       self.write(i, 40, int(enabled))
 
-  def targets(self, positions):
+  def targets(self, positions, *, gripper=True):
     writer = scs.GroupSyncWrite(self.port, self.packet, 42, 2)
     for i, value in zip(IDS, positions, strict=True):
+      if i == IDS[-1] and not gripper:
+        continue
       value = int(round(value))
       if not 0 <= value <= 4095:
         raise ValueError(f"Invalid target for motor {i}: {value}")
