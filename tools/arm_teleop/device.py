@@ -24,6 +24,7 @@ from openpilot.cereal.visionipc import VisionStreamType
 FOLLOWERS = {"left": "5CBC431994", "middle": "5CBC431998", "right": "5CBC453422"}
 WATCHDOG = 0.4
 TICKS_PER_DEGREE = 4096 / 360
+MAX_SERVO_SPEED = 0x7fff  # STS register 46 uses bit 15 for direction.
 LUMA = [max(0, min(255, int((value - 16) * 255 / 219))) for value in range(256)]
 
 
@@ -107,7 +108,7 @@ class Robot:
     self.gripper_contact = None
     self.goal = []
     self.commanded = []
-    self.speed = 30.
+    self.speed = None
     self.reason = "Control is off"
     self.running = True
     threading.Thread(target=self.run, daemon=True).start()
@@ -148,9 +149,13 @@ class Robot:
           raise ValueError("; ".join(f"{name}: {error}" for name, error in self.arm.errors.items()))
         if any(not lo <= p <= hi for p, (lo, hi) in zip(positions, self.arm.limits, strict=True)):
           raise ValueError("Joint position is outside the servo limits")
-        self.speed = float(body.get("speed", 30))
-        if not math.isfinite(self.speed) or not 5 <= self.speed <= 60:
-          raise ValueError("Speed must be between 5 and 60 degrees/second")
+        requested = body.get("speed")
+        self.speed = None if requested is None else float(requested)
+        if self.speed is not None and (isinstance(requested, bool) or not math.isfinite(self.speed) or self.speed <= 0):
+          raise ValueError("Speed must be positive and finite, or omitted for full speed")
+        servo_speed = MAX_SERVO_SPEED
+        if self.speed is not None:
+          servo_speed = max(1, round(min(MAX_SERVO_SPEED, self.speed * TICKS_PER_DEGREE)))
         if time.monotonic() >= lease_deadline:
           raise ValueError("Reservation ended before control could start")
         self.arm.targets(positions)
@@ -160,7 +165,7 @@ class Robot:
             self.arm.write(i, 42, positions[i - 1], 2)
             self.arm.write(i, 41, 20)
             self.arm.write(i, 44, 0, 2)
-            self.arm.write(i, 46, round(self.speed * TICKS_PER_DEGREE), 2)
+            self.arm.write(i, 46, servo_speed, 2)
           self.arm.torque(True)
         except Exception:
           self.stop("Could not enable all servos")
@@ -239,10 +244,11 @@ class Robot:
               elif now - self.last_command > WATCHDOG:
                 self.stop("Command connection lost; holding pose")
               else:
-                step = self.speed * TICKS_PER_DEGREE * min(now - last, 0.05)
                 goals = [*self.goal[:-1], self.gripper_goal(positions[-1], overload)]
-                self.commanded = [max(p - 100, min(p + 100, c + max(-step, min(step, g - c))))
-                                  for p, c, g in zip(positions, self.commanded, goals, strict=True)]
+                if self.speed is not None:
+                  step = self.speed * TICKS_PER_DEGREE * min(now - last, 0.05)
+                  goals = [c + max(-step, min(step, g - c)) for c, g in zip(self.commanded, goals, strict=True)]
+                self.commanded = [max(p - 100, min(p + 100, g)) for p, g in zip(positions, goals, strict=True)]
                 self.arm.targets(self.commanded, gripper=not (self.gripper_contact and self.gripper_contact.torque_off))
         except Exception as e:
           self.active = False
@@ -372,7 +378,7 @@ class Handler(BaseHTTPRequestHandler):
       if not 0 < size < 8192:
         raise ValueError("Invalid command length")
       self.json(command(json.loads(self.rfile.read(size))))
-    except (ValueError, KeyError, TypeError, OSError) as e:
+    except (ValueError, KeyError, TypeError, OverflowError, OSError) as e:
       self.json({"error": str(e)}, 400)
 
   def authorized(self):
