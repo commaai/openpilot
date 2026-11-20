@@ -58,7 +58,7 @@ class ConfidenceBall(Widget):
 
     # confidence zones while engaged, top and bottom gradient colors
     if self._confidence_filter.x > 0.5:
-      engaged = (rl.Color(0, 255, 187, 255), rl.Color(0, 255, 64, 255))
+      engaged = (rl.Color(0, 255, 204, 255), rl.Color(0, 255, 38, 255))
     elif self._confidence_filter.x > 0.2:
       engaged = (rl.Color(255, 200, 0, 255), rl.Color(255, 115, 0, 255))
     else:
