@@ -1,0 +1,24 @@
+# the tests run in AGNOS's venv, it has everything but opendbc
+[env]
+PYTHONPATH = "/data/ci/tree:/data/ci/tree/panda/opendbc_repo"  # the tree is /data/ci/tree/panda, each job clones opendbc into it
+PYTHONWARNINGS = "error"
+LOGLEVEL = "debug"
+
+[jobs.hitl]
+runs-on = ["up-can", "up-tres-can"]
+timeout-minutes = 20
+
+[[jobs.hitl.steps]]
+name = "Build"
+run = """
+git clone -q --depth 1 https://github.com/commaai/opendbc.git opendbc_repo
+scons
+scripts/reflash_internal_panda.py
+"""
+
+[[jobs.hitl.steps]]
+name = "Test"
+run = """
+cd tests/hitl
+HITL=1 python -m unittest discover -v
+"""
