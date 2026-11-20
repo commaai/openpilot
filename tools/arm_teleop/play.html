@@ -29,6 +29,7 @@ function render(s){
   el('slot').textContent=phase?'@'+r.github_username+' · '+clock.format(r.start*1000)+' – '+clock.format(r.end*1000)+' · '+phases[phase]:'Checking reservation…';
   active=s.active&&live;
   el('control').textContent=active?'Control active · '+s.follower+' arm following':live?(ready?'Control paused · ready to start':'Control paused · waiting for connection'):'Control inactive';
+  if(active&&arm?.gripper_limited)el('control').textContent+=' · Gripper overloaded. Move the grip back to resume.';
   el('control').classList.toggle('on',active);
   el('control').title=s.note;
   el('leader').textContent=(s.leader.connected?'Table leader connected':s.leader.error||'Waiting for table leader')+(live&&arm?' · '+s.follower+' follower '+(arm.connected?'connected':'offline'):'');

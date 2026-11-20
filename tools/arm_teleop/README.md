@@ -61,6 +61,8 @@ Without the key file, the original direct workstation mode is available. Do not 
 
 Place the gateway's dedicated Ed25519 SSH public key at `/data/arm_teleop_gateway.pub`. At teleop startup, the power setup installs it into AGNOS's `/tmp/authorized_keys` with a restricted forwarding destination and a disabled shell. Existing administrative SSH keys are preserved. The private key stays on the gateway host.
 
+During a session, an overload confined to the gripper stops the squeeze while the other five joints keep following. The controller resets the gripper target to its measured position and switches off gripper torque if the overload is reported again. This can loosen the grasp. Move the grip back past the contact position to resume once the servo clears its fault. The controller shows the restriction and the device reports `gripper_limited` alongside its raw `faults`. Other servo faults still stop the arm.
+
 ## Multi-arm API
 
 `GET /status` returns `arms.left`, `arms.middle`, and `arms.right`, each with its serial, connection state, positions, limits, faults, and control state. The legacy `arm` field remains an alias for the left arm.

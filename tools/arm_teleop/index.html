@@ -69,7 +69,7 @@ function render(s){
   for(const option of $('arm').options)option.disabled=!Object.hasOwn(device.arms||{left:device.arm},option.value);
   $('leaderError').textContent=s.leader.error||'';$('followerError').textContent=s.device_error||arm.error||'';
   $('start').disabled=s.active||!online||!!arm.error||!s.leader.connected||!live;$('start').textContent=s.active?'● Following leader':'Start following';
-  $('release').disabled=s.active||!online;$('note').textContent=s.note;
+  $('release').disabled=s.active||!online;$('note').textContent=s.active&&arm.gripper_limited?'Gripper overloaded. Move the grip back to resume. The arm is still following.':s.note;
   $('power').textContent=device.performance?'Always on':'Connecting';$('shutdown').textContent=device.performance?'Disabled':'—';
   for(let i=0;i<6;i++){$('l'+i).textContent=s.leader.connected&&s.leader.positions.length?(s.leader.positions[i]*360/4096).toFixed(1):'—';$('f'+i).textContent=online&&arm.positions.length?(arm.positions[i]*360/4096).toFixed(1):'—';$('r'+i).disabled=s.active;}
   $('mode').disabled=s.active;updateScale();$('speed').disabled=s.active;$('arm').disabled=s.active;
