@@ -1,0 +1,409 @@
+#!/usr/bin/env python3
+from dataclasses import dataclass
+import io
+import json
+import math
+import os
+from pathlib import Path
+import secrets
+import signal
+import socket
+import sys
+import threading
+import time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+import numpy as np
+from PIL import Image
+
+sys.path.insert(0, "/data/arm_teleop_deps")
+from servos import Arm, IDS, JOINTS
+from msgq.visionipc import VisionIpcClient
+from openpilot.cereal.visionipc import VisionStreamType
+
+FOLLOWERS = {"left": "5CBC431994", "middle": "5CBC431998", "right": "5CBC453422"}
+WATCHDOG = 0.4
+TICKS_PER_DEGREE = 4096 / 360
+MAX_SERVO_SPEED = 0x7fff  # STS register 46 uses bit 15 for direction.
+LUMA = [max(0, min(255, int((value - 16) * 255 / 219))) for value in range(256)]
+
+
+class Camera:
+  def __init__(self):
+    self.condition = threading.Condition()
+    self.jpeg = b""
+    self.frame = 0
+    self.updated = 0.
+    self.captured_at = 0.
+    self.fps = 0.
+    self.error = "Waiting for wide camera"
+    threading.Thread(target=self.run, daemon=True).start()
+
+  def run(self):
+    while True:
+      try:
+        client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_WIDE_ROAD, True)
+        client.connect(True)
+        last = time.monotonic()
+        while True:
+          buf = client.recv()
+          if buf is None:
+            if time.monotonic() - last > 2:
+              raise TimeoutError("Wide camera stopped sending frames")
+            continue
+          data = np.asarray(buf.data, dtype=np.uint8)
+          captured_at = time.time() - (time.monotonic() - client.timestamp_sof / 1e9)  # noqa: TID251
+          y = data[:buf.uv_offset].reshape(-1, buf.stride)[:buf.height, :buf.width]
+          uv = data[buf.uv_offset:buf.uv_offset + buf.stride * (buf.height // 2)].reshape(-1, buf.stride)[:, :buf.width]
+          size = (1008, round(buf.height * 1008 / buf.width))
+          planes = [Image.fromarray(plane).resize(size, Image.Resampling.BILINEAR) for plane in (y, uv[:, ::2], uv[:, 1::2])]
+          planes[0] = planes[0].point(LUMA)
+          image = Image.merge("YCbCr", planes).convert("RGB")
+          output = io.BytesIO()
+          image.save(output, "JPEG", quality=75)
+          now = time.monotonic()
+          with self.condition:
+            self.jpeg = output.getvalue()
+            self.frame += 1
+            self.fps = 0.9 * self.fps + 0.1 / max(now - last, 0.001)
+            self.updated = now
+            self.captured_at = captured_at
+            self.error = ""
+            self.condition.notify_all()
+          last = now
+      except Exception as e:
+        self.error = str(e)
+        time.sleep(1)
+
+
+@dataclass
+class GripperContact:
+  position: int
+  request: float
+  direction: int
+  torque_off: bool = False
+
+  def retreat_requested(self, goal, position):
+    # Clear the contact only on deliberate input away from the obstruction, beyond encoder jitter.
+    retreat = 2 * TICKS_PER_DEGREE
+    direction = self.direction or (1 if goal < self.position else -1)
+    return (direction * (self.position - goal) >= retreat and direction * (self.request - goal) >= retreat
+            and direction * (position - goal) >= 0)
+
+
+class Robot:
+  def __init__(self, name="left", managed=False):
+    self.name = name
+    self.serial = FOLLOWERS[name]
+    self.lock = threading.RLock()
+    self.arm = None
+    self.state = {"serial": self.serial, "connected": False, "positions": [], "error": f"Connecting to {name} arm"}
+    self.active = False
+    self.holding = False
+    self.session = None
+    self.managed = managed
+    self.lease_deadline = float("inf")
+    self.sequence = -1
+    self.last_command = 0.
+    self.gripper_contact = None
+    self.goal = []
+    self.commanded = []
+    self.speed = None
+    self.reason = "Control is off"
+    self.running = True
+    threading.Thread(target=self.run, daemon=True).start()
+
+  def stop(self, reason):
+    self.active = False
+    self.session = None
+    self.lease_deadline = float("inf")
+    self.reason = reason
+    self.gripper_contact = None
+    if self.arm is not None and self.holding:
+      self.arm.targets(self.arm.positions())
+
+  def command(self, body):
+    with self.lock:
+      op = body["op"]
+      if op == "stop":
+        self.stop(body.get("reason", "Stopped by operator"))
+        return {"ok": True}
+      if not self.arm:
+        raise ValueError(f"{self.name.capitalize()} arm is not connected")
+      if op == "release":
+        self.stop("Torque released")
+        self.arm.torque(False)
+        self.holding = False
+        return {"ok": True}
+      if op == "start":
+        if self.active:
+          raise ValueError("Control is already active")
+        remaining = float(body.get("lease_expires_at", 0)) - time.time()  # noqa: TID251 - Convert UTC once, then enforce with monotonic time.
+        if self.managed and (not math.isfinite(remaining) or not 0 < remaining <= 300):
+          raise ValueError("A current reservation lease of at most five minutes is required")
+        lease_deadline = time.monotonic() + remaining if self.managed else float("inf")
+        if any(m != 777 for m in self.arm.models) or any(self.arm.modes):
+          raise ValueError("Expected six STS3215 servos in position mode")
+        positions = self.arm.positions()
+        if self.arm.errors:
+          raise ValueError("; ".join(f"{name}: {error}" for name, error in self.arm.errors.items()))
+        if any(not lo <= p <= hi for p, (lo, hi) in zip(positions, self.arm.limits, strict=True)):
+          raise ValueError("Joint position is outside the servo limits")
+        requested = body.get("speed")
+        self.speed = None if requested is None else float(requested)
+        if self.speed is not None and (isinstance(requested, bool) or not math.isfinite(self.speed) or self.speed <= 0):
+          raise ValueError("Speed must be positive and finite, or omitted for full speed")
+        servo_speed = MAX_SERVO_SPEED
+        if self.speed is not None:
+          servo_speed = max(1, round(min(MAX_SERVO_SPEED, self.speed * TICKS_PER_DEGREE)))
+        if time.monotonic() >= lease_deadline:
+          raise ValueError("Reservation ended before control could start")
+        self.arm.targets(positions)
+        self.holding = True
+        try:
+          for i in IDS:
+            self.arm.write(i, 42, positions[i - 1], 2)
+            self.arm.write(i, 41, 20)
+            self.arm.write(i, 44, 0, 2)
+            self.arm.write(i, 46, servo_speed, 2)
+          self.arm.torque(True)
+        except Exception:
+          self.stop("Could not enable all servos")
+          raise
+        self.goal = positions[:]
+        self.commanded = positions[:]
+        self.session = secrets.token_hex(16)
+        self.sequence = -1
+        self.last_command = time.monotonic()
+        self.lease_deadline = lease_deadline
+        self.active = True
+        self.reason = "Following leader"
+        return {"session": self.session, "positions": positions, "limits": self.arm.limits}
+      if op == "target":
+        if time.monotonic() >= self.lease_deadline:
+          self.stop("Reservation ended; holding pose")
+        if not self.active or body.get("session") != self.session:
+          raise ValueError("Control session has stopped")
+        sequence = int(body["sequence"])
+        if sequence <= self.sequence:
+          raise ValueError("Stale command")
+        values = body["positions"]
+        if len(values) != 6 or any(not isinstance(v, (int, float)) or not math.isfinite(v) for v in values):
+          raise ValueError("Expected six finite joint positions")
+        self.goal = [max(lo, min(hi, p)) for p, (lo, hi) in zip(values, self.arm.limits, strict=True)]
+        self.sequence = sequence
+        self.last_command = time.monotonic()
+        return {"ok": True, "positions": self.state["positions"]}
+      raise ValueError("Unknown command")
+
+  def gripper_goal(self, position, overload):
+    goal = self.goal[-1]
+    contact = self.gripper_contact
+    if contact is None:
+      if not overload:
+        return goal
+      drive = self.commanded[-1] - position or goal - position
+      self.gripper_contact = GripperContact(position, goal, (drive > 0) - (drive < 0))
+    elif overload and not contact.torque_off:
+      self.arm.write(IDS[-1], 40, 0)
+      contact.torque_off = True
+    elif not overload and contact.retreat_requested(goal, position):
+      if contact.torque_off:
+        self.arm.write(IDS[-1], 42, position, 2)
+        self.arm.write(IDS[-1], 40, 1)
+      self.gripper_contact = None
+      self.commanded[-1] = position
+      return goal
+    self.commanded[-1] = position
+    return position
+
+  def run(self):
+    last = time.monotonic()
+    retry_at = 0.
+    while self.running:
+      now = time.monotonic()
+      with self.lock:
+        try:
+          if self.arm is None and now >= retry_at:
+            retry_at = now + 2
+            self.arm = Arm(self.serial)
+            self.holding = any(self.arm.read(i, 40, 1) for i in IDS)
+            self.state.update(connected=True, port=self.arm.path, limits=self.arm.limits, models=self.arm.models, error="")
+          if self.arm is not None:
+            positions = self.arm.positions()
+            self.state["positions"] = positions
+            errors = self.arm.errors
+            overload = self.active and self.arm.gripper_overload_only
+            fault = "" if overload else "; ".join(f"{name}: {error}" for name, error in errors.items())
+            self.state.update(error=fault, faults=errors)
+            if fault and self.reason != fault:
+              self.stop(fault)
+            if self.active:
+              if now >= self.lease_deadline:
+                self.stop("Reservation ended; holding pose")
+              elif now - self.last_command > WATCHDOG:
+                self.stop("Command connection lost; holding pose")
+              else:
+                goals = [*self.goal[:-1], self.gripper_goal(positions[-1], overload)]
+                if self.speed is not None:
+                  step = self.speed * TICKS_PER_DEGREE * min(now - last, 0.05)
+                  goals = [c + max(-step, min(step, g - c)) for c, g in zip(self.commanded, goals, strict=True)]
+                self.commanded = [max(p - 100, min(p + 100, g)) for p, g in zip(positions, goals, strict=True)]
+                self.arm.targets(self.commanded, gripper=not (self.gripper_contact and self.gripper_contact.torque_off))
+        except Exception as e:
+          self.active = False
+          self.session = None
+          self.gripper_contact = None
+          self.reason = "Arm communication lost"
+          self.state.update(connected=False, error=str(e) or f"{self.name.capitalize()} arm not found")
+          if self.arm:
+            try:
+              if self.holding:
+                self.arm.targets(self.arm.positions())
+            except Exception:
+              pass
+            self.arm.close()
+            self.arm = None
+          self.holding = False
+        last = now
+      time.sleep(max(0, 1 / 30 - (time.monotonic() - now)))
+
+  def status(self):
+    with self.lock:
+      return {**self.state, "active": self.active, "holding": self.holding, "reason": self.reason,
+              "managed": self.managed, "lease_remaining": max(0, self.lease_deadline - time.monotonic()) if self.active and self.managed else None,
+              "gripper_limited": self.gripper_contact is not None, "target": self.commanded,
+              "command_age": time.monotonic() - self.last_command if self.active else None}
+
+
+def stop_all(reason):
+  errors = []
+  for robot in robots.values():
+    with robot.lock:
+      try:
+        robot.stop(reason)
+      except OSError as e:
+        errors.append(str(e))
+  if errors:
+    raise OSError("; ".join(errors))
+
+
+def command(body):
+  name = body.get("arm", "all" if body["op"] == "stop" else "left")
+  if name == "all" and body["op"] == "stop":
+    stop_all(body.get("reason", "Stopped by operator"))
+    return {"ok": True}
+  if not isinstance(name, str) or name not in robots:
+    raise ValueError("Choose left, middle, or right; all is only supported for stop")
+  return robots[name].command(body)
+
+
+class Handler(BaseHTTPRequestHandler):
+  protocol_version = "HTTP/1.1"
+  disable_nagle_algorithm = True
+
+  def setup(self):
+    super().setup()
+    self.connection.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+
+  def log_message(self, *args):
+    pass
+
+  def json(self, body, status=200):
+    data = json.dumps(body).encode()
+    self.send_response(status)
+    self.send_header("Content-Type", "application/json")
+    self.send_header("Content-Length", str(len(data)))
+    self.send_header("Cache-Control", "no-store")
+    self.end_headers()
+    self.wfile.write(data)
+
+  def do_GET(self):
+    if not self.authorized():
+      return
+    if self.path == "/status":
+      arms = {name: robot.status() for name, robot in robots.items()}
+      self.json({"arm": arms["left"], "arms": arms, "joints": JOINTS, "camera": {"fps": round(camera.fps, 1), "frames": camera.frame,
+                 "age": time.monotonic() - camera.updated if camera.updated else None, "captured_at": camera.captured_at, "error": camera.error},
+                 "device_time": time.time(),  # noqa: TID251
+                 "os": Path("/VERSION").read_text().strip(), "performance": os.getenv("ARM_TELEOP") == "1"})
+    elif self.path == "/frame":
+      with camera.condition:
+        jpeg, frame, captured_at = camera.jpeg, camera.frame, camera.captured_at
+      if not jpeg or time.monotonic() - camera.updated > 1:
+        self.json({"error": "Waiting for wide camera"}, 503)
+        return
+      self.send_response(200)
+      self.send_header("Content-Type", "image/jpeg")
+      self.send_header("Content-Length", str(len(jpeg)))
+      self.send_header("X-Frame-Id", str(frame))
+      self.send_header("X-Capture-Time", str(captured_at))
+      self.send_header("Cache-Control", "no-store")
+      self.end_headers()
+      self.wfile.write(jpeg)
+    elif self.path == "/video":
+      self.connection.settimeout(.2)
+      self.connection.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 32768)
+      self.send_response(200)
+      self.send_header("Content-Type", "multipart/x-mixed-replace; boundary=frame")
+      self.send_header("Cache-Control", "no-store")
+      self.send_header("Connection", "close")
+      self.end_headers()
+      frame = -1
+      try:
+        while True:
+          with camera.condition:
+            camera.condition.wait_for(lambda previous=frame: camera.frame != previous and camera.jpeg, timeout=3)
+            if not camera.jpeg or time.monotonic() - camera.updated > 2:
+              break
+            frame, jpeg, captured_at = camera.frame, camera.jpeg, camera.captured_at
+          header = f"--frame\r\nContent-Type: image/jpeg\r\nContent-Length: {len(jpeg)}\r\nX-Capture-Time: {captured_at}\r\n\r\n".encode()
+          self.wfile.write(header + jpeg + b"\r\n")
+          self.wfile.flush()
+      except (BrokenPipeError, ConnectionResetError, TimeoutError):
+        pass
+      self.close_connection = True
+    else:
+      self.json({"error": "Not found"}, 404)
+
+  def do_POST(self):
+    if not self.authorized():
+      return
+    if self.path != "/command" or self.headers.get("Origin") or self.headers.get_content_type() != "application/json":
+      self.json({"error": "Unsupported request"}, 400)
+      self.close_connection = True
+      return
+    try:
+      size = int(self.headers.get("Content-Length", "0"))
+      if not 0 < size < 8192:
+        raise ValueError("Invalid command length")
+      self.json(command(json.loads(self.rfile.read(size))))
+    except (ValueError, KeyError, TypeError, OverflowError, OSError) as e:
+      self.json({"error": str(e)}, 400)
+
+  def authorized(self):
+    if gateway_key is not None and not secrets.compare_digest(self.headers.get("Authorization", ""), "Bearer " + gateway_key):
+      self.json({"error": "Use the reservation gateway"}, 401)
+      self.close_connection = True
+      return False
+    return True
+
+
+if __name__ == "__main__":
+  key_file = Path("/data/arm_teleop_gateway_key")
+  gateway_key = key_file.read_text().strip() if key_file.exists() else None
+  if gateway_key is not None and len(gateway_key) < 32:
+    raise ValueError("Invalid reservation gateway key")
+  camera = Camera()
+  robots = {name: Robot(name, managed=gateway_key is not None) for name in FOLLOWERS}
+  server = ThreadingHTTPServer(("127.0.0.1", 8022), Handler)
+  signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
+  try:
+    server.serve_forever()
+  finally:
+    for robot in robots.values():
+      robot.running = False
+    try:
+      stop_all("Device service stopped")
+    finally:
+      server.server_close()

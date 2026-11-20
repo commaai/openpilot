@@ -1,0 +1,3 @@
+aiohttp>=3.11,<4
+feetech-servo-sdk==1.0.0
+pyserial==3.5

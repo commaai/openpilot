@@ -8,6 +8,7 @@ from openpilot.common.hardware import PC, COMMA_HARDWARE
 from openpilot.system.manager.process import PythonProcess, NativeProcess, DaemonProcess
 
 WEBCAM = os.getenv("USE_WEBCAM") is not None
+ARM_TELEOP = os.getenv("ARM_TELEOP") == "1"
 
 def driverview(started: bool, params: Params, CP: car.CarParams) -> bool:
   return started or params.get_bool("IsDriverViewEnabled")
@@ -78,7 +79,9 @@ procs = [
   NativeProcess("stream_encoderd", "openpilot/system/loggerd", ["./encoderd", "--stream"], or_(livestream, notcar)),
   PythonProcess("logmessaged", "openpilot.system.logmessaged", always_run),
 
-  NativeProcess("camerad", "openpilot/system/camerad", ["./camerad"], or_(driverview, livestream), enabled=not WEBCAM),
+  NativeProcess("camerad", "openpilot/system/camerad", ["./camerad"], always_run if ARM_TELEOP else or_(driverview, livestream), enabled=not WEBCAM),
+  NativeProcess("arm_teleop", "tools/arm_teleop", ["python3", "device.py"], always_run, enabled=ARM_TELEOP),
+  NativeProcess("arm_power", "tools/arm_teleop", ["sudo", "/usr/local/venv/bin/python", "power.py", "--watch"], always_run, enabled=ARM_TELEOP),
   PythonProcess("webcamerad", "openpilot.system.camerad.webcam.camerad", driverview, enabled=WEBCAM),
   PythonProcess("proclogd", "openpilot.system.proclogd", only_onroad, enabled=platform.system() != "Darwin"),
   PythonProcess("journald", "openpilot.system.journald", only_onroad, platform.system() != "Darwin"),
@@ -115,7 +118,7 @@ procs = [
   PythonProcess("radard", "openpilot.selfdrive.controls.radard", only_onroad),
   PythonProcess("hardwared", "openpilot.system.hardware.hardwared", always_run),
   PythonProcess("tombstoned", "openpilot.system.tombstoned", always_run, enabled=not PC),
-  PythonProcess("updated", "openpilot.system.updated.updated", only_offroad, enabled=not PC),
+  PythonProcess("updated", "openpilot.system.updated.updated", only_offroad, enabled=not PC and not ARM_TELEOP),
   PythonProcess("uploader", "openpilot.system.loggerd.uploader", always_run),
 
   # debug procs

@@ -87,6 +87,9 @@ function launch {
   # hardware specific init
   if [ -f /AGNOS ]; then
     agnos_init
+    if [ "${ARM_TELEOP:-0}" = "1" ]; then
+      sudo /usr/local/venv/bin/python "$DIR/tools/arm_teleop/power.py"
+    fi
   fi
 
   # write tmux scrollback to a file
