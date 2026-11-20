@@ -260,6 +260,7 @@ void process_peripheral_state(Panda *panda, PubMaster *pm, bool no_fan_control, 
 
   static uint64_t last_cabin_camera_t = 0;
   static uint16_t prev_fan_speed = 999;
+  static uint64_t last_fan_update_t = 0;
   static int ir_pwr = 0;
   static int prev_ir_pwr = 999;
   static uint32_t prev_frame_id = UINT32_MAX;
@@ -276,9 +277,12 @@ void process_peripheral_state(Panda *panda, PubMaster *pm, bool no_fan_control, 
     if (sm.updated("deviceState") && !no_fan_control) {
       // Fan speed
       uint16_t fan_speed = sm["deviceState"].getDeviceState().getFanSpeedPercentDesired();
-      if (fan_speed != prev_fan_speed || sm.frame % 100 == 0) {
+      uint64_t now = nanos_since_boot();
+      // Restore the requested speed after the panda's heartbeat fallback runs the fan.
+      if (fan_speed != prev_fan_speed || now - last_fan_update_t >= 5ULL * 1000000000) {
         panda->set_fan_speed(fan_speed);
         prev_fan_speed = fan_speed;
+        last_fan_update_t = now;
       }
     }
 
