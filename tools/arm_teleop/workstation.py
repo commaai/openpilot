@@ -16,6 +16,7 @@ class Station:
   def __init__(self, args):
     self.args = args
     self.follower = args.follower
+    self.reservation = {} if args.game_url else None
     self.leader = None
     self.leader_positions = []
     self.leader_error = "Connecting to leader"
@@ -65,7 +66,8 @@ class Station:
         if self.active:
           raise ValueError("Pause before selecting another arm")
         name = body.get("arm")
-        if name not in self.device.get("arms", {"left": self.device.get("arm", {})}):
+        choices = ("left", "middle", "right") if self.args.game_url else self.device.get("arms", {"left": self.device.get("arm", {})})
+        if name not in choices:
           raise ValueError("Choose an available follower arm")
         self.follower = name
         self.note = f"{name.capitalize()} arm selected; start to recenter the leader"
@@ -73,6 +75,8 @@ class Station:
         await self.stop("Motors released")
         await self.command({"op": "release"})
       elif op == "start":
+        if self.args.game_url and self.reservation.get("phase") != "active":
+          raise ValueError("Your reservation is not active")
         if self.active:
           raise ValueError("Already following; pause before changing settings")
         if not self.leader or self.leader_error:
@@ -107,6 +111,15 @@ class Station:
     retry_at = 0.
     last_command = time.monotonic()
     while True:
+      if self.args.game_url and self.reservation.get("phase") in ("ended", "cancelled"):
+        async with self.lock:
+          if self.active:
+            await self.stop("Reservation ended")
+          if self.leader:
+            self.leader.close()
+            self.leader = None
+          self.leader_error = "Leader released"
+        return
       started = time.monotonic()
       async with self.lock:
         try:
@@ -148,16 +161,28 @@ class Station:
   def status(self):
     return {"leader": {"serial": self.args.leader, "connected": self.leader is not None and not self.leader_error,
                        "positions": self.leader_positions, "error": self.leader_error},
-            "device": self.device, "device_error": self.device_error, "follower": self.follower, "active": self.active, "note": self.note,
+            "reservation": self.reservation, "device": self.device, "device_error": self.device_error,
+            "follower": self.follower, "active": self.active, "note": self.note,
             "rate": round(self.rate, 1) if self.active else 0, "latency": round(self.latency, 1), "joints": JOINTS}
 
   async def monitor(self):
+    next_check = 0.
     while True:
       try:
-        async with self.http.get(self.base + "/status", timeout=ClientTimeout(total=0.7)) as response:
-          response.raise_for_status()
-          self.device = await response.json()
-          self.device_error = ""
+        if self.args.game_url and self.reservation.get("phase") not in ("ended", "cancelled") and time.monotonic() >= next_check:
+          next_check = time.monotonic() + 1
+          async with self.http.get(self.base, timeout=ClientTimeout(total=1)) as response:
+            response.raise_for_status()
+            slot = await response.json()
+            self.reservation = {key: slot[key] for key in ("start", "end", "phase", "github_username")}
+        if self.args.game_url and self.reservation.get("phase") != "active":
+          self.device = {}
+          self.device_error = "Waiting for an active reservation"
+        else:
+          async with self.http.get(self.base + "/status", timeout=ClientTimeout(total=0.7)) as response:
+            response.raise_for_status()
+            self.device = await response.json()
+            self.device_error = ""
       except Exception:
         self.device_error = "Reconnecting to comma four"
       state = {"type": "state", **self.status()}
@@ -269,7 +294,12 @@ def main():
   async def status(request):
     return web.json_response(station.status())
 
+  async def play(request):
+    return web.FileResponse(Path(__file__).with_name("play.html"), headers={"Cache-Control": "no-store"})
+
   app.router.add_get("/", index)
+  if args.game_url:
+    app.router.add_get("/play", play)
   app.router.add_get("/status", status)
   app.router.add_get("/ws", station.websocket)
   app.router.add_get("/video", station.video)

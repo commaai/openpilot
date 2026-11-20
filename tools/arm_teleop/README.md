@@ -46,14 +46,14 @@ Neither server starts motion on its own. Probe and status reads do not enable to
 
 ## Reserved game sessions
 
-The companion [xx service](https://github.com/commaai/xx/pull/7492) books five-minute slots at `https://balltoss.comma.life` and issues a different API token for each reservation. Save its token file, stop any older workstation teleop service, and run:
+The companion [xx service](https://github.com/commaai/xx/pull/7492) books five-minute slots at `https://sisyphustoss.comma.life` and issues a different API token for each reservation. Save its token file, stop any older workstation teleop service, and run:
 
 ```bash
-python tools/arm_teleop/workstation.py --game-url https://balltoss.comma.life \
+python tools/arm_teleop/workstation.py --game-url https://sisyphustoss.comma.life \
   --reservation <reservation-id> --token-file /path/to/balltoss-token.txt
 ```
 
-The local UI remains at `http://127.0.0.1:8070`. Live video and commands pass through the gateway and are available only during the reserved slot.
+Open `http://127.0.0.1:8070/play` for the reservation controller. Choose the left, middle, or right follower before or during the slot. When the slot opens, click **Start following**. The page shows the reservation window, control state and live camera. Pause before switching arms. The gateway ends control at the slot deadline, and the workstation releases the USB leader. The full joint and speed controls remain at `http://127.0.0.1:8070/`.
 
 On the device, `/data/arm_teleop_gateway_key` enables managed mode. It must contain a random service key of at least 32 characters and match the gateway's credential. Every device HTTP request then requires `Authorization: Bearer <service-key>`, and `start` requires a `lease_expires_at` Unix timestamp no more than five minutes ahead. The device converts that timestamp once to a monotonic deadline and holds the arm when the lease ends. The 400 ms command watchdog remains active. Keep device port 8022 on loopback, and restart the device manager after installing the key.
 
