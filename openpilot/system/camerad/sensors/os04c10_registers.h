@@ -276,7 +276,10 @@ const struct i2c_random_wr_payload init_array_os04c10[] = {
   {0x3817, 0x01},
 
   {0x380c, 0x08}, {0x380d, 0x5c}, // HTS (line length)
-  {0x380e, 0x09}, {0x380f, 0x38}, // VTS (frame length)
+  // VTS (frame length): 2304 lines = 48.7 ms. FSIN starts each frame, so the free-running frame must end well before
+  // the 50 ms FSIN period; at 2360 lines (49.9 ms) it ended within a few lines of the pulse and the sensor sometimes
+  // emitted a stray frame start while locking on, cutting a frame short (CSID UNBOUNDED_FRAME).
+  {0x380e, 0x09}, {0x380f, 0x00},
 
   {0x3820, 0xb0},
   {0x3821, 0x00},
