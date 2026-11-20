@@ -3,6 +3,7 @@ import numpy as np
 
 import openpilot.cereal.messaging as messaging
 from opendbc.car.interfaces import ACCEL_MIN, ACCEL_MAX
+from openpilot.cereal import log
 from openpilot.common.constants import CV
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import DT_MDL
@@ -18,6 +19,7 @@ from openpilot.common.swaglog import cloudlog
 J_CRUISE_VALS = [1.6, 1.2, 0.8, 0.6]
 J_CRUISE_BP = [0., 10.0, 25., 40.]
 A_CRUISE_MIN = -0.5
+AGGRESSIVE_ACCEL_BOOST = 0.1  # m/s^2
 CONTROL_N_T_IDX = ModelConstants.T_IDXS[:CONTROL_N]
 
 
@@ -49,6 +51,7 @@ class LongitudinalPlanner:
 
   def update(self, sm):
     v_ego = sm['carState'].vEgo
+    personality = sm['selfdriveState'].personality
     v_cruise_kph = min(sm['carState'].vCruise, V_CRUISE_MAX)
     v_cruise = v_cruise_kph * CV.KPH_TO_MS
     if sm['controlsState'].forceDecel:
@@ -74,12 +77,12 @@ class LongitudinalPlanner:
     # No change cost when user is controlling the speed, or when standstill
     prev_accel_constraint = not (reset_state or sm['carState'].standstill)
 
-    self.mpc.set_weights(prev_accel_constraint, personality=sm['selfdriveState'].personality)
+    self.mpc.set_weights(prev_accel_constraint, personality=personality)
     if self.CP.openpilotLongitudinalControl:
       self.mpc.set_cur_state(self.v_desired_filter.x, self.output_a_target)
     else:
       self.mpc.set_cur_state(v_ego, sm['carState'].aEgo)
-    self.mpc.update(sm['modelV2'], sm['radarState'], personality=sm['selfdriveState'].personality)
+    self.mpc.update(sm['modelV2'], sm['radarState'], personality=personality)
 
     self.v_desired_trajectory = np.interp(CONTROL_N_T_IDX, T_IDXS_MPC, self.mpc.v_solution)
     self.a_desired_trajectory = np.interp(CONTROL_N_T_IDX, T_IDXS_MPC, self.mpc.a_solution)
@@ -99,6 +102,10 @@ class LongitudinalPlanner:
     output_should_stop_mpc = should_stop(v_ego, output_a_target_mpc)
     curve_offset = self.curve_speed.update(sm['modelV2'], sm['vehicleParameters'].roll)
     output_a_target_e2e = sm['modelV2'].action.desiredAcceleration + curve_offset
+    if personality == log.LongitudinalPersonality.aggressive:
+      speed_scale = np.interp(v_ego, [10 * CV.MPH_TO_MS, 20 * CV.MPH_TO_MS], [0.0, 1.0])
+      accel_scale = np.interp(output_a_target_e2e, [-1.0, -0.5, 5.0], [0.0, 1.0, 1.0], right=0.0)
+      output_a_target_e2e += AGGRESSIVE_ACCEL_BOOST * speed_scale * accel_scale
     output_should_stop_e2e = sm['modelV2'].action.shouldStop
 
     self.a_cruise = get_cruise_accel(v_cruise, v_ego, self.a_cruise, self.output_a_target, self.dt)
