@@ -422,13 +422,6 @@ class HardwareComma(HardwareBase):
     time.sleep(0.01)
     gpio_set(GPIO.STM_BOOT0, False)
 
-  def booted(self):
-    # this normally boots within 8s, but on rare occasions takes 30+s
-    encoder_state = sudo_read("/sys/kernel/debug/msm_vidc/core0/info")
-    if "Core state: 0" in encoder_state and (time.monotonic() < 60*2):
-      return False
-    return True
-
 if __name__ == "__main__":
   t = HardwareComma()
   t.initialize_hardware()

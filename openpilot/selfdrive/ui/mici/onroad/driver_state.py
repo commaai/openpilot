@@ -42,7 +42,7 @@ class DriverStateRenderer(Widget):
     self._face_pitch = 0.
     self._face_yaw = 0.
     self._should_draw = False
-    self._dimmed = False
+    self._dimmed = 0.0
     self._show_under_alerts = False
     self._force_active = False
     self._looking_center = False
@@ -76,8 +76,8 @@ class DriverStateRenderer(Widget):
   def set_should_draw(self, should_draw: bool):
     self._should_draw = should_draw
 
-  def set_dimmed(self, dimmed: bool):
-    """Draw grayed out without the cone, like when monitoring is inactive"""
+  def set_dimmed(self, dimmed: float):
+    """Draw grayed out without the cone, like when monitoring is inactive. 0 to 1 so it can fade with the rest of the UI"""
     self._dimmed = dimmed
 
   def set_show_under_alerts(self, show_under_alerts: bool):
@@ -85,8 +85,9 @@ class DriverStateRenderer(Widget):
 
   @property
   def should_draw(self):
+    # dimmed doesn't need driver data, so it also shows offroad
     return (self._should_draw and (self._show_under_alerts or ui_state.sm["selfdriveState"].alertSize == AlertSize.none) and
-            ui_state.sm.recv_frame["driverStateV2"] > ui_state.started_frame)
+            (self._dimmed > 0 or ui_state.received_since_started("driverStateV2")))
 
   def set_force_active(self, force_active: bool):
     """Force the dmoji to always appear active (green) regardless of actual state"""
@@ -116,7 +117,7 @@ class DriverStateRenderer(Widget):
                        rl.Color(255, 255, 255, int(255 * 0.9 * self._fade_filter.x)))
 
     green_amount = self._color_fade_filter.update(0.0 if self._awareness_unfull else 1.0)
-    if self.effective_active and not self._dimmed:
+    if self.effective_active and self._dimmed < 1:
       source_rect = rl.Rectangle(0, 0, self._dm_cone.width, self._dm_cone.height)
       dest_rect = rl.Rectangle(
         self._rect.x + self._rect.width / 2,
@@ -135,7 +136,7 @@ class DriverStateRenderer(Widget):
           dest_rect,
           rl.Vector2(dest_rect.width / 2, dest_rect.height / 2),
           self._rotation_filter.x - 90,
-          rl.Color(r, g, b, int(255 * self._fade_filter.x)),
+          rl.Color(r, g, b, int(255 * self._fade_filter.x * (1 - self._dimmed))),
         )
 
       else:
@@ -175,7 +176,7 @@ class DriverStateRenderer(Widget):
     sm = ui_state.sm
 
     dm_state = sm["driverMonitoringState"]
-    self._is_active = dm_state.activePolicy == log.DriverMonitoringState.MonitoringPolicy.vision
+    self._is_active = sm.valid["driverMonitoringState"] and dm_state.activePolicy == log.DriverMonitoringState.MonitoringPolicy.vision
     self._is_rhd = dm_state.isRHD
     self._face_detected = dm_state.visionPolicyState.faceDetected
     self._awareness_unfull = self.effective_active and dm_state.visionPolicyState.awarenessPercent < self.AWARENESS_UNFULL_PERCENT
@@ -220,7 +221,7 @@ class DriverStateRenderer(Widget):
 
     if not self.should_draw:
       self._fade_filter.update(0.0)
-    elif not self.effective_active or self._dimmed:
+    elif not self.effective_active:
       self._fade_filter.update(0.35)
     else:
-      self._fade_filter.update(1.0)
+      self._fade_filter.update(1.0 - 0.65 * self._dimmed)

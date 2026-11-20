@@ -77,12 +77,11 @@ def get_alert(sm: messaging.SubMaster) -> Alert | None:
   ss = sm['selfdriveState']
 
   # Check if selfdriveState messages have stopped arriving
-  recv_frame = sm.recv_frame['selfdriveState']
   if not sm.updated['selfdriveState']:
     time_since_onroad = time.monotonic() - ui_state.started_time
 
     # 1. Never received selfdriveState since going onroad
-    waiting_for_startup = recv_frame < ui_state.started_frame
+    waiting_for_startup = not ui_state.received_since_started('selfdriveState')
     if waiting_for_startup and time_since_onroad > 10:
       return ALERT_STARTUP_PENDING
 
@@ -99,7 +98,7 @@ def get_alert(sm: messaging.SubMaster) -> Alert | None:
     return None
 
   # Don't get old alert
-  if recv_frame < ui_state.started_frame:
+  if not ui_state.received_since_started('selfdriveState'):
     return None
 
   # Return current alert

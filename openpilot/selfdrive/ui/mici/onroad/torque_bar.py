@@ -7,6 +7,7 @@ import numpy as np
 import raylib_nb as rl
 from opendbc.car import ACCELERATION_DUE_TO_GRAVITY
 from openpilot.selfdrive.ui.mici.onroad import blend_colors
+from openpilot.selfdrive.ui.mici.onroad.status import status_fade
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.polygon import draw_polygon, Gradient
@@ -187,17 +188,17 @@ class TorqueBar(Widget):
     torque_line_height = np.interp(abs(self._torque_filter.x), [0.5, 1], [14, 56])
 
     # animate alpha and angle span
-    self._torque_line_alpha_filter.update(ui_state.status != UIStatus.DISENGAGED and not self._hidden)
+    line_alpha = self._torque_line_alpha_filter.update(not self._hidden) * (1 - status_fade.weight(UIStatus.DISENGAGED))
+    engaged = status_fade.weight(UIStatus.ENGAGED)
 
-    torque_line_bg_alpha = np.interp(abs(self._torque_filter.x), [0.5, 1.0], [0.25, 0.5])
-    torque_line_bg_color = rl.Color(255, 255, 255, int(255 * torque_line_bg_alpha * self._torque_line_alpha_filter.x))
-    if ui_state.status != UIStatus.ENGAGED:
-      torque_line_bg_color = rl.Color(255, 255, 255, int(255 * 0.15 * self._torque_line_alpha_filter.x))
+    # dimmer while not engaged
+    torque_line_bg_alpha = 0.15 + (np.interp(abs(self._torque_filter.x), [0.5, 1.0], [0.25, 0.5]) - 0.15) * engaged
+    torque_line_bg_color = rl.Color(255, 255, 255, int(255 * torque_line_bg_alpha * line_alpha))
 
     # draw curved line polygon torque bar
     torque_line_radius = 1200
     top_angle = -90
-    torque_bg_angle_span = self._torque_line_alpha_filter.x * TORQUE_ANGLE_SPAN * rect.width / 476
+    torque_bg_angle_span = line_alpha * TORQUE_ANGLE_SPAN * rect.width / 476
     torque_start_angle = top_angle - torque_bg_angle_span / 2
     torque_end_angle = top_angle + torque_bg_angle_span / 2
     # centerline radius & center (you already have these values)
@@ -225,18 +226,18 @@ class TorqueBar(Widget):
 
     # fade to orange as we approach max torque
     start_color = blend_colors(
-      rl.Color(255, 255, 255, int(255 * 0.9 * self._torque_line_alpha_filter.x)),
-      rl.Color(255, 200, 0, int(255 * self._torque_line_alpha_filter.x)),  # yellow
+      rl.Color(255, 255, 255, int(255 * 0.9 * line_alpha)),
+      rl.Color(255, 200, 0, int(255 * line_alpha)),  # yellow
       max(0, abs(self._torque_filter.x) - 0.75) * 4,
     )
     end_color = blend_colors(
-      rl.Color(255, 255, 255, int(255 * 0.9 * self._torque_line_alpha_filter.x)),
-      rl.Color(255, 115, 0, int(255 * self._torque_line_alpha_filter.x)),  # orange
+      rl.Color(255, 255, 255, int(255 * 0.9 * line_alpha)),
+      rl.Color(255, 115, 0, int(255 * line_alpha)),  # orange
       max(0, abs(self._torque_filter.x) - 0.75) * 4,
     )
 
-    if ui_state.status != UIStatus.ENGAGED:
-      start_color = end_color = rl.Color(255, 255, 255, int(255 * 0.35 * self._torque_line_alpha_filter.x))
+    dimmed = rl.Color(255, 255, 255, int(255 * 0.35 * line_alpha))
+    start_color, end_color = blend_colors(dimmed, start_color, engaged), blend_colors(dimmed, end_color, engaged)
 
     gradient = Gradient(
       start=(start_grad_pt, 0),
@@ -254,4 +255,4 @@ class TorqueBar(Widget):
     if abs(self._torque_filter.x) < 0.5:
       dot_y = self._rect.y + self._rect.height - torque_line_offset - torque_line_height / 2
       rl.draw_circle(int(cx), int(dot_y), 10 // 2,
-                     rl.Color(182, 182, 182, int(255 * 0.9 * self._torque_line_alpha_filter.x)))
+                     rl.Color(182, 182, 182, int(255 * 0.9 * line_alpha)))

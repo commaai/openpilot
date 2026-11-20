@@ -52,8 +52,6 @@ public:
 
   cereal::PandaState::PandaType hw_type = cereal::PandaState::PandaType::UNKNOWN;
 
-  bool connected();
-  bool comms_healthy();
   std::string hw_serial();
 
   // Static functions

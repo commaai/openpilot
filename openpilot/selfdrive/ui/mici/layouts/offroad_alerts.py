@@ -20,7 +20,7 @@ from openpilot.selfdrive.ui.mici.widgets.qr import QR
 from openpilot.common.hardware import HARDWARE
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import UnifiedLabel
-from openpilot.system.ui.widgets.scroller import NavScroller, Scroller
+from openpilot.system.ui.widgets.scroller import NavScroller
 from openpilot.system.ui.lib.application import gui_app, FontWeight, TextAlignment, TextAlignmentVertical
 from openpilot.system.ui.lib.multilang import tr
 
@@ -28,8 +28,9 @@ REFRESH_INTERVAL = 5.0  # seconds
 
 
 # Card background: translucent black squircle with inner shadows, like the Figma design
-CARD_RADIUS = 42
-CARD_CORNER_EXPONENT = 2.4  # superellipse corners, 2 would be circular
+# superellipse corners (2 would be circular), fit to the edges of the old card images within 0.5 px
+CARD_RADIUS = 44.2
+CARD_CORNER_EXPONENT = 2.58
 CARD_FILL_ALPHA = 0.8
 # inner shadows drawn in order over the fill: (gray, opacity, spread, blur sigma)
 CARD_SHADOWS = [(1.0, 0.36, 3.9, 7.9)]
@@ -149,6 +150,7 @@ class AlertItem(Widget):
     self._title_text = ""
     self._body_text = ""
     self._text_offset = 0.0  # centers text shorter than the icon
+    self._body_y = 0.0  # body top, relative to the text top
 
     self._update_content()
 
@@ -167,7 +169,7 @@ class AlertItem(Widget):
       return title, body
     else:
       # No sentence boundary found, return full text as title
-      return "", text
+      return text.strip(), ""
 
   def _update_content(self):
     """Update text and calculate height."""
@@ -192,7 +194,11 @@ class AlertItem(Widget):
     title_height = self._title_label.get_content_height(title_width) if self._title_text else 0
     body_height = self._body_label.get_content_height(body_width) if self._body_text else 0
     spacing = self.TITLE_BODY_SPACING if (self._title_text and self._body_text) else 0
-    total_text_height = title_height + spacing + body_height
+    # the body runs under the icon, so after a short title it starts below the icon
+    self._body_y = title_height + spacing
+    if self._title_text and self._body_text:
+      self._body_y = max(self._body_y, self.ICON_SIZE + self.ICON_MARGIN)
+    total_text_height = self._body_y + body_height
 
     # Fit the card to the text, and the icon
     self._text_offset = max(self.ICON_SIZE - total_text_height, 0) / 2
@@ -225,7 +231,7 @@ class AlertItem(Widget):
         self._title_label.get_content_height(title_width),
       )
       self._title_label.render(title_rect)
-      text_y += title_rect.height + self.TITLE_BODY_SPACING
+    text_y += self._body_y
 
     # Draw body label
     if self._body_text:
@@ -284,12 +290,9 @@ class NotificationItem(Widget):
     rl.draw_texture_ex(self.icon, icon_pos, 0.0, 1.0, rl.WHITE)
 
 
-class MiciOffroadAlerts(Scroller):
-  """Offroad alerts layout with vertical scrolling."""
-
+class MiciOffroadAlerts(NavScroller):
   def __init__(self):
-    # Create vertical scroller
-    super().__init__(horizontal=False, spacing=12, pad=0)
+    super().__init__(horizontal=False, spacing=12, pad=30)
     self.params = Params()
     self.sorted_alerts: list[AlertData] = []
     self.alert_items: list[AlertItem] = []
@@ -308,6 +311,9 @@ class MiciOffroadAlerts(Scroller):
     self._pending_params: dict | None = None
     self._params_thread = threading.Thread(target=self._params_worker, daemon=True)
     self._params_thread.start()
+
+    # refresh every frame, shown or not, for the home pill count
+    gui_app.add_nav_stack_tick(self._refresh_state)
 
   def active_alerts(self) -> int:
     return sum(alert.visible for alert in self.sorted_alerts) + len(self._notification_items)
@@ -372,18 +378,10 @@ class MiciOffroadAlerts(Scroller):
 
     if update_alert_data:
       if update_available:
-        version_string = ""
-
-        # Get new version description and parse version and date
-        new_desc = pending_params["UpdaterNewDescription"] or ""
-        if new_desc:
-          # format: "version / branch / commit / date"
-          parts = new_desc.split(" / ")
-          if len(parts) > 3:
-            version, date = parts[0], parts[3]
-            version_string = f"\nopenpilot {version}, {date}\n"
-
-        update_alert_data.text = f"Update available {version_string}. Click to update. Read the release notes at blog.comma.ai."
+        # format: "version / branch / commit / date"
+        parts = (pending_params["UpdaterNewDescription"] or "").split(" / ")
+        version = f"openpilot {parts[0]} ({parts[3]}) is ready to install. " if len(parts) > 3 else ""
+        update_alert_data.text = f"Update available. {version}Tap to update. Read the release notes at blog.comma.ai."
         update_alert_data.visible = True
         active_count += 1
       else:
@@ -432,8 +430,7 @@ class MiciOffroadAlerts(Scroller):
     self._scroller.add_widgets(self._notification_items)
     self._sort_items()
 
-  def _update_state(self):
-    """Periodically refresh alerts."""
+  def _refresh_state(self):
     self._refresh_notifications()
 
     # Refresh alerts when thread updates params
