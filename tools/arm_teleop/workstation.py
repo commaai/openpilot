@@ -93,7 +93,7 @@ class Station:
           raise ValueError("Invalid motion settings")
         await asyncio.to_thread(self.leader.torque, False)
         positions = await asyncio.to_thread(self.leader.positions)
-        result = await self.command({"op": "start", "speed": body.get("speed", 30)})
+        result = await self.command({"op": "start", "speed": body.get("speed")})
         self.previous_leader = positions[:]
         self.target_base = ([p if sign == 1 else 4095 - p for p, sign in zip(positions, signs, strict=True)]
                             if mode == "match" else result["positions"])

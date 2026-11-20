@@ -36,7 +36,9 @@
       <label class="labelrow" for="mode">Following mode</label><select id="mode" class="select"><option value="match">Match leader joint positions (1:1)</option><option value="relative">Relative movement</option></select>
       <label class="labelrow" for="scale">Movement scale<output id="scaleLabel">0.50×</output></label>
       <input id="scale" type="range" min="0.1" max="1" step="0.05" value="0.5"><div class="range-ends"><span>PRECISE</span><span>1:1</span></div>
-      <label class="labelrow" for="speed">Maximum joint speed</label><select id="speed" class="select"><option value="10">10° / sec · gentle</option><option value="20">20° / sec</option><option value="30" selected>30° / sec · standard</option><option value="45">45° / sec</option><option value="60">60° / sec</option></select>
+      <label class="labelrow" for="speed">Joint speed limit (°/s)</label>
+      <input id="speed" class="select" type="number" min="0" step="any" list="speeds" placeholder="No limit">
+      <datalist id="speeds"><option value="10"><option value="20"><option value="30"><option value="45"><option value="60"></datalist>
       <button class="button start" id="start" disabled>Start following</button>
       <button class="button stop" id="stop">Pause / hold position</button>
       <p class="hint"><span class="key">Space</span> or <span class="key">Esc</span> to stop. In pose-match mode, Start moves the follower toward the current leader pose. Leaving this window pauses control.</p>
@@ -81,7 +83,13 @@ function connect(){
 }
 function video(){clearTimeout(videoRetry);$('video').src='/video?t='+Date.now();}
 $('video').onerror=()=>{videoRetry=setTimeout(video,2000);};
-$('start').onclick=()=>{$('error').textContent='';send('start',{mode:$('mode').value,scale:+$('scale').value,speed:+$('speed').value,signs:names.map((_,i)=>$('r'+i).checked?-1:1)});};
+$('start').onclick=()=>{
+  const speed=$('speed');
+  speed.setCustomValidity(speed.value!==''&&speed.valueAsNumber<=0?'Enter a positive speed or leave it blank.':'');
+  if(!speed.reportValidity())return;
+  $('error').textContent='';
+  send('start',{mode:$('mode').value,scale:+$('scale').value,speed:speed.value===''?null:speed.valueAsNumber,signs:names.map((_,i)=>$('r'+i).checked?-1:1)});
+};
 $('arm').onchange=()=>send('select',{arm:$('arm').value});
 $('stop').onclick=stop;$('release').onclick=()=>{$('error').textContent='';send('release');};
 function updateScale(){const match=$('mode').value==='match';$('scale').disabled=match||state?.active;$('scaleLabel').textContent=match?'1.00×':(+$('scale').value).toFixed(2)+'×';}
