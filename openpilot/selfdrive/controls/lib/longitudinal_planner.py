@@ -104,7 +104,7 @@ class LongitudinalPlanner:
     output_a_target_e2e = sm['modelV2'].action.desiredAcceleration + curve_offset
     if personality == log.LongitudinalPersonality.aggressive:
       speed_scale = np.interp(v_ego, [5.0, 10.0], [0.0, 1.0])
-      accel_scale = np.interp(output_a_target_e2e, [-1.0, -0.5, 5.0], [0.0, 1.0, 1.0], right=0.0)
+      accel_scale = np.interp(output_a_target_e2e, [-1.0, -0.5], [0.0, 1.0])
       output_a_target_e2e += AGGRESSIVE_ACCEL_BOOST * speed_scale * accel_scale
     output_should_stop_e2e = sm['modelV2'].action.shouldStop
 
