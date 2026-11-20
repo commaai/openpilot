@@ -14,7 +14,7 @@
 <button id="follow" disabled>Start following</button><button id="pause" disabled>Pause</button></section>
 <output id="control" aria-live="polite">Connecting…</output><small id="leader"></small><div id="error" role="alert"></div>
 <img id="camera" hidden alt="Live view of the three arms">
-<footer><small>Space or Esc pauses. Pause before switching arms. <a href="/">Full controls</a></small></footer>
+<footer><small>Start moves the follower to the leader’s joint positions at up to 30°/s. Space or Esc pauses. Pause before switching arms. <a href="/">Full controls</a></small></footer>
 </main>
 <script>
 const el=id=>document.getElementById(id);
@@ -42,7 +42,7 @@ function connect(){
 }
 el('camera').onerror=()=>setTimeout(()=>{if(showVideo)el('camera').src='/video?t='+Date.now();},1000);
 el('arm').onchange=()=>{el('error').textContent='';send('select',{arm:el('arm').value});};
-el('follow').onclick=()=>{el('error').textContent='';send('start');};
+el('follow').onclick=()=>{el('error').textContent='';send('start',{mode:'match'});};
 el('pause').onclick=pause;window.addEventListener('blur',pause);window.addEventListener('pagehide',pause);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)pause();});
 document.addEventListener('keydown',e=>{if(e.code==='Escape'||(e.code==='Space'&&active)){e.preventDefault();pause();}});

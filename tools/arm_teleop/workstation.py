@@ -61,7 +61,7 @@ class Station:
     async with self.lock:
       op = body["op"]
       if op == "stop":
-        await self.stop("Paused; restart to recenter the leader")
+        await self.stop("Paused; holding the current pose")
       elif op == "select":
         if self.active:
           raise ValueError("Pause before selecting another arm")
@@ -70,7 +70,7 @@ class Station:
         if name not in choices:
           raise ValueError("Choose an available follower arm")
         self.follower = name
-        self.note = f"{name.capitalize()} arm selected; start to recenter the leader"
+        self.note = f"{name.capitalize()} arm selected"
       elif op == "release":
         await self.stop("Motors released")
         await self.command({"op": "release"})
@@ -84,16 +84,19 @@ class Station:
         camera = self.device.get("camera", {})
         if self.device_error or camera.get("age") is None or camera["age"] > 1:
           raise ValueError("Wait for a live camera connection")
-        scale = float(body.get("scale", 0.5))
+        mode = body.get("mode", "match" if self.args.game_url else "relative")
+        if mode not in ("match", "relative"):
+          raise ValueError("Choose a following mode")
+        scale = 1. if mode == "match" else float(body.get("scale", 0.5))
         signs = body.get("signs", [1] * 6)
         if not math.isfinite(scale) or not 0.1 <= scale <= 1 or len(signs) != 6 or any(s not in (-1, 1) for s in signs):
           raise ValueError("Invalid motion settings")
         await asyncio.to_thread(self.leader.torque, False)
         positions = await asyncio.to_thread(self.leader.positions)
         result = await self.command({"op": "start", "speed": body.get("speed", 30)})
-        self.leader_base = positions[:]
         self.previous_leader = positions[:]
-        self.follower_base = result["positions"]
+        self.target_base = ([p if sign == 1 else 4095 - p for p, sign in zip(positions, signs, strict=True)]
+                            if mode == "match" else result["positions"])
         self.limits = result["limits"]
         self.offsets = [0.] * 6
         self.scale = scale
@@ -141,7 +144,7 @@ class Station:
               self.offsets = [old + delta for old, delta in zip(self.offsets, deltas, strict=True)]
               self.previous_leader = self.leader_positions[:]
               target = [max(lo, min(hi, p + delta * self.scale * sign))
-                        for p, delta, sign, (lo, hi) in zip(self.follower_base, self.offsets, self.signs, self.limits, strict=True)]
+                        for p, delta, sign, (lo, hi) in zip(self.target_base, self.offsets, self.signs, self.limits, strict=True)]
               before = time.monotonic()
               await self.command({"op": "target", "session": self.session, "sequence": self.sequence, "positions": target})
               now = time.monotonic()

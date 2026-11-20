@@ -1,6 +1,6 @@
 # Arm control
 
-Wide-camera video from a comma four and relative leader/follower control for a six-servo LeRobot SO arm. The device runs the `robot-arm-teleop` openpilot branch. The workstation serves a local UI and reads the USB leader; video and commands travel through SSH.
+Wide-camera video from a comma four and leader/follower control for a six-servo LeRobot SO arm. The device runs the `robot-arm-teleop` openpilot branch. The workstation serves a local UI and reads the USB leader; video and commands travel through SSH.
 
 This setup uses leader `5CBC431223` on the workstation and three followers on the device: left `5CBC431994`, middle `5CBC431998`, and right `5CBC453422`. Names refer to the wide-camera view. USB serial numbers are used instead of changing `/dev/ttyACM` numbers.
 
@@ -14,13 +14,13 @@ Open http://127.0.0.1:8070. `uv` installs the small Python environment on the fi
 
 1. Wait for live video and both arm connections.
 2. Select the follower arm, movement scale, and maximum speed. Start with 0.5× and 30°/s.
-3. Click **Start following**. Moving the leader moves the selected follower relative to their starting poses.
-4. **Pause / hold position**, Space, or Escape stops following and holds the follower's current position. Pause before selecting another arm. Restart to recenter the leader.
+3. Choose **Match leader joint positions** for 1:1 encoder tracking or **Relative movement** to apply scaled changes from the two starting poses. Click **Start following**.
+4. **Pause / hold position**, Space, or Escape stops following and holds the follower's current position. Pause before selecting another arm. Restarting relative control resets its reference poses.
 5. **Release follower torque** makes the follower free to move by hand. Support it before releasing.
 
 Changing tabs, leaving the browser window, closing the page, losing the camera, or losing the command connection stops following. Reconnection never resumes motion automatically. The device independently expires commands after 400 ms. Speed and position limits are enforced on the device, and encoder jumps are rejected on the workstation.
 
-These arms currently have factory position limits, not calibrated mechanical joint limits. This controller uses relative encoder deltas, not absolute pose matching. It preserves the existing EEPROM configuration. Per-joint Reverse controls accommodate an opposite assembly direction; change them while paused. For full calibrated pose matching, first perform the [LeRobot arm calibration](https://huggingface.co/docs/lerobot/so101).
+These arms currently have factory position limits, not calibrated mechanical joint limits. Pose matching targets the same encoder readings. Physical alignment depends on the servo horns and encoder zeros on each arm. It preserves the existing EEPROM configuration. Per-joint Reverse controls accommodate an opposite assembly direction; change them while paused. For full calibrated pose matching, first perform the [LeRobot arm calibration](https://huggingface.co/docs/lerobot/so101).
 
 ## Device installation
 
@@ -53,7 +53,7 @@ python tools/arm_teleop/workstation.py --game-url https://sisyphustoss.comma.lif
   --reservation <reservation-id> --token-file /path/to/balltoss-token.txt
 ```
 
-Open `http://127.0.0.1:8070/play` for the reservation controller. Choose the left, middle, or right follower before or during the slot. When the slot opens, click **Start following**. The page shows the reservation window, control state and live camera. Pause before switching arms. The gateway ends control at the slot deadline, and the workstation releases the USB leader. The full joint and speed controls remain at `http://127.0.0.1:8070/`.
+Open `http://127.0.0.1:8070/play` for the reservation controller. Choose the left, middle, or right follower before or during the slot. When the slot opens, click **Start following** to move the follower toward the leader’s current encoder positions at up to 30°/s and then follow 1:1. The page shows the reservation window, control state and live camera. Pause before switching arms. The gateway ends control at the slot deadline, and the workstation releases the USB leader. The full joint and speed controls remain at `http://127.0.0.1:8070/`.
 
 On the device, `/data/arm_teleop_gateway_key` enables managed mode. It must contain a random service key of at least 32 characters and match the gateway's credential. Every device HTTP request then requires `Authorization: Bearer <service-key>`, and `start` requires a `lease_expires_at` Unix timestamp no more than five minutes ahead. The device converts that timestamp once to a monotonic deadline and holds the arm when the lease ends. The 400 ms command watchdog remains active. Keep device port 8022 on loopback, and restart the device manager after installing the key.
 
