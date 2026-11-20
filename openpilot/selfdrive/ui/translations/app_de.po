@@ -113,6 +113,10 @@ msgstr "ÄNDERN"
 msgid "CHECK"
 msgstr "PRÜFEN"
 
+#: openpilot/selfdrive/ui/widgets/exp_mode_button.py
+msgid "CHILL MODE ON"
+msgstr "CHILL‑MODUS AKTIV"
+
 #: openpilot/selfdrive/ui/layouts/sidebar.py
 #: openpilot/system/ui/widgets/network.py
 msgid "CONNECT"
@@ -220,6 +224,10 @@ msgstr "FEHLER"
 #: openpilot/selfdrive/ui/layouts/sidebar.py
 msgid "ETH"
 msgstr "ETH"
+
+#: openpilot/selfdrive/ui/widgets/exp_mode_button.py
+msgid "EXPERIMENTAL MODE ON"
+msgstr "EXPERIMENTALMODUS AKTIV"
 
 #: openpilot/selfdrive/ui/layouts/settings/developer.py
 msgid "Enable"
@@ -798,3 +806,18 @@ msgstr[1] "vor {} Minuten"
 msgid "✓ SUBSCRIBED"
 msgstr "✓ ABONNIERT"
 
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode."
+msgstr "Den Schalter für die openpilot-Längsregelung (Alpha) aktivieren, um den Experimentalmodus zu erlauben."
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Experimental Mode"
+msgstr "Experimentalmodus"
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Experimental mode is currently unavailable on this car since the car's stock ACC is used for longitudinal control."
+msgstr "Der Experimentalmodus ist derzeit auf diesem Fahrzeug nicht verfügbar, da der serienmäßige ACC für die Längsregelung verwendet wird."
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "openpilot longitudinal control may come in a future update."
+msgstr "Die openpilot‑Längsregelung könnte in einem zukünftigen Update kommen."

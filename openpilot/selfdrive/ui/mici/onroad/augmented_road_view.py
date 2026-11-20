@@ -322,7 +322,7 @@ class AugmentedRoadView(CameraView):
     super().close()
 
   def _switch_stream_if_needed(self, sm):
-    if sm['carParams'].openpilotLongitudinalControl and WIDE_CAM in self.available_streams:
+    if sm['selfdriveState'].experimentalMode and WIDE_CAM in self.available_streams:
       v_ego = sm['carState'].vEgo
       if v_ego < WIDE_CAM_MAX_SPEED:
         target = WIDE_CAM

@@ -91,7 +91,7 @@ class UIState:
 
     # Core state variables
     self.is_metric: bool = self.params.get_bool("IsMetric")
-    self.initial_cruise_speed: int = self.params.get("InitialCruiseSpeedKph", return_default=True)
+    self.experimental_mode: bool = self.params.get_bool("ExperimentalMode")
     self.is_release = self.params.get_bool("IsReleaseBranch")
     self.always_on_dm: bool = self.params.get_bool("AlwaysOnDM")
     self.navigation_enabled: bool = self.params.get_bool("NavigationEnabled")
@@ -142,6 +142,12 @@ class UIState:
 
   def is_offroad(self) -> bool:
     return not self.started
+
+  def toggle_experimental_mode(self) -> None:
+    if self.has_longitudinal_control and self.params.get_bool("ExperimentalModeConfirmed"):
+      enabled = not self.params.get_bool("ExperimentalMode")
+      self.params.put_bool("ExperimentalMode", enabled, block=True)
+      self.experimental_mode = enabled
 
   def received_since_started(self, service: str) -> bool:
     return self.sm.recv_frame[service] > self._started_frame
@@ -260,7 +266,7 @@ class UIState:
 
     self.recording_audio = self.params.get_bool("RecordAudio") and self.started
     self.is_metric = self.params.get_bool("IsMetric")
-    self.initial_cruise_speed = self.params.get("InitialCruiseSpeedKph", return_default=True)
+    self.experimental_mode = self.params.get_bool("ExperimentalMode")
     self.always_on_dm = self.params.get_bool("AlwaysOnDM")
     self.personality_param = self.params.get("LongitudinalPersonality", return_default=True)
     self.navigation_enabled = self.params.get_bool("NavigationEnabled")

@@ -55,7 +55,8 @@ class Notifications:
     resp.raise_for_status()
 
     os.makedirs(ASSETS_ROOT, exist_ok=True)
-    notifications = [n | {key: self._save_asset(dongle_id, n[key]) for key in ASSET_KEYS if key in n} for n in resp.json()]
+    # both home screens need the id and the image, skip one without them
+    notifications = [n | {key: self._save_asset(dongle_id, n[key]) for key in ASSET_KEYS if key in n} for n in resp.json() if "id" in n and "image" in n]
     with self._lock:
       # the ones the user dismissed stay dismissed
       dismissed = {n["id"] for n in self._notifications if n["dismissed"]}
