@@ -5,6 +5,7 @@ from enum import Enum
 from collections.abc import Callable
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import UnifiedLabel
+from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets.scroller import DO_ZOOM
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, TextAlignment, TextAlignmentVertical
 from openpilot.common.filter_simple import BounceFilter
@@ -359,6 +360,7 @@ class GreyBigButton(BigButton):
   """Users should manage newlines with this class themselves"""
 
   LABEL_HORIZONTAL_PADDING = 30
+  VALUE_FONT_SIZE = 36
 
   def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)
@@ -370,16 +372,34 @@ class GreyBigButton(BigButton):
     self._label.set_font_weight(FontWeight.BOLD)
     self._label.set_line_height(1.0)
 
-    self._sub_label.set_font_size(36)
+    self._sub_label.set_font_size(self.VALUE_FONT_SIZE)
     self._sub_label.set_text_color(rl.Color(255, 255, 255, int(255 * 0.9)))
     self._sub_label.set_font_weight(FontWeight.DISPLAY_REGULAR)
     self._sub_label.set_alignment_vertical(TextAlignmentVertical.MIDDLE if not self._label.text else
                                            TextAlignmentVertical.BOTTOM)
     self._sub_label.set_line_height(0.95)
+    self._fit_sub_label()
 
   @property
   def LABEL_VERTICAL_PADDING(self):
     return BigButton.LABEL_VERTICAL_PADDING if self._label.text else 18
+
+  def set_value(self, value: str):
+    if value != self.value:
+      super().set_value(value)
+      self._fit_sub_label()
+
+  def _fit_sub_label(self):
+    # shrink long text to fit the card, and caller line breaks to fit on their lines
+    width = self._subtitle_width_hint()
+    font = gui_app.font(FontWeight.DISPLAY_REGULAR)
+    for size in range(self.VALUE_FONT_SIZE, 27, -1):
+      self._sub_label.set_font_size(size)
+      if "\n" in self.value:
+        if len(wrap_text(font, self.value, size, width)) == self.value.count("\n") + 1:
+          break
+      elif self._label.text or self._sub_label.get_content_height(width) <= self._rect.height - self.LABEL_VERTICAL_PADDING * 2:
+        break
 
   def _get_label_font_size(self):
     return 36

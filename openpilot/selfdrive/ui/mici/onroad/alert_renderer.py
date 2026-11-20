@@ -57,8 +57,7 @@ class AlertRenderer(Widget):
 
     self._alert_text1_label = UnifiedLabel(text="", font_size=ALERT_FONT_BIG, font_weight=FontWeight.DISPLAY, line_height=0.86,
                                            letter_spacing=ALERT_TITLE_LETTER_SPACING)
-    self._alert_text2_label = UnifiedLabel(text="", font_size=ALERT_FONT_SMALL, font_weight=FontWeight.ROMAN, line_height=0.86,
-                                           letter_spacing=0.025)
+    self._alert_text2_label = UnifiedLabel(text="", font_size=ALERT_FONT_SMALL, font_weight=FontWeight.ROMAN, line_height=0.86)
 
     self._prev_alert: Alert | None = None
     self._text_gen_time = 0
