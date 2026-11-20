@@ -802,3 +802,18 @@ msgstr[0] "{}분 전"
 msgid "✓ SUBSCRIBED"
 msgstr "✓ 구독됨"
 
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode."
+msgstr "실험 모드를 사용하려면 openpilot 롱컨 제어(알파) 토글을 켜세요."
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Experimental Mode"
+msgstr "실험 모드"
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "Experimental mode is currently unavailable on this car since the car's stock ACC is used for longitudinal control."
+msgstr "이 차량은 롱컨 제어에 순정 ACC를 사용하므로 현재 실험 모드를 사용할 수 없습니다."
+
+#: openpilot/selfdrive/ui/layouts/settings/toggles.py
+msgid "openpilot longitudinal control may come in a future update."
+msgstr "openpilot 롱컨 제어는 향후 업데이트에서 제공될 수 있습니다."

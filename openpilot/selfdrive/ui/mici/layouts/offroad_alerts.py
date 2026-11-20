@@ -253,9 +253,9 @@ class NotificationItem(Widget):
     super().__init__()
     self.alert_data = AlertData(key="", text="", severity=notification.get("severity", 0), visible=True)
     self.notification = notification
-    self.icon = gui_app.texture(notification["icon"], AlertItem.ICON_SIZE, AlertItem.ICON_SIZE)
+    self.icon = gui_app.texture(notification["icon"], AlertItem.ICON_SIZE, AlertItem.ICON_SIZE) if "icon" in notification else None
     self._image = gui_app.texture(notification["image"])
-    self._menu = notification["menu"]
+    self._menu = notification.get("menu", [])
     if self._menu:
       self.set_click_callback(self._show_menu)
     self.set_rect(rl.Rectangle(0, 0, AlertItem.ALERT_WIDTH, AlertItem.NOTIFICATION_HEIGHT))
@@ -272,8 +272,8 @@ class NotificationItem(Widget):
         scroller._scroller.add_widget(QR(card["qr"]))
       elif "title" in card:
         icon = gui_app.texture("icons_mici/setup/small_slider/slider_arrow.png", 64, 56, flip_x=True) if card.get("icon") == "arrow" else None
-        scroller._scroller.add_widget(GreyBigButton(card["title"], card["text"], icon))
-      elif card["button"] == "dismiss":
+        scroller._scroller.add_widget(GreyBigButton(card["title"], card.get("text", ""), icon))
+      elif card.get("button") == "dismiss":
         button = BigPillButton("dismiss")
         button.set_click_callback(dismiss)
         scroller._scroller.add_widget(button)
@@ -285,8 +285,9 @@ class NotificationItem(Widget):
     draw_card(self._rect, self.is_pressed)
     image_pos = rl.Vector2(self._rect.x + (self._rect.width - self._image.width) / 2, self._rect.y + (self._rect.height - self._image.height) / 2)
     rl.draw_texture_ex(self._image, image_pos, 0.0, 1.0, rl.WHITE)
-    icon_pos = rl.Vector2(self._rect.x + self._rect.width - AlertItem.ALERT_PADDING - self.icon.width, self._rect.y + AlertItem.ALERT_PADDING)
-    rl.draw_texture_ex(self.icon, icon_pos, 0.0, 1.0, rl.WHITE)
+    if self.icon is not None:
+      icon_pos = rl.Vector2(self._rect.x + self._rect.width - AlertItem.ALERT_PADDING - self.icon.width, self._rect.y + AlertItem.ALERT_PADDING)
+      rl.draw_texture_ex(self.icon, icon_pos, 0.0, 1.0, rl.WHITE)
 
 
 class MiciOffroadAlerts(NavScroller):
