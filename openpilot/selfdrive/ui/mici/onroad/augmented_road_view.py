@@ -179,13 +179,13 @@ class AugmentedRoadView(CameraView):
     self._alert_renderer = AlertRenderer()
     self._driver_state_renderer = DriverStateRenderer(background=False)
     self._confidence_ball = ConfidenceBall()
-    self._offroad_label = UnifiedLabel("start the car to\nuse openpilot", 54, FontWeight.DISPLAY,
-                                       text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
-                                       alignment=TextAlignment.CENTER,
-                                       alignment_vertical=TextAlignmentVertical.MIDDLE)
-    self._offroad_sublabel = UnifiedLabel("", 40, FontWeight.ROMAN,
-                                          text_color=rl.Color(255, 255, 255, int(255 * 0.9 * 0.65)),
-                                          alignment=TextAlignment.CENTER)
+    self._offroad_label = UnifiedLabel("start the car", 46, FontWeight.DISPLAY,
+                                       text_color=rl.Color(255, 255, 255, 255),
+                                       alignment=TextAlignment.LEFT,
+                                       alignment_vertical=TextAlignmentVertical.TOP)
+    self._offroad_sublabel = UnifiedLabel("to use openpilot", 40, FontWeight.ROMAN,
+                                          text_color=rl.Color(255, 255, 255, int(255 * 0.65)),
+                                          alignment=TextAlignment.LEFT)
 
     self._fade_texture = gui_app.texture("icons_mici/onroad/onroad_fade.png")
 
@@ -198,17 +198,17 @@ class AugmentedRoadView(CameraView):
 
     # update offroad label
     if ui_state.panda_type == log.PandaState.PandaType.unknown:
-      self._offroad_label.set_text("system booting")
-      self._offroad_label.set_font_size(54)
-      self._offroad_sublabel.set_text("")
+      self._offroad_label.set_text("openpilot starting")
+      self._offroad_label.set_font_size(46)
+      self._offroad_sublabel.set_text("system booting")
     elif ui_state.ignition and not ui_state.started:
       self._offroad_label.set_text("openpilot can't start")
       self._offroad_label.set_font_size(46)
       self._offroad_sublabel.set_text("check alerts")
     else:
-      self._offroad_label.set_text("start the car to\nuse openpilot")
-      self._offroad_label.set_font_size(54)
-      self._offroad_sublabel.set_text("")
+      self._offroad_label.set_text("start the car")
+      self._offroad_label.set_font_size(46)
+      self._offroad_sublabel.set_text("to use openpilot")
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     # Don't trigger click callback if bookmark was triggered
@@ -287,14 +287,14 @@ class AugmentedRoadView(CameraView):
     self._bookmark_icon.render(self.rect)
 
   def _render_offroad_text(self, rect: rl.Rectangle):
-    # center the label and optional subline together
+    rect = rl.Rectangle(rect.x + 8, rect.y + 8, rect.width - 16, rect.height - 16)
     if not self._offroad_sublabel.text:
       self._offroad_label.render(rect)
       return
     gap = 8
     label_h = self._offroad_label.get_content_height(int(rect.width))
     sub_h = self._offroad_sublabel.get_content_height(int(rect.width))
-    y = rect.y + (rect.height - label_h - gap - sub_h) / 2
+    y = rect.y
     self._offroad_label.render(rl.Rectangle(rect.x, y, rect.width, label_h))
     self._offroad_sublabel.render(rl.Rectangle(rect.x, y + label_h + gap, rect.width, sub_h))
 
