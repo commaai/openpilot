@@ -11,8 +11,10 @@ from openpilot.selfdrive.ui.onroad.model_renderer import ModelRenderer as BaseMo
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.polygon import Gradient, draw_polygon
 
-LEAD_BAR_LENGTH = 12.0  # px
+LEAD_BAR_LENGTH = 10.0  # px
 LEAD_BAR_WIDTH = 1.8  # m
+LANE_EDGES = (-1.8, 1.8)  # m, a 3.6 m lane for a stop bar without lane lines
+LANE_LINE_PROB = 0.5
 
 STOP_SPEED = 1.0  # m/s, planned speed that counts as stopping
 STOP_APPEAR_DISTANCE = (8.0, 50.0)  # m
@@ -49,6 +51,8 @@ class StopPoint:
     # the planned stop comes and goes frame to frame, so it needs to persist before showing and before hiding
     self._planning, self._planning_filter = False, FirstOrderFilter(0.0, 0.3, 1 / gui_app.target_fps)
     self._behind_lead, self._behind_lead_filter = False, FirstOrderFilter(0.0, 0.3, 1 / gui_app.target_fps)
+    # lateral offsets of the bar's edges from the path, at the lane lines
+    self.edges = [FirstOrderFilter(y, 0.2, 1 / gui_app.target_fps, initialized=False) for y in LANE_EDGES]
     self.fade_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
   def update(self, model, model_updated: bool, v_ego: float, lead_distances: list[float]) -> bool:
@@ -183,14 +187,21 @@ class ModelRenderer(BaseModelRenderer):
     visible = available and planning_stop and d_stop < MAX_DRAW_DISTANCE and len(lane) > 0
     self._stop_point.fade_filter.update(opacity if visible else 0.0)
     if visible:
-      self._stop_point.bar = self._get_lead_bar(lane, d_stop, 0.0)
+      # a planned stop spans the lane instead of a car
+      path_y = np.interp(d_stop, lane[:, 0], lane[:, 1])
+      edges = []
+      for f, ll, prob, default in zip(self._stop_point.edges, self._lane_lines[1:3], self._lane_line_probs[1:3], LANE_EDGES, strict=True):
+        line = ll.raw_points
+        y = np.interp(d_stop, line[:, 0], line[:, 1]) - path_y if prob > LANE_LINE_PROB and len(line) else default
+        edges.append(f.update(y))
+      self._stop_point.bar = self._get_lead_bar(lane, d_stop, 0.0, edges)
 
-  def _get_lead_bar(self, lane, d_rel, y_rel):
+  def _get_lead_bar(self, lane, d_rel, y_rel, edges=(-LEAD_BAR_WIDTH / 2, LEAD_BAR_WIDTH / 2)):
     # bar on the road behind the lead, following the lane
     x = np.array([d_rel, d_rel - min(6.0, 0.25 * d_rel)])
     y = np.interp(x, lane[:, 0], lane[:, 1]) - np.interp(d_rel, lane[:, 0], lane[:, 1]) - y_rel
     z = np.interp(x, self._path.raw_points[:, 0], self._path.raw_points[:, 2]) + self._path_offset_z
-    corners = np.vstack((np.column_stack((x, y + LEAD_BAR_WIDTH / 2, z)), np.column_stack((x, y - LEAD_BAR_WIDTH / 2, z))[::-1]))
+    corners = np.vstack((np.column_stack((x, y + edges[0], z)), np.column_stack((x, y + edges[1], z))[::-1]))
     pts = self._car_space_transform @ corners.T
     bar = (pts[:2] / pts[2]).T
 
