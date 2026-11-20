@@ -13,6 +13,7 @@ from openpilot.common.utils import tabulate
 
 from openpilot.common.git import get_commit
 from openpilot.common.hardware import PC
+from openpilot.common.test import kill_leftover_processes
 from openpilot.tools.lib.openpilotci import get_url
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
 from openpilot.selfdrive.test.process_replay.process_replay import get_process_config, replay_process
@@ -234,6 +235,8 @@ def get_frames():
 if __name__ == "__main__":
   update = "--update" in sys.argv or (os.getenv("GIT_BRANCH", "") == 'master')
   replay_dir = os.path.dirname(os.path.abspath(__file__))
+  if not PC:
+    kill_leftover_processes()
 
   # load logs
   lr = list(LogReader(get_url(TEST_ROUTE, SEGMENT, "rlog.zst")))

@@ -9,6 +9,7 @@ from unittest import mock
 from openpilot.common.hardware import HARDWARE, COMMA_HARDWARE
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.system.manager import manager
+from openpilot.system.manager.process import NativeProcess, PythonProcess
 
 
 @contextlib.contextmanager
@@ -19,6 +20,17 @@ def clean_env():
   finally:
     os.environ.clear()
     os.environ.update(starting_env)
+
+
+def kill_leftover_processes():
+  # an interrupted run leaves its processes behind, holding the cameras and slowing the models
+  cmdlines = []
+  for p in manager.managed_processes.values():
+    if isinstance(p, PythonProcess):
+      cmdlines.append(p.module)
+    elif isinstance(p, NativeProcess):
+      cmdlines.append(" ".join(p.cmdline))
+  subprocess.run(["pkill", "-9", "-f", "-x", "|".join(cmdlines)], check=False)
 
 
 class OpenpilotTestCase(unittest.TestCase):
@@ -82,6 +94,8 @@ class OpenpilotTestCase(unittest.TestCase):
     super().setUpClass()
     if cls.COMMA_HARDWARE_TEST and not COMMA_HARDWARE:
       raise unittest.SkipTest("Skipping comma hardware test on PC")
+    if cls.COMMA_HARDWARE_TEST:
+      kill_leftover_processes()
     cls._class_env = clean_env()
     cls._class_env.__enter__()
     setup_class = getattr(cls, "setup_class", None)
