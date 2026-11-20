@@ -52,7 +52,6 @@ T_IDXS_LST = [index_function(idx, max_val=MAX_T, max_idx=N) for idx in range(N+1
 
 T_IDXS = np.array(T_IDXS_LST)
 FCW_IDXS = T_IDXS < 5.0
-T_DIFFS = np.diff(T_IDXS, prepend=[0.])
 COMFORT_BRAKE = 2.5
 STOP_DISTANCE = 6.0
 MIN_X_LEAD_FACTOR = 0.5
@@ -276,43 +275,29 @@ class LongitudinalMpc:
       for i in range(N+1):
         self.solver.set(i, 'x', self.x0)
 
-  @staticmethod
-  def extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau):
-    a_lead_traj = a_lead * np.exp(-a_lead_tau * (T_IDXS**2)/2.)
-    v_lead_traj = np.clip(v_lead + np.cumsum(T_DIFFS * a_lead_traj), 0.0, 1e8)
-    x_lead_traj = x_lead + np.cumsum(T_DIFFS * v_lead_traj)
-    return x_lead_traj, v_lead_traj
+  def no_lead_trajectory(self):
+    v = self.x0[1] + 10.0
+    return np.column_stack((50.0 + T_IDXS * v, np.full_like(T_IDXS, v)))
 
   def process_lead(self, model_lead, radar_lead):
+    if not radar_lead.present or radar_lead.modelProb <= 0.5:
+      return self.no_lead_trajectory()
+
     v_ego = self.x0[1]
-    if radar_lead.present:
-      x_lead = radar_lead.dRel
-      v_lead = radar_lead.vLead
-      a_lead = radar_lead.aLeadK
-      a_lead_tau = radar_lead.aLeadTau
-      use_model_traj = radar_lead.modelProb > 0.5
-    else:
-      # Fake a fast lead car, so mpc can keep running in the same mode
-      x_lead = 50.0
-      v_lead = v_ego + 10.0
-      a_lead = 0.0
-      a_lead_tau = 0.0
-      use_model_traj = False
+    x_lead = radar_lead.dRel
+    v_lead = radar_lead.vLead
 
     # MPC will not converge if immediate crash is expected
     # Clip lead distance to what is still possible to brake for
     min_x_lead = MIN_X_LEAD_FACTOR * (v_ego + v_lead) * (v_ego - v_lead) / (-ACCEL_MIN * 2)
     x_start = np.clip(x_lead, min_x_lead, 1e8)
 
-    if use_model_traj:
-      # Anchor the model's predicted deltas at the radar measurement.
-      x_traj = x_lead + (np.asarray(model_lead.x, dtype=np.float64) - model_lead.x[0])
-      v_traj = v_lead + (np.asarray(model_lead.v, dtype=np.float64) - model_lead.v[0])
-      x_traj[0] = x_start
-      x_mpc = np.interp(T_IDXS, LEAD_T_IDXS_MODEL, x_traj)
-      v_mpc = np.interp(T_IDXS, LEAD_T_IDXS_MODEL, np.clip(v_traj, 0.0, 1e8))
-    else:
-      x_mpc, v_mpc = self.extrapolate_lead(x_start, np.clip(v_lead, 0.0, 1e8), np.clip(a_lead, -10., 5.), a_lead_tau)
+    # Anchor the model's predicted deltas at the radar measurement.
+    x_traj = x_lead + (np.asarray(model_lead.x, dtype=np.float64) - model_lead.x[0])
+    v_traj = v_lead + (np.asarray(model_lead.v, dtype=np.float64) - model_lead.v[0])
+    x_traj[0] = x_start
+    x_mpc = np.interp(T_IDXS, LEAD_T_IDXS_MODEL, x_traj)
+    v_mpc = np.interp(T_IDXS, LEAD_T_IDXS_MODEL, np.clip(v_traj, 0.0, 1e8))
 
     return np.column_stack((np.maximum.accumulate(x_mpc), v_mpc))
 
@@ -330,6 +315,10 @@ class LongitudinalMpc:
     lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1])
 
     x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle])
+    probs = [radarstate.leadOne.modelProb, model_leads[1].prob, model_leads[2].prob]
+    masked = np.interp(T_IDXS, ModelConstants.LEAD_T_OFFSETS, probs) < 0.5
+    no_lead = self.no_lead_trajectory()[masked]
+    x_obstacles[masked] = (no_lead[:,0] + get_stopped_equivalence_factor(no_lead[:,1]))[:, None]
     self.source = MPC_SOURCES[np.argmin(x_obstacles[0])]
 
     self.yref[:,:] = 0.0

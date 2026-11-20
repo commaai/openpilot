@@ -20,9 +20,6 @@ _LEAD_ACCEL_TAU = 1.5
 # radar tracks
 SPEED, ACCEL = 0, 1     # Kalman filter states enum
 
-# stationary qualification parameters
-V_EGO_STATIONARY = 4.   # no stationary object flag below this speed
-
 RADAR_TO_CAMERA = 1.52  # RADAR is ~ 1.5m ahead from center of mesh frame
 
 
@@ -80,7 +77,7 @@ class Track:
 
     self.cnt += 1
 
-  def get_RadarState(self, model_prob: float = 0.0):
+  def get_RadarState(self, model_prob: float):
     return {
       "dRel": float(self.dRel),
       "yRel": float(self.yRel),
@@ -94,11 +91,6 @@ class Track:
       "radar": True,
       "radarTrackId": self.identifier,
     }
-
-  def potential_low_speed_lead(self, v_ego: float):
-    # stop for stuff in front of you and low speed, even without model confirmation
-    # Radar points closer than 0.75, are almost always glitches on toyota radars
-    return abs(self.yRel) < 1.0 and (v_ego < V_EGO_STATIONARY) and (0.75 < self.dRel < 25)
 
   def __str__(self):
     ret = f"x: {self.dRel:4.1f}  y: {self.yRel:4.1f}  v: {self.vRel:4.1f}  a: {self.aLeadK:4.1f}"
@@ -151,29 +143,15 @@ def get_RadarState_from_vision(lead_msg: capnp._DynamicStructReader, v_ego: floa
 
 
 def get_lead(v_ego: float, ready: bool, tracks: dict[int, Track], lead_msg: capnp._DynamicStructReader,
-             model_v_ego: float, lead_prob: float, low_speed_override: bool = True) -> dict[str, Any]:
-  # Determine leads, this is where the essential logic happens
-  if len(tracks) > 0 and ready and lead_prob > .5:
+             model_v_ego: float, lead_prob: float) -> dict[str, Any]:
+  if not (ready and lead_prob > .5):
+    return {'present': False}
+
+  if tracks:
     track = match_vision_to_track(v_ego, lead_msg, tracks)
-  else:
-    track = None
-
-  lead_dict = {'present': False}
-  if track is not None:
-    lead_dict = track.get_RadarState(lead_prob)
-  elif (track is None) and ready and (lead_prob > .5):
-    lead_dict = get_RadarState_from_vision(lead_msg, v_ego, model_v_ego, lead_prob)
-
-  if low_speed_override:
-    low_speed_tracks = [c for c in tracks.values() if c.potential_low_speed_lead(v_ego)]
-    if len(low_speed_tracks) > 0:
-      closest_track = min(low_speed_tracks, key=lambda c: c.dRel)
-
-      # Only choose new track if it is actually closer than the previous one
-      if (not lead_dict['present']) or (closest_track.dRel < lead_dict['dRel']):
-        lead_dict = closest_track.get_RadarState()
-
-  return lead_dict
+    if track is not None:
+      return track.get_RadarState(lead_prob)
+  return get_RadarState_from_vision(lead_msg, v_ego, model_v_ego, lead_prob)
 
 
 class RadarD:
@@ -238,8 +216,8 @@ class RadarD:
         else:
           self.lead_prob_filters[i].update(lead_prob)
 
-      self.radar_state.leadOne = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[0], model_v_ego, self.lead_prob_filters[0].x, low_speed_override=True)
-      self.radar_state.leadTwo = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[1], model_v_ego, self.lead_prob_filters[1].x, low_speed_override=False)
+      self.radar_state.leadOne = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[0], model_v_ego, self.lead_prob_filters[0].x)
+      self.radar_state.leadTwo = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[1], model_v_ego, self.lead_prob_filters[1].x)
 
   def publish(self, pm: messaging.PubMaster):
     assert self.radar_state is not None

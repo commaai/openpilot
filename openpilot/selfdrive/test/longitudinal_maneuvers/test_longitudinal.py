@@ -94,15 +94,13 @@ def create_maneuvers(kwargs):
       **kwargs,
     ),
     Maneuver(
-      "stay stopped behind radar override lead",
+      "stationary model-confirmed lead at low speed",
       duration=20.,
       initial_speed=0.,
       lead_relevancy=True,
       initial_distance_lead=10.,
       speed_lead_values=[0., 0.],
-      prob_lead_values=[0., 0.],
       breakpoints=[1., 11.],
-      only_radar=True,
       **kwargs,
     ),
     Maneuver(
