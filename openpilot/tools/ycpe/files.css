@@ -1,0 +1,30 @@
+/* files.js: the Files panel over the playbar. A lane per kind (name, cells, totals, buttons), then one segment's files */
+.popover.files-panel { width: min(760px, calc(100vw - 16px)); max-height: 80vh; font-size: 12px; }
+.fl .panel-head { align-items: center; }
+.fl .panel-head > b { flex: 0 0 auto; }
+.fl .panel-head > .muted { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fl-source { height: 22px; min-width: 0; max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); color: var(--fg); }
+.fl-notes > * { margin: 4px 0; }
+.fl .notice { display: flex; align-items: center; gap: 6px; padding: 4px 8px; border: 1px solid var(--alert); border-radius: 5px; }
+.fl .notice svg { color: var(--alert); flex-shrink: 0; }
+.fl-lanes { display: grid; grid-template-columns: max-content 1fr 13em max-content; align-items: center; gap: 3px 8px; }
+.fl-scope { display: flex; align-items: center; justify-content: space-between; min-height: 24px; }
+.fl-lane { display: block; width: 100%; height: 10px; cursor: pointer; }
+.fl-kind { font-weight: 600; }
+.fl-total { font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fl-acts { display: flex; min-width: 44px; }
+.fl .icon-btn:disabled { opacity: .35; cursor: default; }
+.fl-seg { padding: 6px 0; border-top: 1px solid var(--line); }
+.fl-seg-head { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; font-variant-numeric: tabular-nums; }
+.fl-cells { display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px 8px; }
+.fl-cells > span { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; white-space: nowrap; }
+.fl-cells .button { display: inline-flex; align-items: center; gap: 2px; }
+.fl-dl { display: inline-flex; align-items: center; gap: 2px; text-decoration: none; font-variant-numeric: tabular-nums; }
+.fl-queue { padding-top: 4px; border-top: 1px solid var(--line); }
+.fl-queue summary { color: var(--muted); cursor: pointer; }
+.fl-queue progress { width: 120px; height: 6px; vertical-align: middle; }
+@media (max-width: 760px) {
+  .fl-lanes { grid-template-columns: max-content 1fr max-content; }
+  .fl-total { display: none; }
+  .fl-cells { grid-template-columns: repeat(3, 1fr); }
+}

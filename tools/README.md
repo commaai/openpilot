@@ -60,5 +60,6 @@ Development tools such as cabana, plotjuggler, and replay live in [openpilot/too
 ├── lib/                # Libraries to support the tools and reading openpilot logs
 ├── plotjuggler/        # A tool to plot openpilot logs
 ├── replay/             # Replay drives and mock openpilot services
-└── sim/                # Run openpilot in a simulator
+├── sim/                # Run openpilot in a simulator
+└── ycpe/               # Web tool for drives, logs, CAN and video, live or recorded
 ```

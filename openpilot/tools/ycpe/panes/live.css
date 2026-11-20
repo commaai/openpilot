@@ -1,0 +1,28 @@
+/* a live camera's controls (panes/live.js), over the picture in the camera pane's fixed dark colors: the connection top
+   right as in connect's stream view, quality and screenshot bottom right; shown once there's a picture */
+.camera-pane .live-video { display: contents; }
+.camera-pane .live-video:not(.on) :is(.live-bar, .live-controls) { display: none; }
+.camera-pane .live-bar { position: absolute; right: 6px; top: 6px; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.camera-pane .live-controls { position: absolute; right: 6px; bottom: 6px; display: flex; gap: 4px; }
+.camera-pane :is(.live-status, .live-quality, .live-shot) { height: 22px; border: 1px solid var(--line); border-radius: 11px; background: var(--raised); color: var(--fg); opacity: .85; cursor: pointer; }
+.camera-pane :is(.live-status, .live-quality, .live-shot):hover { opacity: 1; }
+.camera-pane .live-status { display: flex; align-items: center; gap: 6px; padding: 0 8px; font-variant-numeric: tabular-nums; }
+/* connect's colors for a good and a poor connection */
+.camera-pane .live-status i { width: 8px; height: 8px; border-radius: 50%; background: #22c967; }
+.camera-pane .live-status i.poor { background: #f5c542; }
+.camera-pane .live-quality { align-items: center; padding: 0 8px; }
+.camera-pane .live-quality .muted { color: var(--muted); }
+.camera-pane .live-shot { display: flex; align-items: center; padding: 0 8px; }
+.camera-pane .live-stats { display: grid; grid-template-columns: auto auto; gap: 1px 12px; margin: 0; padding: 5px 9px; border-radius: 6px; background: var(--raised); font: 11px var(--mono); }
+.camera-pane .live-stats[hidden] { display: none; }
+.camera-pane .live-stats dt { color: var(--muted); }
+.camera-pane .live-stats dd { margin: 0; text-align: right; }
+/* phones: targets a finger can hit */
+@media (pointer: coarse) {
+  .camera-pane :is(.live-status, .live-quality, .live-shot) { height: 32px; border-radius: 16px; }
+}
+@container (max-height: 160px) or (max-width: 300px) {
+  .camera-pane .live-bar { right: 3px; top: 3px; }
+  .camera-pane .live-controls { right: 3px; bottom: 3px; }
+  .camera-pane :is(.live-status, .live-quality, .live-shot) { height: 18px; font-size: 10px; }
+}

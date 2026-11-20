@@ -1,0 +1,11 @@
+{
+  "rules": {
+    "no-unused-vars": ["warn", {"ignoreRestSiblings": true}],
+    "no-unused-expressions": ["warn", {"allowShortCircuit": true, "allowTernary": true}],
+    "no-cond-assign": "off",
+    "no-control-regex": "off",
+    "unicorn/no-new-array": "off",
+    "unicorn/no-useless-spread": "off",
+    "unicorn/no-invalid-fetch-options": "off"
+  }
+}
