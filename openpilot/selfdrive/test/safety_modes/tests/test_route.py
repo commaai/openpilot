@@ -1,5 +1,5 @@
 from openpilot.common.test import OpenpilotTestCase
-from openpilot.selfdrive.test.safety_modes.route import ENGAGED, LEAD, bin_frames, car_mode_samples, find_edge
+from openpilot.selfdrive.test.safety_modes.route import ENGAGED, LEAD, bin_frames, car_mode_samples, count_disengages, find_edge
 from openpilot.selfdrive.test.safety_modes.tests.helpers import can, msg, panda
 
 
@@ -38,6 +38,12 @@ class TestWindow(OpenpilotTestCase):
 
   def test_needs_hold(self):
     assert find_edge(samples((0., False), (20., True), (20. + ENGAGED - 1, False)), 60.) is None
+
+  def test_disengages(self):
+    # only the falls after the edge
+    s = samples((0., True), (5., False), (20., True), (30., False), (35., True), (40., False))
+    assert count_disengages(s, 20.) == 2
+    assert count_disengages(s, 35.) == 1
 
 
 class TestFrames:

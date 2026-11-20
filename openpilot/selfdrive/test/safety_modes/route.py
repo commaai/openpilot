@@ -1,4 +1,4 @@
-# a test route's window the UP plays: its first engagement after the route's panda was in the car's safety mode
+# a test route's window the UP plays: its first engagement after the route's panda was in the car's safety mode, to the segment's end
 import hashlib
 import os
 import pickle
@@ -15,7 +15,8 @@ from opendbc.car.vin import VIN_UNKNOWN
 from openpilot.tools.lib.logreader import LogReader
 
 DT = 0.01
-# seconds of CAN before the panda's controls_allowed edge, the panda is in the car's safety mode up to ~8 s after the first CAN, and after it
+# seconds of CAN before the panda's controls_allowed edge, the panda is in the car's safety mode up to ~8 s after the first CAN,
+# and seconds it holds controls_allowed after it
 LEAD = 10.
 ENGAGED = 3.
 BUSES = 3
@@ -34,6 +35,8 @@ class Window:
   # segment seconds from its first CAN
   start: float
   frames: list[Frame]
+  # the route's panda disallowing controls after the edge, each one the DUT must follow too
+  disengages: int
   # the route's carParams for CarParamsCache, None when card wouldn't take its firmware
   cache: bytes | None
   # card can't tell the car from the route's firmware, it's given
@@ -82,6 +85,10 @@ def find_edge(samples: list[tuple[float, bool]], can_end: float, cruise_on: Sequ
   return None
 
 
+def count_disengages(samples: list[tuple[float, bool]], edge: float) -> int:
+  return sum(before and not allowed and t > edge for (_, before), (t, allowed) in zip(samples, samples[1:], strict=False))
+
+
 def bin_frames(msgs, start: float, seconds: float) -> list[Frame]:
   frames: list[Frame] = [[] for _ in range(round(seconds / DT))]
   for m in msgs:
@@ -93,9 +100,9 @@ def bin_frames(msgs, start: float, seconds: float) -> list[Frame]:
   return frames
 
 
-def make_window(route: CarTestRoute, segment: int, start: float, frames: list[Frame], logged_bytes: bytes | None) -> Window | None:
+def make_window(route: CarTestRoute, segment: int, start: float, frames: list[Frame], disengages: int, logged_bytes: bytes | None) -> Window | None:
   if logged_bytes is None:
-    return Window(segment, start, frames, None, True, False)
+    return Window(segment, start, frames, disengages, None, True, False)
   with car.CarParams.from_bytes(logged_bytes) as logged:
     has_fw = len(logged.carFw) > 0 and logged.carVin != VIN_UNKNOWN
     given = not has_fw or match_fw_to_car(logged.carFw, logged.carVin, log=False)[1] != {route.car_model}
@@ -108,10 +115,10 @@ def make_window(route: CarTestRoute, segment: int, start: float, frames: list[Fr
     CP = interfaces[route.car_model].get_params(route.car_model, fingerprint, car_fw, logged.openpilotLongitudinalControl, False, docs=False)
     if CP.openpilotLongitudinalControl != logged.openpilotLongitudinalControl:
       return None
-    return Window(segment, start, frames, logged_bytes if has_fw else None, given, logged.openpilotLongitudinalControl)
+    return Window(segment, start, frames, disengages, logged_bytes if has_fw else None, given, logged.openpilotLongitudinalControl)
 
 
-def parse_window(route: CarTestRoute) -> tuple[int, float, list[Frame], bytes | None] | None:
+def parse_window(route: CarTestRoute) -> tuple[int, float, list[Frame], int, bytes | None] | None:
   # in the segments test_models uses
   for segment in [route.segment] if route.segment is not None else [2, 1, 0]:
     try:
@@ -126,7 +133,7 @@ def parse_window(route: CarTestRoute) -> tuple[int, float, list[Frame], bytes | 
     if edge is not None:
       start = edge - LEAD
       logged_bytes = None if logged is None else logged.as_builder().to_bytes()
-      return segment, start - can[0], bin_frames(msgs, start, LEAD + ENGAGED), logged_bytes
+      return segment, start - can[0], bin_frames(msgs, start, can[-1] - start), count_disengages(samples, edge), logged_bytes
   return None
 
 

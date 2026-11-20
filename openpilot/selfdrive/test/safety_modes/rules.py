@@ -5,6 +5,8 @@ ENGAGE_LIMIT = 2.
 BLOCKED = 192
 # once the car's CAN stops, the panda flags its rx checks lagging after 1 s, checked at 1 Hz, and drops controls_allowed
 CAN_LOSS_DROP = (1., 2.5)
+# seconds around openpilot's disengagement the frame openpilot sent before it saw it reaches the panda
+IN_FLIGHT = 0.1
 
 Check = tuple[bool, str]
 
@@ -44,18 +46,29 @@ def none_blocked(msgs) -> Check:
   engaged = _first_engaged(msgs)
   if engaged is None:
     return True, "never engaged, no TX checked"
-  # while the panda reports controls allowed and the car's CAN runs. once it disallows, what openpilot already sent is rightly blocked
+  # while the car's CAN runs. when the car disengages the panda sees it on its CAN before openpilot does, the one frame of
+  # each message openpilot already sent is rightly blocked. a second is openpilot actuating after it should have seen it
   last = max((_t(msgs, m) for m in _of(msgs, 'can') if any(c.src < 3 for c in m.can)), default=0.)
-  allowed = [(_t(msgs, m), m.pandaStates[0].controlsAllowed) for m in _of(msgs, 'pandaStates') if _t(msgs, m) >= engaged]
-  for (t, a), (_, a_next) in zip(allowed, allowed[1:], strict=False):
-    if a and not a_next:
-      last = min(last, t)
-      break
-  blocked = [(_t(msgs, m), c) for m in _of(msgs, 'can') if engaged <= _t(msgs, m) <= last for c in m.can if c.src >= BLOCKED]
+  states = [(_t(msgs, m), m.selfdriveState.enabled) for m in _of(msgs, 'selfdriveState')]
+  disengages = [t for (_, before), (t, enabled) in zip(states, states[1:], strict=False) if before and not enabled and t > engaged]
+  in_flight: set[tuple[float, int, int]] = set()
+  blocked = []
+  for m in _of(msgs, 'can'):
+    t = _t(msgs, m)
+    if not engaged <= t <= last:
+      continue
+    for c in m.can:
+      if c.src < BLOCKED:
+        continue
+      d = next((d for d in disengages if abs(t - d) <= IN_FLIGHT), None)
+      if d is not None and (d, c.address, c.src) not in in_flight:
+        in_flight.add((d, c.address, c.src))
+      else:
+        blocked.append((t, c))
   if blocked:
     t, c = blocked[0]
-    return False, f"{len(blocked)} TX frames blocked while engaged, first {c.address:#x} bus {c.src - BLOCKED} at t={t:.2f}, data {bytes(c.dat).hex()}"
-  return True, "no TX frames blocked while engaged"
+    return False, f"{len(blocked)} TX frames blocked, first {c.address:#x} bus {c.src - BLOCKED} at t={t:.2f}, data {bytes(c.dat).hex()}"
+  return True, f"no TX frames blocked, {len(in_flight)} in flight at {len(disengages)} disengagements"
 
 
 def no_new_faults(msgs) -> Check:

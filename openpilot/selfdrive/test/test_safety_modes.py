@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# one test route per safety mode and param on a DUT in an ultimate provisioning (UP) station, the UP plays its engagement's CAN raw.
+# one test route per safety mode and param on a DUT in an ultimate provisioning (UP) station, the UP plays its engagement's CAN raw to the segment's end.
 # ALFRED_SHARD/ALFRED_SHARDS drive every Nth safety mode, SCENARIOS=TOYOTA_COROLLA_TSS2,HONDA_CIVIC only those car models or routes
 import multiprocessing
 import os
@@ -143,8 +143,14 @@ def safety_groups(selected: list[str]) -> dict[tuple[str, int], list[CarTestRout
   return dict(sorted(groups.items()))
 
 
-def first_window(group: list[CarTestRoute]) -> tuple[CarTestRoute | None, Window | None]:
-  return next(((r, w) for r in group if (w := find_window(r)) is not None), (None, None))
+def best_window(group: list[CarTestRoute]) -> tuple[CarTestRoute | None, Window | None]:
+  # the route whose window disengages most, ties go to the first
+  best: tuple[CarTestRoute | None, Window | None] = (None, None)
+  for route in group:
+    window = find_window(route)
+    if window is not None and (best[1] is None or window.disengages > best[1].disengages):
+      best = (route, window)
+  return best
 
 
 def first(msgs, service: str, since: float) -> str:
@@ -173,7 +179,7 @@ def run(up, route: CarTestRoute, window: Window) -> tuple[str, list[str]]:
   except Exception as e:
     status, lines = "failed", [repr(e)]
   given = ", fingerprint given, the route's firmware doesn't identify the car" if window.given else ""
-  lines.insert(0, f"route {route.route} segment {window.segment}, engage edge at {window.start + LEAD:.1f} s{given}")
+  lines.insert(0, f"route {route.route} segment {window.segment}, engage edge at {window.start + LEAD:.1f} s, {window.disengages} disengagements{given}")
   lines.insert(1, timing(times, msgs))
   return status, lines
 
@@ -188,7 +194,7 @@ def main() -> None:
   start = time.monotonic()
   # parsing a route's logs takes seconds, all windows the cache doesn't have load in parallel before the first drive
   with ProcessPoolExecutor(4, mp_context=multiprocessing.get_context("spawn")) as pool:
-    windows = list(pool.map(first_window, [group for _, group in groups]))
+    windows = list(pool.map(best_window, [group for _, group in groups]))
   print(f"windows of {len(groups)} safety modes loaded in {time.monotonic() - start:.0f} s", flush=True)
 
   up = UP.remote()

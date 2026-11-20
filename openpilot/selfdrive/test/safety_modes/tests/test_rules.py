@@ -45,14 +45,17 @@ class TestRules(OpenpilotTestCase):
     # after the car's CAN stops the panda drops controls and blocks what openpilot still sends
     assert none_blocked(drive() + [can(14., [(0x2e4, 192)])])[0]
 
-  def test_blocked_after_disallowed(self):
-    # the car disengages at t=8, what openpilot sent before it saw that is blocked
-    msgs = [m for m in drive() if not (m.which() == 'pandaStates' and 8. <= m.logMonoTime * 1e-9 < 9.)]
-    msgs += [panda(t / 10, False) for t in range(80, 90)]
-    def blocked(t):
-      return none_blocked(sorted(msgs + [can(t, [(0x2e4, 192)])], key=lambda m: m.logMonoTime))[0]
-    assert blocked(8.05)
-    assert not blocked(7.85)
+  def test_blocked_at_disengage(self):
+    # the car disengages at t=8, the frame of each message openpilot sent before it saw that is blocked
+    def blocked(*frames):
+      return none_blocked(drive(disengage_at=8.) + [can(t, [(addr, 192)]) for t, addr in frames])[0]
+    assert blocked((8.01, 0x2e4))
+    assert blocked((7.95, 0x2e4), (8.01, 0x343))
+    # a second frame is openpilot actuating from what it saw before
+    assert not blocked((8.01, 0x2e4), (8.02, 0x2e4))
+    assert not blocked((7.5, 0x2e4))
+    # without openpilot disengaging nothing is excused
+    assert not none_blocked(drive() + [can(8.01, [(0x2e4, 192)])])[0]
 
   def test_faults(self):
     msgs = sorted(drive(), key=lambda m: m.logMonoTime)
