@@ -1,0 +1,3993 @@
+VERSION ""
+
+
+NS_ : 
+	NS_DESC_
+	CM_
+	BA_DEF_
+	BA_
+	VAL_
+	CAT_DEF_
+	CAT_
+	FILTER
+	BA_DEF_DEF_
+	EV_DATA_
+	ENVVAR_DATA_
+	SGTYPE_
+	SGTYPE_VAL_
+	BA_DEF_SGTYPE_
+	BA_SGTYPE_
+	SIG_TYPE_REF_
+	VAL_TABLE_
+	SIG_GROUP_
+	SIG_VALTYPE_
+	SIGTYPE_VALTYPE_
+	BO_TX_BU_
+	BA_DEF_REL_
+	BA_REL_
+	BA_DEF_DEF_REL_
+	BU_SG_REL_
+	BU_EV_REL_
+	BU_BO_REL_
+	SG_MUL_VAL_
+
+BS_:
+
+BU_: XXX
+
+
+BO_ 2152177664 OTA_Electric_Pwr_Readiness_LS: 1 XXX
+ SG_ RmtRflshElecPwrRdness : 7|8@0+ (0.025,0) [0|6.375] "AmpHour"  XXX
+
+BO_ 2152013824 Smart_High_Beam_Cust_LS: 1 XXX
+ SG_ SmrtHgBmAstCstSetAvail : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SmrtHgBmAstCstCurrSetVal : 7|3@0+ (1,0) [0|7] ""  XXX
+
+BO_ 2159255552 ODI_CenterStack_2_BCM_LS: 8 XXX
+ SG_ ODI_CntrStck2BCM : 7|64@0+ (1,0) [0|1.84467440737096E+019] ""  XXX
+
+BO_ 2159247360 ODI_BCM_2_CenterStack_LS: 8 XXX
+ SG_ ODI_BCM2CntrStck : 7|64@0+ (1,0) [0|1.84467440737096E+019] ""  XXX
+
+BO_ 2152046592 Remote_Climate_Control_Req_LS: 5 XXX
+ SG_ RmClmCtrlHMIActIndReq : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RmClmCtrlRcrcSetReq : 3|3@0+ (1,0) [0|7] ""  XXX
+ SG_ RmClmCtrlACSetReq : 10|3@0+ (1,0) [0|7] ""  XXX
+ SG_ RmClmCtrlFrntFanStReq : 15|5@0+ (1,0) [0|31] ""  XXX
+ SG_ RmClmCtrlFLAirDtStReq : 19|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RmClmCtrlClmModSetReq : 23|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RmClmCtrlLtSTempStReq : 29|6@0+ (1,0) [0|63] ""  XXX
+ SG_ RmClmCtrlRrDfgSetReq : 31|2@0+ (1,0) [0|3] ""  XXX
+ SG_ RmClmCtrlRtSTempStReq : 37|6@0+ (1,0) [0|63] ""  XXX
+ SG_ RmClmCtrlSyncSetReq : 39|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2152030208 Tuner_Frequency_Request_LS: 8 XXX
+ SG_ TnrFrqBndReq : 3|4@0+ (1,0) [0|15] ""  XXX
+ SG_ TnrFrqChnlReq : 15|56@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2150531072 Regen_Power_Ind_LS: 4 XXX
+ SG_ RegPwrLmtdDspPrcnt : 0|9@0- (0.392157,0) [-100.392192|100.000035] "%"  XXX
+ SG_ RegPwrLmtdDspPrcntVs : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RegPwrLmtdIO : 2|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2151833600 Heated_Wndshild_CstmrIhbt_Req_LS: 1 XXX
+ SG_ HtdFrntWSCustRqIhbt : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HtdFrntWSDispReq : 7|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2151817216 Heated_Wndshild_Cstmr_Req_LS: 1 XXX
+ SG_ HtdFrntWSCustRq : 7|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2151849984 Seat_Level_Setting_Request_LS: 2 XXX
+ SG_ AutoThrmlStPasLvlStRq : 2|3@0+ (1,0) [0|7] ""  XXX
+ SG_ AutoThrmlStDrvLvStRq : 5|3@0+ (1,0) [0|7] ""  XXX
+ SG_ AutoThrmlStPassMdStRq : 7|2@0+ (1,0) [0|3] ""  XXX
+ SG_ AutoThrmlStDrvMdStRq : 15|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2153897984 ARB_OpMode_Customization_LS: 1 XXX
+ SG_ RunBrdExtdFtrAvail : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RunBrdOpMdCstCurrStVal : 6|3@0+ (1,0) [0|7] ""  XXX
+ SG_ RunBrdOpMdCstStAvail : 7|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2151702528 Lane_Keeping_Assist_LS: 2 XXX
+ SG_ LnKpngAstRecfblIndRq : 2|3@0+ (1,0) [0|7] ""  XXX
+ SG_ LnMrkngIndLft : 4|2@0+ (1,0) [0|3] ""  XXX
+ SG_ LnKepAsstStIndLft : 7|3@0+ (1,0) [0|7] ""  XXX
+ SG_ LnMrkngIndRgt : 12|2@0+ (1,0) [0|3] ""  XXX
+ SG_ LnKepAsstStIndRgt : 15|3@0+ (1,0) [0|7] ""  XXX
+
+BO_ 2156986368 PassPhrase_3_AMM_LS: 8 XXX
+ SG_ WiFiPssPhrsDgts17to24_Mp : 7|64@0+ (1,0) [0|0] ""  XXX
+
+BO_ 2156978176 PassPhrase_2_AMM_LS: 8 XXX
+ SG_ WiFiPssPhrsDgts9to16_Mp : 7|64@0+ (1,0) [0|0] ""  XXX
+
+BO_ 2156969984 PassPhrase_1_AMM_LS: 8 XXX
+ SG_ WiFiPssPhrsDgts1to8_Mp : 7|64@0+ (1,0) [0|0] ""  XXX
+
+BO_ 2150236160 Unlock_Key_Store_Crypt_2_LS: 8 XXX
+ SG_ UlckKyStrCrptoDt2Group : 4|61@0+ (1,0) [0|0] ""  XXX
+ SG_ UlckKyStrCrptoDt2 : 3|60@0+ (1,0) [0|1.15292150460685E+018] ""  XXX
+ SG_ UlckKyStrCrptoDt2M : 4|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2150170624 Unlock_Key_Store_Crypt_1_LS: 8 XXX
+ SG_ UlckKyStrCrptoDt1Group : 4|61@0+ (1,0) [0|0] ""  XXX
+ SG_ UlckKyStrCrptoDt1 : 3|60@0+ (1,0) [0|1.15292150460685E+018] ""  XXX
+ SG_ UlckKyStrCrptoDt1M : 4|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2155126784 Drvr_Seat_Rearward_Movmnt_LS: 1 XXX
+ SG_ DrvrSetRrwrdMvmnt : 7|3@0+ (1,0) [0|7] ""  XXX
+
+BO_ 2154725376 Auxiliary_Heater_LS: 1 XXX
+ SG_ AuxHtrAtv378 : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AuxHtrRq : 7|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2157051904 WiFi_Station_AMM_LS: 5 XXX
+ SG_ WiFiStatnMpReq : 1|34@0+ (1,0) [0|0] ""  XXX
+ SG_ WSMR_WiFiAssnReq : 1|2@0+ (1,0) [0|3] ""  XXX
+ SG_ WSMR_WiFiStnMpMACAddr : 15|32@0+ (1,0) [0|4294967295] ""  XXX
+
+BO_ 2156994560 WiFi_AP_Data_AMM_LS: 2 XXX
+ SG_ WiFiAccsPntData_Mp : 0|9@0+ (1,0) [0|0] ""  XXX
+ SG_ WAPDM_WiFiEnStat : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ WAPDM_EncrptnType : 11|4@0+ (1,0) [0|15] ""  XXX
+ SG_ WAPDM_SecurityType : 15|4@0+ (1,0) [0|15] ""  XXX
+
+BO_ 2158133248 Hill_Top_Customization_LS: 6 XXX
+ SG_ HTRCsStAvail : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HTRCsAvail : 7|7@0+ (1,0) [0|0] ""  XXX
+ SG_ HTRCA_Res3Avail : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HTRCA_Res2Avail : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HTRCA_Res1Avail : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HTRCA_OnAwAvail : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HTRCA_OnHmAvail : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HTRCA_OnAvail : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HTRCA_OffAvail : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HTRCsCrStVal : 10|3@0+ (1,0) [0|7] ""  XXX
+ SG_ HVDpltnMdMxCnfdcRgExt : 21|14@0+ (0.1,0) [0|1638.3] "km"  XXX
+ SG_ HVDpltnMdMiCnfdcRgExt : 37|14@0+ (0.1,0) [0|1638.3] "km"  XXX
+
+BO_ 2154651648 Telematics_Audio_Control_LS: 1 XXX
+ SG_ TeleAudCtl : 7|8@0+ (1,0) [0|0] ""  XXX
+ SG_ TAC_AudConctOutcm : 3|4@0+ (1,0) [0|15] ""  XXX
+ SG_ TAC_AudChConctStat : 7|4@0+ (1,0) [0|15] ""  XXX
+
+BO_ 2154635264 Telematics_Audio_Request_LS: 1 XXX
+ SG_ TeleAudReq : 7|8@0+ (1,0) [0|0] ""  XXX
+ SG_ TAR_AudSrcStat : 3|4@0+ (1,0) [0|15] ""  XXX
+ SG_ TAR_AudConctReq : 7|4@0+ (1,0) [0|15] ""  XXX
+
+BO_ 2152529920 LVM_Audio_Video_Command_LS: 2 XXX
+ SG_ LowVolModAudVidCmd : 5|14@0+ (1,0) [0|0] ""  XXX
+ SG_ LVMAVC_StreoAudRsp : 0|2@0+ (1,0) [0|3] ""  XXX
+ SG_ LVMAVC_PrmtAudRsp : 2|2@0+ (1,0) [0|3] ""  XXX
+ SG_ LVMAVC_RemtEnbl : 5|3@0+ (1,0) [0|7] ""  XXX
+ SG_ LVMAVC_SpchRcgnAval : 9|2@0+ (1,0) [0|3] ""  XXX
+ SG_ LVMAVC_RemSpchRcgnActn : 11|2@0+ (1,0) [0|3] ""  XXX
+ SG_ LVMAVC_RemSpchRcgnID : 14|3@0+ (1,0) [0|7] ""  XXX
+
+BO_ 2152513536 LVM_Audio_Video_Req_LS: 2 XXX
+ SG_ LowVolModAudVidReq : 0|9@0+ (1,0) [0|0] ""  XXX
+ SG_ LVMAVR_DispReq : 0|3@0+ (1,0) [0|7] ""  XXX
+ SG_ LVMAVR_SpchRcgnAct : 9|2@0+ (1,0) [0|3] ""  XXX
+ SG_ LVMAVR_PrmtAudReq : 11|2@0+ (1,0) [0|3] ""  XXX
+ SG_ LVMAVR_StreoAudReq : 13|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2154889216 Cluster_HMI_Animation_Req_LS: 1 XXX
+ SG_ ClstrHMIAnmReq : 7|3@0+ (1,0) [0|7] ""  XXX
+
+BO_ 2154872832 Infotainment_Activation_Req_LS: 1 XXX
+ SG_ RmRflshUpdtAvail : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ InfoActvnReq : 7|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2156961792 SSID_AMM_3_LS: 8 XXX
+ SG_ WiFiSSIDDgts17to24_Mp : 7|64@0+ (1,0) [0|0] ""  XXX
+
+BO_ 2154569728 Infotainment_System_State_LS: 1 XXX
+ SG_ InfotnmntSysSt : 7|5@0+ (1,0) [0|31] ""  XXX
+
+BO_ 2151931904 Custom_Launch_Ctrl_LS: 8 XXX
+ SG_ LnchCtrlMdStat : 2|3@0+ (1,0) [0|7] ""  XXX
+ SG_ LnchCtrlWhlSlpStat : 7|5@0+ (1,0) [0|31] ""  XXX
+ SG_ PTExPrtclFltWrng3IO : 8|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AWDRecmndIO : 9|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LnchCtrlEngRPMStat : 15|6@0+ (1,0) [0|63] ""  XXX
+ SG_ ACCSysSltdMd : 17|2@0+ (1,0) [0|3] ""  XXX
+ SG_ VehSpdCntlSystmType : 20|3@0+ (1,0) [0|7] ""  XXX
+ SG_ PTExPartFltManRegStat : 23|3@0+ (1,0) [0|7] ""  XXX
+ SG_ TCSTempDsblReqIO : 24|1@0+ (1,0) [0|1] ""  XXX
+ SG_ VehStbCmptvMdCstAvl : 25|1@0+ (1,0) [0|1] ""  XXX
+ SG_ VehStbEnmntCstAvl : 26|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TCSysCstAvl : 27|1@0+ (1,0) [0|1] ""  XXX
+ SG_ VehStbCmptvMdCurSt : 28|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ElctShfPriLtdPerfMdIO : 29|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RegVltCtlEngyRcvryAct : 30|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ACCSysSltdMdDispIO : 31|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LnchCtrlTmrVal : 35|4@0+ (1,0) [0|15] ""  XXX
+ SG_ VehStbEnhmntCurSt : 36|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TCSysCurSt : 37|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TracAndStbScrnCnfg : 39|2@0+ (1,0) [0|3] ""  XXX
+ SG_ BiFuelRflGaslinIndReq : 42|3@0+ (1,0) [0|7] ""  XXX
+ SG_ AutoShtdwnIO : 43|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LnchCtrlBrkPresVal : 47|4@0+ (10,0) [0|150] "%"  XXX
+ SG_ AutoShtdwnTmr : 55|8@0+ (1,0) [0|255] "min"  XXX
+ SG_ FuelMdTrnstnIndReq : 63|4@0+ (1,0) [0|15] ""  XXX
+
+BO_ 2150244352 HMI_EngyConsmpHistGrph_1_LS: 8 XXX
+ SG_ EngyCnsHsGrphDspDtVal : 7|55@0+ (1,0) [0|0] ""  XXX
+ SG_ ECHGDDV_Col1 : 2|5@0+ (1,0) [0|31] ""  XXX
+ SG_ ECHGDDV_EngyConsAvg : 7|5@0+ (1,0) [0|31] ""  XXX
+ SG_ ECHGDDV_Col3 : 8|5@0+ (1,0) [0|31] ""  XXX
+ SG_ ECHGDDV_Col2 : 13|5@0+ (1,0) [0|31] ""  XXX
+ SG_ ECHGDDV_Col4 : 19|5@0+ (1,0) [0|31] ""  XXX
+ SG_ ECHGDDV_Col6 : 25|5@0+ (1,0) [0|31] ""  XXX
+ SG_ ECHGDDV_Col5 : 30|5@0+ (1,0) [0|31] ""  XXX
+ SG_ ECHGDDV_Col7 : 36|5@0+ (1,0) [0|31] ""  XXX
+ SG_ ECHGDDV_Col9 : 42|5@0+ (1,0) [0|31] ""  XXX
+ SG_ ECHGDDV_Col8 : 47|5@0+ (1,0) [0|31] ""  XXX
+ SG_ ECHGDDV_Col10 : 53|5@0+ (1,0) [0|31] ""  XXX
+
+BO_ 2156953600 SSID_AMM_2_LS: 8 XXX
+ SG_ WiFiSSIDDgts9to16_Mp : 7|64@0+ (1,0) [0|0] ""  XXX
+
+BO_ 2151686144 SD_Card_LS: 2 XXX
+ SG_ SDCrdFullIO : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SDCrdErrIO : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ NoSDCrdPrIO : 2|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2155028480 Lane_Change_Threat_LS: 2 XXX
+ SG_ RgtLnChgThrt : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RtLnChngThrtAprchSpd : 15|8@0- (1,0) [-128|127] "km/h"  XXX
+
+BO_ 2151915520 HMI_Display_LS: 8 XXX
+ SG_ AHDisbldDrOpnIO : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AHDisbldStbltIO : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AHAppBrkPedlIO : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AHServcIO : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ShfToPrkBfExtngIO : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AHEnbld : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AHAct : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ESPDrvrIlkShfAtdIO : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ESPTransMalfIO : 9|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ESPRngInvldReqIO : 10|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ESPPrkInvldReqIO : 11|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ESPHldShfLvrToEngRgIO : 12|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ESPDrvrPrkIlkSftAtdIO : 13|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngIntkArBstPrExtRngGroup : 14|15@0+ (1,0) [0|0] ""  XXX
+ SG_ EngIntkArBstPrExtRng : 8|9@0+ (1,-110) [-110|401] "kPa"  XXX
+ SG_ EngIntkArBstPrExtRngV : 14|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ElcTransRngSlctVDA : 15|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ElecShfRngDispRCExtd : 27|4@0+ (1,0) [0|15] ""  XXX
+ SG_ ElecShfRngDisp : 31|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DrvEffInd : 39|8@0- (0.78125,0) [-100|99.21875] "%"  XXX
+ SG_ ESPShfToDrvTryAgnIO : 43|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ESPTrnVehOffFrPrkIO : 44|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ESPTrnsCtlrMalfIO : 45|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ElcShfPriTwoGrsSlInRq : 47|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2152153088 Right_Rear_Seat_Display_Stats_LS: 6 XXX
+ SG_ RRStCtlDispStat : 3|44@0+ (1,0) [0|0] ""  XXX
+ SG_ RRSCDS_MassgTyp : 1|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RRSCDS_Massg : 3|2@0+ (1,0) [0|3] ""  XXX
+ SG_ RRSCDS_HdrstFwdRrwd : 8|2@0+ (1,0) [0|3] ""  XXX
+ SG_ RRSCDS_HdrstUpDn : 10|2@0+ (1,0) [0|3] ""  XXX
+ SG_ RRSCDS_MassgIntsty : 13|3@0+ (1,0) [0|7] ""  XXX
+ SG_ RRSCDS_HdrstTltFwdRr : 17|2@0+ (1,0) [0|3] ""  XXX
+ SG_ RRSCDS_HdrstWngInOt : 19|2@0+ (1,0) [0|3] ""  XXX
+ SG_ RRSCDS_HdrstFdRrUDn : 22|3@0+ (1,0) [0|7] ""  XXX
+ SG_ RRSCDS_LmbrUDnFdRr : 25|3@0+ (1,0) [0|7] ""  XXX
+ SG_ RRSCDS_LmbrFwdRr : 27|2@0+ (1,0) [0|3] ""  XXX
+ SG_ RRSCDS_LmbrUpDwn : 29|2@0+ (1,0) [0|3] ""  XXX
+ SG_ RRSCDS_UprShldrFdRr : 31|2@0+ (1,0) [0|3] ""  XXX
+ SG_ RRSCDS_BkCshBlstInOt : 34|3@0+ (1,0) [0|7] ""  XXX
+ SG_ RRSCDS_CshBlstrInOut : 36|2@0+ (1,0) [0|3] ""  XXX
+ SG_ RRSCDS_BkBlstrInOut : 38|2@0+ (1,0) [0|3] ""  XXX
+ SG_ RRSCDS_UnsdRsrvd : 42|3@0+ (1,0) [0|7] ""  XXX
+ SG_ RRSCDS_DispReq : 43|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RRSCDS_DispSz : 45|2@0+ (1,0) [0|3] ""  XXX
+ SG_ RRSCDS_CshLgAdjFdRr : 47|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2152136704 Right_Rear_Seat_Massage_LS: 8 XXX
+ SG_ RRStMassgPrty : 7|64@0+ (1,0) [0|0] ""  XXX
+ SG_ RRSMP_Type2 : 3|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RRSMP_Type1 : 7|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RRSMP_Type4 : 11|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RRSMP_Type3 : 15|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RRSMP_Type6 : 19|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RRSMP_Type5 : 23|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RRSMP_Type8 : 27|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RRSMP_Type7 : 31|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RRSMP_Type10 : 35|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RRSMP_Type9 : 39|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RRSMP_Type12 : 43|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RRSMP_Type11 : 47|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RRSMP_Type14 : 51|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RRSMP_Type13 : 55|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RRSMP_UnsdRsrvd : 56|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RRSMP_MaxDispVal : 59|3@0+ (1,0) [0|7] ""  XXX
+ SG_ RRSMP_Type15 : 63|4@0+ (1,0) [0|15] ""  XXX
+
+BO_ 2152120320 Right_Rear_Seat_Actuator_LS: 8 XXX
+ SG_ RRStActPrty : 7|64@0+ (1,0) [0|0] ""  XXX
+ SG_ RRSAP_HdrstUpDn : 3|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RRSAP_Massg : 7|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RRSAP_HdrstUpDnFdRr : 11|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RRSAP_HdrstFwdRrwd : 15|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RRSAP_HdrstTltFwdRr : 19|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RRSAP_HdrstWngsInOut : 23|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RRSAP_LmbrUpDwn : 27|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RRSAP_UprShldrFwdRr : 31|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RRSAP_LmbrUpDnFdRr : 35|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RRSAP_LmbrFwdRr : 39|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RRSAP_CshBlstrInOut : 43|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RRSAP_BkBlstrInOut : 47|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RRSAP_CshLgthAdjFdRr : 51|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RRSAP_BkCshBlstrInOut : 55|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RRSAP_UnsdRsrvd : 59|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RRSAP_DispSz : 63|4@0+ (1,0) [0|15] ""  XXX
+
+BO_ 2152103936 Left_Rear_Seat_Display_Status_LS: 6 XXX
+ SG_ LRStCtlDispStat : 3|44@0+ (1,0) [0|0] ""  XXX
+ SG_ LRSCDS_MassgTyp : 1|4@0+ (1,0) [0|15] ""  XXX
+ SG_ LRSCDS_Massg : 3|2@0+ (1,0) [0|3] ""  XXX
+ SG_ LRSCDS_HdrstFwdRrwd : 8|2@0+ (1,0) [0|3] ""  XXX
+ SG_ LRSCDS_HdrstUpDn : 10|2@0+ (1,0) [0|3] ""  XXX
+ SG_ LRSCDS_MassgIntsty : 13|3@0+ (1,0) [0|7] ""  XXX
+ SG_ LRSCDS_HdrstTltFwdRr : 17|2@0+ (1,0) [0|3] ""  XXX
+ SG_ LRSCDS_HdrstWngInOt : 19|2@0+ (1,0) [0|3] ""  XXX
+ SG_ LRSCDS_HdrstFdRrUDn : 22|3@0+ (1,0) [0|7] ""  XXX
+ SG_ LRSCDS_LmbrUDnFdRr : 25|3@0+ (1,0) [0|7] ""  XXX
+ SG_ LRSCDS_LmbrFwdRr : 27|2@0+ (1,0) [0|3] ""  XXX
+ SG_ LRSCDS_LmbrUpDwn : 29|2@0+ (1,0) [0|3] ""  XXX
+ SG_ LRSCDS_UprShldrFdRr : 31|2@0+ (1,0) [0|3] ""  XXX
+ SG_ LRSCDS_BkCshBlstInOt : 34|3@0+ (1,0) [0|7] ""  XXX
+ SG_ LRSCDS_CshBlstrInOut : 36|2@0+ (1,0) [0|3] ""  XXX
+ SG_ LRSCDS_BkBlstrInOut : 38|2@0+ (1,0) [0|3] ""  XXX
+ SG_ LRSCDS_UnsdRsrvd : 42|3@0+ (1,0) [0|7] ""  XXX
+ SG_ LRSCDS_DispReq : 43|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LRSCDS_DispSz : 45|2@0+ (1,0) [0|3] ""  XXX
+ SG_ LRSCDS_CshLgAdjFdRr : 47|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2152087552 Left_Rear_Seat_Massage_LS: 8 XXX
+ SG_ LRStMassgPrty : 7|64@0+ (1,0) [0|0] ""  XXX
+ SG_ LRSMP_Type2 : 3|4@0+ (1,0) [0|15] ""  XXX
+ SG_ LRSMP_Type1 : 7|4@0+ (1,0) [0|15] ""  XXX
+ SG_ LRSMP_Type4 : 11|4@0+ (1,0) [0|15] ""  XXX
+ SG_ LRSMP_Type3 : 15|4@0+ (1,0) [0|15] ""  XXX
+ SG_ LRSMP_Type6 : 19|4@0+ (1,0) [0|15] ""  XXX
+ SG_ LRSMP_Type5 : 23|4@0+ (1,0) [0|15] ""  XXX
+ SG_ LRSMP_Type8 : 27|4@0+ (1,0) [0|15] ""  XXX
+ SG_ LRSMP_Type7 : 31|4@0+ (1,0) [0|15] ""  XXX
+ SG_ LRSMP_Type10 : 35|4@0+ (1,0) [0|15] ""  XXX
+ SG_ LRSMP_Type9 : 39|4@0+ (1,0) [0|15] ""  XXX
+ SG_ LRSMP_Type12 : 43|4@0+ (1,0) [0|15] ""  XXX
+ SG_ LRSMP_Type11 : 47|4@0+ (1,0) [0|15] ""  XXX
+ SG_ LRSMP_Type14 : 51|4@0+ (1,0) [0|15] ""  XXX
+ SG_ LRSMP_Type13 : 55|4@0+ (1,0) [0|15] ""  XXX
+ SG_ LRSMP_UnsdRsrvd : 56|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LRSMP_MaxDispVal : 59|3@0+ (1,0) [0|7] ""  XXX
+ SG_ LRSMP_Type15 : 63|4@0+ (1,0) [0|15] ""  XXX
+
+BO_ 2152071168 Left_Rear_Seat_Actuator_LS: 8 XXX
+ SG_ LRStActPrty : 7|64@0+ (1,0) [0|0] ""  XXX
+ SG_ LRSAP_HdrstUpDn : 3|4@0+ (1,0) [0|15] ""  XXX
+ SG_ LRSAP_Massg : 7|4@0+ (1,0) [0|15] ""  XXX
+ SG_ LRSAP_HdrstUpDnFdRr : 11|4@0+ (1,0) [0|15] ""  XXX
+ SG_ LRSAP_HdrstFwdRrwd : 15|4@0+ (1,0) [0|15] ""  XXX
+ SG_ LRSAP_HdrstTltFwdRr : 19|4@0+ (1,0) [0|15] ""  XXX
+ SG_ LRSAP_HdrstWngsInOut : 23|4@0+ (1,0) [0|15] ""  XXX
+ SG_ LRSAP_LmbrUpDwn : 27|4@0+ (1,0) [0|15] ""  XXX
+ SG_ LRSAP_UprShldrFwdRr : 31|4@0+ (1,0) [0|15] ""  XXX
+ SG_ LRSAP_LmbrUpDnFdRr : 35|4@0+ (1,0) [0|15] ""  XXX
+ SG_ LRSAP_LmbrFwdRr : 39|4@0+ (1,0) [0|15] ""  XXX
+ SG_ LRSAP_CshBlstrInOut : 43|4@0+ (1,0) [0|15] ""  XXX
+ SG_ LRSAP_BkBlstrInOut : 47|4@0+ (1,0) [0|15] ""  XXX
+ SG_ LRSAP_CshLgthAdjFdRr : 51|4@0+ (1,0) [0|15] ""  XXX
+ SG_ LRSAP_BkCshBlstrInOut : 55|4@0+ (1,0) [0|15] ""  XXX
+ SG_ LRSAP_UnsdRsrvd : 59|4@0+ (1,0) [0|15] ""  XXX
+ SG_ LRSAP_DispSz : 63|4@0+ (1,0) [0|15] ""  XXX
+
+BO_ 2153947136 Remote_Reflash_Stat_LS: 1 XXX
+ SG_ RmtRflshMdAct : 7|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2152628224 OnBoard_Tester_Response_LS: 2 XXX
+ SG_ OBTCResp : 2|11@0+ (1,0) [0|0] ""  XXX
+ SG_ OBTCR_Stat : 2|3@0+ (1,0) [0|7] ""  XXX
+ SG_ OBTCR_ReqstrID : 15|8@0+ (1,0) [0|255] ""  XXX
+ SG_ OBTCMstrStat : 5|3@0+ (1,0) [0|7] ""  XXX
+
+BO_ 2152112128 Performanc_Mode_Vis_Scrn_Stat_LS: 5 XXX
+ SG_ PerfMdVislztnScrnStat : 0|33@0+ (1,0) [0|0] ""  XXX
+ SG_ PMVSS_Snd : 0|3@0+ (1,0) [0|7] ""  XXX
+ SG_ PMVSS_Trans : 10|3@0+ (1,0) [0|7] ""  XXX
+ SG_ PMVSS_Eng : 13|3@0+ (1,0) [0|7] ""  XXX
+ SG_ PMVSS_Drvln : 17|3@0+ (1,0) [0|7] ""  XXX
+ SG_ PMVSS_Susp : 20|3@0+ (1,0) [0|7] ""  XXX
+ SG_ PMVSS_Strng : 23|3@0+ (1,0) [0|7] ""  XXX
+ SG_ PMVSS_PsngrSeat : 24|3@0+ (1,0) [0|7] ""  XXX
+ SG_ PMVSS_DrvrSeat : 27|3@0+ (1,0) [0|7] ""  XXX
+ SG_ PMVSS_AdptCrsCnt : 30|3@0+ (1,0) [0|7] ""  XXX
+ SG_ PMVSS_Disps : 34|3@0+ (1,0) [0|7] ""  XXX
+ SG_ PMVSS_Exhst : 37|3@0+ (1,0) [0|7] ""  XXX
+ SG_ PerfMdMainMenuType : 3|3@0+ (1,0) [0|7] ""  XXX
+
+BO_ 2152775680 Front_360_Camera_On_LS: 3 XXX
+ SG_ DispFrt360CamOn : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RrPedDetCstStAvl : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RrPedDetCstStVal : 4|3@0+ (1,0) [0|7] ""  XXX
+ SG_ RrPdDetHptcStVbRqSeqN : 6|2@0+ (1,0) [0|3] ""  XXX
+ SG_ TrgdVidRecFetrPrsnt : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RrPdDetHptcStVbRq : 13|6@0+ (1,0) [0|63] "Pulse"  XXX
+ SG_ DispTrgdVidOn : 14|1@0+ (1,0) [0|1] ""  XXX
+ SG_ a_360DegVidFetrPrsnt : 15|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DispSmrtTwVidOn : 16|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RrPedDetCstAvail : 23|7@0+ (1,0) [0|0] ""  XXX
+ SG_ RPDCA_Resrv3Avail : 17|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RPDCA_Resrv2Avail : 18|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RPDCA_Resrv1Avail : 19|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RPDCA_AlrtBrkAvail : 20|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RPDCA_AlrtAvail : 21|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RPDCA_OnAvail : 22|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RPDCA_OfAvail : 23|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2153857024 Teen_Driver_Event_Report_2_LS: 8 XXX
+ SG_ TnDrvRptCrdAvlDspDat : 6|13@0+ (1,0) [0|0] ""  XXX
+ SG_ TDRCADD_FCHdwyAlrt : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TDRCADD_ABSAtvEvt : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TDRCADD_StCtrlEvnts : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TDRCADD_TrCtrlEvnts : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TDRCADD_OvSpdEvnt : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TDRCADD_DistDrvn : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TDRCADD_MaxSpd : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TDRCADD_LDWEvnts : 10|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TDRCADD_WOTEvnts : 11|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TDRCADD_DrwDrvAlrt : 12|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TDRCADD_FCMBrEvts : 13|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TDRCADD_RCMBrEvts : 14|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TDRCADD_FCImntAlrts : 15|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TeenDrvWOTEvntsRpt : 9|10@0+ (1,0) [0|1023] "counts"  XXX
+ SG_ TnDrvABSAtvEvntsRpt : 31|10@0+ (1,0) [0|1023] "counts"  XXX
+ SG_ TnDrvStblCtrlEvntsRpt : 37|10@0+ (1,0) [0|1023] "counts"  XXX
+ SG_ TnDrvDrowDrvAlrtsRpt : 43|10@0+ (1,0) [0|1023] "counts"  XXX
+ SG_ TnDrvTrCtrlEvntsRpt : 49|10@0+ (1,0) [0|1023] "counts"  XXX
+
+BO_ 2153865216 Teen_Driver_Customization_Req_LS: 4 XXX
+ SG_ TeenDrvReq : 3|4@0+ (1,0) [0|15] ""  XXX
+ SG_ TDOvSpdWrnCstStReq : 12|5@0+ (1,0) [0|0] ""  XXX
+ SG_ TDOWCSR_DecSwAct : 8|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TDOWCSR_IncSwAct : 9|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TDOWCSR_StatReq : 12|3@0+ (1,0) [0|7] ""  XXX
+ SG_ TnDrvSpdLmtCstStReq : 15|3@0+ (1,0) [0|7] ""  XXX
+ SG_ TeenDrvPinCd : 23|16@0+ (1,0) [0|39321] ""  XXX
+
+BO_ 2153840640 Teen_Driver_Event_Report_1_LS: 8 XXX
+ SG_ TDFwdClnHdwyAlrtsRpt : 5|10@0+ (1,0) [0|1023] "counts"  XXX
+ SG_ TnDrvDRLOffUnbIO : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TnDrvALCOffUnbIO : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TDFwdClnImntAlrtsRpt : 11|10@0+ (1,0) [0|1023] "counts"  XXX
+ SG_ TDFwdClnMtgnBrEvRpt : 17|10@0+ (1,0) [0|1023] "counts"  XXX
+ SG_ TDRevClnMtgnBrEvRpt : 39|10@0+ (1,0) [0|1023] "counts"  XXX
+ SG_ TeenDrvMaxSpdRpt : 45|12@0+ (0.0625,0) [0|255.9375] "km/h"  XXX
+ SG_ TeenDrvLDWEvntsRpt : 49|10@0+ (1,0) [0|1023] "counts"  XXX
+
+BO_ 2153824256 Teen_Driver_Control_Info_LS: 8 XXX
+ SG_ TnDrvSpdLmtCstCrStVl : 2|11@0+ (1,0) [0|0] ""  XXX
+ SG_ TDSLCCSV_SpLmtStat : 2|3@0+ (1,0) [0|7] ""  XXX
+ SG_ TDSLCCSV_SpLmDisVl : 15|8@0+ (2,0) [0|510] "km/h"  XXX
+ SG_ TnDrvSpdLmtCstStAvl : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TnDrvOvrSpdIO : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TnDrvGapAdjUnbIO : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TeenDrvPINStrd : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TeenDrvFtrAvl : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TDOvSpdWrnCstCrStVl : 22|15@0+ (1,0) [0|0] ""  XXX
+ SG_ TDOWCCSV_CrStVl : 19|12@0+ (0.0625,0) [0|255.9375] "km/h"  XXX
+ SG_ TDOWCCSV_CrStat : 22|3@0+ (1,0) [0|7] ""  XXX
+ SG_ TDOvSpdWrnCstStAvl : 23|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TnDrvOvSpdEvntsRpt : 33|10@0+ (1,0) [0|1023] "counts"  XXX
+ SG_ TeenDrvRsp : 37|4@0+ (1,0) [0|15] ""  XXX
+ SG_ TeenDrvAct : 38|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TeenDrvAccelLimIO : 39|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TeenDrvDistDrvnRpt : 55|16@0+ (1,0) [0|65535] "km"  XXX
+
+BO_ 2155151360 Psngr_Seat_Massage_Priority_LS: 8 XXX
+ SG_ PsngrStMassgPrty : 7|64@0+ (1,0) [0|0] ""  XXX
+ SG_ PSMP_Type2 : 3|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PSMP_Type1 : 7|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PSMP_Type4 : 11|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PSMP_Type3 : 15|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PSMP_Type6 : 19|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PSMP_Type5 : 23|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PSMP_Type8 : 27|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PSMP_Type7 : 31|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PSMP_Type10 : 35|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PSMP_Type9 : 39|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PSMP_Type12 : 43|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PSMP_Type11 : 47|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PSMP_Type14 : 51|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PSMP_Type13 : 55|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PSMP_UnsdRsrvd : 56|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PSMP_MaxDispVal : 59|3@0+ (1,0) [0|7] ""  XXX
+ SG_ PSMP_Type15 : 63|4@0+ (1,0) [0|15] ""  XXX
+
+BO_ 2155134976 Psngr_Seat_Control_Disp_Stat_LS: 6 XXX
+ SG_ PsngrStCtlDispStat : 3|44@0+ (1,0) [0|0] ""  XXX
+ SG_ PSCDS_MassgTyp : 1|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PSCDS_Massg : 3|2@0+ (1,0) [0|3] ""  XXX
+ SG_ PSCDS_HdrstFwdRrwd : 8|2@0+ (1,0) [0|3] ""  XXX
+ SG_ PSCDS_HdrstUpDn : 10|2@0+ (1,0) [0|3] ""  XXX
+ SG_ PSCDS_MassgIntsty : 13|3@0+ (1,0) [0|7] ""  XXX
+ SG_ PSCDS_HdrstTltFwdRr : 17|2@0+ (1,0) [0|3] ""  XXX
+ SG_ PSCDS_HdrstWngInOt : 19|2@0+ (1,0) [0|3] ""  XXX
+ SG_ PSCDS_HdrstUDnFdRr : 22|3@0+ (1,0) [0|7] ""  XXX
+ SG_ PSCDS_LmbrUDnFdRr : 25|3@0+ (1,0) [0|7] ""  XXX
+ SG_ PSCDS_LmbrFwdRr : 27|2@0+ (1,0) [0|3] ""  XXX
+ SG_ PSCDS_LmbrUpDwn : 29|2@0+ (1,0) [0|3] ""  XXX
+ SG_ PSCDS_UprShldrFdRr : 31|2@0+ (1,0) [0|3] ""  XXX
+ SG_ PSCDS_BkCshBlstInOt : 34|3@0+ (1,0) [0|7] ""  XXX
+ SG_ PSCDS_CshBlstrInOut : 36|2@0+ (1,0) [0|3] ""  XXX
+ SG_ PSCDS_BkBlstrInOut : 38|2@0+ (1,0) [0|3] ""  XXX
+ SG_ PSCDS_UnsdRsrvd : 42|3@0+ (1,0) [0|7] ""  XXX
+ SG_ PSCDS_DispReq : 43|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PSCDS_DispSz : 45|2@0+ (1,0) [0|3] ""  XXX
+ SG_ PSCDS_CshLgAdjFdRr : 47|2@0+ (1,0) [0|3] ""  XXX
+ SG_ PsngrSetRrwdMvmnt : 6|3@0+ (1,0) [0|7] ""  XXX
+
+BO_ 2155118592 Psngr_Seat_Actuator_Priority_LS: 8 XXX
+ SG_ PsngrStActPrty : 7|64@0+ (1,0) [0|0] ""  XXX
+ SG_ PSAP_HdrstUpDn : 3|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PSAP_Massg : 7|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PSAP_HdrstUpDnFdRr : 11|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PSAP_HdrstFwdRrwd : 15|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PSAP_HdrstTltFwdRr : 19|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PSAP_HdrstWngsInOut : 23|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PSAP_LmbrUpDwn : 27|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PSAP_UprShldrFwdRr : 31|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PSAP_LmbrUpDnFdRr : 35|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PSAP_LmbrFwdRr : 39|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PSAP_CshBlstrInOut : 43|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PSAP_BkBlstrInOut : 47|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PSAP_CshLgthAdjFdRr : 51|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PSAP_BkCshBlstrInOut : 55|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PSAP_UnsdRsrvd : 59|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PSAP_DispSz : 63|4@0+ (1,0) [0|15] ""  XXX
+
+BO_ 2155102208 Driver_Seat_Massage_Priority_LS: 8 XXX
+ SG_ DrvStMassgPrty : 7|64@0+ (1,0) [0|0] ""  XXX
+ SG_ DSMP_Type2 : 3|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DSMP_Type1 : 7|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DSMP_Type4 : 11|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DSMP_Type3 : 15|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DSMP_Type6 : 19|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DSMP_Type5 : 23|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DSMP_Type8 : 27|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DSMP_Type7 : 31|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DSMP_Type10 : 35|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DSMP_Type9 : 39|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DSMP_Type12 : 43|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DSMP_Type11 : 47|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DSMP_Type14 : 51|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DSMP_Type13 : 55|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DSMP_UnsdRsrvd : 56|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DSMP_MaxDispVal : 59|3@0+ (1,0) [0|7] ""  XXX
+ SG_ DSMP_Type15 : 63|4@0+ (1,0) [0|15] ""  XXX
+
+BO_ 2155085824 Driver_Seat_Control_Disp_Stat_LS: 8 XXX
+ SG_ DrvStCtlDispStat : 3|44@0+ (1,0) [0|0] ""  XXX
+ SG_ DSCDS_MassgTyp : 1|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DSCDS_Massg : 3|2@0+ (1,0) [0|3] ""  XXX
+ SG_ DSCDS_HdrstFwdRrwd : 8|2@0+ (1,0) [0|3] ""  XXX
+ SG_ DSCDS_HdrstUpDn : 10|2@0+ (1,0) [0|3] ""  XXX
+ SG_ DSCDS_MassgIntsty : 13|3@0+ (1,0) [0|7] ""  XXX
+ SG_ DSCDS_HdrstTltFwdRr : 17|2@0+ (1,0) [0|3] ""  XXX
+ SG_ DSCDS_HdrstWngInOt : 19|2@0+ (1,0) [0|3] ""  XXX
+ SG_ DSCDS_HdrstUDnFdRr : 22|3@0+ (1,0) [0|7] ""  XXX
+ SG_ DSCDS_LmbrUDnFdRr : 25|3@0+ (1,0) [0|7] ""  XXX
+ SG_ DSCDS_LmbrFwdRr : 27|2@0+ (1,0) [0|3] ""  XXX
+ SG_ DSCDS_LmbrUpDwn : 29|2@0+ (1,0) [0|3] ""  XXX
+ SG_ DSCDS_UprShldrFdRr : 31|2@0+ (1,0) [0|3] ""  XXX
+ SG_ DSCDS_BkCshBlstInOt : 34|3@0+ (1,0) [0|7] ""  XXX
+ SG_ DSCDS_CshBlstrInOut : 36|2@0+ (1,0) [0|3] ""  XXX
+ SG_ DSCDS_BkBlstrInOut : 38|2@0+ (1,0) [0|3] ""  XXX
+ SG_ DSCDS_UnsdRsrvd : 42|3@0+ (1,0) [0|7] ""  XXX
+ SG_ DSCDS_DispReq : 43|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DSCDS_DispSz : 45|2@0+ (1,0) [0|3] ""  XXX
+ SG_ DSCDS_CshLgAdjFdRr : 47|2@0+ (1,0) [0|3] ""  XXX
+ SG_ CPMAPINFO4 : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ StrgColCommsFlt : 7|2@0+ (1,0) [0|3] ""  XXX
+ SG_ StrgColInOutPos : 55|8@0+ (1,0) [0|255] ""  XXX
+ SG_ StrgColUpDwnPos : 63|8@0+ (1,0) [0|255] ""  XXX
+
+BO_ 2155069440 Driver_Seat_Actuator_Priority_LS: 8 XXX
+ SG_ DrvStActPrty : 7|64@0+ (1,0) [0|0] ""  XXX
+ SG_ DSAP_HdrstUpDn : 3|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DSAP_Massg : 7|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DSAP_HdrstUpDnFdRr : 11|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DSAP_HdrstFwdRrwd : 15|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DSAP_HdrstTltFwdRr : 19|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DSAP_HdrstWngsInOut : 23|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DSAP_LmbrUpDwn : 27|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DSAP_UprShldrFwdRr : 31|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DSAP_LmbrUpDnFdRr : 35|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DSAP_LmbrFwdRr : 39|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DSAP_CshBlstrInOut : 43|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DSAP_BkBlstrInOut : 47|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DSAP_CshLgthAdjFdRr : 51|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DSAP_BkCshBlstrInOut : 55|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DSAP_UnsdRsrvd : 59|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DSAP_DispSz : 63|4@0+ (1,0) [0|15] ""  XXX
+
+BO_ 2156937216 PassPhrase_Digits_17_to_24_LS: 8 XXX
+ SG_ WiFiPssPhrsDgts17to24 : 7|64@0+ (1,0) [0|0] ""  XXX
+
+BO_ 2156929024 PassPhrase_Digits_9_to_16_LS: 8 XXX
+ SG_ WiFiPssPhrsDgts9to16 : 7|64@0+ (1,0) [0|0] ""  XXX
+
+BO_ 2156920832 PassPhrase_Digits_1_to_8_LS: 8 XXX
+ SG_ WiFiPssPhrsDgts1to8 : 7|64@0+ (1,0) [0|0] ""  XXX
+
+BO_ 2156871680 SSID_Digits_17_to_24_LS: 8 XXX
+ SG_ WiFiSSIDDgts17to24 : 7|64@0+ (1,0) [0|0] ""  XXX
+
+BO_ 2156863488 SSID_Digits_9_to_16_LS: 8 XXX
+ SG_ WiFiSSIDDgts9to16 : 7|64@0+ (1,0) [0|0] ""  XXX
+
+BO_ 2156855296 SSID_Digits_1_to_8_LS: 8 XXX
+ SG_ WiFiSSIDDgts1to8 : 7|64@0+ (1,0) [0|0] ""  XXX
+
+BO_ 2152480768 Perfr_Data_Recorder_Lap_Info_LS: 6 XXX
+ SG_ PerfDatRecBstLpInfo : 2|19@0+ (1,0) [0|0] ""  XXX
+ SG_ PDRBLI_BstLpTmMins : 2|6@0+ (1,0) [0|63] "min"  XXX
+ SG_ PDRBLI_BstLpTmSecs : 12|6@0+ (1,0) [0|63] "sec"  XXX
+ SG_ PDRBLI_BstLpTm100s : 22|7@0+ (0.01,0) [0|1.27] "sec"  XXX
+ SG_ PerfDatRecLstLpInfo : 26|19@0+ (1,0) [0|0] ""  XXX
+ SG_ PDRLLI_LstLpTmMins : 26|6@0+ (1,0) [0|63] "min"  XXX
+ SG_ PDRLLI_LstLpTmSecs : 36|6@0+ (1,0) [0|63] "sec"  XXX
+ SG_ PDRLLI_LstLpTm100s : 46|7@0+ (0.01,0) [0|1.27] "sec"  XXX
+
+BO_ 2152497152 Perf_Data_Recroder_RT_Info_LS: 4 XXX
+ SG_ PerfDatRecRltmInfo : 1|26@0+ (1,0) [0|0] ""  XXX
+ SG_ PDRRI_CrLpTmMins : 1|6@0+ (1,0) [0|63] "min"  XXX
+ SG_ PDRRI_CrLpTmSecs : 11|6@0+ (1,0) [0|63] ""  XXX
+ SG_ PDRRI_LpDiffTmSecs : 17|6@0+ (1,0) [0|63] "sec"  XXX
+ SG_ PDRRI_CrLpTm10sSec : 21|4@0+ (0.1,0) [0|1.5] "sec"  XXX
+ SG_ PDRRI_LpDiffTm10s : 27|4@0+ (0.1,0) [0|1.5] "sec"  XXX
+
+BO_ 2153791488 ARB_State_LS: 1 XXX
+ SG_ ArtcldRngBrdSt : 2|3@0+ (1,0) [0|7] ""  XXX
+
+BO_ 2149883904 BluetoothTetheringPairingRsp_LS: 7 XXX
+ SG_ BTTethrngPrngRsp : 4|53@0+ (1,0) [0|0] ""  XXX
+ SG_ BTPR_RspInfoAvail : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ BTPR_RspStat : 4|4@0+ (1,0) [0|15] ""  XXX
+ SG_ BTPR_RspVal : 15|48@0+ (1,0) [0|281474976710655] ""  XXX
+
+BO_ 2150252544 HMI_EngyConsmpHistGrph_LS: 8 XXX
+ SG_ EngyConsmpHistGrph : 7|64@0+ (1,0) [0|0] ""  XXX
+ SG_ ECHG_EngyCnsmdAvg : 4|5@0+ (1,0) [0|31] ""  XXX
+ SG_ ECHG_MeasUnit : 7|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ECHG_Column02 : 10|5@0+ (1,0) [0|31] ""  XXX
+ SG_ ECHG_Column01 : 15|5@0+ (1,0) [0|31] ""  XXX
+ SG_ ECHG_Column04 : 16|5@0+ (1,0) [0|31] ""  XXX
+ SG_ ECHG_Column03 : 21|5@0+ (1,0) [0|31] ""  XXX
+ SG_ ECHG_Column05 : 27|5@0+ (1,0) [0|31] ""  XXX
+ SG_ ECHG_Column07 : 33|5@0+ (1,0) [0|31] ""  XXX
+ SG_ ECHG_Column06 : 38|5@0+ (1,0) [0|31] ""  XXX
+ SG_ ECHG_Column08 : 44|5@0+ (1,0) [0|31] ""  XXX
+ SG_ ECHG_Column10 : 50|5@0+ (1,0) [0|31] ""  XXX
+ SG_ ECHG_Column09 : 55|5@0+ (1,0) [0|31] ""  XXX
+ SG_ ECHG_YAxisMaxVal : 58|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ECHG_XAxisTkMrkIntvl : 61|3@0+ (1,0) [0|7] ""  XXX
+
+BO_ 2150391808 HMI_Hourmeter_Data_LS: 6 XXX
+ SG_ EngIdlAtvTm : 7|24@0+ (1,0) [0|16777215] "min"  XXX
+ SG_ EngRunAtvTm : 31|24@0+ (1,0) [0|16777215] "min"  XXX
+
+BO_ 2155913216 Diesel_Information_2_LS: 7 XXX
+ SG_ DslExhFldRmngDstHRsGroup : 7|16@0+ (1,0) [0|0] ""  XXX
+ SG_ DslExhFldRmngDstHRs : 6|15@0+ (2,0) [0|65534] "km"  XXX
+ SG_ DslExhFldRmngDstHRsV : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DslExhFluidLvlPrcntGroup : 16|9@0+ (1,0) [0|0] ""  XXX
+ SG_ DslExhFluidLvlPrcntV : 16|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DslExhFluidLvlPrcnt : 31|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+ SG_ DslEmnsOBDMrkt : 18|2@0+ (1,0) [0|3] ""  XXX
+ SG_ PedFrndlyAlrtCsCrStVal : 21|3@0+ (1,0) [0|7] ""  XXX
+ SG_ PedFrndlyAlrtCsSetAvl : 22|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PedFrndlyAlrtStat : 39|24@0+ (1,0) [0|0] ""  XXX
+ SG_ PFAS_PFACrsOvrSpd : 34|8@0+ (1,0) [0|255] "km/h"  XXX
+ SG_ PFAS_PFARevSnd : 36|2@0+ (1,0) [0|3] ""  XXX
+ SG_ PFAS_PFAFwdSnd : 38|2@0+ (1,0) [0|3] ""  XXX
+ SG_ PFAS_PFASndGenEn : 39|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PFAS_PFASndVolCtrl : 42|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+ SG_ PFAS_SrvPedAlrtIO : 48|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PFAS_PFASysStat : 50|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2034 CCP_Data_Transmission_Object_LS: 8 XXX
+ SG_ DgnInf : 7|64@0+ (1,0) [0|1.84467440737096E+019] ""  XXX
+
+BO_ 2032 CCP_Command_Receive_Object_LS: 8 XXX
+ SG_ DgnInf : 7|64@0+ (1,0) [0|1.84467440737096E+019] ""  XXX
+
+BO_ 2152095744 HSGMLAN_Customization_Setings_LS: 5 XXX
+ SG_ DrvlnPerfMdCustAvl : 5|6@0+ (1,0) [0|0] ""  XXX
+ SG_ DPMCA_DrvlPrfMd6Avl : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DPMCA_DrvlPrfMd5Avl : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DPMCA_DrvlPrfMd4Avl : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DPMCA_DrvlPrfMd3Avl : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DPMCA_DrvlPrfMd2Avl : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DPMCA_DrvlPrfMd1Avl : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DispPerfCustMdAvl : 13|6@0+ (1,0) [0|0] ""  XXX
+ SG_ DPMCA_DispPrfMd6Avl : 8|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DPMCA_DispPrfMd5Avl : 9|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DPMCA_DispPrfMd4Avl : 10|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DPMCA_DispPrfMd3Avl : 11|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DPMCA_DispPrfMd2Avl : 12|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DPMCA_DispPrfMd1Avl : 13|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SndPerfMdCustAvl : 21|6@0+ (1,0) [0|0] ""  XXX
+ SG_ SPMCA_SndPrfMd6Avl : 16|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SPMCA_SndPrfMd5Avl : 17|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SPMCA_SndPrfMd4Avl : 18|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SPMCA_SndPrfMd3Avl : 19|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SPMCA_SndPrfMd2Avl : 20|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SPMCA_SndPrfMd1Avl : 21|1@0+ (1,0) [0|1] ""  XXX
+ SG_ StrPerfMdCustAvl : 29|6@0+ (1,0) [0|0] ""  XXX
+ SG_ SPMCA_StrPrfMd6Avl : 24|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SPMCA_StrPrfMd5Avl : 25|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SPMCA_StrPrfMd4Avl : 26|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SPMCA_StrPrfMd3Avl : 27|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SPMCA_StrPrfMd2Avl : 28|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SPMCA_StrPrfMd1Avl : 29|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SusPerfMdCustAvl : 37|6@0+ (1,0) [0|0] ""  XXX
+ SG_ SPMCA_SusPrfMd6Avl : 32|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SPMCA_SusPrfMd5Avl : 33|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SPMCA_SusPrfMd4Avl : 34|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SPMCA_SusPrfMd3Avl : 35|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SPMCA_SusPrfMd2Avl : 36|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SPMCA_SusPrfMd1Avl : 37|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2156945408 SSID_AMM_1_LS: 8 XXX
+ SG_ WiFiSSIDDgts1to8_Mp : 7|64@0+ (1,0) [0|0] ""  XXX
+
+BO_ 2152611840 OnBoard_Tester_Request_LS: 2 XXX
+ SG_ OBTCReq : 4|5@0+ (1,0) [0|0] ""  XXX
+ SG_ OBTCR_Prty : 3|4@0+ (1,0) [0|15] ""  XXX
+ SG_ OBTCR_Actv : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ OBTCReqstrStat : 7|3@0+ (1,0) [0|7] ""  XXX
+ SG_ OBTCReqstrID : 15|8@0+ (1,0) [0|255] ""  XXX
+
+BO_ 2153308160 Hyb_Redundant_Batt_Data2_LS: 4 XXX
+ SG_ RdHVltBatPckCrntGroup : 6|15@0+ (1,0) [0|0] ""  XXX
+ SG_ RdHVltBatPckCrnt : 4|13@0- (0.15,0) [-614.4|614.25] "A"  XXX
+ SG_ RdHVltBatPckCrntV : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RdHVltBatPckCrntM : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RdHVltBatPckVltGroup : 21|14@0+ (1,0) [0|0] ""  XXX
+ SG_ RdHVltBatPckVlt : 19|12@0+ (0.125,0) [0|511.875] "V"  XXX
+ SG_ RdHVltBatPckVltV : 20|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RdHVltBatPckVltM : 21|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2155970560 HVAC_PowerManager_Status_LS: 1 XXX
+ SG_ ClmCntLdShdLvlRq : 3|4@0+ (1,0) [0|15] ""  XXX
+ SG_ ClmCntBatSaverIO : 5|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2151178240 Lighting_Customization_Rqst_1_LS: 4 XXX
+ SG_ LtRtHnTrGPSCstStRq : 2|3@0+ (1,0) [0|7] ""  XXX
+ SG_ LtRtHnTrCstStReq : 5|3@0+ (1,0) [0|7] ""  XXX
+ SG_ AutHgBmAsSnCsStRq : 10|3@0+ (1,0) [0|7] ""  XXX
+ SG_ AutHgBmAstCstStRq : 13|3@0+ (1,0) [0|7] ""  XXX
+ SG_ AdpHgBmAsSnCsStRq : 18|3@0+ (1,0) [0|7] ""  XXX
+ SG_ AdpHgBmAstCstStRq : 21|3@0+ (1,0) [0|7] ""  XXX
+ SG_ AFLGPSCstStReq : 26|3@0+ (1,0) [0|7] ""  XXX
+ SG_ AFLCstStReq : 29|3@0+ (1,0) [0|7] ""  XXX
+
+BO_ 2154790912 Lighting_Customization_Info_2_LS: 2 XXX
+ SG_ AutHgBmAsCsCrStVal : 2|3@0+ (1,0) [0|7] ""  XXX
+ SG_ AutHgBmAsSnCsCrStVa : 5|3@0+ (1,0) [0|7] ""  XXX
+ SG_ AutHgBmAsCsStAvl : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AutHgBmAsSnCsStAvl : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AdpHgBmAsCsCrStVal : 10|3@0+ (1,0) [0|7] ""  XXX
+ SG_ AdpHgBmAsSnCsCrStVal : 13|3@0+ (1,0) [0|7] ""  XXX
+ SG_ AdpHgBmAsCsStAvl : 14|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AdpHgBmAsSnCsStAvl : 15|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2151292928 V2V_Customization_Menu_LS: 5 XXX
+ SG_ TrfRdsdInfCsStAvail : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CntdVehBrkAltCsStAvl : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IntrStopAlrtCsSetAvl : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IntrStAlrtCsCrSetVal : 5|3@0+ (1,0) [0|7] ""  XXX
+ SG_ TrfRdsdInfCsCrStVal : 10|3@0+ (1,0) [0|7] ""  XXX
+ SG_ CntdVehBrAltCsCrStVal : 13|3@0+ (1,0) [0|7] ""  XXX
+ SG_ IntrStAlrtCsAvail : 22|7@0+ (1,0) [0|0] ""  XXX
+ SG_ ISACA_Resrv4Avail : 16|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ISACA_Resrv3Avail : 17|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ISACA_Resrv2Avail : 18|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ISACA_Resrv1Avail : 19|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ISACA_AlrtBrkAvail : 20|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ISACA_AlrtAvail : 21|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ISACA_OfAvail : 22|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CntdVehBrkAlrtCsAvail : 30|7@0+ (1,0) [0|0] ""  XXX
+ SG_ CVBACA_Resrv5Avail : 24|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CVBACA_Resrv4Avail : 25|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CVBACA_Resrv3Avail : 26|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CVBACA_Resrv2Avail : 27|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CVBACA_Resrv1Avail : 28|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CVBACA_OnAvail : 29|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CVBACA_OfAvail : 30|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TrfRdsdInfCsAvail : 38|7@0+ (1,0) [0|0] ""  XXX
+ SG_ TRICA_Resrv5Avail : 32|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TRICA_Resrv4Avail : 33|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TRICA_Resrv3Avail : 34|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TRICA_Resrv2Avail : 35|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TRICA_Resrv1Avail : 36|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TRICA_OnAvail : 37|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TRICA_OfAvail : 38|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2151464960 V2V_Warnings_LS: 5 XXX
+ SG_ V2VWrngIndReq : 4|5@0+ (1,0) [0|31] ""  XXX
+ SG_ V2VWrngDirctn : 7|3@0+ (1,0) [0|7] ""  XXX
+ SG_ V2VWrngDistRemng : 9|10@0+ (1,0) [0|1023] ""  XXX
+ SG_ V2VTrfLghtInfo : 28|13@0+ (1,0) [0|0] ""  XXX
+ SG_ V2VTLI_TrfLghtTmPhsSw : 28|6@0+ (1,0) [0|63] ""  XXX
+ SG_ V2VTLI_TrfLghtMntngDirctn : 32|1@0+ (1,0) [0|1] ""  XXX
+ SG_ V2VTLI_TrfLghtValDirctn : 34|2@0+ (1,0) [0|3] ""  XXX
+ SG_ V2VTLI_TrfLghtPhsArivl : 36|2@0+ (1,0) [0|3] ""  XXX
+ SG_ V2VTLI_TrfLghtActlPhs : 38|2@0+ (1,0) [0|3] ""  XXX
+ SG_ V2VSrvIndReq : 30|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2151448576 V2V_Seat_Vib_Request_LS: 3 XXX
+ SG_ V2VSysHptcStVibReq : 5|6@0+ (1,0) [0|63] ""  XXX
+ SG_ V2VSysHptStVibRqSN : 7|2@0+ (1,0) [0|3] ""  XXX
+ SG_ V2VSyLftHptStVbRq : 13|6@0+ (1,0) [0|63] ""  XXX
+ SG_ V2VSyLftHptStVbRqSN : 15|2@0+ (1,0) [0|3] ""  XXX
+ SG_ V2VSyRghtHptStVbRq : 21|6@0+ (1,0) [0|63] ""  XXX
+ SG_ V2VSyRghtHptStVbRqSN : 23|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2153930752 Lane_Centering_Convenience_LS: 3 XXX
+ SG_ LCWrnIndReq : 4|5@0+ (1,0) [0|31] ""  XXX
+ SG_ LCCDrvrAwrnsIO : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LnCntrVhlStpd : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LnCntrNonRspDrvrCnd : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LCConvMsgIndreq : 12|5@0+ (1,0) [0|31] ""  XXX
+ SG_ LCCIndReq : 15|3@0+ (1,0) [0|7] ""  XXX
+ SG_ LnCntrEsclnStat : 17|2@0+ (1,0) [0|3] ""  XXX
+ SG_ LnCntrSpchPrmtReq : 19|2@0+ (1,0) [0|3] ""  XXX
+ SG_ LnCntrngCtlIcnLoctn : 23|4@0- (1,0) [-8|7] ""  XXX
+
+BO_ 2153889792 Lane_Centering_Arrow_LS: 5 XXX
+ SG_ LCArrwBlk1Act : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LCArrwBlk2Act : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LCArrwBlk3Act : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LCArrwBlk4Act : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LCArrwBlk5Act : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LCArrwBlk2Offst : 15|8@0- (1,0) [-128|127] ""  XXX
+ SG_ LCArrwBlk3Offst : 23|8@0- (1,0) [-128|127] ""  XXX
+ SG_ LCArrwBlk4Offst : 31|8@0- (1,0) [-128|127] ""  XXX
+ SG_ LCArrwBlk5Offst : 39|8@0- (1,0) [-128|127] ""  XXX
+
+BO_ 2153914368 Energy_Usage_LS: 7 XXX
+ SG_ EngyUsgScrScal : 7|56@0+ (1,0) [0|0] ""  XXX
+ SG_ EUSS_OTEgUgScrMxScVal : 0|7@0- (0.1,0) [-5|5] ""  XXX
+ SG_ EUSS_OTEgUgScrMnScVal : 7|7@0- (0.1,0) [-5|5] ""  XXX
+ SG_ EUSS_ITEgUgScrMnScVal : 9|7@0- (0.1,0) [-5|5] ""  XXX
+ SG_ EUSS_ITEgUgScrMxScVal : 18|7@0- (0.1,0) [-5|5] ""  XXX
+ SG_ EUSS_TcEgUgScrMnScVal : 27|7@0- (0.1,0) [-5|5] ""  XXX
+ SG_ EUSS_TcEgUgScrMxScVal : 36|7@0- (0.1,0) [-5|5] ""  XXX
+ SG_ EUSS_TrEgUgScrMnScVal : 45|7@0- (0.1,0) [-5|5] ""  XXX
+ SG_ EUSS_TrEgUgScrMxScVal : 54|7@0- (0.1,0) [-5|5] ""  XXX
+
+BO_ 2151882752 PTO_Customization_Request_LS: 3 XXX
+ SG_ PTOTpStpSpdCsStReq : 2|3@0+ (1,0) [0|7] ""  XXX
+ SG_ PTOEngRnTmrCsStRq : 11|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PTOStdbySpdCsStReq : 14|3@0+ (1,0) [0|7] ""  XXX
+ SG_ PTOSet1SpdCsStReq : 19|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PTOSet2SpdCsStReq : 23|4@0+ (1,0) [0|15] ""  XXX
+
+BO_ 2151899136 PTO_Status_LS: 5 XXX
+ SG_ PTORelBrkPedIO : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PTORelAccPedIO : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PTORedEngSpdIO : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PTOPrsRelCltPedIO : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PTOPrsRelBrkPedIO : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PTOEngmntStatInd : 6|2@0+ (1,0) [0|3] ""  XXX
+ SG_ PTODisengCrsCntlIO : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PTOSet1SpdCsStAvl : 8|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PTOSet2SpdCsStAvl : 9|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PTOTpStpSpdCsStAvl : 10|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PTOEngRnTmrCsStAvl : 11|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PTOStdbySpdCsStAvl : 12|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PTOTransInGearIO : 13|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PTOSetPrkBrkIO : 14|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PTORelCltPedIO : 15|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PTOStdbSpdCsCrStVal : 18|3@0+ (1,0) [0|7] ""  XXX
+ SG_ PTOGroup : 20|2@0+ (1,0) [0|0] ""  XXX
+ SG_ PTOVDA : 19|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PTOVDM : 20|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PTOManTransInGrIO : 21|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PTOAccelUpnBrkRelIO : 22|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PTOEngUpnBrkRelIO : 23|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PTOTpStSpdCsCrStVal : 26|3@0+ (1,0) [0|7] ""  XXX
+ SG_ PTOEnRnTmCsCrStVal : 30|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PTOServIndOn : 31|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PTOSet1SpdCsCrStVal : 35|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PTOSet2SpdCsCrStVal : 39|4@0+ (1,0) [0|15] ""  XXX
+
+BO_ 2150580224 HMI_UtlChrgIntrfr_Indication_LS: 5 XXX
+ SG_ CstmrNonUsblSOCGroup : 1|10@0+ (1,0) [0|0] ""  XXX
+ SG_ CstmrNonUsblSOCV : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CstmrNonUsblSOC : 15|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+ SG_ CstNonUsbSOCDspLvl : 23|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+ SG_ PrpDspTtlPwrLvlPct : 24|9@0- (0.392157,0) [-100.392192|100.000035] "%"  XXX
+
+BO_ 2151735296 Rear_Cross_Traffic_Alert_Ind_LS: 1 XXX
+ SG_ RrCrsTrfcAlrtOffIO : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LnChgAlrtOffIndOn : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RtRrCrsTrfcAlrtEnbld : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RtSBZAlrtEnbld : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RtLnChgAlrtEnbld : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RtSdDetSysTmpDsbld : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RtSdDetSysServDsbld : 6|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2151792640 Rear_Cross_Traffic_Alert_Rght_LS: 5 XXX
+ SG_ RrCTfcRHptcStRqSqN : 1|2@0+ (1,0) [0|3] ""  XXX
+ SG_ RrCTfcRHptcStReq : 7|6@0+ (1,0) [0|63] ""  XXX
+ SG_ RrCrsTrfAltRgtIndCtrl : 34|3@0+ (1,0) [0|0] ""  XXX
+ SG_ RCTARIC_IndReq : 33|2@0+ (1,0) [0|3] ""  XXX
+ SG_ RCTARIC_Indctr1Act : 34|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2149826560 FCA_VisionBased_Info_2_LS: 4 XXX
+ SG_ FCAGpStng : 2|3@0+ (1,0) [0|7] ""  XXX
+ SG_ FCAHdwyStngIO : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FCACrusCtrlCnclReqd : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FCABrkPrflReq : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FwdClnAlrtOffIO11E : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FwdClnAlrtPr11E : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SpdLmtVsnFsdSpdGroup : 15|15@0+ (1,0) [0|0] ""  XXX
+ SG_ SpdLmtVsnFsdSpd : 15|8@0+ (1,0) [0|255] ""  XXX
+ SG_ SpdLmtVsnFsdSpdM : 17|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FwdObjAlrtInd11E : 16|9@0+ (1,0) [0|0] ""  XXX
+ SG_ FOAI_AlrtChmIhbRq11E : 16|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FOAI_VehAhdIndRq11E : 27|4@0+ (1,0) [0|15] ""  XXX
+ SG_ FOAI_AlrtWrnIndRq11E : 31|4@0+ (1,0) [0|15] ""  XXX
+ SG_ SpdLmtVnFsSpdNwDet : 18|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SpdLmtVsnFsdSpdUnt : 19|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2149957632 Park_Assist_ESSprocess_Info_LS: 1 XXX
+ SG_ ClsnMtgtnInhbtd : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PrkAstInhbtReq : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PrkAstRrObjSnsngRqAct : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PrkAstOprtrDsrdStat : 4|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2149941248 Park_Assist_ESSbased_Info_LS: 5 XXX
+ SG_ PrkAstRrExtdDstUnfltd : 3|12@0+ (0.01,0) [0|40.95] "m"  XXX
+ SG_ PrkAstRrSysStatUnfltd : 5|2@0+ (1,0) [0|3] ""  XXX
+ SG_ PrkAstFntnSnsDstrbdIO : 16|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PrkAstFntnSnrsBlkd : 17|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PrkAstFntnFld : 18|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PrkAstFntnDsbldIO : 19|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PrkAstFntnClnPrkAstIO : 20|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ClsnMtgtnInhbtReqtd : 21|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PrkAstRrObjSnsngAct : 22|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PARrRgn3ObjStatUnfltd : 27|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PARrRgn4ObjStatUnfltd : 31|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PARrRgn1ObjStatUnfltd : 35|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PARrRgn2ObjStatUnfltd : 39|4@0+ (1,0) [0|15] ""  XXX
+
+BO_ 2156314624 High_Volt_Time_Based_Chrg_LS: 8 XXX
+ SG_ TODCNxtPlnndDprtrTm : 5|14@0+ (1,0) [0|0] ""  XXX
+ SG_ TODCNPDT_Hr : 2|5@0+ (1,0) [0|31] "Hour"  XXX
+ SG_ TODCNPDT_DyOfWk : 5|3@0+ (1,0) [0|7] ""  XXX
+ SG_ TODCNPDT_Min : 13|6@0+ (1,0) [0|63] "Minute"  XXX
+ SG_ OffBrdCSFltDtctd : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ OBVhCsACChgRqBnVs : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HVChgSyChgLvlPrfDt : 16|25@0+ (1,0) [0|0] ""  XXX
+ SG_ HVCSCLPD_UsrIntTyp : 16|2@0+ (1,0) [0|3] ""  XXX
+ SG_ HVCSCLPD_NrmChrgC : 27|5@0+ (1,0) [0|31] "A"  XXX
+ SG_ HVCSCLPD_ChgLvlPfS : 30|3@0+ (1,0) [0|7] ""  XXX
+ SG_ HVCSCLPD_RdCrntLv2 : 33|5@0+ (1,0) [0|31] "A"  XXX
+ SG_ HVCSCLPD_RdCrntLv1 : 38|5@0+ (1,0) [0|31] "A"  XXX
+ SG_ HVCSCLPD_RdCrntLv3 : 44|5@0+ (1,0) [0|31] "A"  XXX
+ SG_ HVChrgAbrtRsn : 19|3@0+ (1,0) [0|7] ""  XXX
+ SG_ TODCOpMd : 22|3@0+ (1,0) [0|7] ""  XXX
+ SG_ HVChrgSysSplyFltIO : 23|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TODCDspMnPgTmpOr : 52|5@0+ (1,0) [0|0] ""  XXX
+ SG_ TODCDMPTO_TpOvR : 51|4@0+ (1,0) [0|15] ""  XXX
+ SG_ TODCDMPTO_CmPgR : 52|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HVChrgSysStNot : 55|3@0+ (1,0) [0|7] ""  XXX
+ SG_ HVBatBlkSOC : 63|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+
+BO_ 2150449152 Engine_Information_5_LS: 4 XXX
+ SG_ SrvcFlSysPrkInOpnArIO : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TnDrvTrCtrlOffUnbIO : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TnDrvStblCtrlOffUnbIO : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ InActFuelMdFuelLvlIO : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FuelSysNEmsRltMalfAct : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngInltSpcfcHmdtyGroup : 7|16@0+ (1,0) [0|0] ""  XXX
+ SG_ EngInltSpcfcHmdtyM : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngInltSpcfcHmdtyV : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngInltSpcfcHmdty : 15|8@0+ (0.0196078,0) [0|4.999989] "% water"  XXX
+ SG_ AutoStpInhbtRsnInd : 23|8@0+ (1,0) [0|0] ""  XXX
+ SG_ ASIRI_Indication08 : 16|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ASIRI_Indication07 : 17|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ASIRI_Indication06 : 18|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ASIRI_Indication05 : 19|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ASIRI_Indication04 : 20|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ASIRI_Indication03 : 21|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ASIRI_Indication02 : 22|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ASIRI_Indication01 : 23|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SpdLmtrSttngTypAct : 25|2@0+ (1,0) [0|3] ""  XXX
+ SG_ ManTransIndReq : 28|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ESPDrvrExtIO : 29|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ESPDrvrDrStIndtrmntIO : 30|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ESPAutoPrkIO : 31|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2149810176 FCA_VisionBased_Info_1_LS: 1 XXX
+ SG_ FCAHptcStVbnRqSeqN : 1|2@0+ (1,0) [0|3] ""  XXX
+ SG_ FCAHptcStVbnReq : 7|6@0+ (1,0) [0|63] ""  XXX
+
+BO_ 2149793792 FCA_VisionBased_Info_LS: 6 XXX
+ SG_ FwdClnAlrtCustCrntSetngVal : 3|3@0+ (1,0) [0|7] ""  XXX
+ SG_ FCACustStngAvlbl : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ VhlAhdDstIndReq : 26|19@0+ (1,0) [0|0] ""  XXX
+ SG_ VADIR_IndLvl : 26|4@0+ (1,0) [0|15] ""  XXX
+ SG_ VADIR_FlwTme : 38|7@0+ (0.1,0) [0|12.7] "s"  XXX
+ SG_ VADIR_FlwDst : 47|8@0+ (1,0) [0|255] "m"  XXX
+
+BO_ 2150080512 Aux_Coolant_Heater_Status_LS: 8 XXX
+ SG_ EngAstHtDfrdHtMdAct : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LBCCsCrStVal : 2|2@0+ (1,0) [0|3] ""  XXX
+ SG_ AuxClntHtrVlvStat : 5|3@0+ (1,0) [0|7] ""  XXX
+ SG_ LBCChrgLvlPrfExpIO : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LBCCsStAvl : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LBCCstmrDaRstResp : 12|5@0+ (1,0) [0|0] ""  XXX
+ SG_ LBCCDRR_PosNumbr : 10|3@0+ (1,0) [0|7] ""  XXX
+ SG_ LBCCDRR_ClrStrdPosResp : 12|2@0+ (1,0) [0|3] ""  XXX
+ SG_ LBCPosStgStat : 20|5@0+ (1,0) [0|0] ""  XXX
+ SG_ LBCPSS_PosUpdtLct : 18|3@0+ (1,0) [0|7] ""  XXX
+ SG_ LBCPSS_PosUpdtStat : 20|2@0+ (1,0) [0|3] ""  XXX
+ SG_ LBCVehLctStat : 27|4@0+ (1,0) [0|0] ""  XXX
+ SG_ LBCVLS_VehGPSLct : 26|3@0+ (1,0) [0|7] ""  XXX
+ SG_ LBCVLS_VehGPSLctV : 27|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LBCCstmrFdbk : 31|4@0+ (1,0) [0|0] ""  XXX
+ SG_ LBCCF_Lct4PosStrdIO : 28|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LBCCF_Lct3PosStrdIO : 29|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LBCCF_Lct2PosStrdIO : 30|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LBCCF_Lct1PosStrdIO : 31|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ChrgCyclElecEngyEcnEq : 35|12@0+ (0.1,0) [0|409.5] "km/l"  XXX
+ SG_ ChrgCyclOvrlEngyEcnEq : 51|12@0+ (0.1,0) [0|409.5] "km/l"  XXX
+
+BO_ 2153873408 Heated_Steering_Whl_Rqsted_LS: 1 XXX
+ SG_ MnlHtdStWhlRqstd : 7|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2152128512 Performance_Mode_Cust_Setings_LS: 4 XXX
+ SG_ ACCPerfMdCustAvl : 5|6@0+ (1,0) [0|0] ""  XXX
+ SG_ ACCPMCA_ACCPrfMd6Avl : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ACCPMCA_ACCPrfMd5Avl : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ACCPMCA_ACCPrfMd4Avl : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ACCPMCA_ACCPrfMd3Avl : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ACCPMCA_ACCPrfMd2Avl : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ACCPMCA_ACCPrfMd1Avl : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrvrStPerfMdCustAvl : 13|6@0+ (1,0) [0|0] ""  XXX
+ SG_ DSPMCA_DrvrStPrfMd6Avl : 8|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DSPMCA_DrvrStPrfMd5Avl : 9|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DSPMCA_DrvrStPrfMd4Avl : 10|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DSPMCA_DrvrStPrfMd3Avl : 11|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DSPMCA_DrvrStPrfMd2Avl : 12|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DSPMCA_DrvrStPrfMd1Avl : 13|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PsngStPerfMdCustAvl : 21|6@0+ (1,0) [0|0] ""  XXX
+ SG_ PSPMCA_PsngStPrfMd6Avl : 16|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PSPMCA_PsngStPrfMd5Avl : 17|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PSPMCA_PsngStPrfMd4Avl : 18|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PSPMCA_PsngStPrfMd3Avl : 19|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PSPMCA_PsngStPrfMd2Avl : 20|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PSPMCA_PsngStPrfMd1Avl : 21|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrvStyPerfMdCustAvl : 30|7@0+ (1,0) [0|0] ""  XXX
+ SG_ DSPMCA_DrvStyPrfMd7Avl : 24|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DSPMCA_DrvStyPrfMd6Avl : 25|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DSPMCA_DrvStyPrfMd5Avl : 26|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DSPMCA_DrvStyPrfMd4Avl : 27|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DSPMCA_DrvStyPrfMd3Avl : 28|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DSPMCA_DrvStyPrfMd2Avl : 29|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DSPMCA_DrvStyPrfMd1Avl : 30|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2151997440 Driver_Drowsiness_Dtctn_Stat_LS: 5 XXX
+ SG_ DrvDrowSysIndRq : 2|3@0+ (1,0) [0|7] ""  XXX
+ SG_ DrvDrwDetCsCrStVal : 5|3@0+ (1,0) [0|7] ""  XXX
+ SG_ DrvDrowDetCstStAvl : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrvDrsnHptcStRqSeqN : 9|2@0+ (1,0) [0|3] ""  XXX
+ SG_ DrDrwSysHptcStVbnRq : 15|6@0+ (1,0) [0|63] ""  XXX
+
+BO_ 2156331008 High_Voltage_EnergyMgmt_Ctrl_LS: 7 XXX
+ SG_ LwRngLVLdShdRq : 1|2@0+ (1,0) [0|3] ""  XXX
+ SG_ HVDpltnMdMxCnfdcRg : 11|12@0+ (0.1,0) [0|409.5] "km"  XXX
+ SG_ HVDpltnMdMiCnfdcRg : 27|12@0+ (0.1,0) [0|409.5] "km"  XXX
+ SG_ HVDpltnMdMxGugRg : 43|12@0+ (0.1,0) [0|409.5] "km"  XXX
+
+BO_ 2151776256 Rear_Cross_Traffic_Alert_Left_LS: 5 XXX
+ SG_ RrCTfcLHptcStRqSeqN : 1|2@0+ (1,0) [0|3] ""  XXX
+ SG_ RrCTfcLHptcStReq : 7|6@0+ (1,0) [0|63] ""  XXX
+ SG_ RrCrsTrfAltLftIndCtrl : 34|3@0+ (1,0) [0|0] ""  XXX
+ SG_ RCTALIC_IndReq : 33|2@0+ (1,0) [0|3] ""  XXX
+ SG_ RCTALIC_Indctr1Act : 34|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2154774528 Lighting_Customization_Info_1_LS: 1 XXX
+ SG_ LtRtHnTrCstStVal : 2|3@0+ (1,0) [0|7] ""  XXX
+ SG_ LtRtHnTrGPCsCrStVal : 5|3@0+ (1,0) [0|7] ""  XXX
+ SG_ LtRtHnTrCstStAvail : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LtRtHnTrGPSCsStAvl : 7|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2150375424 Eng_Maintenance_Mode_Strt_Req_LS: 3 XXX
+ SG_ MntnceMdStEngRq : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngAstHtCstStRq : 3|3@0+ (1,0) [0|7] ""  XXX
+ SG_ EngAstHtPlgInCstStRq : 6|3@0+ (1,0) [0|7] ""  XXX
+ SG_ DsplTrnsShftLvrLckRqd : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngyCnsHistGrphRstRq : 8|1@0+ (1,0) [0|1] ""  XXX
+ SG_ USBProgInPrgrs : 9|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LBCPosMdfcReq : 12|3@0+ (1,0) [0|7] ""  XXX
+ SG_ LBCCsStReq : 14|2@0+ (1,0) [0|3] ""  XXX
+ SG_ LBCCstmrDaRstReq : 20|5@0+ (1,0) [0|0] ""  XXX
+ SG_ LBCCDRR_PosNum : 18|3@0+ (1,0) [0|7] ""  XXX
+ SG_ LBCCDRR_ClrStrdPosReq : 20|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2150383616 Engine_Maintenance_Mode_Req_LS: 8 XXX
+ SG_ MntnceMdDsplyRq : 3|4@0+ (1,0) [0|15] ""  XXX
+ SG_ EngMntnceMdAct : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngMntncePrcntCpl : 15|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+ SG_ EngPrpDspPwrLvlPct : 23|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+ SG_ EstElecPrpCap : 31|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+ SG_ PrpCapDspOpPs : 39|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+ SG_ PrpDspTtlPwr : 45|13@0+ (0.5,-326.6) [-326.6|3768.9] "kW"  XXX
+ SG_ BatPrpDspPwrLvlPct : 48|9@0- (0.392157,0) [-100.392192|100.000035] "%"  XXX
+
+BO_ 2151981056 Drive_Cycle_Efficiency_LS: 8 XXX
+ SG_ DstTrvldDt : 7|51@0+ (1,0) [0|0] ""  XXX
+ SG_ DTD_BattPrpDstTrvld : 7|17@0+ (0.015625,0) [0|2047.984375] "km"  XXX
+ SG_ DTD_FuelPrpDstTrvld : 22|17@0+ (0.015625,0) [0|2047.984375] "km"  XXX
+ SG_ DTD_DrvCyclDstTrvld : 37|17@0+ (0.015625,0) [0|2047.984375] "km"  XXX
+ SG_ DrvCyclBatPropRat : 50|11@0+ (0.048852,0) [0|100.000044] "%"  XXX
+
+BO_ 2151964672 Drive_Cycle_Energy_Efficiency_LS: 8 XXX
+ SG_ DrvCyclBatCondEnrgEfncy : 7|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+ SG_ DrvCyclCbnCondEnrgEfncy : 23|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+ SG_ DrvCyclDrvStEnrgEfncy : 31|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+ SG_ DrvCyclTtlEnrgEfncy : 39|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+ SG_ DrvCyclFuelEnmy : 47|12@0+ (0.1,0) [0|409.5] "km/liters"  XXX
+ SG_ DrvCyclFuelUsd : 51|12@0+ (0.125,0) [0|511.875] "liters"  XXX
+
+BO_ 2156298240 High_Volt_Batt_Time_Pwr_Chrg_LS: 8 XXX
+ SG_ HVBatCmpltTmHghPwrChrg : 7|14@0+ (1,0) [0|0] ""  XXX
+ SG_ HVBCTHPC_HrOfDy : 4|5@0+ (1,0) [0|31] "Hour"  XXX
+ SG_ HVBCTHPC_DyOfWk : 7|3@0+ (1,0) [0|7] ""  XXX
+ SG_ HVBCTHPC_MntOfHr : 15|6@0+ (1,0) [0|63] "Minute"  XXX
+ SG_ HVBatCmpltTmLwPwrChrg : 9|14@0+ (1,0) [0|0] ""  XXX
+ SG_ HVBCTLPC_DyOfWk : 9|3@0+ (1,0) [0|7] ""  XXX
+ SG_ HVBCTLPC_MntOfHr : 17|6@0+ (1,0) [0|63] "Minute"  XXX
+ SG_ HVBCTLPC_HrOfDy : 22|5@0+ (1,0) [0|31] "Hour"  XXX
+ SG_ HVBatStrTmHghPwrChrg : 27|14@0+ (1,0) [0|0] ""  XXX
+ SG_ HVBSTHPC_HrOfDy : 24|5@0+ (1,0) [0|31] "Hour"  XXX
+ SG_ HVBSTHPC_DyOfWk : 27|3@0+ (1,0) [0|7] ""  XXX
+ SG_ HVBSTHPC_MntOfHr : 35|6@0+ (1,0) [0|63] "Minute"  XXX
+ SG_ HVBatStrTmLwPwrChrg : 45|14@0+ (1,0) [0|0] ""  XXX
+ SG_ HVBSTLPC_HrOfDy : 42|5@0+ (1,0) [0|31] "Hour"  XXX
+ SG_ HVBSTLPC_DyOfWk : 45|3@0+ (1,0) [0|7] ""  XXX
+ SG_ HVBSTLPC_MntOfHr : 53|6@0+ (1,0) [0|63] "Minute"  XXX
+ SG_ HVChrgSysDpTmExdSt : 58|3@0+ (1,0) [0|0] ""  XXX
+ SG_ HVCSDTES_NPDTIO : 56|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HVCSDTES_HiPwrCIO : 57|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HVCSDTES_LoPwrCIO : 58|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HTRActvIndOn : 59|1@0+ (1,0) [0|1] ""  XXX
+ SG_ InsfcntTmTFlChrgIO : 60|1@0+ (1,0) [0|1] ""  XXX
+ SG_ InvldHMIEtrIO : 61|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HVBatChrgCrdAlrtReq : 63|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2149924864 Drv_Pref_Mode_Switch_Status_LS: 8 XXX
+ SG_ DrvSelMd1Stat : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrvSelMd1ReqDnd : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrvSelMd2Stat : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrvSelMd2ReqDnd : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrvSelMd3Stat : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrvSelMd3ReqDnd : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HilRlbkCtrlActIO : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FwdClnMtgnBrkReqAct : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrvSelMdSelnStat : 8|17@0+ (1,0) [0|0] ""  XXX
+ SG_ DSMSS_DrvSelMd1Un : 8|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DSMSS_DrvSelMd1Pn : 16|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DSMSS_DrvSelMd8Un : 17|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DSMSS_DrvSelMd7Un : 18|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DSMSS_DrvSelMd6Un : 19|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DSMSS_DrvSelMd5Un : 20|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DSMSS_DrvSelMd4Un : 21|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DSMSS_DrvSelMd3Un : 22|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DSMSS_DrvSelMd2Un : 23|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DSMSS_DrvSelMd0Pn : 24|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DSMSS_DrvSelMd8Pn : 25|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DSMSS_DrvSelMd7Pn : 26|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DSMSS_DrvSelMd6Pn : 27|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DSMSS_DrvSelMd5Pn : 28|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DSMSS_DrvSelMd4Pn : 29|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DSMSS_DrvSelMd3Pn : 30|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DSMSS_DrvSelMd2Pn : 31|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrvSelMd4Stat : 9|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrvSelMd4ReqDnd : 10|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrvSelMd5Stat : 11|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrvSelMd5ReqDnd : 12|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrvSelMd6Stat : 13|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrvSelMd6ReqDnd : 14|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PTOMobModTrnsInGrIO : 15|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ECODrvAsstDsplyStat : 34|11@0+ (1,0) [0|0] ""  XXX
+ SG_ EDADS_ShftIndStat : 33|2@0+ (1,0) [0|3] ""  XXX
+ SG_ EDADS_EcoDrvShftIO : 34|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EDADS_RcmndtFwdGr : 43|4@0+ (1,0) [0|15] ""  XXX
+ SG_ EDADS_CrntFwdMsdG : 47|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DrvSelMd7Stat : 35|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrvSelMd7ReqDnd : 36|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrvSelMd8Stat : 37|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrvSelMd8ReqDnd : 38|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FstIdlMdAct : 39|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DsplyPerfMdRq : 50|3@0+ (1,0) [0|7] ""  XXX
+ SG_ TireLFLowTracIO : 51|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TireLRLowTracIO : 52|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TireRFLowTracIO : 53|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TireRRLowTracIO : 54|1@0+ (1,0) [0|1] ""  XXX
+ SG_ a_12VBatSysUnstab : 55|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ColPrepSysCustAvail : 62|7@0+ (1,0) [0|0] ""  XXX
+ SG_ CPSCA_Resrv3Avail : 56|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CPSCA_Resrv2Avail : 57|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CPSCA_Resrv1Avail : 58|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CPSCA_AlrtBrkStrAvail : 59|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CPSCA_AlrtBrkAvail : 60|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CPSCA_AlrtAvail : 61|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CPSCA_OffAvail : 62|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2152054784 HMI_Disp_Hyb_Animation_Status_LS: 1 XXX
+ SG_ AnmStrtReq : 2|3@0+ (1,0) [0|7] ""  XXX
+ SG_ IntPnlClstrAnmtStat : 5|3@0+ (1,0) [0|7] ""  XXX
+ SG_ FuelEconMetDispUnts : 6|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2150301696 HMI_Animation_Initiator_LS: 1 XXX
+ SG_ WlcAnmReq : 0|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2150563840 HMI_AnimationHybridRadio_LS: 3 XXX
+ SG_ RadAnmtStat : 2|3@0+ (1,0) [0|7] ""  XXX
+ SG_ RadAudQueStat : 5|3@0+ (1,0) [0|7] ""  XXX
+ SG_ DrStStatDispAct : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PsStStatDispAct : 7|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2154758144 Auxiliary_Heater_Active_LS: 1 XXX
+ SG_ ChldLckOtSwAct : 1|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2154577920 Amp_Sink_Stat_LS: 2 XXX
+ SG_ AmpSnkStat : 4|13@0+ (1,0) [0|0] ""  XXX
+ SG_ ASS_SurndAvail : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ASS_DSPAvail : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ASS_VehNoisCmpnAvail : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ASS_PhLckdLpLckd : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ASS_MtxSnkMutStat : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ASS_DSPMd7Prsnt : 8|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ASS_DSPMd6Prsnt : 9|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ASS_DSPMd5Prsnt : 10|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ASS_DSPMd4Prsnt : 11|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ASS_DSPMd3Prsnt : 12|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ASS_DSPMd2Prsnt : 13|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ASS_DSPMd1Prsnt : 14|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ASS_DSPMd0Prsnt : 15|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2154594304 Amp_Settings_Tone_Ctrl_LS: 5 XXX
+ SG_ AmpSetTonCtrl : 1|34@0+ (1,0) [0|0] ""  XXX
+ SG_ ASTC_ChimSnkLvl : 1|8@0+ (0.5,-127.5) [-127.5|0] "dB"  XXX
+ SG_ ASTC_ChimSnkSpkrPos : 9|4@0+ (1,0) [0|15] ""  XXX
+ SG_ ASTC_SurndLvl : 21|6@0- (1,0) [-32|31] ""  XXX
+ SG_ ASTC_MtxSnkMutRmpTm : 25|8@0+ (5,0) [0|1275] "ms"  XXX
+ SG_ ASTC_MtxSnkMut : 26|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ASTC_DSPMd : 30|4@0+ (1,0) [0|15] ""  XXX
+ SG_ ASTC_VehNoisCmpnAct : 31|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ASTC_GblAudSnkMut : 32|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ASTC_AmpLwPwrSt : 33|1@0+ (1,0) [0|1] ""  XXX
+ SG_ InfotnBkltngConfigSt : 3|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2154586112 Amp_Settings_Sink_Lvl_Ctrl_LS: 8 XXX
+ SG_ AmpSetSnkLvlCtrl : 7|64@0+ (1,0) [0|0] ""  XXX
+ SG_ ASSLC_MtxSnkLvl : 7|8@0+ (0.5,-127.5) [-127.5|0] "dB"  XXX
+ SG_ ASSLC_MxPrmtSnkLvl : 15|8@0+ (0.5,-127.5) [-127.5|0] "dB"  XXX
+ SG_ ASSLC_AudFdbkSnkLvl : 23|8@0+ (0.5,-127.5) [-127.5|0] "dB"  XXX
+ SG_ ASSLC_FvSnkLvl : 31|8@0+ (0.5,-127.5) [-127.5|0] "dB"  XXX
+ SG_ ASSLC_MtxSnkFd : 33|6@0- (1,0) [-32|31] ""  XXX
+ SG_ ASSLC_MtxSnkBal : 39|6@0- (1,0) [-32|31] ""  XXX
+ SG_ ASSLC_MtxSnkBass : 43|6@0- (1,0) [-32|31] ""  XXX
+ SG_ ASSLC_MtxSnkMdrng : 53|6@0- (1,0) [-32|31] ""  XXX
+ SG_ ASSLC_AutoLdnsCmpnAct : 56|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ASSLC_VcSrcActOnMtx : 57|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ASSLC_MtxSnkTrbl : 63|6@0- (1,0) [-32|31] ""  XXX
+
+BO_ 2152857600 ACC_TrafficJam_RouteSpd_Stat_LS: 3 XXX
+ SG_ ACCRteSpdDrvIntvReq : 1|2@0+ (1,0) [0|3] ""  XXX
+ SG_ ACCTrfcJamAstActStat : 10|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ACCRteSpdAdaptStat : 12|2@0+ (1,0) [0|3] ""  XXX
+ SG_ ACCGrnMdStat : 14|2@0+ (1,0) [0|3] ""  XXX
+ SG_ ACCTrfcJamAstRmnTm : 23|8@0+ (1,0) [0|255] "sec"  XXX
+
+BO_ 2158149632 High_Volt_Bat_Time_Bsd_Rsp_1_LS: 7 XXX
+ SG_ HVBatTmBsSsnChRsp : 0|14@0+ (1,0) [0|0] ""  XXX
+ SG_ HVBTBSCR_SsnStat : 0|2@0+ (1,0) [0|3] ""  XXX
+ SG_ HVBTBSCR_SsnMthStat : 11|4@0+ (1,0) [0|15] ""  XXX
+ SG_ HVBTBSCR_SsnSlctStat : 14|3@0+ (1,0) [0|7] ""  XXX
+ SG_ HVBTBSCR_SsnDyStat : 23|5@0+ (1,0) [0|31] "day"  XXX
+ SG_ HVBatTmBsChrgStRsp : 3|3@0+ (1,0) [0|7] ""  XXX
+ SG_ HVBatCrgDspStat : 6|3@0+ (1,0) [0|7] ""  XXX
+ SG_ HVBatTmBsChrgRtRsp : 17|10@0+ (1,0) [0|0] ""  XXX
+ SG_ HVBTBCRS_ChRtEnblStat : 17|2@0+ (1,0) [0|3] ""  XXX
+ SG_ HVBTBCRS_ChRtSlctStat : 27|4@0+ (1,0) [0|15] ""  XXX
+ SG_ HVBTBCRS_ChRtDStat : 31|4@0+ (1,0) [0|15] ""  XXX
+ SG_ EngyCnsHsGrphCnfgDt : 36|13@0+ (1,0) [0|0] ""  XXX
+ SG_ ECHGCD_YAxMaxVal : 32|6@0+ (4,0) [0|252] ""  XXX
+ SG_ ECHGCD_MeasUt : 36|4@0+ (1,0) [0|15] ""  XXX
+ SG_ ECHGCD_XAxTkMrkInterv : 42|3@0+ (1,0) [0|7] ""  XXX
+ SG_ EgyCnsHstGphInsEgyCns : 55|5@0+ (1,0) [0|31] ""  XXX
+
+BO_ 2158116864 High_Volt_Bat_Time_Bsd_Rsp_LS: 8 XXX
+ SG_ OBHVBCMinsRmng : 5|6@0+ (1,0) [0|63] ""  XXX
+ SG_ OBHVBCCompTmDispFrmt : 7|2@0+ (1,0) [0|3] ""  XXX
+ SG_ HVBatTmBsDelChrgRsp : 12|21@0+ (1,0) [0|0] ""  XXX
+ SG_ HVBTBDCRS_DlChHRsp : 12|5@0+ (1,0) [0|31] "hr"  XXX
+ SG_ HVBTBDCRS_DlChSlctStat : 19|4@0+ (1,0) [0|15] ""  XXX
+ SG_ HVBTBDCRS_DlChDStat : 23|4@0+ (1,0) [0|15] ""  XXX
+ SG_ HVBTBDCRS_DlChMHRsp : 29|6@0+ (1,0) [0|63] "min"  XXX
+ SG_ HVBTBDCRS_DlChSsnStat : 31|2@0+ (1,0) [0|3] ""  XXX
+ SG_ HVBatTmBsRtChrgRsp : 34|27@0+ (1,0) [0|0] ""  XXX
+ SG_ HVBTBRCR_RtChMHRsp : 32|6@0+ (1,0) [0|63] "min"  XXX
+ SG_ HVBTBRCR_RtChSsnStat : 34|2@0+ (1,0) [0|3] ""  XXX
+ SG_ HVBTBRCR_RtChSlctStat : 42|3@0+ (1,0) [0|7] ""  XXX
+ SG_ HVBTBRCR_RtChDStat : 50|4@0+ (1,0) [0|15] ""  XXX
+ SG_ HVBTBRCR_RtChHRsp : 55|5@0+ (1,0) [0|31] "hr"  XXX
+ SG_ HVBTBRCR_RtCHSlctTblRwStat : 58|3@0+ (1,0) [0|7] "rows"  XXX
+ SG_ HVBTBRCR_RtChSlRtStat : 62|4@0+ (1,0) [0|15] ""  XXX
+
+BO_ 2156281856 High_Volt_Bat_Time_Bsd_Req_1_LS: 7 XXX
+ SG_ HVBatTmBsSsnChStReq : 0|14@0+ (1,0) [0|0] ""  XXX
+ SG_ HVBTBSCSR_SsnStReq : 0|2@0+ (1,0) [0|3] ""  XXX
+ SG_ HVBTBSCSR_SsnMthStReq : 11|4@0+ (1,0) [0|15] ""  XXX
+ SG_ HVBTBSCSR_SsnSlStReq : 14|3@0+ (1,0) [0|7] ""  XXX
+ SG_ HVBTBSCSR_SsnDayStReq : 23|5@0+ (1,0) [0|31] "day"  XXX
+ SG_ HVBatTmBsChrgMdReq : 3|3@0+ (1,0) [0|7] ""  XXX
+ SG_ HVChgSyChgLvlPrfSt : 6|3@0+ (1,0) [0|7] ""  XXX
+ SG_ StTODChrgTmpOvrd : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HVBatTmBsChrgRtStReq : 17|10@0+ (1,0) [0|0] ""  XXX
+ SG_ HVBTBCRSR_ChRtEnblStReq : 17|2@0+ (1,0) [0|3] ""  XXX
+ SG_ HVBTBCRSR_ChRtSlStReq : 27|4@0+ (1,0) [0|15] ""  XXX
+ SG_ HVBTBCRSR_ChRtDStReq : 31|4@0+ (1,0) [0|15] ""  XXX
+ SG_ TmpOvdNxtPlnDptTmRq : 32|17@0+ (1,0) [0|0] ""  XXX
+ SG_ TONPDTR_StTmpOvrAtv : 32|2@0+ (1,0) [0|3] ""  XXX
+ SG_ TONPDTR_HrOfDy : 42|5@0+ (1,0) [0|31] "Hour"  XXX
+ SG_ TONPDTR_DyOfWk : 46|4@0+ (1,0) [0|15] ""  XXX
+ SG_ TONPDTR_MntOfHr : 53|6@0+ (1,0) [0|63] "Minute"  XXX
+ SG_ RtBsChrgCmplnTmPrfReq : 34|2@0+ (1,0) [0|3] ""  XXX
+ SG_ HTRCsStReq : 37|3@0+ (1,0) [0|7] ""  XXX
+
+BO_ 2156265472 High_Volt_Bat_Time_Bsd_Req_LS: 8 XXX
+ SG_ ChgCdTfAlCzStRq : 2|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ChgPwLsAlCzStRq : 5|3@0+ (1,0) [0|7] ""  XXX
+ SG_ PrtyChrgRq : 7|2@0+ (1,0) [0|3] ""  XXX
+ SG_ HVBatTmBsDlChStReq : 12|21@0+ (1,0) [0|0] ""  XXX
+ SG_ HVBTBDCSRQ_DlChHStReq : 12|5@0+ (1,0) [0|31] "hr"  XXX
+ SG_ HVBTBDCSRQ_DlChSlStReq : 19|4@0+ (1,0) [0|15] ""  XXX
+ SG_ HVBTBDCSRQ_DlChDStReq : 23|4@0+ (1,0) [0|15] ""  XXX
+ SG_ HVBTBDCSRQ_DlChMHStReq : 29|6@0+ (1,0) [0|63] "min"  XXX
+ SG_ HVBTBDCSRQ_DlChSsnStReq : 31|2@0+ (1,0) [0|3] ""  XXX
+ SG_ ChgSysAudInCsStReq : 15|3@0+ (1,0) [0|7] ""  XXX
+ SG_ HVBatTmBsRtChrgStReq : 34|27@0+ (1,0) [0|0] ""  XXX
+ SG_ HVBTBRCSR_RtChDStReq : 34|4@0+ (1,0) [0|15] ""  XXX
+ SG_ HVBTBRCSR_RtChSlStReq : 42|3@0+ (1,0) [0|7] ""  XXX
+ SG_ HVBTBRCSR_RtChSlRtStReq : 46|4@0+ (1,0) [0|15] ""  XXX
+ SG_ HVBTBRCSR_RtChMHStReq : 48|6@0+ (1,0) [0|63] "min"  XXX
+ SG_ HVBTBRCSR_RtChSsnStReq : 50|2@0+ (1,0) [0|3] ""  XXX
+ SG_ HVBTBRCSR_RtChHStReq : 55|5@0+ (1,0) [0|31] "hr"  XXX
+ SG_ HVBTBRCSR_RtChSlTbRwReq : 58|3@0+ (1,0) [0|7] "rows"  XXX
+ SG_ OffBrdHVCVehCsChRq : 35|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngyUsgScrnMeasUtStat : 39|4@0+ (1,0) [0|15] ""  XXX
+
+BO_ 2150113280 Energy_Storage_System_LS: 8 XXX
+ SG_ EngyStgSysActCoolEnb : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrvCycElEnrgUsd : 21|14@0+ (0.36,0) [0|5897.88] "MJ"  XXX
+ SG_ DrvCyclElecEngyEcon : 32|9@0+ (0.1,0) [0|51.1] ""  XXX
+ SG_ HVChrgInhbRsn : 36|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DrvCyclTrpDstTrvld : 54|15@0+ (0.1,0) [0|3276.7] "km"  XXX
+
+BO_ 2150055936 Climate_Control_Status_LS: 5 XXX
+ SG_ ClmtCtrlUpprPwrLmt : 7|8@0+ (0.1,0) [0|25.5] "kW"  XXX
+ SG_ ClmtCtrlLwrPwrLmt : 15|8@0+ (0.1,0) [0|25.5] "kW"  XXX
+ SG_ ClimCtrlHVDvcShtdwnCmd : 16|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ClmCntCmpPwrUsdClc : 39|8@0+ (0.04,0) [0|10.2] "kW"  XXX
+
+BO_ 2150039552 Thrml_Ref_Compressor_Status_LS: 5 XXX
+ SG_ ThrmlRefCompStat : 3|4@0+ (1,0) [0|15] ""  XXX
+ SG_ EvpCorOtltAirTmpCalcdGroup : 4|13@0+ (1,0) [0|0] ""  XXX
+ SG_ EvpCorOtltAirTmpCalcdV : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EvpCorOtltAirTmpCalcd : 15|8@0+ (0.5,-40) [-40|87.5] "deg C"  XXX
+ SG_ ThrmlRefCompSpdGroup : 22|15@0+ (1,0) [0|0] ""  XXX
+ SG_ ThrmlRefCompSpd : 21|14@0+ (1,0) [0|16383] "rpm"  XXX
+ SG_ ThrmlRefCompSpdV : 22|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ThrmlRfCmpOvTmpFltPr : 23|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2154856448 Humidity_Sensor_Status_LS: 5 XXX
+ SG_ HmdtySnsrGlssTemp : 1|10@0+ (0.146628,-50) [-50|100.000444] "deg C"  XXX
+ SG_ HmdtySnsrTemp : 17|10@0+ (0.146628,-50) [-50|100.000444] "deg C"  XXX
+ SG_ HmdtySnsrRltvHmdty : 39|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+
+BO_ 2151342080 Park_Assistant_Right_Status_LS: 2 XXX
+ SG_ PARtRgn1ObjStat : 3|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PrkAstRtSysStat : 5|2@0+ (1,0) [0|3] ""  XXX
+ SG_ PARtRgn3ObjStat : 11|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PARtRgn2ObjStat : 15|4@0+ (1,0) [0|15] ""  XXX
+
+BO_ 2151325696 Park_Assistant_Left_Status_LS: 2 XXX
+ SG_ PALtRgn1ObjStat : 3|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PrkAstLtSysStat : 5|2@0+ (1,0) [0|3] ""  XXX
+ SG_ PALtRgn3ObjStat : 11|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PALtRgn2ObjStat : 15|4@0+ (1,0) [0|15] ""  XXX
+
+BO_ 2151809024 Drv_Cycl_Elec_Enrgy_Consumd_LS: 8 XXX
+ SG_ DrvCycElecEngySt5 : 5|14@0+ (0.36,0) [0|5897.88] "MJ"  XXX
+ SG_ DrvCycElecEngyCnsmd : 23|32@0+ (1,0) [0|0] ""  XXX
+ SG_ DCEEC_EngyPct1 : 23|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+ SG_ DCEEC_EngyPct2 : 31|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+ SG_ DCEEC_EngyPct3 : 39|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+ SG_ DCEEC_EngyPct4 : 47|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+ SG_ ElecEngyEconAvg : 48|9@0+ (0.1,0) [0|51.1] ""  XXX
+
+BO_ 2151858176 Drv_Cycl_Elec_Enrgy_States_LS: 8 XXX
+ SG_ DrvCycElecEngySt1 : 5|14@0+ (0.36,0) [0|5897.88] "MJ"  XXX
+ SG_ DrvCycElecEngySt2 : 21|14@0+ (0.36,0) [0|5897.88] "MJ"  XXX
+ SG_ DrvCycElecEngySt3 : 37|14@0+ (0.36,0) [0|5897.88] "MJ"  XXX
+ SG_ DrvCycElecEngySt4 : 53|14@0+ (0.36,0) [0|5897.88] "MJ"  XXX
+
+BO_ 2150547456 HMI_Hybrid_Vehicle_Status_LS: 8 XXX
+ SG_ HVDpltnMdRng : 0|16@0+ (0.015625,0) [0|1023.984375] "km"  XXX
+ SG_ VehChrgMdSt : 3|3@0+ (1,0) [0|7] ""  XXX
+ SG_ GrnAudQueReq : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SvcHybChrgSysIO : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HVBatChrgCrdConnIO : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CntrsOpnUndrTmpIO : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ OffBrdHVCVehCplrLkd : 16|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HVBatLimDTmpInd : 25|2@0+ (1,0) [0|3] ""  XXX
+ SG_ OffBrdHVCVehPwrDrtd : 26|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HVChrgrSysStat : 29|3@0+ (1,0) [0|7] ""  XXX
+ SG_ HVChrgrCplrStat : 31|2@0+ (1,0) [0|3] ""  XXX
+ SG_ ChgrSysAdblIndReq : 33|2@0+ (1,0) [0|3] ""  XXX
+ SG_ HVBatOutOfEnrgyInd : 36|3@0+ (1,0) [0|7] ""  XXX
+ SG_ OffBrdHVBlkChrgCmp : 37|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ElecPrplsnMtrOvrSpdIO : 38|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HVBatCntctrsOpnIO : 39|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HVDpltnMdCnfdcTrndg : 47|8@0- (0.787402,0) [-100.787456|100.000054] "%"  XXX
+ SG_ OffBrdHVBlkChgCpltTm : 53|14@0+ (1,0) [0|0] ""  XXX
+ SG_ OBHVBCCT_HrofDay : 50|5@0+ (1,0) [0|31] ""  XXX
+ SG_ OBHVBCCT_DayofWk : 53|3@0+ (1,0) [0|7] ""  XXX
+ SG_ OBHVBCCT_MinofHr : 61|6@0+ (1,0) [0|63] ""  XXX
+ SG_ OffBrdHVCVehPwrLvl : 55|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2151489536 CSV_EOCM_R_Indications_LS: 1 XXX
+ SG_ RVBShtToPrkBfExtngVehIO : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RVBAutoBrkRlsIO : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ NVSysStat : 4|3@0+ (1,0) [0|7] ""  XXX
+
+BO_ 2149761024 Chassis_Information_2_LS: 6 XXX
+ SG_ PerfTrcCrnExStngVal : 4|5@0+ (1,0) [0|31] ""  XXX
+ SG_ ActVehAccelGroup : 5|22@0+ (1,0) [0|0] ""  XXX
+ SG_ ActVehAccelV : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ActVehAccel : 11|12@0- (0.01,0) [-20.48|20.47] "m/s^2"  XXX
+ SG_ TrlrStabAstActIO : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ElvtdIdlCstStAvl : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ElvtdIdlCstCrStVal : 13|2@0+ (1,0) [0|3] ""  XXX
+ SG_ TrnsCltchThrmlProtIndR : 27|20@0+ (1,0) [0|0] ""  XXX
+ SG_ TCTPIR_DrvNotfn : 27|4@0+ (1,0) [0|15] ""  XXX
+ SG_ TCTPIR_TnsEsClTmpD : 39|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+ SG_ TCTPIR_TnsEsClCDwT : 47|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+ SG_ PsngStPerfMdCsCrStVal : 30|3@0+ (1,0) [0|7] ""  XXX
+ SG_ PsngStPerfMdCsStAvl : 31|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2155012096 SBZA_Right_Status_LS: 1 XXX
+ SG_ SODTmpUnavlbleIO : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SODSnsClnRqdIO : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SODRtIndCntl : 6|5@0+ (1,0) [0|0] ""  XXX
+ SG_ SODRIC_Ind3 : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SODRIC_Ind2 : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SODRIC_Ind1 : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SODRIC_IndReq : 6|2@0+ (1,0) [0|3] ""  XXX
+ SG_ SrvSODSysIO : 7|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2150514688 Power_Slidining_Door_Status_LS: 1 XXX
+ SG_ SldngDrRgtStat : 2|3@0+ (1,0) [0|7] ""  XXX
+ SG_ SldngDrLftStat : 5|3@0+ (1,0) [0|7] ""  XXX
+ SG_ PwrSldngDrUnavlblIO : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SdClsrObstclDtctdStat : 7|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2158067712 Video_Master_Info_2_LS: 5 XXX
+ SG_ TchScnDsplUsrActnExt : 1|34@0+ (1,0) [0|0] ""  XXX
+ SG_ TSDUAE_RotBtnPsh : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TSDUAE_ScrnPrsdRq : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TSDUAE_GrphStrkInfRq : 15|8@0+ (1,0) [0|255] ""  XXX
+ SG_ TSDUAE_XCoOdntRq : 23|8@0+ (1,0) [0|255] ""  XXX
+ SG_ TSDUAE_YCoOdntRq : 31|8@0+ (1,0) [0|255] ""  XXX
+ SG_ TSDUAE_RotEnc : 39|8@0- (1,0) [-128|127] "Detentions"  XXX
+
+BO_ 2158051328 Video_Master_Info_1_LS: 5 XXX
+ SG_ RemRcvrSrcInpCmd : 3|4@0+ (1,0) [0|15] ""  XXX
+ SG_ VidMstrDsplyMd : 5|2@0+ (1,0) [0|3] ""  XXX
+ SG_ VidSrcUICntrlStat : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RmtRcvrTunCmnd : 12|5@0+ (1,0) [0|31] ""  XXX
+ SG_ VidMstrArbCmd : 15|3@0+ (1,0) [0|7] ""  XXX
+ SG_ RmtRcvrTunVal : 23|16@0- (1,0) [-32768|32767] ""  XXX
+ SG_ VidMstrSrcType : 36|5@0+ (1,0) [0|31] ""  XXX
+ SG_ TVDspCmd : 39|3@0+ (1,0) [0|7] ""  XXX
+
+BO_ 2158034944 TV_Tuner_Info_LS: 6 XXX
+ SG_ VidSrcCompFormatER : 3|4@0+ (1,0) [0|15] ""  XXX
+ SG_ CurntTVStnServc : 6|3@0+ (1,0) [0|7] ""  XXX
+ SG_ CurntTVStnQual : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RmtRcvrCmndStat : 10|3@0+ (1,0) [0|7] ""  XXX
+ SG_ RmtRecvtDataTyp : 13|3@0+ (1,0) [0|7] ""  XXX
+ SG_ RmtRcvrTunStat : 14|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TVTunerPres : 15|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RmtRcvrPrgrmServID : 23|16@0+ (1,0) [0|65535] ""  XXX
+ SG_ VidSrcStatCode : 35|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RemRcvrSrcInpStat : 39|4@0+ (1,0) [0|15] ""  XXX
+ SG_ VidSrcType : 44|5@0+ (1,0) [0|31] ""  XXX
+
+BO_ 2158018560 TV_Station_Name_LS: 8 XXX
+ SG_ TVStatNmeChar1_8 : 7|64@0+ (1,0) [0|0] ""  XXX
+
+BO_ 2156838912 WiFi_Station_LS: 7 XXX
+ SG_ WiFiStationResp : 3|52@0+ (1,0) [0|0] ""  XXX
+ SG_ WSR_WiFiAssnStat : 3|4@0+ (1,0) [0|15] ""  XXX
+ SG_ WSR_WiFiStnMACAddr : 15|48@0+ (1,0) [0|281474976710655] ""  XXX
+
+BO_ 2156822528 WiFi_AP_Data_LS: 2 XXX
+ SG_ WiFiAccsPntData : 0|9@0+ (1,0) [0|0] ""  XXX
+ SG_ WAPD_IHUWiFiEnStat : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ WAPD_EncrptnType : 11|4@0+ (1,0) [0|15] ""  XXX
+ SG_ WAPD_SecurityType : 15|4@0+ (1,0) [0|15] ""  XXX
+
+BO_ 2151948288 Driver_Drow_Det_Cst_Rqst_LS: 1 XXX
+ SG_ DrvDrowDetCstStRq : 2|3@0+ (1,0) [0|7] ""  XXX
+ SG_ RunBrdOpMdCstStReq : 7|3@0+ (1,0) [0|7] ""  XXX
+
+BO_ 2158002176 XM_Radio_Service_LS: 1 XXX
+ SG_ CurntStnServc : 2|3@0+ (1,0) [0|7] ""  XXX
+ SG_ SrvcPrvdr : 5|3@0+ (1,0) [0|7] ""  XXX
+
+BO_ 2149728256 Charging_Sys_Trans_Shift_Lock_LS: 5 XXX
+ SG_ ChrgSysTrnsShftLckRq : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ChrgPrtDrStat : 2|2@0+ (1,0) [0|3] ""  XXX
+ SG_ PrtyChrgActIO : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PrtyChrgAct : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HghVltgPropState : 7|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ChgCdTfAlCzCrStVal : 10|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ChgCdTfAlCzStAvbl : 11|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ChgPwLsAlCzCrStVal : 14|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ChgPwLsAlCzStAvbl : 15|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ChgSyAudInCsCrStVa : 18|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ChgSysAudInCsStAvl : 19|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HVChrgPwrLvl : 22|3@0+ (1,0) [0|7] ""  XXX
+ SG_ EngAstHtCsCrStVal : 26|3@0+ (1,0) [0|7] ""  XXX
+ SG_ EngAstHtCsStAvl : 27|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngAstHtPlgInCsCrStVl : 30|3@0+ (1,0) [0|7] ""  XXX
+ SG_ EngAstHtPlgInCsStAvl : 31|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PrtyChrgStPnt : 38|7@0+ (1,0) [0|127] ""  XXX
+
+BO_ 2150023168 Hybrid_Information_LS: 5 XXX
+ SG_ HybChrgMdStat : 1|2@0+ (1,0) [0|3] ""  XXX
+ SG_ HVInvRatVltGroup : 2|19@0+ (1,0) [0|0] ""  XXX
+ SG_ HVInvRatVltV : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HVInvRatVlt : 8|9@0+ (1,0) [0|511] "volts"  XXX
+ SG_ OffBrdVehImmbNot : 5|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ElecPrplsnMtrTach : 28|13@0+ (1,0) [0|8191] "rpm"  XXX
+
+BO_ 2153988096 Power_Elec_Info_LS: 7 XXX
+ SG_ PwrElecCoolLpTempGroup : 1|10@0+ (1,0) [0|0] ""  XXX
+ SG_ PwrElecCoolLpTempV : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PwrElecCoolLpTempM : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PwrElecCoolLpTemp : 15|8@0+ (1,-40) [-40|215] "deg C"  XXX
+ SG_ EngyUsgScr : 20|37@0+ (1,0) [0|0] ""  XXX
+ SG_ EUS_TcEngyUsgScrAvVal : 20|7@0- (0.1,0) [-5|5] ""  XXX
+ SG_ EUS_TrEngyUsgScrAvVal : 29|7@0- (0.1,0) [-5|5] ""  XXX
+ SG_ EUS_OTEngyUsgScrAvVal : 38|7@0- (0.1,0) [-5|5] ""  XXX
+ SG_ EUS_TtEngyUsgScrAvVal : 40|9@0- (0.1,0) [-20|20] ""  XXX
+ SG_ EUS_ITEngyUsgScrAvVal : 47|7@0- (0.1,0) [-5|5] ""  XXX
+
+BO_ 2155945984 Jump_Start_Req_LS: 1 XXX
+ SG_ JmpStrtReq : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TCSysCurStReq : 2|2@0+ (1,0) [0|3] ""  XXX
+ SG_ VehStbEnhmntCurStRq : 4|2@0+ (1,0) [0|3] ""  XXX
+ SG_ VehStbCmptvMdCurStRq : 6|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2155585536 MSB_Customization_Setting_Req_LS: 1 XXX
+ SG_ StBltTgtCSRq : 2|3@0+ (1,0) [0|7] ""  XXX
+
+BO_ 2155569152 CPS_Customization_Setting_Req_LS: 3 XXX
+ SG_ ColPrSysCustReq : 2|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ExtHlStrAssCsStRq : 5|3@0+ (1,0) [0|7] ""  XXX
+ SG_ IntDimSeldClrTypStReq : 12|5@0+ (1,0) [0|31] ""  XXX
+ SG_ HLOCCstSetReq : 15|3@0+ (1,0) [0|7] ""  XXX
+ SG_ IntDimSeldAnmTypStReq : 19|4@0+ (1,0) [0|15] ""  XXX
+ SG_ SmPhRmFunCstStReq : 22|3@0+ (1,0) [0|7] ""  XXX
+
+BO_ 2155233280 VICM_Info_LS: 8 XXX
+ SG_ VehRefuelSt : 2|3@0+ (1,0) [0|7] ""  XXX
+ SG_ FlDrOpenIndOn : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ UtlChrgPopUpAct : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ UtlChrgIntrfrIO : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ShftPrkIO_3B2 : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ NtrlCstdwnCrtMdActvIO : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RtBsChrgCmplnTmPrfRsp : 9|2@0+ (1,0) [0|3] ""  XXX
+ SG_ EngRnngDutoVehSpdIO : 10|1@0+ (1,0) [0|1] ""  XXX
+ SG_ NtrlGrWrngIO : 11|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LftmFuelEcon : 19|12@0+ (0.1,0) [0|409.5] "kilometers/liter"  XXX
+ SG_ LiftimeFuelEcnEquiv : 35|12@0+ (0.1,0) [0|409.5] "km/l"  XXX
+ SG_ ChrgCyclFuelEcn : 51|12@0+ (0.1,0) [0|409.5] "km/l"  XXX
+
+BO_ 2152169472 Coolant_Heater_Status_LS: 3 XXX
+ SG_ ClntHtrSt : 1|2@0+ (1,0) [0|3] ""  XXX
+ SG_ ClntHtrPCBOvTmpFlt : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ClntHtrHtSnkOvTmpFlt : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ClntHtrElecPwrGroup : 4|13@0+ (1,0) [0|0] ""  XXX
+ SG_ ClntHtrElecPwrV : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ClntHtrElecPwr : 15|8@0+ (0.04,0) [0|10.2] "kW"  XXX
+ SG_ ClntHtrFlt : 7|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ClntHtrInltClntTmp : 23|8@0+ (1,-40) [-40|215] "deg C"  XXX
+
+BO_ 2152759296 SITM_Front_Sensor_IO_LS: 1 XXX
+ SG_ FrtCmrBlckdIO : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FrtEOCMMdlFldIO : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FrtCmrFldIO : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FrtRdrFldIO : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PedWrnIndReq : 5|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2152742912 SITM_Rear_Sensor_IO_LS: 1 XXX
+ SG_ RrEOCMMdlFldIO : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RrRdrBlckdIO : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RrRdrFldIO : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ShrtRngRdrOffIO : 3|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2150891520 Go_Notifier_Req_LS: 5 XXX
+ SG_ DgtlMapSpdCat : 2|3@0+ (1,0) [0|7] ""  XXX
+ SG_ FwdClnAlrtCustStngReq : 5|3@0+ (1,0) [0|7] ""  XXX
+ SG_ GNCustStngReq : 7|2@0+ (1,0) [0|3] ""  XXX
+ SG_ DgtlMapDrvngSd : 8|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DgtlMapPsgRstrctn : 11|3@0+ (1,0) [0|7] ""  XXX
+ SG_ RrStRmndrCstSetReq : 14|3@0+ (1,0) [0|7] ""  XXX
+ SG_ DgtlMapEffSpdLmt : 20|5@0+ (1,0) [0|31] ""  XXX
+ SG_ DgtlMapEffSpdLmtTyp : 23|3@0+ (1,0) [0|7] ""  XXX
+ SG_ DgtlMapVerYr : 29|6@0+ (1,0) [0|63] ""  XXX
+ SG_ DgtlMapVerQtr : 31|2@0+ (1,0) [0|3] ""  XXX
+ SG_ DgtlMapCndlSpdLmt : 36|5@0+ (1,0) [0|31] ""  XXX
+ SG_ DgtlMapCndlSpdLmtTyp : 39|3@0+ (1,0) [0|7] ""  XXX
+
+BO_ 2151751680 Haptic_Seat_Status_LS: 3 XXX
+ SG_ CrshAlrtDrvrSlctdType : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CrshAlrtStPrsnt : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HptcStVbnStat : 3|2@0+ (1,0) [0|3] ""  XXX
+ SG_ HptcStFldIO : 4|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2155536384 Rear_Virtual_Bmper_Indication_LS: 1 XXX
+ SG_ RVBDsbldIO : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RVBEnbldIO : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RVBFldIO : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RVBUnblIO : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TnDrvRIMOffUnbIO : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RevClnMtgnBrkReqAct : 5|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2151481344 CSV_FSRACC_Indications_LS: 1 XXX
+ SG_ AutoBrkRlsIO : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ShtToPrkBfExtngVehIO : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HdUpDsplyUnblIO : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FSRACCFrstRsmPrssIO : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FrtRdrBlckdIO : 4|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2151432192 ACC_Drv_Seat_Vib_Req_IO_LS: 1 XXX
+ SG_ ACCHptcStVbnRqSeqN : 1|2@0+ (1,0) [0|3] ""  XXX
+ SG_ ACCHptcStVbnReq : 7|6@0+ (1,0) [0|63] ""  XXX
+
+BO_ 2151415808 Ln_Dep_Wrn_Drv_Seat_Vib_Req_LS: 5 XXX
+ SG_ LDWLftHptcStRqSN : 1|2@0+ (1,0) [0|3] ""  XXX
+ SG_ LDWLftHptcStRq : 7|6@0+ (1,0) [0|63] ""  XXX
+ SG_ LDWRghtHptcStRqSN : 9|2@0+ (1,0) [0|3] ""  XXX
+ SG_ LDWRghtHptcStRq : 15|6@0+ (1,0) [0|63] ""  XXX
+ SG_ LftLnChgThrtHptStRqSN : 17|2@0+ (1,0) [0|3] ""  XXX
+ SG_ LftLnChgThrtHptStRq : 23|6@0+ (1,0) [0|63] "Pulse"  XXX
+ SG_ RgtLnChgThrtHptStRqSN : 25|2@0+ (1,0) [0|3] ""  XXX
+ SG_ RgtLnChgThrtHptStRq : 31|6@0+ (1,0) [0|63] "Pulse"  XXX
+ SG_ FrPedDetCsStAvl : 32|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FrPedDetCsCrStVal : 35|3@0+ (1,0) [0|7] ""  XXX
+
+BO_ 2151350272 Frnt_Prk_Ast_Drv_Seat_Vib_Req_LS: 3 XXX
+ SG_ FPAHptcStVbnRqSeqN : 1|2@0+ (1,0) [0|3] ""  XXX
+ SG_ FPAHptcStVbnReq : 7|6@0+ (1,0) [0|63] ""  XXX
+ SG_ APAIconDispRq : 10|3@0+ (1,0) [0|7] ""  XXX
+ SG_ APAIconFilPctRq : 22|7@0+ (1,0) [0|127] ""  XXX
+
+BO_ 2151333888 Rear_Prk_Ast_Drv_Seat_Vib_Req_LS: 1 XXX
+ SG_ RPAHptcStVbRqSeqN : 1|2@0+ (1,0) [0|3] ""  XXX
+ SG_ RPAHptcStVbnReq : 7|6@0+ (1,0) [0|63] ""  XXX
+
+BO_ 2151522304 Reset_FuelLife_Request_LS: 1 XXX
+ SG_ FuelFltLfRstRqd : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ElEngyEconAvgRstRq : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TCSTmpDsblReqConf : 3|2@0+ (1,0) [0|3] ""  XXX
+ SG_ LnchCtrlRelLnLockReqd : 4|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2150629376 CV_System_Failure_LS: 1 XXX
+ SG_ CVSysFlrIO : 0|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2155929600 Diesel_Information_LS: 8 XXX
+ SG_ DslExFldTpWrngIndRq : 3|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DslExhFldDiagWrnIdRq : 6|3@0+ (1,0) [0|7] ""  XXX
+ SG_ DslExhFldQlyWrngIReq : 11|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DslExhFldWrngIdRqER : 15|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DslExhFluidDistTIndcmt : 22|15@0+ (2,0) [0|65534] "km"  XXX
+ SG_ DslExNxEmWrngIndRq : 35|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DslExFldCnWrngIndRq : 39|4@0+ (1,0) [0|15] ""  XXX
+ SG_ DslExFldWrngVSpdLmt : 47|24@0+ (1,0) [0|0] ""  XXX
+ SG_ DEFWVSL_S1SpdLmt : 47|8@0+ (1,0) [0|255] "km / h"  XXX
+ SG_ DEFWVSL_S2SpdLmt : 55|8@0+ (1,0) [0|255] "km / h"  XXX
+ SG_ DEFWVSL_S3SpdLmt : 63|8@0+ (1,0) [0|255] "km / h"  XXX
+
+BO_ 2154741760 RSA_Status_LS: 1 XXX
+ SG_ RSAPrsnt : 0|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2154807296 Lighting_Customization_Info_3_LS: 4 XXX
+ SG_ AFLGPSCstCrStVal : 2|3@0+ (1,0) [0|7] ""  XXX
+ SG_ AFLCstCrStVal : 5|3@0+ (1,0) [0|7] ""  XXX
+ SG_ AFLGPSCstStAvl : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AFLCstStAvl : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AFLGPSMnu2CstStAvl : 8|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AFLMnu2CstStAvl : 9|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AFLMnu3CstStAvl : 10|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngAutoStpNotProb : 11|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ESCMHiEleclLdReqAct : 12|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngAutoStrtStpInfo : 17|10@0+ (1,0) [0|0] ""  XXX
+ SG_ EASSI_StrtStpSt : 17|2@0+ (1,0) [0|3] ""  XXX
+ SG_ EASSI_UnsdRsrvd2 : 24|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EASSI_TorqDetdIndet : 25|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EASSI_StlDetd : 26|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EASSI_TrqDetd : 27|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EASSI_FuelReqOn : 28|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EASSI_StrtTyp : 31|3@0+ (1,0) [0|7] ""  XXX
+
+BO_ 2151079936 PDIM_Status_LS: 1 XXX
+ SG_ PDIMPrsnt : 0|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2155364352 Hybrid_Information_SuperSlow_LS: 5 XXX
+ SG_ SvcHybridSysIO : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ JmpStrtStat : 3|3@0+ (1,0) [0|7] ""  XXX
+ SG_ HybMdDisp : 7|4@0+ (1,0) [0|15] ""  XXX
+ SG_ CstmrUsblSOCGroup : 15|15@0+ (1,0) [0|0] ""  XXX
+ SG_ CstmrUsblSOC : 15|8@0+ (0.39216,0) [0|100.0008] "%"  XXX
+ SG_ CstmrUsblSOCV : 17|1@0+ (1,0) [0|1] ""  XXX
+ SG_ BattCntrlPrcssrVDA : 16|1@0+ (1,0) [0|1] ""  XXX
+ SG_ InstDrvEff : 31|8@0- (0.78125,0) [-100|99.21875] "%"  XXX
+ SG_ ClntCrcFlwRtEst : 39|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+
+BO_ 2154979328 Front_Seat_Heat_Cool_Req_LS: 1 XXX
+ SG_ FrntStVoltBstModReq : 0|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2155282432 RearSeat_HeatVent_Cool_LS: 1 XXX
+ SG_ RrStVoltBstModReq : 0|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2151505920 VehInfoTripComputer_LS: 7 XXX
+ SG_ SpdCurvAdvSysEnbld : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TrlrBrkDsplyAct : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ACCSettingType : 3|2@0+ (1,0) [0|3] ""  XXX
+ SG_ AutoMdSpdLmtCnfrmd : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PTExPrtclFltManRgnRqd : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ Trp2OdomtrGroup : 6|55@0+ (1,0) [0|0] ""  XXX
+ SG_ Trp2OdomtrV : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ Trp2Odomtr : 38|23@0+ (0.015625,0) [0|131071.984375] "km"  XXX
+ SG_ Trp1OdomtrGroup : 7|32@0+ (1,0) [0|0] ""  XXX
+ SG_ Trp1OdomtrV : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ Trp1Odomtr : 14|23@0+ (0.015625,0) [0|131071.984375] "km"  XXX
+
+BO_ 2155896832 Alternative_Fuel_Information_LS: 5 XXX
+ SG_ FuelMdStat : 2|3@0+ (1,0) [0|7] ""  XXX
+ SG_ AltFuelMdReqDndIO : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FlLvlTank2PctGroup : 4|13@0+ (1,0) [0|0] ""  XXX
+ SG_ FlLvlTank2PctV : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FlLvlTank2Pct : 15|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+ SG_ AltFuelAccWrnngAct : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AltFuelLvlLo : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AltFuelPHeatAct : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FuelTotCapTnk2 : 19|12@0+ (0.125,0) [0|511.875] "liters"  XXX
+ SG_ FuelAlchlCompAdptnPrg : 20|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FuelAlcoholCompGroup : 21|22@0+ (1,0) [0|0] ""  XXX
+ SG_ FuelAlcoholCompV : 21|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FuelAlcoholComp : 39|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+
+BO_ 2155552768 Exterior_Lock_Switch_Req_LS: 1 XXX
+ SG_ PsvEntCmftWndRq : 1|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2154496000 Rear_Closure_Soft_Top_Info_LS: 1 XXX
+ SG_ CmpSftTopMotBfrOpTrnkIO : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TargaTopStateGroup : 2|2@0+ (1,0) [0|0] ""  XXX
+ SG_ TargaTopState : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TargaTopStateV : 2|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2155208704 Power_Conv_Top_Info_LS: 3 XXX
+ SG_ SftTpAbvWrngSpdIndOn : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SftTpFlrIO : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SftTpLtcIO : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SftTpMnlLtchIndOn : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SftTpMchnOvhtIO : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SftTpRmCrgCrrIO : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SftTpStrIO : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SftTpTmpLwIO : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SftTpTneuCvrIO : 8|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SftTpVehOvSpdIndOn : 9|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SftTpVltLwIO : 10|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CkSoftTpIO : 11|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ClsTrnkLidIO : 12|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FTUpdWndPsLmtEnbld : 13|1@0+ (1,0) [0|1] ""  XXX
+ SG_ VltSwAtvIndOn : 14|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SftTpTrnLmpsRqd : 15|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FldngTpSt : 18|3@0+ (1,0) [0|7] ""  XXX
+ SG_ FldngTpWndCmftRq : 20|2@0+ (1,0) [0|3] ""  XXX
+ SG_ SftTpPlsDnSrtdIndOn : 21|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SftTpPlsDnWrngIndOn : 22|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2153390080 Manual_Liftgate_Control_LS: 1 XXX
+ SG_ RrClosOpenSwAct_2D1Group : 3|3@0+ (1,0) [0|0] ""  XXX
+ SG_ RrClosOpenSwAct_2D1 : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RrClosOpenSwAct_2D1V : 3|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2155175936 CruiseControlGapSwitch_LS: 1 XXX
+ SG_ AdptCrsGapSwAct : 1|2@0+ (1,0) [0|3] ""  XXX
+ SG_ AdptCrsLKALDWSwAct : 2|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2156806144 Cellular_Network_Date_and_Time: 6 XXX
+ SG_ CldrDayCmpstdVal : 4|5@0+ (1,0) [0|31] "days"  XXX
+ SG_ HrsCmpstdValGroup : 5|30@0+ (1,0) [0|0] ""  XXX
+ SG_ HrsCmpstdValV : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HrsCmpstdVal : 28|5@0+ (1,0) [0|31] "h"  XXX
+ SG_ MinsCmpstdValGroup : 6|39@0+ (1,0) [0|0] ""  XXX
+ SG_ MinsCmpstdValV : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ MinsCmpstdVal : 37|6@0+ (1,0) [0|63] "min"  XXX
+ SG_ SecCmpstdValGroup : 7|48@0+ (1,0) [0|0] ""  XXX
+ SG_ SecCmpstdValV : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SecCmpstdVal : 45|6@0+ (1,0) [0|63] "secs"  XXX
+ SG_ CldrMthCmpstdVal : 11|4@0+ (1,0) [0|15] ""  XXX
+ SG_ CellNtwrkDtTmAvl : 12|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CldrYrCmpstdVal : 23|8@0+ (1,2000) [2000|2255] "year"  XXX
+
+BO_ 2154078208 Window_Position_Status_LS: 2 XXX
+ SG_ DrvWndPosStat : 2|3@0+ (1,0) [0|7] ""  XXX
+ SG_ LRWndPosStat : 5|3@0+ (1,0) [0|7] ""  XXX
+ SG_ PsWndPosStat : 10|3@0+ (1,0) [0|7] ""  XXX
+ SG_ RRWndPosStat : 13|3@0+ (1,0) [0|7] ""  XXX
+
+BO_ 2159058944 ODIEvent_IPC_LS: 3 XXX
+ SG_ ODIEvntPkt_IPC : 5|22@0+ (1,0) [0|0] ""  XXX
+ SG_ ODIEI_EvID : 5|6@0+ (1,0) [0|63] ""  XXX
+ SG_ ODIEI_FUCID : 15|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODIEI_MultiFrRetCh : 23|8@0+ (1,0) [0|255] ""  XXX
+
+BO_ 2159042560 ODI_DynData_IPC_LS: 8 XXX
+ SG_ ODIDynData_IPC : 14|55@0+ (1,0) [0|0] ""  XXX
+ SG_ ODDI_InvldData : 8|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODDI_DataType : 14|6@0+ (1,0) [0|63] ""  XXX
+ SG_ ODDI_FUCID : 23|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDI_DataId : 31|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDI_DataVal : 39|32@0+ (1,0) [0|4294967295] ""  XXX
+
+BO_ 2150006784 System_Power_Mode_Pushbutton_LS: 1 XXX
+ SG_ SysPwrMdPshbtnActGroup : 1|2@0+ (1,0) [0|0] ""  XXX
+ SG_ SysPwrMdPshbtnAct : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SysPwrMdPshbtnActV : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PEPSRunCrnkRlyDctd : 2|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2155216896 Road_Type_Information_LS: 6 XXX
+ SG_ MpDataAvlbl : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ BldUpArDet : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SprtLnRd : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CntrldAccRd : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CurvAdvInd : 5|2@0+ (1,0) [0|3] ""  XXX
+ SG_ SpdLmtPstdSpdGroup : 6|23@0+ (1,0) [0|0] ""  XXX
+ SG_ SpdLmtPstdSpdM : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SpdLmtPstdSpd : 23|8@0+ (1,0) [0|255] ""  XXX
+ SG_ DgtlMapPstdSpdLimAsrd : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FncRdClass : 10|3@0+ (1,0) [0|7] ""  XXX
+ SG_ RdSpdCatType : 12|2@0+ (1,0) [0|3] ""  XXX
+ SG_ LnCat : 14|2@0+ (1,0) [0|3] ""  XXX
+ SG_ SpdLmtUnits : 15|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SpdLmtRecmndSpd : 31|8@0+ (1,0) [0|255] ""  XXX
+ SG_ IntlStdAlph2CddCntryCd : 33|10@0+ (1,0) [0|0] ""  XXX
+ SG_ ISA2CCC_FrstCdChr : 33|5@0+ (1,0) [0|31] ""  XXX
+ SG_ ISA2CCC_ScndCdChr : 44|5@0+ (1,0) [0|31] ""  XXX
+
+BO_ 2156216320 TTY_Status_LS: 1 XXX
+ SG_ TxtTelephoneDevPr : 0|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2158813184 ODIIndication_IPC_LS: 8 XXX
+ SG_ ODIInd_IPC : 7|64@0+ (1,0) [0|0] ""  XXX
+ SG_ ODIIIPC_FUCID : 7|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODIIIPC_ODIInd8 : 8|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd7 : 9|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd6 : 10|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd5 : 11|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd4 : 12|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd3 : 13|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd2 : 14|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd1 : 15|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd16 : 16|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd15 : 17|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd14 : 18|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd13 : 19|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd12 : 20|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd11 : 21|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd10 : 22|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd9 : 23|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd24 : 24|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd23 : 25|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd22 : 26|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd21 : 27|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd20 : 28|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd19 : 29|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd18 : 30|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd17 : 31|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd32 : 32|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd31 : 33|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd30 : 34|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd29 : 35|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd28 : 36|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd27 : 37|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd26 : 38|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd25 : 39|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd40 : 40|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd39 : 41|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd38 : 42|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd37 : 43|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd36 : 44|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd35 : 45|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd34 : 46|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd33 : 47|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd48 : 48|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd47 : 49|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd46 : 50|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd45 : 51|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd44 : 52|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd43 : 53|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd42 : 54|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd41 : 55|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd56 : 56|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd55 : 57|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd54 : 58|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd53 : 59|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd52 : 60|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd51 : 61|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd50 : 62|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIIPC_ODIInd49 : 63|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2150277120 GPS_Geographical_Position_LS: 8 XXX
+ SG_ PsngSysLatGroup : 6|31@0+ (1,0) [0|0] ""  XXX
+ SG_ PsngSysLat : 5|30@0- (1,0) [-536870912|536870911] "mas"  XXX
+ SG_ PsngSysLatV : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PsngSysLongGroup : 39|32@0+ (1,0) [0|0] ""  XXX
+ SG_ PsngSysLong : 38|31@0- (1,0) [-1073741824|1073741823] "mas"  XXX
+ SG_ PsngSysLongV : 39|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2150285312 GPS_Elevation_and_Heading_LS: 8 XXX
+ SG_ PsngSysHdingGroup : 3|37@0+ (1,0) [0|0] ""  XXX
+ SG_ PsngSysHding : 3|12@0+ (0.1,0) [0|409.5] "deg"  XXX
+ SG_ PsngSysHdingV : 47|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PsngSysDilPrcsGroup : 4|29@0+ (1,0) [0|0] ""  XXX
+ SG_ PsngSysDilPrcsV : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PsngSysDilPrcs : 17|10@0+ (0.1,0) [0|102.3] ""  XXX
+ SG_ PsngSysCalcSpdGroup : 39|10@0+ (1,0) [0|0] ""  XXX
+ SG_ PsngSysCalcSpd : 39|8@0+ (1,0) [0|255] "km / h"  XXX
+ SG_ PsngSysCalcSpdV : 46|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PsngSysElvtnGroup : 45|22@0+ (1,0) [0|0] ""  XXX
+ SG_ PsngSysElvtn : 44|21@0+ (1,-100000) [-100000|1997151] "cm"  XXX
+ SG_ PsngSysElvtnV : 45|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2151890944 Telematics_Indication_Request_LS: 4 XXX
+ SG_ TlmtcsIndCntrlReq : 15|24@0+ (1,0) [0|0] ""  XXX
+ SG_ TICR_Ind1Cnt : 11|4@0+ (1,0) [0|15] ""  XXX
+ SG_ TICR_Ind1 : 13|2@0+ (1,0) [0|3] ""  XXX
+ SG_ TICR_Ind1Req : 15|2@0+ (1,0) [0|3] ""  XXX
+ SG_ TICR_Ind1FlshRtOff : 23|8@0+ (10,0) [0|2550] "ms"  XXX
+ SG_ TICR_Ind1FlshRtOn : 31|8@0+ (10,0) [0|2550] "ms"  XXX
+
+BO_ 2151251968 Telematics_Indication_Control_LS: 4 XXX
+ SG_ TlmtcsIndCntrlStat : 12|21@0+ (1,0) [0|0] ""  XXX
+ SG_ TICS_Ind1V : 8|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TICS_Ind1 : 10|2@0+ (1,0) [0|3] ""  XXX
+ SG_ TICS_Ind1Stat : 12|2@0+ (1,0) [0|3] ""  XXX
+ SG_ TICS_Ind1FlshRtOffSt : 23|8@0+ (10,0) [0|2550] "ms"  XXX
+ SG_ TICS_Ind1FlshRtOnSt : 31|8@0+ (10,0) [0|2550] "ms"  XXX
+
+BO_ 2155495424 Remote_Start_Seat_Request_LS: 1 XXX
+ SG_ RmStrCldStEnReq : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RmStrHtdStEnRq : 1|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2149990400 HS_Indications_Fast_LS: 8 XXX
+ SG_ ABSIO : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ StpOnBrkToRelPBIndOn : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TrlrBrkngVDA : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrvThrtlOvrdIO : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TreInfMonSysRstPrfmd : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ACCHdwayStngIO : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ACCDrvrSeltdSpdIO : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TrlrWiringFltIO : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AdvHlmpsVDA : 9|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SADmpVDA : 10|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ScndryAxleVDA : 11|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SrvTrlrBrkngSysIO : 12|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TrlrBrkngGainSetIO : 13|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TrlrCnctdIO : 14|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ChkTrlrIO : 15|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TrlrBrkngFrcOtpt : 23|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+ SG_ TrlrBrkngGainSet : 31|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+ SG_ TrlrHtchSwAtv_ITBC : 32|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TransNtrlCntrlMdStat : 34|2@0+ (1,0) [0|3] ""  XXX
+ SG_ MotStBltFldIO : 35|1@0+ (1,0) [0|1] ""  XXX
+ SG_ MotStBltUnblIO : 36|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TrnsfrCsRngShfSpdLmt : 47|8@0+ (1,0) [0|255] "km / h"  XXX
+ SG_ InstFuelConsmpRate : 51|12@0+ (0.025,0) [0|102.375] "liters/hr"  XXX
+ SG_ SecAxlOperMod : 55|4@0+ (1,0) [0|15] ""  XXX
+
+BO_ 2155380736 HS_Indications_SuperSlow_LS: 6 XXX
+ SG_ VehOvrLdIndOn : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SrvLevSysIO : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HdLtLvlFlrIO : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RrLevVDA : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AirCndOffIO : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngOilHotIO : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PTExPrtclFltrWrnIO : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DslGlwPlgIO : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngHotFuelEnrchmntIO : 8|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngOilChngIO : 9|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngOilLvlLwIO : 10|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngOilPrsLwIO : 11|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngWtrInFlIO : 12|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RdcdPwrIO : 13|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CkFlFilrCapIO : 14|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngHt_StpEngIO : 15|1@0+ (1,0) [0|1] ""  XXX
+ SG_ StrAsstRdcdLvl2IO : 16|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PwrStrIO : 17|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PTExPrtclFltrWrn2IO : 18|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AdvFrntLghtSysIndRq : 21|3@0+ (1,0) [0|7] ""  XXX
+ SG_ StrngAsstRdcdIO : 22|1@0+ (1,0) [0|1] ""  XXX
+ SG_ StrAsstRdcdLvl3IO : 23|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PwrPckAirInTempFlt : 31|8@0+ (1,-40) [-40|215] "deg C"  XXX
+ SG_ PwrPkFnSpd : 39|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+ SG_ ARSFlrIO : 40|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2150498304 Analog_Values_Slow_LS: 8 XXX
+ SG_ EngCltTmpGroup : 0|57@0+ (1,0) [0|0] ""  XXX
+ SG_ EngCltTmpV : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngCltTmp : 63|8@0+ (1,-40) [-40|215] "deg C"  XXX
+ SG_ EngIntAirTmpGroup : 1|50@0+ (1,0) [0|0] ""  XXX
+ SG_ EngIntAirTmpV : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngIntAirTmp : 55|8@0+ (1,-40) [-40|215] "deg C"  XXX
+ SG_ EngOilTmpGroup : 2|43@0+ (1,0) [0|0] ""  XXX
+ SG_ EngOilTmpV : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngOilTmp : 47|8@0+ (1,-40) [-40|215] "deg C"  XXX
+ SG_ OAT_PT_EstGroup : 4|37@0+ (1,0) [0|0] ""  XXX
+ SG_ OAT_PT_EstV : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ OAT_PT_EstM : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ OAT_PT_Est : 39|8@0+ (0.5,-40) [-40|87.5] "deg C"  XXX
+ SG_ TrnOilTmpGroup : 5|30@0+ (1,0) [0|0] ""  XXX
+ SG_ TrnOilTmpV : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TrnOilTmp : 31|8@0+ (1,-40) [-40|215] "deg C"  XXX
+ SG_ BarPrsAbsGroup : 6|23@0+ (1,0) [0|0] ""  XXX
+ SG_ BarPrsAbsV : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ BarPrsAbs : 23|8@0+ (0.5,0) [0|127.5] "kPa"  XXX
+ SG_ EngOilPrsGroup : 7|16@0+ (1,0) [0|0] ""  XXX
+ SG_ EngOilPrsV : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngOilPrs : 15|8@0+ (4,0) [0|1020] "kPa"  XXX
+
+BO_ 2151047168 HUD_Status_LS: 1 XXX
+ SG_ HUDActv : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HdUpDspAnmtStat : 3|3@0+ (1,0) [0|7] ""  XXX
+
+BO_ 2155331584 Wheel_Pulses_LS: 4 XXX
+ SG_ WhlPlsPerRevDrvn : 6|7@0+ (1,0) [0|127] ""  XXX
+ SG_ WhlPlsPerRevNonDrvn : 14|7@0+ (1,0) [0|127] ""  XXX
+ SG_ WhlRotStatTmstmpRes : 18|11@0+ (0.002,0) [0|4.094] "uSec"  XXX
+
+BO_ 2154225664 Door_Handle_Switch_Status_LS: 1 XXX
+ SG_ DrvDrHndleSwAtv : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PasDrHndleSwAtv : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RCHndleSwAtv : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RRDrHndleSwAtv : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RLDrHndleSwAtv : 4|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2149900288 Telematics_Contol_LS: 3 XXX
+ SG_ EnhSrvRClsRlsRq : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EnhSrvVisAlRq : 3|2@0+ (1,0) [0|3] ""  XXX
+ SG_ EnhSrvAudAlRq : 5|2@0+ (1,0) [0|3] ""  XXX
+ SG_ EnhSrvRmStrtRq : 7|2@0+ (1,0) [0|3] ""  XXX
+ SG_ EnhSrvLckRq : 10|3@0+ (1,0) [0|7] ""  XXX
+ SG_ BTTethrngPrngReq : 14|4@0+ (1,0) [0|15] ""  XXX
+ SG_ EnhSvVehTopSpdLim : 23|8@0+ (2,0) [0|510] "km / h"  XXX
+
+BO_ 2159001600 ODIEnumDynamicData_IPC_LS: 8 XXX
+ SG_ ODIEnmDynData_IPC : 5|62@0+ (1,0) [0|0] ""  XXX
+ SG_ ODIEDDIPC_Data2Value : 2|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDIPC_Data1Value : 5|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDIPC_Data5Value : 9|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDIPC_Data4Value : 12|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDIPC_Data3Value : 15|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDIPC_Data8Value : 16|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDIPC_Data7Value : 19|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDIPC_Data6Value : 22|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDIPC_Data10Value : 26|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDIPC_Data9Value : 29|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDIPC_Data13Value : 33|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDIPC_Data12Value : 36|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDIPC_Data11Value : 39|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDIPC_Data16Value : 40|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDIPC_Data15Value : 43|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDIPC_Data14Value : 46|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDIPC_Data18Value : 50|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDIPC_Data17Value : 53|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDIPC_FUCID : 63|8@0+ (1,0) [0|255] ""  XXX
+
+BO_ 2158993408 ODIEnumDynamicData_CntrStack_LS: 8 XXX
+ SG_ ODIEnmDynData_CenterStack : 5|62@0+ (1,0) [0|0] ""  XXX
+ SG_ ODIEDDCS_Data2Value : 2|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDCS_Data1Value : 5|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDCS_Data5Value : 9|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDCS_Data4Value : 12|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDCS_Data3Value : 15|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDCS_Data8Value : 16|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDCS_Data7Value : 19|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDCS_Data6Value : 22|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDCS_Data10Value : 26|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDCS_Data9Value : 29|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDCS_Data13Value : 33|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDCS_Data12Value : 36|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDCS_Data11Value : 39|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDCS_Data16Value : 40|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDCS_Data15Value : 43|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDCS_Data14Value : 46|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDCS_Data18Value : 50|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDCS_Data17Value : 53|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDDCS_FUCID : 63|8@0+ (1,0) [0|255] ""  XXX
+
+BO_ 2154708992 Audio_Master_Source_Status_LS: 2 XXX
+ SG_ AudSrcStat2 : 3|12@0+ (1,0) [0|0] ""  XXX
+ SG_ ASS2AudSrcType : 3|5@0+ (1,0) [0|31] ""  XXX
+ SG_ ASS2AudSrcStatCode : 11|4@0+ (1,0) [0|15] ""  XXX
+ SG_ ASS2AudSrcChType : 14|3@0+ (1,0) [0|7] ""  XXX
+
+BO_ 2158985216 ODIDynDataMultiReq_OTIM_LS: 8 XXX
+ SG_ ODIDynDataMltRq_OTIM : 5|62@0+ (1,0) [0|0] ""  XXX
+ SG_ ODDMO_DataID2Vld : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODDMO_DataID3Vld : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODDMO_DataID4Vld : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODDMO_DataID5Vld : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODDMO_ReqType : 5|2@0+ (1,0) [0|3] ""  XXX
+ SG_ ODDMO_FUCID : 15|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDMO_DispMID : 23|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDMO_DataID1 : 31|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDMO_DataID2 : 39|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDMO_DataID3 : 47|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDMO_DataID4 : 55|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDMO_DataID5 : 63|8@0+ (1,0) [0|255] ""  XXX
+
+BO_ 2154471424 Rear_Closure_Ajar_Switch_Status: 1 XXX
+ SG_ RrClosAjarSwAct : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RrClsrSnwLdIO : 1|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2159149056 ODI_TEL_2_CenterStack_LS: 8 XXX
+ SG_ ODI_TEL2CntrStck : 7|64@0+ (1,0) [0|1.84467440737096E+019] ""  XXX
+
+BO_ 2159116288 ODI_TEL_2_AuxIP_LS: 8 XXX
+ SG_ ODI_TEL2AxIP : 7|64@0+ (1,0) [0|1.84467440737096E+019] ""  XXX
+
+BO_ 2158796800 ODIIndication_LS: 8 XXX
+ SG_ ODIInd : 7|64@0+ (1,0) [0|0] ""  XXX
+ SG_ ODII_FUCID : 7|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODII_ODIInd8 : 8|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd7 : 9|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd6 : 10|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd5 : 11|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd4 : 12|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd3 : 13|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd2 : 14|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd1 : 15|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd16 : 16|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd15 : 17|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd14 : 18|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd13 : 19|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd12 : 20|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd11 : 21|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd10 : 22|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd9 : 23|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd24 : 24|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd23 : 25|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd22 : 26|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd21 : 27|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd20 : 28|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd19 : 29|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd18 : 30|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd17 : 31|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd32 : 32|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd31 : 33|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd30 : 34|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd29 : 35|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd28 : 36|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd27 : 37|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd26 : 38|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd25 : 39|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd40 : 40|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd39 : 41|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd38 : 42|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd37 : 43|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd36 : 44|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd35 : 45|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd34 : 46|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd33 : 47|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd48 : 48|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd47 : 49|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd46 : 50|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd45 : 51|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd44 : 52|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd43 : 53|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd42 : 54|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd41 : 55|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd56 : 56|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd55 : 57|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd54 : 58|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd53 : 59|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd52 : 60|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd51 : 61|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd50 : 62|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODII_ODIInd49 : 63|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2158755840 ODIEvent_LS: 4 XXX
+ SG_ ODIEvntPkt : 13|22@0+ (1,0) [0|0] ""  XXX
+ SG_ ODIE_EvID : 13|6@0+ (1,0) [0|63] ""  XXX
+ SG_ ODIE_FUCID : 23|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODIE_MultiFrRetCh : 31|8@0+ (1,0) [0|255] ""  XXX
+
+BO_ 2159157248 ODI_CenterStack_2_TEL_LS: 8 XXX
+ SG_ ODI_CntrStck2TEL : 7|64@0+ (1,0) [0|1.84467440737096E+019] ""  XXX
+
+BO_ 2153955328 Infrastructure_Timer_Status_LS: 5 XXX
+ SG_ EngOffTmExtRngGroup : 0|33@0+ (1,0) [0|0] ""  XXX
+ SG_ EngOffTmExtRngV : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngOffTmExtRng : 39|8@0+ (4,0) [0|1020] "min"  XXX
+ SG_ ElpsdTimeCntRstOcc : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ElpsdTimeCnt : 15|24@0+ (1,0) [0|16777215] "min"  XXX
+
+BO_ 2151063552 Infotainment_Operation_LS: 7 XXX
+ SG_ InftnOprAlwd : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ValetMdAct : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ Frnt360CamSwAct : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CamVideoICSDispAct : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LRStStatDispAct : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RRStStatDispAct : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TrgdVidRecSwAct : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RrPedDetCstStReq : 10|3@0+ (1,0) [0|7] ""  XXX
+ SG_ IntrStopAlrtCsSetReq : 13|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ICSTchStat : 17|34@0+ (1,0) [0|0] ""  XXX
+ SG_ ICSTS_TchPrxmty : 17|2@0+ (1,0) [0|3] ""  XXX
+ SG_ ICSTS_X1TchCrdnt : 31|16@0+ (0.001526,0) [0|100] ""  XXX
+ SG_ ICSTS_Y1TchCrdnt : 47|16@0+ (0.001526,0) [0|100] ""  XXX
+ SG_ TrfRdsdInfCsStReq : 20|3@0+ (1,0) [0|7] ""  XXX
+ SG_ CntdVehBrAltCsStReq : 23|3@0+ (1,0) [0|7] ""  XXX
+
+BO_ 2157985792 Fob_Programming_Request_LS: 1 XXX
+ SG_ FobProgEvntRqd : 0|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2151284736 Park_Assistant_General_Status: 1 XXX
+ SG_ PrkAsstClnPrkAstIO : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PrkAsstDisablIO : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PrkAstFld : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PrkAstSnrsBlk : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PrkAstSnsDistrbdIO : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TnDrvPrkAstOffUnbIO : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PrkAstOprtrDsrdStat_1D0 : 7|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2159099904 ODI_DAB_2_AuxIP_LS: 8 XXX
+ SG_ ODI_DAB2AxIP : 7|64@0+ (1,0) [0|1.84467440737096E+019] ""  XXX
+
+BO_ 2159067136 ODI_DAB_2_IPC_LS: 8 XXX
+ SG_ ODI_DAB2IPC : 7|64@0+ (1,0) [0|1.84467440737096E+019] ""  XXX
+
+BO_ 2159206400 ODI_AuxIP_2_IPC_LS: 8 XXX
+ SG_ ODI_AxIP2IPC : 7|64@0+ (1,0) [0|1.84467440737096E+019] ""  XXX
+
+BO_ 2159198208 ODI_IPC_2_AuxIP_LS: 8 XXX
+ SG_ ODI_IPC2AxIP : 7|64@0+ (1,0) [0|1.84467440737096E+019] ""  XXX
+
+BO_ 2159190016 ODI_AuxIP_2_CenterStack_LS: 8 XXX
+ SG_ ODI_AxIP2CntrStck : 7|64@0+ (1,0) [0|1.84467440737096E+019] ""  XXX
+
+BO_ 2159181824 ODI_CenterStack_2_AuxIP_LS: 8 XXX
+ SG_ ODI_CntrStck2AxIP : 7|64@0+ (1,0) [0|1.84467440737096E+019] ""  XXX
+
+BO_ 2159173632 ODI_IPC_2_CenterStack_LS: 8 XXX
+ SG_ ODI_IPC2CntrStck : 7|64@0+ (1,0) [0|1.84467440737096E+019] ""  XXX
+
+BO_ 2159165440 ODI_CenterStack_2_IPC_LS: 8 XXX
+ SG_ ODI_CntrStck2IPC : 7|64@0+ (1,0) [0|1.84467440737096E+019] ""  XXX
+
+BO_ 2159108096 ODI_AuxIP_2_DAB_LS: 8 XXX
+ SG_ ODI_AxIP2DAB : 7|64@0+ (1,0) [0|1.84467440737096E+019] ""  XXX
+
+BO_ 2159075328 ODI_IPC_2_DAB_LS: 8 XXX
+ SG_ ODI_IPC2DAB : 7|64@0+ (1,0) [0|1.84467440737096E+019] ""  XXX
+
+BO_ 2151718912 Chime_Active: 1 XXX
+ SG_ ChmAct : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ChmVolSt : 2|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2155479040 Customization_Setting_Request_LS: 5 XXX
+ SG_ DrvlnCustStngReq : 2|3@0+ (1,0) [0|7] ""  XXX
+ SG_ RstrCustFctrDef : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PedFrndlyAlrtCsStReq : 6|3@0+ (1,0) [0|7] ""  XXX
+ SG_ SusCustStngReq : 10|3@0+ (1,0) [0|7] ""  XXX
+ SG_ StrCustStngReq : 13|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ElvtdIdlCstStReq : 15|2@0+ (1,0) [0|3] ""  XXX
+ SG_ SndPerfMdCsStRq : 18|3@0+ (1,0) [0|7] ""  XXX
+ SG_ DispPerfMdCsStRq : 21|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ACCPerfMdCsStReq : 26|3@0+ (1,0) [0|7] ""  XXX
+ SG_ DrvrStPerfMdCsStReq : 29|3@0+ (1,0) [0|7] ""  XXX
+ SG_ PsngStPerfMdCsStReq : 34|3@0+ (1,0) [0|7] ""  XXX
+ SG_ DrvStyPerfMdCsStReq : 37|3@0+ (1,0) [0|7] ""  XXX
+
+BO_ 2151383040 Reset_TP_request_LS: 1 XXX
+ SG_ TreInfMonSysRstReq : 0|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2155421696 Passive_Entry_Challenge_LS: 5 XXX
+ SG_ PsvEntChlng : 7|32@0+ (1,0) [0|4294967295] "passwrd"  XXX
+ SG_ ServKylsStSysIO : 32|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PsvEntApprchDtcd : 33|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PsvEntAprchDrctn : 36|3@0+ (1,0) [0|7] ""  XXX
+ SG_ PsvEntApprchCnfgReq : 39|3@0+ (1,0) [0|7] ""  XXX
+
+BO_ 2155413504 Drv_Dr_Key_Cyl_Status_LS: 3 XXX
+ SG_ DrvrDrKeyCylUlkSwActGroup : 1|2@0+ (1,0) [0|0] ""  XXX
+ SG_ DrvrDrKeyCylUlkSwAct : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrvrDrKeyCylUlkSwActV : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PsvLckngReqd : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PsvApprchVehId : 15|16@0+ (1,0) [0|65535] ""  XXX
+
+BO_ 2159026176 ODIDynamicData_LS: 8 XXX
+ SG_ ODIDynData : 14|55@0+ (1,0) [0|0] ""  XXX
+ SG_ ODD_InvldData : 8|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODD_DataType : 14|6@0+ (1,0) [0|63] ""  XXX
+ SG_ ODD_FUCID : 23|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODD_DataId : 31|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODD_DataVal : 39|32@0+ (1,0) [0|4294967295] ""  XXX
+
+BO_ 2158936064 ODIEnumDynamicData_LS: 8 XXX
+ SG_ ODIEnmDynData : 5|62@0+ (1,0) [0|0] ""  XXX
+ SG_ ODIEDD_Data2Value : 2|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDD_Data1Value : 5|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDD_Data5Value : 9|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDD_Data4Value : 12|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDD_Data3Value : 15|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDD_Data8Value : 16|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDD_Data7Value : 19|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDD_Data6Value : 22|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDD_Data10Value : 26|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDD_Data9Value : 29|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDD_Data13Value : 33|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDD_Data12Value : 36|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDD_Data11Value : 39|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDD_Data16Value : 40|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDD_Data15Value : 43|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDD_Data14Value : 46|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDD_Data18Value : 50|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDD_Data17Value : 53|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ODIEDD_FUCID : 63|8@0+ (1,0) [0|255] ""  XXX
+
+BO_ 2158845952 ODIAction_CntrStack_LS: 8 XXX
+ SG_ ODIActn_CntrStck : 5|62@0+ (1,0) [0|0] ""  XXX
+ SG_ ODIAC_DaTy : 5|6@0+ (1,0) [0|63] ""  XXX
+ SG_ ODIAC_FUCID : 15|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODIAC_ActnID : 23|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODIAC_DspMID : 31|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODIAC_ActnVal : 39|32@0+ (1,0) [0|4294967295] ""  XXX
+
+BO_ 2158886912 ODIDynDataListRequest_IPC_LS: 8 XXX
+ SG_ ODIDynDataLstRq_IPC : 7|64@0+ (1,0) [0|0] ""  XXX
+ SG_ ODDLI_FUCID : 7|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDLI_DataId : 15|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDLI_DspMID : 23|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDLI_ReqDir : 24|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODDLI_NmEntries : 31|7@0+ (1,0) [0|127] ""  XXX
+ SG_ ODDLI_Idx : 39|16@0+ (1,0) [0|65535] ""  XXX
+ SG_ ODDLI_SubIdReqM : 51|12@0+ (1,0) [0|4095] ""  XXX
+ SG_ ODDLI_WrpArnd : 52|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODDLI_BckgndFlag : 53|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODDLI_ReqType : 55|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2151366656 Man_Prk_Brk_LS: 1 XXX
+ SG_ RrAxlLckIO : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FrntAxlLckIO : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PrkBrkSwAtv : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AxlLcksServIO : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AxlLckUnavailIndReq : 6|3@0+ (1,0) [0|7] ""  XXX
+ SG_ AxlLcksVDA : 7|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2149842944 Vehicle_Stability_LS: 8 XXX
+ SG_ IMUProtLonAccGroup : 2|11@0+ (1,0) [0|0] ""  XXX
+ SG_ IMUProtLonAcc : 1|10@0- (0.03,0) [-15.36|15.33] "m/s^2"  XXX
+ SG_ IMUProtLonAccV : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TCSysAtv : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ BrkSysAutBrkFld : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ VSEAct : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ StrWhAngGroup : 6|47@0+ (1,0) [0|0] ""  XXX
+ SG_ StrWhAngV : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ StrWhAng : 39|16@0- (0.0625,0) [-2048|2047.9375] "deg"  XXX
+ SG_ StWhAnVDA : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ VehStabEnhmntStat : 18|3@0+ (1,0) [0|7] ""  XXX
+ SG_ VehStabEnhmntMd : 21|3@0+ (1,0) [0|7] ""  XXX
+ SG_ StrWhlAngSenCalStat : 23|2@0+ (1,0) [0|3] ""  XXX
+ SG_ TCSysOpMd : 26|3@0+ (1,0) [0|7] ""  XXX
+ SG_ TCSysOpStat : 29|3@0+ (1,0) [0|7] ""  XXX
+ SG_ VSELatAccGroup : 52|13@0+ (1,0) [0|0] ""  XXX
+ SG_ VSELatAcc : 51|12@0- (0.015625,0) [-32|31.984375] "m/s^2"  XXX
+ SG_ VSELatAccV : 52|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AdptDrvrSeatStng : 55|3@0+ (1,0) [0|7] ""  XXX
+
+BO_ 2159132672 ODIAction_RearSeat_LS: 8 XXX
+ SG_ ODIActn_RSD : 5|62@0+ (1,0) [0|0] ""  XXX
+ SG_ ODIAR_DaTy : 5|6@0+ (1,0) [0|63] ""  XXX
+ SG_ ODIAR_FUCID : 15|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODIAR_ActnID : 23|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODIAR_DspMID : 31|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODIAR_ActnVal : 39|32@0+ (1,0) [0|4294967295] ""  XXX
+
+BO_ 2158968832 ODI_RearSeat_2_Centerstack_LS: 8 XXX
+ SG_ ODI_RSD2CntrStck : 7|64@0+ (1,0) [0|1.84467440737096E+019] ""  XXX
+
+BO_ 2158960640 ODIIndication_Centerstack_LS: 8 XXX
+ SG_ ODIInd_CntrStck : 7|64@0+ (1,0) [0|0] ""  XXX
+ SG_ ODIIC_FUCID : 7|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODIIC_ODIInd8 : 8|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd7 : 9|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd6 : 10|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd5 : 11|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd4 : 12|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd3 : 13|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd2 : 14|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd1 : 15|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd16 : 16|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd15 : 17|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd14 : 18|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd13 : 19|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd12 : 20|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd11 : 21|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd10 : 22|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd9 : 23|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd24 : 24|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd23 : 25|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd22 : 26|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd21 : 27|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd20 : 28|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd19 : 29|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd18 : 30|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd17 : 31|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd32 : 32|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd31 : 33|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd30 : 34|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd29 : 35|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd28 : 36|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd27 : 37|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd26 : 38|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd25 : 39|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd40 : 40|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd39 : 41|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd38 : 42|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd37 : 43|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd36 : 44|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd35 : 45|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd34 : 46|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd33 : 47|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd48 : 48|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd47 : 49|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd46 : 50|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd45 : 51|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd44 : 52|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd43 : 53|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd42 : 54|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd41 : 55|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd56 : 56|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd55 : 57|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd54 : 58|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd53 : 59|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd52 : 60|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd51 : 61|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd50 : 62|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODIIC_ODIInd49 : 63|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2158977024 ODIEvent_Centerstack_LS: 4 XXX
+ SG_ ODIEvntPkt_CntrStck : 13|22@0+ (1,0) [0|0] ""  XXX
+ SG_ ODIEC_EvID : 13|6@0+ (1,0) [0|63] ""  XXX
+ SG_ ODIEC_FUCID : 23|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODIEC_MultiFrRetCh : 31|8@0+ (1,0) [0|255] ""  XXX
+
+BO_ 2158952448 ODIDynDataMultiReq_RearSeat_LS: 8 XXX
+ SG_ ODIDynDataMltRq_RSD : 5|62@0+ (1,0) [0|0] ""  XXX
+ SG_ ODDMR_DataID2Vld : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODDMR_DataID3Vld : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODDMR_DataID4Vld : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODDMR_DataID5Vld : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODDMR_ReqType : 5|2@0+ (1,0) [0|3] ""  XXX
+ SG_ ODDMR_FUCID : 15|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDMR_DispMID : 23|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDMR_DataID1 : 31|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDMR_DataID2 : 39|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDMR_DataID3 : 47|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDMR_DataID4 : 55|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDMR_DataID5 : 63|8@0+ (1,0) [0|255] ""  XXX
+
+BO_ 2158944256 ODIDynDataListReq_RearSeat_LS: 8 XXX
+ SG_ ODIDynDataLstRq_RSD : 7|64@0+ (1,0) [0|0] ""  XXX
+ SG_ ODDLR_FUCID : 7|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDLR_DataId : 15|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDLR_DspMID : 23|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDLR_ReqDir : 24|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODDLR_NmEntries : 31|7@0+ (1,0) [0|127] ""  XXX
+ SG_ ODDLR_Idx : 39|16@0+ (1,0) [0|65535] ""  XXX
+ SG_ ODDLR_SubIdReqM : 51|12@0+ (1,0) [0|4095] ""  XXX
+ SG_ ODDLR_WrpArnd : 52|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODDLR_BckgndFlag : 53|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODDLR_ReqType : 55|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2158927872 ODI_DynData_CenterStack_LS: 8 XXX
+ SG_ ODIDynData_CntrStck : 14|55@0+ (1,0) [0|0] ""  XXX
+ SG_ ODDC_InvldData : 8|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODDC_DataType : 14|6@0+ (1,0) [0|63] ""  XXX
+ SG_ ODDC_FUCID : 23|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDC_DataId : 31|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDC_DataVal : 39|32@0+ (1,0) [0|4294967295] ""  XXX
+
+BO_ 2158895104 ODI_CenterStack_2_RearSeat_LS: 8 XXX
+ SG_ ODI_CntrStck2RSD : 7|64@0+ (1,0) [0|1.84467440737096E+019] ""  XXX
+
+BO_ 2152038400 Infomatics_Response_Payload_LS: 8 XXX
+ SG_ InfMdRspPld : 7|64@0+ (1,0) [0|1.84467440737096E+019] ""  XXX
+
+BO_ 2152022016 Infomatics_Metadata_Response_LS: 7 XXX
+ SG_ InfMdRspCmplt : 7|16@0+ (1,0) [0|65535] ""  XXX
+ SG_ InfMdRspInf : 23|16@0+ (1,0) [0|65535] ""  XXX
+ SG_ InfMdStRsp : 35|4@0+ (1,0) [0|15] ""  XXX
+ SG_ AudSelctdSrcReq : 44|5@0+ (1,0) [0|31] ""  XXX
+ SG_ AudSysVolSetCtrl : 55|8@0+ (1,0) [0|0] ""  XXX
+ SG_ ASVSC_ReqEnbld : 48|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ASVSC_VolReq : 55|7@0+ (0.787402,0) [0|100.000054] ""  XXX
+
+BO_ 2152005632 Infomatics_Request_Payload_LS: 8 XXX
+ SG_ InfMdRqstPld : 7|64@0+ (1,0) [0|1.84467440737096E+019] ""  XXX
+
+BO_ 2151989248 Infomatics_Metadata_Request_LS: 5 XXX
+ SG_ InfMdRqstCmplt : 7|16@0+ (1,0) [0|65535] ""  XXX
+ SG_ InfMdRqstInt : 23|16@0+ (1,0) [0|65535] ""  XXX
+ SG_ InfMdStReq : 35|4@0+ (1,0) [0|15] ""  XXX
+
+BO_ 2151972864 Fuel_Level_Status_LS: 4 XXX
+ SG_ FuelLvlLwIO : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LnchCtrlMdReq : 2|2@0+ (1,0) [0|3] ""  XXX
+ SG_ LnchCtrlWhlSlpReq : 7|5@0+ (1,0) [0|31] ""  XXX
+ SG_ VehFuelRngCalcGroup : 9|18@0+ (1,0) [0|0] ""  XXX
+ SG_ VehFuelRngCalc : 8|17@0+ (0.015625,0) [0|2047.984375] "km"  XXX
+ SG_ VehFuelRngCalcV : 9|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LnchCtrlEngRPMReq : 15|6@0+ (1,0) [0|63] ""  XXX
+
+BO_ 2154528768 Wheel_Grnd_Velocity_LS: 8 XXX
+ SG_ WhlGrndVlctyLftDrvnGroup : 6|15@0+ (1,0) [0|0] ""  XXX
+ SG_ WhlGrndVlctyLftDrvn : 5|14@0+ (0.03125,0) [0|511.96875] "km / h"  XXX
+ SG_ WhlGrndVlctyLftDrvnV : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ WhlGrndVlctyLftNnDrvnGroup : 22|15@0+ (1,0) [0|0] ""  XXX
+ SG_ WhlGrndVlctyLftNnDrvn : 21|14@0+ (0.03125,0) [0|511.96875] "km / h"  XXX
+ SG_ WhlGrndVlctyLftNnDrvnV : 22|1@0+ (1,0) [0|1] ""  XXX
+ SG_ WhlGrndVlctyRtDrvnGroup : 38|15@0+ (1,0) [0|0] ""  XXX
+ SG_ WhlGrndVlctyRtDrvn : 37|14@0+ (0.03125,0) [0|511.96875] "km / h"  XXX
+ SG_ WhlGrndVlctyRtDrvnV : 38|1@0+ (1,0) [0|1] ""  XXX
+ SG_ WhlGrndVlctyRtNnDrvnGroup : 54|15@0+ (1,0) [0|0] ""  XXX
+ SG_ WhlGrndVlctyRtNnDrvn : 53|14@0+ (0.03125,0) [0|511.96875] "km / h"  XXX
+ SG_ WhlGrndVlctyRtNnDrvnV : 54|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2150916096 Park_Heater_Info_LS: 4 XXX
+ SG_ PrkHtrAtv : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ClntCircPmpAct : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PrkHtrCoolntTempGroup : 2|11@0+ (1,0) [0|0] ""  XXX
+ SG_ PrkHtrCoolntTempV : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PrkHtrCoolntTemp : 15|8@0+ (1,-40) [-40|215] "deg C"  XXX
+ SG_ PrkHtrFlCsmdRlCntRsOc : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PrkHtrFlCnsmdRolCntGroup : 4|29@0+ (1,0) [0|0] ""  XXX
+ SG_ PrkHtrFlCnsmdRolCntV : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PrkHtrFlCnsmdRolCnt : 23|16@0+ (3.05176E-006,0) [0|0.1999970916] "liters"  XXX
+ SG_ PrkHtrPrhtAch : 5|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2150367232 Immobilizer_Identifier_LS: 5 XXX
+ SG_ ImoId : 7|16@0+ (1,0) [0|65535] ""  XXX
+ SG_ LrnEnvId : 23|16@0+ (1,0) [0|65535] ""  XXX
+ SG_ LrnEnvIdSt : 32|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ImoIdSt : 33|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2150621184 Keyless_Start_Auth_LS: 1 XXX
+ SG_ KylsStrAuthRslt : 7|8@0+ (1,0) [0|0] ""  XXX
+ SG_ KSARUID8 : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ KSARUID7 : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ KSARUID6 : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ KSARUID5 : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ KSARUID4 : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ KSARUID3 : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ KSARUID2 : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ KSARUID1 : 7|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2151309312 Inflatable_Restraints_Key_Id_LS: 2 XXX
+ SG_ InflRestId : 7|16@0+ (1,0) [0|39321] ""  XXX
+
+BO_ 2154061824 Window_Normalized_Indication_LS: 1 XXX
+ SG_ PsWndNtNrmIndOn : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrWndNtNrmIndOn : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RLWndNtNrmIndOn : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RRWndNtNrmIndOn : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RmtWndMvmntAtv : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ WndOprAlwd : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RrDrUnlckIO : 6|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2154512384 Rear_Closure_Rel_Sw_Sta_LS: 1 XXX
+ SG_ RrClosRelSwActGroup : 1|2@0+ (1,0) [0|0] ""  XXX
+ SG_ RrClosRelSwAct : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RrClosRelSwActV : 1|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2155347968 HS_Indications_Slow_LS: 8 XXX
+ SG_ ActVbnCtrlMlfIO : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PedtrnProtSysDpl : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TirePrsLowIO : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ACCUnavlbleDTWthrIO : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngOilStrvtnIO : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SecAxlNonEmMalfIO : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ BrkFldLvlLwGroup : 7|4@0+ (1,0) [0|0] ""  XXX
+ SG_ BrkFldLvlLwV : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ BrkFldLvlLw : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ACCSnsClnRqdIO : 8|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ACCTmpUnavlbleIO : 9|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngRecmndUpshftIO : 10|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ServAdpCrsCtrlIndOn : 11|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SrvSuspSysIO : 12|1@0+ (1,0) [0|1] ""  XXX
+ SG_ BrkPadWrnIO : 13|1@0+ (1,0) [0|1] ""  XXX
+ SG_ BrkSysMalFuncIndOn : 15|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngEmsRelMalfIndReq : 18|3@0+ (1,0) [0|7] ""  XXX
+ SG_ RrAxlMalfIO : 19|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrShftCntrlReqDndIO : 20|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CompOvrhtIndOn : 21|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TrnsSkpShftIO : 22|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RrAxlTmpInhIO : 23|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SecAxlTmpInhIO : 24|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CPSAlrtOnlIO : 25|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EPBSysStatIndReq : 27|2@0+ (1,0) [0|3] ""  XXX
+ SG_ EPBSysWrnIndReq : 29|2@0+ (1,0) [0|3] ""  XXX
+ SG_ CPSFldIO : 30|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CPSOffIO : 31|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CPSUnblIO : 32|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SrvPedtrnProtSysIO : 33|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PedtrnProtSysDisbld : 34|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PedtrnProtVDA : 35|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AppCltchAutSrtIO : 36|1@0+ (1,0) [0|1] ""  XXX
+ SG_ StBltTgtSetAvl : 37|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FourWhlDrvIndReq : 42|3@0+ (1,0) [0|7] ""  XXX
+ SG_ EngRecDwnshftIO : 43|1@0+ (1,0) [0|1] ""  XXX
+ SG_ StBltTgtCrtSetVal : 46|3@0+ (1,0) [0|7] ""  XXX
+ SG_ HillDesCtrlRedVehSpIO : 47|1@0+ (1,0) [0|1] ""  XXX
+ SG_ VehRollAngleGroup : 55|8@0+ (1,0) [0|0] ""  XXX
+ SG_ VehRollAngle : 54|7@0+ (0.703125,-45) [-45|44.296875] "deg"  XXX
+ SG_ VehRollAngleV : 55|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ACCPerfMdCsCrStVal : 58|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ACCPerfMdCsStAvl : 59|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrvrStPerfMdCsCrStVal : 62|3@0+ (1,0) [0|7] ""  XXX
+ SG_ DrvrStPerfMdCsStAvl : 63|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2149777408 Non_Drvn_Whl_Rot_Status_LS: 8 XXX
+ SG_ WhlRotStatLftNDrvn : 7|32@0+ (1,0) [0|0] ""  XXX
+ SG_ WRSLNDWhlDistPCntr : 1|10@0+ (1,0) [0|1023] "counts"  XXX
+ SG_ WRSLNDWhlDistVal : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ WRSLNDWhlRotStRst : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ WRSLNDSeqNum : 5|2@0+ (1,0) [0|3] "counts"  XXX
+ SG_ WRSLNDWhlDisTpRC : 7|2@0+ (1,0) [0|3] "counts"  XXX
+ SG_ WRSLNDWhlDistTstm : 23|16@0+ (1,0) [0|65535] "counts"  XXX
+ SG_ WhlRotStatRghtNDrvn : 39|32@0+ (1,0) [0|0] ""  XXX
+ SG_ WRSRNDWhlDistPCntr : 33|10@0+ (1,0) [0|1023] "counts"  XXX
+ SG_ WRSRNDWhlDistVal : 34|1@0+ (1,0) [0|1] ""  XXX
+ SG_ WRSRNDWhlRotStRst : 35|1@0+ (1,0) [0|1] ""  XXX
+ SG_ WRSRNDSeqNum : 37|2@0+ (1,0) [0|3] "counts"  XXX
+ SG_ WRSRNDWhlDisTpRC : 39|2@0+ (1,0) [0|3] "counts"  XXX
+ SG_ WRSRNDWhlDistTstm : 55|16@0+ (1,0) [0|65535] "counts"  XXX
+
+BO_ 2149769216 Driven_Whl_Rotational_Stat_LS: 8 XXX
+ SG_ WhlRotatStatLftDrvn : 7|32@0+ (1,0) [0|0] ""  XXX
+ SG_ WRSLDWhlDistPlsCntr : 1|10@0+ (1,0) [0|1023] "counts"  XXX
+ SG_ WRSLDWhlDistVal : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ WRSLDWhlRotStatRst : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ WRSLDSeqNum : 5|2@0+ (1,0) [0|3] "counts"  XXX
+ SG_ WRSLDWhlDisTpRC : 7|2@0+ (1,0) [0|3] "counts"  XXX
+ SG_ WRSLDWhlDistTmstm : 23|16@0+ (1,0) [0|65535] "counts"  XXX
+ SG_ WhlRotatStatRtDrvn : 39|32@0+ (1,0) [0|0] ""  XXX
+ SG_ WRSRDWhlDistPlsCntr : 33|10@0+ (1,0) [0|1023] "counts"  XXX
+ SG_ WRSRDWhlDistVal : 34|1@0+ (1,0) [0|1] ""  XXX
+ SG_ WRSRDWhlRotStatRst : 35|1@0+ (1,0) [0|1] ""  XXX
+ SG_ WRSRDSeqNum : 37|2@0+ (1,0) [0|3] "counts"  XXX
+ SG_ WRSRDWhlDisTpRC : 39|2@0+ (1,0) [0|3] "counts"  XXX
+ SG_ WRSRDWhlDistTmstm : 55|16@0+ (1,0) [0|65535] "counts"  XXX
+
+BO_ 2156789760 Time_of_Day_LS: 6 XXX
+ SG_ CldrYr : 7|8@0+ (1,2000) [2000|2255] "year"  XXX
+ SG_ CldrMth : 11|4@0+ (1,0) [0|15] ""  XXX
+ SG_ FrPedDetCsStReq : 14|3@0+ (1,0) [0|7] ""  XXX
+ SG_ CldrDay : 20|5@0+ (1,0) [0|31] "days"  XXX
+ SG_ SmrtHgBmAstCstSetReq : 23|3@0+ (1,0) [0|7] ""  XXX
+ SG_ TmofDay : 24|17@0+ (1,0) [0|0] ""  XXX
+ SG_ TOD_HrofDay : 24|5@0+ (1,0) [0|31] "hr"  XXX
+ SG_ TOD_MinofHr : 35|6@0+ (1,0) [0|63] "min"  XXX
+ SG_ TOD_SecofMin : 45|6@0+ (1,0) [0|63] "s"  XXX
+ SG_ TimeDispFormat : 25|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2155020288 Language_Selection_LS: 1 XXX
+ SG_ LngSelExt : 5|6@0+ (1,0) [0|63] ""  XXX
+ SG_ ChVolRq2 : 7|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2150432768 Engine_Information_4_LS: 8 XXX
+ SG_ TransOilTempSensPres : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ GenFldDutCycGroup : 1|42@0+ (1,0) [0|0] ""  XXX
+ SG_ GenFldDutCycV : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ GenFldDutCyc : 47|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+ SG_ FuelFltLifRstPerf : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TrnEmsMlfAtv : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ GrdBrkgAct : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TrnsNEmsRltMalfActv : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngShtdwnPndgIO : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngManfldAirTempCrtdGroup : 7|16@0+ (1,0) [0|0] ""  XXX
+ SG_ EngManfldAirTempCrtdV : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngManfldAirTempCrtd : 15|8@0+ (1,-40) [-40|215] "deg C"  XXX
+ SG_ FuelTotCap : 19|12@0+ (0.125,0) [0|511.875] "liters"  XXX
+ SG_ TrnsThrmlMngmntStat : 21|2@0+ (1,0) [0|3] ""  XXX
+ SG_ PTHiElecLdReqd : 22|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngOilRmnLf : 39|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+ SG_ FuelFltRmnLf : 63|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+
+BO_ 2155298816 Tire_Pressure_Sensor_Prog_Req_LS: 1 XXX
+ SG_ TrPrsSnsProgEvntRqd : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TrPrsMntrTrLdRstRqstd : 2|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2158878720 ODIDynDataListReq_CntrStack_LS: 8 XXX
+ SG_ ODIDynDataLstRq_CntrStck : 7|64@0+ (1,0) [0|0] ""  XXX
+ SG_ ODDLC_FUCID : 7|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDLC_DataId : 15|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDLC_DspMID : 23|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDLC_ReqDir : 24|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODDLC_NmEntries : 31|7@0+ (1,0) [0|127] ""  XXX
+ SG_ ODDLC_Idx : 39|16@0+ (1,0) [0|65535] ""  XXX
+ SG_ ODDLC_SubIdReqM : 51|12@0+ (1,0) [0|4095] ""  XXX
+ SG_ ODDLC_WrpArnd : 52|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODDLC_BckgndFlag : 53|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODDLC_ReqType : 55|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2158870528 ODIDynDataListRequest_AuxIP_LS: 8 XXX
+ SG_ ODIDynDataLstRq_AxIP : 7|64@0+ (1,0) [0|0] ""  XXX
+ SG_ ODDLA_FUCID : 7|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDLA_DataId : 15|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDLA_DspMID : 23|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDLA_ReqDir : 24|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODDLA_NmEntries : 31|7@0+ (1,0) [0|127] ""  XXX
+ SG_ ODDLA_Idx : 39|16@0+ (1,0) [0|65535] ""  XXX
+ SG_ ODDLA_SubIdReqM : 51|12@0+ (1,0) [0|4095] ""  XXX
+ SG_ ODDLA_WrpArnd : 52|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODDLA_BckgndFlag : 53|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODDLA_ReqType : 55|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2154692608 Audio_Source_Status_LS: 2 XXX
+ SG_ AudSrcStat : 3|12@0+ (1,0) [0|0] ""  XXX
+ SG_ ASSAudSrcType : 3|5@0+ (1,0) [0|31] ""  XXX
+ SG_ ASSAudSrcStatCode : 11|4@0+ (1,0) [0|15] ""  XXX
+ SG_ ASSAudSrcChType : 14|3@0+ (1,0) [0|7] ""  XXX
+ SG_ LgclAVChnl : 7|4@0+ (1,0) [0|15] ""  XXX
+
+BO_ 2154627072 Audio_Master_Arbitration_Command: 2 XXX
+ SG_ AudMstrArbCom : 3|4@0+ (1,0) [0|15] ""  XXX
+ SG_ LgclAVChnl_368 : 7|4@0+ (1,0) [0|15] ""  XXX
+ SG_ AudMstrSrcTyp : 12|5@0+ (1,0) [0|31] ""  XXX
+ SG_ AudMstrChnnlTyp : 15|3@0+ (1,0) [0|7] ""  XXX
+
+BO_ 2151112704 Occupant_Sensning_Status_LS: 2 XXX
+ SG_ FrntPassClass : 2|3@0+ (1,0) [0|7] ""  XXX
+ SG_ FrPsSeatOccSnsOpMd : 5|3@0+ (1,0) [0|7] "N/A"  XXX
+ SG_ FrPasSeatResCtrlOccStGroup : 7|14@0+ (1,0) [0|0] ""  XXX
+ SG_ FrPasSeatResCtrlOccSt : 7|2@0+ (1,0) [0|3] ""  XXX
+ SG_ FrPasSeatResCtrlOccStV : 10|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FrPsSeatOccFltSt : 9|2@0+ (1,0) [0|3] "N/A"  XXX
+ SG_ FrPasSeatbltRemOccSt : 11|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2153938944 Remote_Reflash_Req_LS: 1 XXX
+ SG_ RmtRflshMdReqtd : 7|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2159239168 ODI_TEL_2_OTIM_LS: 8 XXX
+ SG_ ODI_TEL2OTIM : 7|64@0+ (1,0) [0|1.84467440737096E+019] ""  XXX
+
+BO_ 2159230976 ODI_OTIM_2_TEL_LS: 8 XXX
+ SG_ ODI_OTIM2TEL : 7|64@0+ (1,0) [0|1.84467440737096E+019] ""  XXX
+
+BO_ 2159222784 ODI_PDIM_2_CenterStack_LS: 8 XXX
+ SG_ ODI_PDIM2CntrStck : 7|64@0+ (1,0) [0|1.84467440737096E+019] ""  XXX
+
+BO_ 2159214592 ODI_CenterStack_2_PDIM_LS: 8 XXX
+ SG_ ODI_CntrStck2PDIM : 7|64@0+ (1,0) [0|1.84467440737096E+019] ""  XXX
+
+BO_ 2158862336 ODIAction_OTIM_LS: 8 XXX
+ SG_ ODIActn_OTIM : 5|62@0+ (1,0) [0|0] ""  XXX
+ SG_ ODIAOT_DaTy : 5|6@0+ (1,0) [0|63] ""  XXX
+ SG_ ODIAOT_FUCID : 15|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODIAOT_ActnID : 23|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODIAOT_DspMID : 31|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODIAOT_ActnVal : 39|32@0+ (1,0) [0|4294967295] ""  XXX
+
+BO_ 2150662144 Environment_Id_Resp_3_LS: 3 XXX
+ SG_ EnvIdRsp3 : 7|16@0+ (1,0) [0|65535] ""  XXX
+ SG_ EnvIdRspSt3 : 17|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2150653952 Environment_Id_Resp_2_LS: 3 XXX
+ SG_ EnvIdRsp2 : 7|16@0+ (1,0) [0|65535] ""  XXX
+ SG_ EnvIdRspSt2 : 17|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2150850560 Seatbelt_Information_LS: 1 XXX
+ SG_ DrSbltAtcGroup : 1|2@0+ (1,0) [0|0] ""  XXX
+ SG_ DrSbltAtc : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrSbltAtcV : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PsSbltAtcGroup : 3|2@0+ (1,0) [0|0] ""  XXX
+ SG_ PsSbltAtc : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PsSbltAtcV : 3|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2154659840 Column_Lock_Status_2: 2 XXX
+ SG_ UnlckRtryRotIndOn : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ UnlockRtryPshIndOn : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ StrgClmnLckVisNot : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ClmnLckStatGroup : 5|6@0+ (1,0) [0|0] ""  XXX
+ SG_ ClmnLckStat : 1|2@0+ (1,0) [0|3] ""  XXX
+ SG_ ClmnLckStatV : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ClmSysFlrIndOn : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ StrngClmnLckTT : 9|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2154938368 Fob_Programming_Mode_Status_LS: 1 XXX
+ SG_ FobProgMdStat : 1|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2155266048 Rear_Seat_Heat_Cool_Switches_LS: 1 XXX
+ SG_ RLHCSeatSw1Act : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RLHCSeatSw2Act : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RLHCSeatSw3Act : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RRHCSeatSw1Act : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RRHCSeatSw2Act : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RRHCSeatSw3Act : 5|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2155249664 Rear_Seat_Heat_Cool_Control_LS: 4 XXX
+ SG_ RLHCSModeIndCtrl : 4|5@0+ (1,0) [0|0] ""  XXX
+ SG_ RLHCSMInd3 : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RLHCSMInd2 : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RLHCSMInd1 : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RLHCSMIndReq : 4|2@0+ (1,0) [0|3] ""  XXX
+ SG_ RRHCSModeIndCtrl : 12|5@0+ (1,0) [0|0] ""  XXX
+ SG_ RRHCSMInd3 : 8|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RRHCSMInd2 : 9|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RRHCSMInd1 : 10|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RRHCSMIndReq : 12|2@0+ (1,0) [0|3] ""  XXX
+ SG_ RLHCSeatLevIndCtrl : 22|7@0+ (1,0) [0|0] ""  XXX
+ SG_ RLHCSLSeatLev5 : 16|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RLHCSLSeatLev4 : 17|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RLHCSLSeatLev3 : 18|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RLHCSLSeatLev2 : 19|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RLHCSLSeatLev1 : 20|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RLHCSLIndReq : 22|2@0+ (1,0) [0|3] ""  XXX
+ SG_ RRHCSeatLevIndCtrl : 30|7@0+ (1,0) [0|0] ""  XXX
+ SG_ RRHCSLSeatLev5 : 24|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RRHCSLSeatLev4 : 25|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RRHCSLSeatLev3 : 26|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RRHCSLSeatLev2 : 27|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RRHCSLSeatLev1 : 28|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RRHCSLIndReq : 30|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2155184128 CruiseControl_LS: 3 XXX
+ SG_ CrsCntAtv : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CrsSpdLmtrSwStat : 4|4@0+ (1,0) [0|15] ""  XXX
+ SG_ TrnsShftLvrLckStat : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RrStRmndrIO : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RrStRmndrCstSetAvail : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CrsCntrlSwStat : 15|8@0+ (1,0) [0|0] ""  XXX
+ SG_ CrsCntrlSwStSwDataIntgty : 9|2@0+ (1,0) [0|3] ""  XXX
+ SG_ CrsCntrlSwStSpDcSwAct : 10|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CrsCntrlSwStSpdInSwAct : 11|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CrsCntrlSwStSetSwAct : 12|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CrsCntrlSwStResSwAct : 13|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CrsCntrlSwStOnSwAct : 14|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CrsCntrlSwStCanSwAct : 15|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SmPhRmFunCstCurStVal : 18|3@0+ (1,0) [0|7] ""  XXX
+ SG_ SmPhRmFunCstStAval : 19|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IdlRecmndToClEngIO : 20|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RrStRmndrCstCurrSetVal : 23|3@0+ (1,0) [0|7] ""  XXX
+
+BO_ 2155167744 Power_Mode_Info_LS: 3 XXX
+ SG_ ShftPrkIO : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ShftToNtrlIO : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ Ky_IdDevPr : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SecPwrMdPshBtnAtv : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TransModActIO : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TransModInactIO : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ KylsStrtUseTxPckIO : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TrStLgMdAtv : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ VehMovState : 10|3@0+ (1,0) [0|7] ""  XXX
+ SG_ AutoShtdwnDsblIO : 11|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AppPrkBrkIO : 12|1@0+ (1,0) [0|1] ""  XXX
+ SG_ NRmtDtdPsCluRstIO : 13|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ApplyBrkPdlIO : 14|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ApplyCltPdlIO : 15|1@0+ (1,0) [0|1] ""  XXX
+ SG_ NoReDetInOn : 16|1@0+ (1,0) [0|1] ""  XXX
+ SG_ NRmtDtdPsBrkRstIO : 17|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PrsBtnAgnTTrnEngOffIO : 18|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TSLgMdPwrCtOWAtv : 19|1@0+ (1,0) [0|1] ""  XXX
+ SG_ NRmtDtctdRstrtAllwd : 20|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PrsStrtAgnIO : 21|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PrsCltchPrsStrtAgnIO : 22|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2154921984 Fob_Status_LS: 2 XXX
+ SG_ RFAFnc : 1|10@0+ (1,0) [0|0] ""  XXX
+ SG_ RFRmtCntFobNm : 1|3@0+ (1,0) [0|7] ""  XXX
+ SG_ RFRmtCntFobBatLw : 8|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RFRmtCntrlFobFnc : 14|6@0+ (1,0) [0|63] ""  XXX
+ SG_ FobPogLimRchdIndOn : 2|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2151317504 Park_Assistant_Rear_Status: 4 XXX
+ SG_ PrkAsstRrExtdDist : 3|12@0+ (0.01,0) [0|40.95] "m"  XXX
+ SG_ PrkAstRrSysStat : 5|2@0+ (1,0) [0|3] ""  XXX
+ SG_ PARrRgn1ObjStat : 19|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PARrRgn2ObjStat : 23|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PARrRgn3ObjStat : 27|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PARrRgn4ObjStat : 31|4@0+ (1,0) [0|15] ""  XXX
+
+BO_ 2151301120 Park_Assistant_Front_Status: 4 XXX
+ SG_ PrkAsstFrtExtdDist : 3|12@0+ (0.01,0) [0|40.95] "m"  XXX
+ SG_ PrkAstFrSysStat : 5|2@0+ (1,0) [0|3] ""  XXX
+ SG_ PrkAstAdvSysAct : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PrkAsstRrOffIO : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PAFrtRgn1ObjStat : 19|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PAFrtRgn2ObjStat : 23|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PAFrtRgn3ObjStat : 27|4@0+ (1,0) [0|15] ""  XXX
+ SG_ PAFrtRgn4ObjStat : 31|4@0+ (1,0) [0|15] ""  XXX
+
+BO_ 2159083520 ODI_TEL_2_IPC_LS: 8 XXX
+ SG_ ODI_TEL2IPC : 7|64@0+ (1,0) [0|1.84467440737096E+019] ""  XXX
+
+BO_ 2153922560 Climate_Control_Voltage_LS: 3 XXX
+ SG_ ClimCtrlVoltBstModReq : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ClmtCtrlHtrEngRunRq : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HtrVlvRqstdPstn : 3|2@0+ (1,0) [0|3] ""  XXX
+ SG_ ClntHtrElecPwrRatGroup : 4|13@0+ (1,0) [0|0] ""  XXX
+ SG_ ClntHtrElecPwrRatV : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ClntHtrElecPwrRat : 15|8@0+ (0.04,0) [0|10.2] "kW"  XXX
+ SG_ ClmCtrHiVltPwrRqtd : 23|8@0+ (0.1,0) [0|25.5] "kW"  XXX
+
+BO_ 2153807872 Door_Open_Switch_Status_LS: 1 XXX
+ SG_ DrDoorOpenSwActGroup : 1|2@0+ (1,0) [0|0] ""  XXX
+ SG_ DrDoorOpenSwAct : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrDoorOpenSwActV : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PsDoorOpenSwActGroup : 3|2@0+ (1,0) [0|0] ""  XXX
+ SG_ PsDoorOpenSwAct : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PsDoorOpenSwActV : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ClmSysAuxFlrIndOn : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PsvStrtStrngClmnLckTT : 6|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2150703104 Audio_Amplifier_Status: 1 XXX
+ SG_ AudSysDigSigProcPres : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AudSysSurSndSysPres : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AudSysVNoisCompPres : 2|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2151399424 Wash_Level_LS: 1 XXX
+ SG_ WshFldLw : 0|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2151956480 Driver_Workload_LS: 2 XXX
+ SG_ DrvWrkldLvl : 3|4@0+ (1,0) [0|15] ""  XXX
+ SG_ ClstrHMIAnmSt : 6|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ClstrHMIRdy : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ StrWhlThbwhlCnts : 13|6@0- (1,0) [-32|31] "counts"  XXX
+
+BO_ 2151940096 Alarm_2_Request_LS: 7 XXX
+ SG_ Alrm2ExtRngReq : 1|26@0+ (1,0) [0|0] ""  XXX
+ SG_ A2ERRAlrmReq : 1|2@0+ (1,0) [0|3] ""  XXX
+ SG_ A2ERRAlrmTime : 15|24@0+ (1,0) [0|16777215] "min"  XXX
+ SG_ EstBulkIntAirTmpGroup : 2|35@0+ (1,0) [0|0] ""  XXX
+ SG_ EstBulkIntAirTmpV : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EstBulkIntAirTmp : 39|8@0+ (0.5,-40) [-40|87.5] "deg C"  XXX
+ SG_ EstIntRfSrfcTmpGroup : 3|44@0+ (1,0) [0|0] ""  XXX
+ SG_ EstIntRfSrfcTmpV : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EstIntRfSrfcTmp : 47|8@0+ (0.5,-40) [-40|87.5] "deg C"  XXX
+ SG_ EstIntHorzDshSrfTmpGroup : 4|53@0+ (1,0) [0|0] ""  XXX
+ SG_ EstIntHorzDshSrfTmpM : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EstIntHorzDshSrfTmp : 55|8@0+ (1,-40) [-40|215] "deg C"  XXX
+
+BO_ 2151923712 Alarm_1_Request_LS: 5 XXX
+ SG_ Alrm1ExtRngReq : 1|26@0+ (1,0) [0|0] ""  XXX
+ SG_ A1ERRAlrmReq : 1|2@0+ (1,0) [0|3] ""  XXX
+ SG_ A1ERRAlrmTime : 15|24@0+ (1,0) [0|16777215] "min"  XXX
+ SG_ HLOCCstCurrSetVal : 6|3@0+ (1,0) [0|7] ""  XXX
+ SG_ HLOCCstSetAvail : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HLOCCstAvail : 39|7@0+ (1,0) [0|0] ""  XXX
+ SG_ HLOCCA_Res4Avail : 33|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HLOCCA_Res3Avail : 34|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HLOCCA_Res2Avail : 35|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HLOCCA_Res1Avail : 36|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HLOCCA_OnOpnOnlyAvail : 37|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HLOCCA_OnAvail : 38|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HLOCCA_OffAvail : 39|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2150645760 Environment_Id_Resp_1_LS: 3 XXX
+ SG_ EnvIdRsp1 : 7|16@0+ (1,0) [0|65535] ""  XXX
+ SG_ EnvIdRspSt1 : 17|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2152464384 Lane_Departure_Warning_LS: 3 XXX
+ SG_ LaneDepWrnDisbldIO : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LnKpAstDisbldIO : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SrvcLaneDepWrnSysIO : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SrvcLnKpAstSysIO : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HndsOffStrWhlDtIO : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TnDrvLDWOffUnbIO : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LftLnDepWrnSt : 7|2@0+ (1,0) [0|3] ""  XXX
+ SG_ LaneDepWrnIndCntrl : 13|6@0+ (1,0) [0|0] ""  XXX
+ SG_ LDWIC_LnDepWAWLn : 9|2@0+ (1,0) [0|3] ""  XXX
+ SG_ LDWIC_Ind2 : 10|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LDWIC_Ind1 : 11|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LDWIC_IndReq : 13|2@0+ (1,0) [0|3] ""  XXX
+ SG_ RtLnDepWrnSt : 15|2@0+ (1,0) [0|3] ""  XXX
+ SG_ LnKpAstIndCntrl : 21|6@0+ (1,0) [0|0] ""  XXX
+ SG_ LKAIC_AdbWngLn : 17|2@0+ (1,0) [0|3] ""  XXX
+ SG_ LKAIC_Ind2 : 18|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LKAIC_Ind1 : 19|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LKAIC_IndReq : 21|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2154971136 Front_Seat_Heat_Cool_Switches_LS: 1 XXX
+ SG_ DrvHCSeatSw1Act : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrvHCSeatSw2Act : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrvHCSeatSw3Act : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PassHCSeatSw1Act : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PassHCSeatSw2Act : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PassHCSeatSw3Act : 5|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2154962944 Front_Seat_Heat_Cool_Control_LS: 4 XXX
+ SG_ DrvHCSModeIndCtrl : 4|5@0+ (1,0) [0|0] ""  XXX
+ SG_ DrvHCSMInd3 : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrvHCSMInd2 : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrvHCSMInd1 : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrvHCSMIndReq : 4|2@0+ (1,0) [0|3] ""  XXX
+ SG_ PassHCSModeIndCtrl : 12|5@0+ (1,0) [0|0] ""  XXX
+ SG_ PassHCSMInd3 : 8|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PassHCSMInd2 : 9|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PassHCSMInd1 : 10|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PassHCSMIndReq : 12|2@0+ (1,0) [0|3] ""  XXX
+ SG_ DrvHCSLevIndCtrl : 22|7@0+ (1,0) [0|0] ""  XXX
+ SG_ DrvHCSLSeatLev5 : 16|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrvHCSLSeatLev4 : 17|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrvHCSLSeatLev3 : 18|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrvHCSLSeatLev2 : 19|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrvHCSLSeatLev1 : 20|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrvHCSLIndReq : 22|2@0+ (1,0) [0|3] ""  XXX
+ SG_ PassHCSeatLevIndCtrl : 30|7@0+ (1,0) [0|0] ""  XXX
+ SG_ PassHCSLSeatLev5 : 24|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PassHCSLSeatLev4 : 25|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PassHCSLSeatLev3 : 26|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PassHCSLSeatLev2 : 27|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PassHCSLSeatLev1 : 28|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PassHCSLIndReq : 30|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2156232704 Alarm_Clock_Status_LS: 4 XXX
+ SG_ AlrmClkStat : 7|32@0+ (1,0) [0|0] ""  XXX
+ SG_ ACSAlarm3 : 1|2@0+ (1,0) [0|3] ""  XXX
+ SG_ ACSAlarm2 : 3|2@0+ (1,0) [0|3] ""  XXX
+ SG_ ACSAlarm1 : 5|2@0+ (1,0) [0|3] ""  XXX
+ SG_ ACSAlarm0 : 7|2@0+ (1,0) [0|3] ""  XXX
+ SG_ ACSAlarm7 : 9|2@0+ (1,0) [0|3] ""  XXX
+ SG_ ACSAlarm6 : 11|2@0+ (1,0) [0|3] ""  XXX
+ SG_ ACSAlarm5 : 13|2@0+ (1,0) [0|3] ""  XXX
+ SG_ ACSAlarm4 : 15|2@0+ (1,0) [0|3] ""  XXX
+ SG_ ACSAlarm11 : 17|2@0+ (1,0) [0|3] ""  XXX
+ SG_ ACSAlarm10 : 19|2@0+ (1,0) [0|3] ""  XXX
+ SG_ ACSAlarm9 : 21|2@0+ (1,0) [0|3] ""  XXX
+ SG_ ACSAlarm8 : 23|2@0+ (1,0) [0|3] ""  XXX
+ SG_ ACSAlarm15 : 25|2@0+ (1,0) [0|3] ""  XXX
+ SG_ ACSAlarm14 : 27|2@0+ (1,0) [0|3] ""  XXX
+ SG_ ACSAlarm13 : 29|2@0+ (1,0) [0|3] ""  XXX
+ SG_ ACSAlarm12 : 31|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2154987520 Hood_Status_LS: 1 XXX
+ SG_ HdStGroup : 2|3@0+ (1,0) [0|0] ""  XXX
+ SG_ HdSt : 1|2@0+ (1,0) [0|3] ""  XXX
+ SG_ HdStV : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ WrlsChrgSysChrgStat : 5|3@0+ (1,0) [0|7] ""  XXX
+
+BO_ 2154840064 Compass_Status_LS: 4 XXX
+ SG_ CmpsOctHdingDataSrc : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CmpsModFltPrs : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CmpsModManCalInPrc : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CmpsZnNvrSet : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CmpsDecZone : 11|4@0+ (1,0) [0|15] ""  XXX
+ SG_ CmpsOctHding : 14|3@0+ (1,0) [0|7] ""  XXX
+ SG_ CmpsSatrtd : 15|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CmpsCrHding : 23|16@0+ (0.0054932,0) [0|359.996862] "deg"  XXX
+
+BO_ 2154676224 Compass_Request_LS: 1 XXX
+ SG_ CmpsDecZonCmndVal : 3|4@0+ (1,0) [0|15] ""  XXX
+ SG_ CmpsDecZonSetReq : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CmpsModManCalReq : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CmpsModSlfTstReq : 6|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2154643456 Auxiliary_Heater_Status_LS: 3 XXX
+ SG_ AuxHtrAtv : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HtrCoreInltClntTmpCalcGroup : 4|21@0+ (1,0) [0|0] ""  XXX
+ SG_ HtrCoreInltClntTmpCalcV : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HtrCoreInltClntTmpCalc : 23|8@0+ (1,-40) [-40|215] "deg C"  XXX
+ SG_ CCClntCrcFlwRtReq : 15|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+
+BO_ 2154905600 Driver_Identifier_LS: 1 XXX
+ SG_ DrId : 2|3@0+ (1,0) [0|7] ""  XXX
+ SG_ DrvSeatPrsMemID : 5|3@0+ (1,0) [0|7] ""  XXX
+
+BO_ 2154954752 High_Volt_Climate_Pwr_Status_LS: 5 XXX
+ SG_ ClmtHtPwrRqd : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HtdStWhlCmd : 2|2@0+ (1,0) [0|3] ""  XXX
+ SG_ HtdStWhlInd : 4|2@0+ (1,0) [0|3] ""  XXX
+ SG_ HtdStWhlCtrlSrc : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ClntHtrElecPwrReq : 15|8@0+ (0.04,0) [0|10.2] "kW"  XXX
+ SG_ EstACCompPwrRchCbnCmf : 23|8@0+ (0.04,0) [0|10.2] "kw"  XXX
+ SG_ EstACCompPwrMtnCbnCmf : 31|8@0+ (0.04,0) [0|10.2] "kW"  XXX
+
+BO_ 2153381888 Control_Power_Liftgate_LS: 4 XXX
+ SG_ FnshRrClsrMtnBfrDrvIO : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RrClsrObstclDtctd : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RrClsrInMtn : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RrClosOpenSwActGroup : 4|3@0+ (1,0) [0|0] ""  XXX
+ SG_ RrClosOpenSwAct : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RrClosOpenSwActV : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RrWprInhbRq : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ GrgPrgMdCmpl : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PwrLftgtInclAngGroup : 7|16@0+ (1,0) [0|0] ""  XXX
+ SG_ PwrLftgtInclAngV : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PwrLftgtInclAng : 15|8@0+ (1,0) [0|255] ""  XXX
+ SG_ VehIncAngEst : 23|8@0+ (1,0) [0|255] "deg"  XXX
+ SG_ PwrLftgtMotStat : 26|3@0+ (1,0) [0|7] ""  XXX
+ SG_ VltActRrAccUnavlIO : 27|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2149752832 Chassis_Information_LS: 8 XXX
+ SG_ VehHghtStatGroup : 0|9@0+ (1,0) [0|0] ""  XXX
+ SG_ VehHghtStatV : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ VehHghtStat : 11|4@0+ (1,0) [0|15] ""  XXX
+ SG_ IntBrkAssPreFilReq : 1|1@0+ (1,0) [0|1] "N/A"  XXX
+ SG_ BksOvht : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HalfSysFail : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ BrkSysRedBrkTlltlReq : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ABSAtv : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrvlnCustStngAvlbl : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ StrCustStngAvlbl : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PrkBrkVDA : 12|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PowStVDA : 13|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RrDrCntVDA : 14|1@0+ (1,0) [0|1] ""  XXX
+ SG_ BrkSysVDA : 15|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SprTireSt : 18|3@0+ (1,0) [0|7] ""  XXX
+ SG_ EPBSysAudWarnReq : 20|2@0+ (1,0) [0|3] ""  XXX
+ SG_ EPBSysDspMsgReq : 23|3@0+ (1,0) [0|7] ""  XXX
+ SG_ DrvlnCustCurrStngVal : 26|3@0+ (1,0) [0|7] ""  XXX
+ SG_ StrCustCurrStngVal : 29|3@0+ (1,0) [0|7] ""  XXX
+ SG_ SusCustStngAvlbl : 30|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EBDFailed : 31|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SusCustCurrStngVal : 34|3@0+ (1,0) [0|7] ""  XXX
+ SG_ HillDscntCntlSysStat : 37|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ElecPrkBrkStat : 39|2@0+ (1,0) [0|3] ""  XXX
+ SG_ HlStrAssActIO : 41|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ColPrSysStngAvl : 42|1@0+ (1,0) [0|1] ""  XXX
+ SG_ GNCustSetngAvlbl : 44|1@0+ (1,0) [0|1] ""  XXX
+ SG_ GNCustCrntStngVal : 47|3@0+ (1,0) [0|7] ""  XXX
+ SG_ CPSInfotmntMtReq : 49|2@0+ (1,0) [0|3] ""  XXX
+ SG_ ColPrSysCrntStng : 52|3@0+ (1,0) [0|7] ""  XXX
+ SG_ SndEnhcmtPerfMdRq : 55|3@0+ (1,0) [0|7] ""  XXX
+ SG_ DispPerfMdCsCrStVal : 58|3@0+ (1,0) [0|7] ""  XXX
+ SG_ DispPerfMdCsStAvl : 59|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SndPerfMdCsCrStVal : 62|3@0+ (1,0) [0|7] ""  XXX
+ SG_ SndPerfMdCsStAvl : 63|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2151514112 Reset_OilLife_Request_LS: 1 XXX
+ SG_ EngOilLfRstRq : 0|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2158903296 ODIDynDataMultiRequest_AuxIP_LS: 8 XXX
+ SG_ ODIDynDataMltRq_AuxIP : 5|62@0+ (1,0) [0|0] ""  XXX
+ SG_ ODDMA_DataID2Vld : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODDMA_DataID3Vld : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODDMA_DataID4Vld : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODDMA_DataID5Vld : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODDMA_ReqType : 5|2@0+ (1,0) [0|3] ""  XXX
+ SG_ ODDMA_FUCID : 15|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDMA_DispMID : 23|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDMA_DataID1 : 31|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDMA_DataID2 : 39|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDMA_DataID3 : 47|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDMA_DataID4 : 55|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDMA_DataID5 : 63|8@0+ (1,0) [0|255] ""  XXX
+
+BO_ 2158911488 ODIDynDataMultiReq_CntrStack_LS: 8 XXX
+ SG_ ODIDynDataMltRq_CntrStck : 5|62@0+ (1,0) [0|0] ""  XXX
+ SG_ ODDMC_DataID2Vld : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODDMC_DataID3Vld : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODDMC_DataID4Vld : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODDMC_DataID5Vld : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODDMC_ReqType : 5|2@0+ (1,0) [0|3] ""  XXX
+ SG_ ODDMC_FUCID : 15|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDMC_DispMID : 23|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDMC_DataID1 : 31|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDMC_DataID2 : 39|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDMC_DataID3 : 47|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDMC_DataID4 : 55|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDMC_DataID5 : 63|8@0+ (1,0) [0|255] ""  XXX
+
+BO_ 2158919680 ODIDynDataMultiRequest_IPC_LS: 8 XXX
+ SG_ ODIDynDataMltRq_IPC : 5|62@0+ (1,0) [0|0] ""  XXX
+ SG_ ODDMI_DataID2Vld : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODDMI_DataID3Vld : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODDMI_DataID4Vld : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODDMI_DataID5Vld : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ODDMI_ReqType : 5|2@0+ (1,0) [0|3] ""  XXX
+ SG_ ODDMI_FUCID : 15|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDMI_DispMID : 23|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDMI_DataID1 : 31|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDMI_DataID2 : 39|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDMI_DataID3 : 47|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDMI_DataID4 : 55|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODDMI_DataID5 : 63|8@0+ (1,0) [0|255] ""  XXX
+
+BO_ 2151825408 Outside_Air_Temperature_LS: 3 XXX
+ SG_ OtsAirTmpCrValGroup : 0|9@0+ (1,0) [0|0] ""  XXX
+ SG_ OtsAirTmpCrValV : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ OtsAirTmpCrVal : 15|8@0+ (0.5,-40) [-40|87.5] "deg C"  XXX
+ SG_ OtsAirTmpGroup : 1|18@0+ (1,0) [0|0] ""  XXX
+ SG_ OtsAirTmpV : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ OtsAirTmp : 23|8@0+ (0.5,-40) [-40|87.5] "deg C"  XXX
+ SG_ OtsAirTmpCrValMsk : 2|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2151153664 Rear_Window_Defog_Status_LS: 1 XXX
+ SG_ RrWndDfgOn : 0|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2151170048 Trailer_Status_LS: 2 XXX
+ SG_ TrlrHtchSwAtv : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TrlrBrkLtFld : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TrlrFgLtFld : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TrlrRvsLtFld : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TrlrTlLtFld : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TrlrFgLtPrs : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TrlrRtTrInLtFld : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TrlLfTrInLtFld : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LftSecTrnIndFld : 8|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RtSecTrnIndFld : 9|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DisRrPrmryLmps : 10|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RLftPrkLmpFld : 11|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RRPrkLmpFld : 12|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RrEndCrrStat : 13|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2151841792 Wipe_Wash_Status_LS: 1 XXX
+ SG_ TurnWprIntIO : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RnSnsActIO : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RnSnsOffIO : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ WSWprAct : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HtdFrntWSSt : 4|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2154995712 Air_Conditioning_Comp_Type_LS: 1 XXX
+ SG_ HVHtrOvrTmpIndOn : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HVHtrFldIO : 4|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2154094592 Adjustable_Pedal_Motion_Inh_LS: 8 XXX
+ SG_ AdjPdlMotInhbtd : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IntDimSeldAnmTypStVal : 4|4@0+ (1,0) [0|15] ""  XXX
+ SG_ IntDimSeldClrTypStVal : 12|5@0+ (1,0) [0|31] ""  XXX
+ SG_ IntDimAnmTypAvl : 22|15@0+ (1,0) [0|0] ""  XXX
+ SG_ IDATA_AnmTyp6Avl : 16|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDATA_AnmTyp5Avl : 17|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDATA_AnmTyp4Avl : 18|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDATA_AnmTyp3Avl : 19|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDATA_AnmTyp2Avl : 20|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDATA_AnmTyp1Avl : 21|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDATA_OffAvl : 22|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDATA_AnmTyp14Avl : 24|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDATA_AnmTyp13Avl : 25|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDATA_AnmTyp12Avl : 26|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDATA_AnmTyp11Avl : 27|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDATA_AnmTyp10Avl : 28|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDATA_AnmTyp9Avl : 29|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDATA_AnmTyp8Avl : 30|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDATA_AnmTyp7Avl : 31|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IntDimClrTypAvl : 38|31@0+ (1,0) [0|0] ""  XXX
+ SG_ IDCTA_ClrTyp6Avl : 32|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDCTA_ClrTyp5Avl : 33|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDCTA_ClrTyp4Avl : 34|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDCTA_ClrTyp3Avl : 35|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDCTA_ClrTyp2Avl : 36|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDCTA_ClrTyp1Avl : 37|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDCTA_OffAvl : 38|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDCTA_ClrTyp14Avl : 40|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDCTA_ClrTyp13Avl : 41|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDCTA_ClrTyp12Avl : 42|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDCTA_ClrTyp11Avl : 43|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDCTA_ClrTyp10Avl : 44|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDCTA_ClrTyp9Avl : 45|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDCTA_ClrTyp8Avl : 46|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDCTA_ClrTyp7Avl : 47|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDCTA_ClrTyp22Avl : 48|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDCTA_ClrTyp21Avl : 49|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDCTA_ClrTyp20Avl : 50|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDCTA_ClrTyp19Avl : 51|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDCTA_ClrTyp18Avl : 52|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDCTA_ClrTyp17Avl : 53|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDCTA_ClrTyp16Avl : 54|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDCTA_ClrTyp15Avl : 55|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDCTA_ClrTyp30Avl : 56|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDCTA_ClrTyp29Avl : 57|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDCTA_ClrTyp28Avl : 58|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDCTA_ClrTyp27Avl : 59|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDCTA_ClrTyp26Avl : 60|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDCTA_ClrTyp25Avl : 61|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDCTA_ClrTyp24Avl : 62|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IDCTA_ClrTyp23Avl : 63|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2149711872 ACC_YawRate_Information_LS: 8 XXX
+ SG_ ACCDrvrSeltdSpd : 3|12@0+ (0.0625,0) [0|255.9375] "km / h"  XXX
+ SG_ AdapCrsCntVDA : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ACCAct370 : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CrsCntlDrSelSpdAct : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CrsSpdLmtrDrvSelSpd : 19|12@0+ (0.0625,0) [0|255.9375] "km / h"  XXX
+ SG_ ACCHdwyStg : 22|3@0+ (1,0) [0|7] ""  XXX
+ SG_ FwdClnAlrtPr : 23|1@0+ (1,0) [0|1] ""  XXX
+ SG_ VehDynYawRateGroup : 36|13@0+ (1,0) [0|0] ""  XXX
+ SG_ VehDynYawRate : 35|12@0- (0.0625,0) [-128|127.9375] "deg/sec"  XXX
+ SG_ VehDynYawRateV : 36|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SpdLmtrSpdWrngEnbld : 37|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SpdLmtrSpdWrngAct : 38|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FwdClnAlrtOffIO : 39|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FwdObjAlrtInd : 48|9@0+ (1,0) [0|0] ""  XXX
+ SG_ FOAI_AlrtChmIhbRq : 48|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FOAI_AlrtWrnIndRq : 59|4@0+ (1,0) [0|15] ""  XXX
+ SG_ FOAI_VehAhdIndRq : 63|4@0+ (1,0) [0|15] ""  XXX
+ SG_ AutoMdSpdLmtStat : 50|2@0+ (1,0) [0|3] ""  XXX
+ SG_ ACCAutoSetSpdStat : 52|2@0+ (1,0) [0|3] ""  XXX
+ SG_ SetSpdLmtRchd : 54|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2153979904 BulbOutage_LS: 2 XXX
+ SG_ CHMSLFld : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FLTrnIndLtFld : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FRTrnIndLtFld : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LftBrkLtFld : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LftLwBmFld : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LftPrkLtFld : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LicPltLtFld : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RLTrnIndLtFld : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RRTrnIndLtFld : 8|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RtBrkLtFld : 9|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RtLwBmFld : 10|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RtPrkLtFld : 11|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RFgLtFld : 12|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RvsLtFld : 13|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LftDytmRunLmpFld : 14|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RtDytmRunLmpFld : 15|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2150154240 Passive_Entry_Reply_LS: 8 XXX
+ SG_ PsvEntVehIdExt : 7|32@0+ (1,0) [0|4294967295] ""  XXX
+ SG_ PsvEntChlngRply : 39|32@0+ (1,0) [0|4294967295] "passwrd"  XXX
+
+BO_ 2155003904 Side_Blind_Zone_Alert_Status: 2 XXX
+ SG_ SBZASysClnIndOn : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SBZASysOffIndOn : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SBZASysSrvIndOn : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SBZATmpUnvIndOn : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LftLnChgThrt : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LfLnChngThrtAprchSpd : 15|8@0- (1,0) [-128|127] "km/h"  XXX
+
+BO_ 2150817792 Airbag_Impact_Data_5: 3 XXX
+ SG_ ImpMaxLateralDeltaVel : 7|8@0- (1,0) [-128|127] ""  XXX
+ SG_ ImpMaxLongDeltaVel : 15|8@0- (1,0) [-128|127] ""  XXX
+ SG_ ImpTimeToMaxDeltaVel : 23|8@0+ (10,0) [0|2550] "ms"  XXX
+
+BO_ 2150227968 Phone_Speech_Rec_Status_LS: 1 XXX
+ SG_ PhnSpRcgnApSt : 1|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2162982912 VIN_Digits_10_to_17: 8 XXX
+ SG_ VehIdNmDig10_17 : 7|64@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2162966528 VIN_Digits_2_to_9: 8 XXX
+ SG_ VehIdNmDig2_9 : 7|64@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2151497728 Tire_Pressure_Sensors_LS: 6 XXX
+ SG_ TireLFPrsGroup : 0|17@0+ (1,0) [0|0] ""  XXX
+ SG_ TireLFPrsV : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TireLFPrs : 23|8@0+ (4,0) [0|1020] "kPaG"  XXX
+ SG_ TireRFPrsGroup : 1|34@0+ (1,0) [0|0] ""  XXX
+ SG_ TireRFPrsV : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TireRFPrs : 39|8@0+ (4,0) [0|1020] "kPaG"  XXX
+ SG_ TireLFPrsStat : 4|3@0+ (1,0) [0|7] ""  XXX
+ SG_ TireRFPrsStat : 7|3@0+ (1,0) [0|7] ""  XXX
+ SG_ TireLRPrsGroup : 8|17@0+ (1,0) [0|0] ""  XXX
+ SG_ TireLRPrsV : 8|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TireLRPrs : 31|8@0+ (4,0) [0|1020] "kPaG"  XXX
+ SG_ TireRRPrsGroup : 9|34@0+ (1,0) [0|0] ""  XXX
+ SG_ TireRRPrsV : 9|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TireRRPrs : 47|8@0+ (4,0) [0|1020] "kPaG"  XXX
+ SG_ TireLRPrsStat : 12|3@0+ (1,0) [0|7] ""  XXX
+ SG_ TireRRPrsStat : 15|3@0+ (1,0) [0|7] ""  XXX
+
+BO_ 2151219200 Remote_Start_Status: 1 XXX
+ SG_ RemStrtSt : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RmVehStrRq : 1|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2153775104 DTC_Triggered: 7 XXX
+ SG_ DTCInfo : 7|56@0+ (1,0) [0|0] ""  XXX
+ SG_ DTCI_DTCTriggered : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DTCIUnused1 : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DTCIUnused2 : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DTCIUnused3 : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DTCIUnused4 : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DTCIUnused5 : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DTCIUnused6 : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DTCIUnused7 : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DTCI_DTCSource : 15|8@0+ (1,0) [0|255] ""  XXX
+ SG_ DTCI_DTCNumber : 23|16@0+ (1,0) [0|65535] ""  XXX
+ SG_ DTCI_DTCFailType : 39|8@0+ (1,0) [0|255] ""  XXX
+ SG_ DTCI_CodeSupported : 40|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DTCI_CurrentStatus : 41|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DTCI_TstNPsdCdClrdSt : 42|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DTCI_TstFldCdClrdStat : 43|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DTCI_HistStat : 44|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DTCI_TstNPsdPwrUpSt : 45|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DTCI_TstFldPwrUpSt : 46|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DTCI_WrnIndRqdSt : 47|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DTCI_DTCFaultType : 55|8@0+ (1,0) [0|255] ""  XXX
+
+BO_ 2151235584 Vehicle_Theft_Notification_Stat: 5 XXX
+ SG_ DrIdDevLrnd : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ VehSecSysFldIO : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ VTDTmprDetected : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EhnSrvEngImmStat : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IllDrIdDevDtctd : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AlcKyIIncmIndOn : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ VehSecStrgColLckPwdGroup : 6|31@0+ (1,0) [0|0] ""  XXX
+ SG_ VehSecStrgColLckPwdV : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ VehSecStrgColLckPwd : 23|16@0+ (1,0) [0|65535] ""  XXX
+ SG_ VehSecAuthnSesComp : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ VhSecNImmoIndRq : 9|2@0+ (1,0) [0|3] ""  XXX
+ SG_ StrgColLckCmd : 11|2@0+ (1,0) [0|3] ""  XXX
+ SG_ NmofPrgKFbExtd : 15|4@0+ (1,0) [0|15] ""  XXX
+ SG_ VehStatStAtv : 32|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EhnSrvImmbComRst : 33|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ClmSysBkupFlrIndOn : 34|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2150809600 Airbag_Impact_Data_4: 8 XXX
+ SG_ ImpDltVlcSamp12 : 7|16@0+ (1,0) [0|0] ""  XXX
+ SG_ IDVS12_Axis1 : 7|8@0- (1,0) [-128|127] "counts"  XXX
+ SG_ IDVS12_Axis2 : 15|8@0- (1,0) [-128|127] "counts"  XXX
+ SG_ ImpDltVlcSamp13 : 23|16@0+ (1,0) [0|0] ""  XXX
+ SG_ IDVS13_Axis1 : 23|8@0- (1,0) [-128|127] "counts"  XXX
+ SG_ IDVS13_Axis2 : 31|8@0- (1,0) [-128|127] "counts"  XXX
+ SG_ ImpDltVlcSamp14 : 39|16@0+ (1,0) [0|0] ""  XXX
+ SG_ IDVS14_Axis1 : 39|8@0- (1,0) [-128|127] "counts"  XXX
+ SG_ IDVS14_Axis2 : 47|8@0- (1,0) [-128|127] "counts"  XXX
+ SG_ ImpDltVlcSamp15 : 55|16@0+ (1,0) [0|0] ""  XXX
+ SG_ IDVS15_Axis1 : 55|8@0- (1,0) [-128|127] "counts"  XXX
+ SG_ IDVS15_Axis2 : 63|8@0- (1,0) [-128|127] "counts"  XXX
+
+BO_ 2150793216 Airbag_Impact_Data_2: 8 XXX
+ SG_ ImpDltVlcSamp4 : 7|16@0+ (1,0) [0|0] ""  XXX
+ SG_ IDVS4_Axis1 : 7|8@0- (1,0) [-128|127] "counts"  XXX
+ SG_ IDVS4_Axis2 : 15|8@0- (1,0) [-128|127] "counts"  XXX
+ SG_ ImpDltVlcSamp5 : 23|16@0+ (1,0) [0|0] ""  XXX
+ SG_ IDVS5_Axis1 : 23|8@0- (1,0) [-128|127] "counts"  XXX
+ SG_ IDVS5_Axis2 : 31|8@0- (1,0) [-128|127] "counts"  XXX
+ SG_ ImpDltVlcSamp6 : 39|16@0+ (1,0) [0|0] ""  XXX
+ SG_ IDVS6_Axis1 : 39|8@0- (1,0) [-128|127] "counts"  XXX
+ SG_ IDVS6_Axis2 : 47|8@0- (1,0) [-128|127] "counts"  XXX
+ SG_ ImpDltVlcSamp7 : 55|16@0+ (1,0) [0|0] ""  XXX
+ SG_ IDVS7_Axis1 : 55|8@0- (1,0) [-128|127] "counts"  XXX
+ SG_ IDVS7_Axis2 : 63|8@0- (1,0) [-128|127] "counts"  XXX
+
+BO_ 2150801408 Airbag_Impact_Data_3: 8 XXX
+ SG_ ImpDltVlcSamp8 : 7|16@0+ (1,0) [0|0] ""  XXX
+ SG_ IDVS8_Axis1 : 7|8@0- (1,0) [-128|127] "counts"  XXX
+ SG_ IDVS8_Axis2 : 15|8@0- (1,0) [-128|127] "counts"  XXX
+ SG_ ImpDltVlcSamp9 : 23|16@0+ (1,0) [0|0] ""  XXX
+ SG_ IDVS9_Axis1 : 23|8@0- (1,0) [-128|127] "counts"  XXX
+ SG_ IDVS9_Axis2 : 31|8@0- (1,0) [-128|127] "counts"  XXX
+ SG_ ImpDltVlcSamp10 : 39|16@0+ (1,0) [0|0] ""  XXX
+ SG_ IDVS10_Axis1 : 39|8@0- (1,0) [-128|127] "counts"  XXX
+ SG_ IDVS10_Axis2 : 47|8@0- (1,0) [-128|127] "counts"  XXX
+ SG_ ImpDltVlcSamp11 : 55|16@0+ (1,0) [0|0] ""  XXX
+ SG_ IDVS11_Axis1 : 55|8@0- (1,0) [-128|127] "counts"  XXX
+ SG_ IDVS11_Axis2 : 63|8@0- (1,0) [-128|127] "counts"  XXX
+
+BO_ 2150785024 Airbag_Impact_Data_1: 8 XXX
+ SG_ ImpDltVlcScal : 7|8@0+ (0.00245,0.706) [0.706|1.33075] "kph/cnt"  XXX
+ SG_ AirbgAccelOrien : 10|3@0+ (45,0) [0|315] "deg"  XXX
+ SG_ ImpDltVlcSamp1 : 23|16@0+ (1,0) [0|0] ""  XXX
+ SG_ IDVS1_Axis1 : 23|8@0- (1,0) [-128|127] "counts"  XXX
+ SG_ IDVS1_Axis2 : 31|8@0- (1,0) [-128|127] "counts"  XXX
+ SG_ ImpDltVlcSamp2 : 39|16@0+ (1,0) [0|0] ""  XXX
+ SG_ IDVS2_Axis1 : 39|8@0- (1,0) [-128|127] "counts"  XXX
+ SG_ IDVS2_Axis2 : 47|8@0- (1,0) [-128|127] "counts"  XXX
+ SG_ ImpDltVlcSamp3 : 55|16@0+ (1,0) [0|0] ""  XXX
+ SG_ IDVS3_Axis1 : 55|8@0- (1,0) [-128|127] "counts"  XXX
+ SG_ IDVS3_Axis2 : 63|8@0- (1,0) [-128|127] "counts"  XXX
+
+BO_ 2151202816 Rear_Window_Defog_Inhibit: 5 XXX
+ SG_ RrWndDfgInhRq : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RrWndDfgSwAtv : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ILSSCommErr : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IPSnsrRwSolrIntFltd : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IPSnsrSolrAnglFltd : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IPSnsrTpCvrTempFltd : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AuxHtrAlwd : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IPSnsrRwSolrInt : 15|8@0+ (3,0) [0|765] "W/m2"  XXX
+ SG_ IPSnsrSolrAzmthAngl : 23|8@0+ (2,-180) [-180|330] "deg"  XXX
+ SG_ IPSnsrSolrElvtnAngl : 31|8@0+ (1,0) [0|255] "deg"  XXX
+ SG_ IPSnsrTpCvrTemp : 39|8@0+ (0.5,-40) [-40|87.5] "deg C"  XXX
+
+BO_ 2150825984 Airbag_Indications: 6 XXX
+ SG_ FsnDrvStbltIC : 7|8@0+ (1,0) [0|0] ""  XXX
+ SG_ FDSIC_IndPer : 3|4@0+ (1,0) [0|15] ""  XXX
+ SG_ FDSIC_IndDC : 6|3@0+ (12.5,12.5) [12.5|100] "%"  XXX
+ SG_ FDSIC_IO : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FsnPsngStbltIC : 15|8@0+ (1,0) [0|0] ""  XXX
+ SG_ FPSIC_IndPer : 11|4@0+ (1,0) [0|15] ""  XXX
+ SG_ FPSIC_IndDtCyc : 14|3@0+ (12.5,12.5) [12.5|100] "%"  XXX
+ SG_ FPSIC_IO : 15|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AirbgIC : 23|8@0+ (1,0) [0|0] ""  XXX
+ SG_ AirbgICIndPer : 19|4@0+ (1,0) [0|15] ""  XXX
+ SG_ AirbgICDutCyc : 22|3@0+ (12.5,12.5) [12.5|100] "%"  XXX
+ SG_ AirbgICIO : 23|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FstnSndRwLtPsStbtInR : 25|2@0+ (1,0) [0|3] ""  XXX
+ SG_ FstnSndRwCtPsStbtInR : 27|2@0+ (1,0) [0|3] ""  XXX
+ SG_ FstnSndRwRtPsStbtInR : 29|2@0+ (1,0) [0|3] ""  XXX
+ SG_ FsnDrStbAuxIR : 31|2@0+ (1,0) [0|3] ""  XXX
+ SG_ FsnPsStbAuxIR : 34|3@0+ (1,0) [0|7] ""  XXX
+ SG_ AirbgFldIO : 35|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SndRwStbltRdIndMd : 37|2@0+ (1,0) [0|3] ""  XXX
+ SG_ FstnThrdRwCtPsStbtInR : 39|2@0+ (1,0) [0|3] ""  XXX
+ SG_ FstnThrdRwRtPsStbtInR : 41|2@0+ (1,0) [0|3] ""  XXX
+ SG_ FstnThrdRwLtPsStbtInR : 43|2@0+ (1,0) [0|3] ""  XXX
+ SG_ SrvIntdPdstProtSysIO : 44|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PdstIntdProtSysDsbld : 45|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PdstIntdProtSysDplyd : 46|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2151759872 Door_Lock_Command: 4 XXX
+ SG_ CntrlLckRqwExtActFun : 9|18@0+ (1,0) [0|0] ""  XXX
+ SG_ CLRAF_Unl_Lk : 9|3@0+ (1,0) [0|7] ""  XXX
+ SG_ CLRAF_FuelD : 16|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CLRAF_RrCls : 17|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CLRAF_Hd : 18|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CLRAF_RLD : 19|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CLRAF_RRD : 20|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CLRAF_PD : 21|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CLRAF_DD : 22|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CLRAF_ActFunc : 28|5@0+ (1,0) [0|31] ""  XXX
+ SG_ CLRAF_UnandRsv3 : 29|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CLRAF_UnandRsv2 : 30|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CLRAF_UnandRsv1 : 31|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RrClsRelRq : 10|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2149974016 Content_Theft_Sensor_Status: 3 XXX
+ SG_ SrvAlrmSysIO : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IntrSnsDisbld : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AlrmTrgDrvDr : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AlrmTrgPsngDr : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AlrmTrgRrRtDr : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AlrmTrgRrLftDr : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AlrmTrigTonn : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AlrmTrgTrnk : 8|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AlrmTrgTltSns : 9|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AlrmTrgIntMvmntSns : 10|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AlrmTrggrdBattRcnctd : 11|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AlrmTrgGlsBrkSns : 12|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AlrmTrgNonOffPM : 13|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AlrmTrigMidClsr : 14|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AlrmTrgdIO : 15|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AlrmStat : 18|3@0+ (1,0) [0|7] ""  XXX
+ SG_ AlrmTrgHd : 21|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2151907328 Steering_Wheel_Control_Switches: 1 XXX
+ SG_ StrgWhlUnit1SwStat : 3|4@0+ (1,0) [0|15] ""  XXX
+ SG_ StrgWhlUnit2SwStat : 7|4@0+ (1,0) [0|15] ""  XXX
+
+BO_ 2150219776 Voice_Recognition_Status: 1 XXX
+ SG_ PhnSpRcgnRq : 1|2@0+ (1,0) [0|3] ""  XXX
+ SG_ VcRecVcFdbckSt : 3|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2152685568 Radiomarks_Response: 8 XXX
+ SG_ RadBrdcstSrc : 3|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RadConInfReqSrc : 7|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RadConInfCmd : 11|4@0+ (1,0) [0|15] ""  XXX
+ SG_ RadConInfID : 31|40@0+ (1,0) [0|1099511627775] ""  XXX
+
+BO_ 2151874560 Vehicle_Theft_Notify_Reset_Req: 8 XXX
+ SG_ EhnSrvEngImmbCom : 0|57@0+ (1,0) [0|0] ""  XXX
+ SG_ ESEIC_EngImmbRq : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ESEIC_EngImRqPsw : 15|56@0+ (1,0) [0|1] ""  XXX
+ SG_ RstVTDTmprDtctd : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RstIllDrIdDevDtctd : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RstDrIdDevLrnd : 3|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2150268928 GPS_Date_and_Time_LS: 6 XXX
+ SG_ CldrYr_154 : 7|8@0+ (1,2000) [2000|2255] "year"  XXX
+ SG_ CldrMth_154 : 11|4@0+ (1,0) [0|15] ""  XXX
+ SG_ CldrDay_154 : 20|5@0+ (1,0) [0|31] "days"  XXX
+ SG_ HrsGroup : 29|6@0+ (1,0) [0|0] ""  XXX
+ SG_ Hrs : 28|5@0+ (1,0) [0|31] "h"  XXX
+ SG_ HrsV : 29|1@0+ (1,0) [0|1] ""  XXX
+ SG_ MinsGroup : 38|7@0+ (1,0) [0|0] ""  XXX
+ SG_ Mins : 37|6@0+ (1,0) [0|63] "min"  XXX
+ SG_ MinsV : 38|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SecGroup : 46|7@0+ (1,0) [0|0] ""  XXX
+ SG_ Sec : 45|6@0+ (1,0) [0|63] "s"  XXX
+ SG_ SecV : 46|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2150137856 RFA_Status_LS: 3 XXX
+ SG_ FobPrevLrndIndOn : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ Ky_IdDevNotPrIO : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FbProgCustActRqd : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ KeyInWrnIO : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ VehSecAtoLrnAtv : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ Ky_IdDevPrgmAuthReq : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LMTTCPrsnOffStat : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ VehSecAtoLrnDlyTmr : 12|5@0+ (1,0) [0|31] "min"  XXX
+ SG_ FldTpMotReq : 15|3@0+ (1,0) [0|7] ""  XXX
+ SG_ RemCtrlFobNumForProgER : 19|4@0+ (1,0) [0|15] ""  XXX
+
+BO_ 2151677952 Chime_Command: 5 XXX
+ SG_ SndChrs : 3|28@0+ (1,0) [0|0] ""  XXX
+ SG_ SC_SndTne : 3|4@0+ (1,0) [0|15] ""  XXX
+ SG_ SC_SndCdnPrd : 15|8@0+ (10,0) [0|2550] "ms"  XXX
+ SG_ SC_NmofRp : 23|8@0+ (1,0) [0|255] "reps"  XXX
+ SG_ SC_SndDutCyc : 31|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+ SG_ SndLoc : 7|4@0+ (1,0) [0|0] ""  XXX
+ SG_ SndLocRtRr : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SndLocLftRr : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SndLocPasFr : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SndLocDrFr : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SndPriority : 39|8@0+ (1,0) [0|255] ""  XXX
+
+BO_ 2150776832 Airbag_Status: 6 XXX
+ SG_ ShfUlkBrToShftIndCtrl : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ShftLkdBuStbltIndCtrl : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SbItlkTrnsShftLvLkRd : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ MmryRclImpctDisRq : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EvntEnbld : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SftyMuteRd : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HybVehHiVltInvDisRqd : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HybImpSnsDsbld : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SIREvntSychCntr : 23|16@0+ (1,0) [0|65535] ""  XXX
+ SG_ FrPsngrStOccSnsngPriDat : 39|16@0+ (1,0) [0|39321] ""  XXX
+
+BO_ 2150760448 Airbag_Impact_Data: 8 XXX
+ SG_ SIRDpl : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ NotPsSeatStat : 5|2@0+ (1,0) [0|3] ""  XXX
+ SG_ NotDrvSeatStat : 7|2@0+ (1,0) [0|3] ""  XXX
+ SG_ NotSecRowRtSeaOccStat : 9|2@0+ (1,0) [0|3] ""  XXX
+ SG_ NotSndRwMdlSeatStat : 11|2@0+ (1,0) [0|3] ""  XXX
+ SG_ NotSndRwRtSeatStat : 13|2@0+ (1,0) [0|3] ""  XXX
+ SG_ NotSndRwLtSeatStat : 15|2@0+ (1,0) [0|3] ""  XXX
+ SG_ NotEventStat : 17|2@0+ (1,0) [0|3] ""  XXX
+ SG_ NotSecRowLeSeaOccStat : 25|2@0+ (1,0) [0|3] ""  XXX
+ SG_ NotSecRowCtSeaOccStat : 27|2@0+ (1,0) [0|3] ""  XXX
+ SG_ NotiFrntPasSeatOccSta : 34|3@0+ (1,0) [0|7] ""  XXX
+ SG_ NoEvDeLoSt : 46|7@0+ (1,0) [0|0] ""  XXX
+ SG_ NEDLSSdCrtnArbgDpld : 40|1@0+ (1,0) [0|1] ""  XXX
+ SG_ NEDLSRtSdArbgDld : 41|1@0+ (1,0) [0|1] ""  XXX
+ SG_ NEDLSLtSdArbgDld : 42|1@0+ (1,0) [0|1] ""  XXX
+ SG_ NEDLSPaFrSt2De : 43|1@0+ (1,0) [0|1] ""  XXX
+ SG_ NEDLSPaFrSt1De : 44|1@0+ (1,0) [0|1] ""  XXX
+ SG_ NEDLSDrFrSt2De : 45|1@0+ (1,0) [0|1] ""  XXX
+ SG_ NEDLSDrFrSt1De : 46|1@0+ (1,0) [0|1] ""  XXX
+ SG_ NoEvSevSt : 54|7@0+ (1,0) [0|0] ""  XXX
+ SG_ NESSRoSevSt : 48|1@0+ (1,0) [0|1] ""  XXX
+ SG_ NESSRiSiSevSt : 49|1@0+ (1,0) [0|1] ""  XXX
+ SG_ NESSReImpSevSt : 50|1@0+ (1,0) [0|1] ""  XXX
+ SG_ NESSLeSiSevSt : 51|1@0+ (1,0) [0|1] ""  XXX
+ SG_ NESSFrImpSt2SevSt : 52|1@0+ (1,0) [0|1] ""  XXX
+ SG_ NESSFrImpSt1SevSt : 53|1@0+ (1,0) [0|1] ""  XXX
+ SG_ NESSFrImpPreSevSt : 54|1@0+ (1,0) [0|1] ""  XXX
+ SG_ NotiEventCount : 63|8@0+ (1,0) [0|255] ""  XXX
+
+BO_ 2155872256 Fuel_Information: 6 XXX
+ SG_ FlLvlPctGroup : 0|9@0+ (1,0) [0|0] ""  XXX
+ SG_ FlLvlPctV : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FlLvlPct : 15|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+ SG_ FlInjRlCtRstOcc : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FuelFltChgNwIO : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DrvStyPerfMdCsCrStVal : 5|3@0+ (1,0) [0|7] ""  XXX
+ SG_ DrvStyPerfMdCsStAvl : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RdWhlAngGroup : 23|8@0+ (1,0) [0|0] ""  XXX
+ SG_ RdWhlAng : 22|7@0+ (0.703125,-45) [-45|44.296875] "deg"  XXX
+ SG_ RdWhlAngV : 23|1@0+ (1,0) [0|1] ""  XXX
+ SG_ VehPitchAngleGroup : 31|8@0+ (1,0) [0|0] ""  XXX
+ SG_ VehPitchAngle : 30|7@0+ (0.703125,-45) [-45|44.296875] "deg"  XXX
+ SG_ VehPitchAngleV : 31|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FlInjRlCt : 39|16@0+ (3.05176E-005,0) [0|1.999970916] "liters"  XXX
+
+BO_ 2156175360 Display_Measurement_System_LS: 1 XXX
+ SG_ DispMeasSysExt : 1|2@0+ (1,0) [0|3] ""  XXX
+ SG_ DispMeasSys : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ NtVsnSysEnbld : 3|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2149859328 System_Power_Mode_Backup_LS: 1 XXX
+ SG_ SysBkupPwrMdEn : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SysBkUpPwrMdGroup : 3|4@0+ (1,0) [0|0] ""  XXX
+ SG_ SysBkUpPwrMd : 1|2@0+ (1,0) [0|3] ""  XXX
+ SG_ SysBkUpPwrMdV : 3|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2158854144 ODIAction_IPC_LS: 8 XXX
+ SG_ ODIActn_IPC : 5|62@0+ (1,0) [0|0] ""  XXX
+ SG_ ODIAI_DaTy : 5|6@0+ (1,0) [0|63] ""  XXX
+ SG_ ODIAI_FUCID : 15|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODIAI_ActnID : 23|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODIAI_DspMID : 31|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODIAI_ActnVal : 39|32@0+ (1,0) [0|4294967295] ""  XXX
+
+BO_ 2158837760 ODIAction_AuxIP_LS: 8 XXX
+ SG_ ODIActn_AxIP : 5|62@0+ (1,0) [0|0] ""  XXX
+ SG_ ODIAA_DaTy : 5|6@0+ (1,0) [0|63] ""  XXX
+ SG_ ODIAA_FUCID : 15|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODIAA_ActnID : 23|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODIAA_DspMID : 31|8@0+ (1,0) [0|255] ""  XXX
+ SG_ ODIAA_ActnVal : 39|32@0+ (1,0) [0|4294967295] ""  XXX
+
+BO_ 2159091712 ODI_IPC_2_TEL_LS: 8 XXX
+ SG_ ODI_IPC2TEL : 7|64@0+ (1,0) [0|1.84467440737096E+019] ""  XXX
+
+BO_ 2154561536 Vehicle_Odo_LS: 5 XXX
+ SG_ VehOdoGroup : 7|40@0+ (1,0) [0|0] ""  XXX
+ SG_ VehOdo : 7|32@0+ (0.015625,0) [0|67108863.984375] "km"  XXX
+ SG_ VehOdoV : 32|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2149908480 Brake_Pedal_Status_LS: 2 XXX
+ SG_ BrkPedInitTrvlAchvdStat : 1|2@0+ (1,0) [0|0] ""  XXX
+ SG_ BrkPedTrvlAchvdV : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ BrkPedTrvlAchvd : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ BrkPdlModTrvlGroup : 3|2@0+ (1,0) [0|0] ""  XXX
+ SG_ BrkPdlModTrvl : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ BrkPdlModTrvlV : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ BrkPdlPos : 15|8@0+ (0.392157,0) [0|100.000035] "% full"  XXX
+
+BO_ 2151268352 Column_Lock_Status: 1 XXX
+ SG_ ClmnLckTT : 1|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2150604800 Right_Rear_Door_Status: 1 XXX
+ SG_ RRDoorAjarSwAct : 0|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2150588416 Passenger_Door_Status_LS: 1 XXX
+ SG_ PDAjrSwAtv : 0|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2150596608 Left_Rear_Door_Status: 1 XXX
+ SG_ RLDoorAjarSwAct : 0|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2155036672 Climate_Control_General_Status: 6 XXX
+ SG_ ACCompNormLdGroup : 0|9@0+ (1,0) [0|0] ""  XXX
+ SG_ ACCompNormLdV : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ACCompNormLd : 15|8@0+ (0.1,0) [0|25.5] "l/min"  XXX
+ SG_ ACCmEngRunReq : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ACCmpsrFldOn : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ACCompModReq : 5|2@0+ (1,0) [0|3] ""  XXX
+ SG_ ClmtCtrlTrgtTemp : 17|10@0+ (0.1,-10) [-10|92.3] "deg C"  XXX
+
+BO_ 2150424576 Engine_Information_3_LS: 8 XXX
+ SG_ TrnsEngdStateGroup : 2|3@0+ (1,0) [0|0] ""  XXX
+ SG_ TrnsEngdState : 1|2@0+ (1,0) [0|3] ""  XXX
+ SG_ TrnsEngdStateV : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ACRfHiSdFldPrsGroup : 3|20@0+ (1,0) [0|0] ""  XXX
+ SG_ ACRfHiSdFldPrsV : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ACRfHiSdFldPrs : 23|8@0+ (14,0) [0|3570] "kPaG"  XXX
+ SG_ ACCompCmnd : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RrAxlELSDCplLwResGroup : 5|46@0+ (1,0) [0|0] ""  XXX
+ SG_ RrAxlELSDCplLwResV : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RrAxlELSDCplLwRes : 47|8@0+ (10,0) [0|2550] "Nm"  XXX
+ SG_ EngAirIntBstPrGroup : 6|39@0+ (1,0) [0|0] ""  XXX
+ SG_ EngAirIntBstPrV : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngAirIntBstPr : 39|8@0- (1,0) [-128|127] "kPaG"  XXX
+ SG_ ExtHlStrAssCsStAvl : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TrnsRngInhbtStat : 10|3@0+ (1,0) [0|7] ""  XXX
+ SG_ DrvtShftCntrlTrgtGear : 14|4@0+ (1,0) [0|15] ""  XXX
+ SG_ ACCmpNrmLdGrdAld : 31|8@0+ (0.1,0) [0|25.5] "dm3/m/s"  XXX
+ SG_ EngTrqDrRqdExtRngGroup : 52|13@0+ (1,0) [0|0] ""  XXX
+ SG_ EngTrqDrRqdExtRng : 51|12@0+ (0.5,-848) [-848|1199.5] "Nm"  XXX
+ SG_ EngTrqDrRqdExtRngV : 52|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ExtHlStrAssCsCrStVal : 55|3@0+ (1,0) [0|7] ""  XXX
+
+BO_ 2150416384 Engine_Information_2_LS: 8 XXX
+ SG_ EngBstPrsIndGroup : 0|33@0+ (1,0) [0|0] ""  XXX
+ SG_ EngBstPrsIndV : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngBstPrsInd : 39|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+ SG_ VaccBoostFailure : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ GenFld : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngSpdLmtnMdAct : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PTWrmgWtToShftIO : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngNEmsnsRelMalfAct : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngCstFlCutAct : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngRunAtv : 8|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngIdlAtv : 11|1@0+ (1,0) [0|1] ""  XXX
+ SG_ VehTopSpdLmtMdAct : 13|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngCylDeactMd : 15|2@0+ (1,0) [0|3] ""  XXX
+ SG_ TransEstGearGroup : 20|5@0+ (1,0) [0|0] ""  XXX
+ SG_ TransEstGear : 19|4@0+ (1,0) [0|15] ""  XXX
+ SG_ TransEstGearV : 20|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngTrqActExtRngGroup : 21|46@0+ (1,0) [0|0] ""  XXX
+ SG_ EngTrqActExtRngV : 21|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngTrqActExtRng : 51|12@0+ (0.5,-848) [-848|1199.5] "Nm"  XXX
+ SG_ EngVDA : 22|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TrnsVDA : 23|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngCoolFanSpd : 31|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+ SG_ VehTopSpdLmtArbVal : 47|8@0+ (2,0) [0|510] "km / h"  XXX
+ SG_ EngSpdStat : 53|2@0+ (1,0) [0|3] ""  XXX
+ SG_ RmVhStrtEngRng : 54|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TrnCrpMdAtv : 55|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2150408192 Engine_Information_1_LS: 8 XXX
+ SG_ TrnsSftMdStat : 2|3@0+ (1,0) [0|7] ""  XXX
+ SG_ ThrPosGroup : 3|36@0+ (1,0) [0|0] ""  XXX
+ SG_ ThrPosV : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ThrPos : 39|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+ SG_ AccActPosGroup : 4|45@0+ (1,0) [0|0] ""  XXX
+ SG_ AccActPosV : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AccActPos : 47|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+ SG_ ElcRngSelDrvAct : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TmpDrvrShftCtlAct : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AccPdlOvrrdAtv : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TrnShftPtrnActStat : 10|3@0+ (1,0) [0|7] ""  XXX
+ SG_ TransTUDMdStat : 12|2@0+ (1,0) [0|3] ""  XXX
+ SG_ Eng12vStrtrMtrCmmdOn : 13|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EngRunng : 14|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TrnsShftLvrPosGroup : 15|48@0+ (1,0) [0|0] ""  XXX
+ SG_ TrnsShftLvrPosV : 15|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TrnsShftLvrPos : 51|4@0+ (1,0) [0|15] ""  XXX
+ SG_ EngSpd : 23|16@0+ (0.25,0) [0|16383.75] "rpm"  XXX
+ SG_ AutoTransComndGear : 55|4@0+ (1,0) [0|15] ""  XXX
+ SG_ CrsCntEnbld : 56|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CltStartSwAtvGroup : 58|2@0+ (1,0) [0|0] ""  XXX
+ SG_ CltStartSwAtv : 57|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CltStartSwAtvV : 58|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TopTrvlCltchSwActGroup : 60|2@0+ (1,0) [0|0] ""  XXX
+ SG_ TopTrvlCltchSwAct : 59|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TopTrvlCltchSwActV : 60|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AdptPsngrSeatStng : 63|3@0+ (1,0) [0|7] ""  XXX
+
+BO_ 2155954176 Climate_Control_Basic_Status_LS: 4 XXX
+ SG_ ACHtIdleBstLevReq : 1|2@0+ (1,0) [0|3] ""  XXX
+ SG_ ClimCtrlAftBlowModActv : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AirCndActIO : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ClmCntlExtDefActIO : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ClntCircPmpRq : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ ClmCntFrBlwFnSp : 15|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+ SG_ AirCndCmptLdEst : 23|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+ SG_ ClmCntRrBlwFnSp : 31|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+
+BO_ 2153971712 Driver_Door_Status: 1 XXX
+ SG_ LftglsAjrSwAct : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ LftglsRelSwAct : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DDAjrSwAtvGroup : 7|8@0+ (1,0) [0|0] ""  XXX
+ SG_ DDAjrSwAtv : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DDAjrSwAtvM : 7|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2149875712 Battery_Voltage: 7 XXX
+ SG_ BatVltGroup : 0|17@0+ (1,0) [0|0] ""  XXX
+ SG_ BatVltV : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ BatVlt : 23|8@0+ (0.1,3) [3|28.5] "volts"  XXX
+ SG_ BatSaverIO : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SrvBattChrgSysIO : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ BatSOCGroup : 3|28@0+ (1,0) [0|0] ""  XXX
+ SG_ BatSOCV : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ BatSOC : 31|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+ SG_ BattStOfChrgCrtyLow : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IntlgntBattSnsFldIO : 5|1@0+ (1,0) [0|1] ""  XXX
+ SG_ BattStOfChrgLowIO : 6|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DCCnvStblznErrIO : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ EnrgMgtLdShdRq : 11|4@0+ (1,0) [0|15] ""  XXX
+ SG_ BattVltIRq : 13|2@0+ (1,0) [0|3] ""  XXX
+ SG_ PwrMdOffBattSOC : 39|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+ SG_ BattCrntFltrd : 47|8@0- (0.5,0) [-64|63.5] "A"  XXX
+ SG_ BatSvrMdSevLvl : 55|8@0+ (1,0) [0|255] ""  XXX
+
+BO_ 2151186432 Auto_High_Beam_Status: 1 XXX
+ SG_ AutoBmSlctStat : 1|2@0+ (1,0) [0|3] ""  XXX
+ SG_ CtLghtDet : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AutoHgBmCtrlInOn : 3|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2149629952 Lighting_Status_LS: 5 XXX
+ SG_ OtsdAmbtLtLvlStatGroup : 0|23@0+ (1,0) [0|0] ""  XXX
+ SG_ OtsdAmbtLtLvlStatV : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ OtsdAmbtLtLvlStat : 27|2@0+ (1,0) [0|3] ""  XXX
+ SG_ DRLAct : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HazSwAtv : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PrkLtLeftIO : 3|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PrkLtRightIO : 4|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TrnSwAct : 6|2@0+ (1,0) [0|3] ""  XXX
+ SG_ FrFogLmpsAct : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PrkLtLeftOn : 8|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FrFgLtIO : 9|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AutoLtsInactIO : 10|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AutoLtsActIO : 11|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RrFgLtIO : 12|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HiBmIO : 13|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PrkLtIO : 14|1@0+ (1,0) [0|1] ""  XXX
+ SG_ BrkLtsAtv : 15|1@0+ (1,0) [0|1] ""  XXX
+ SG_ FlToPsSwAtv : 16|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RevLmpAtv : 17|1@0+ (1,0) [0|1] "N/A"  XXX
+ SG_ PrkngLtsAct : 18|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RrFogLmpsAct : 19|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HiBmReqd : 20|1@0+ (1,0) [0|1] ""  XXX
+ SG_ AutoBmSlctAllwd : 21|1@0+ (1,0) [0|1] ""  XXX
+ SG_ PrkLtRightOn : 22|1@0+ (1,0) [0|1] ""  XXX
+ SG_ SrvlnceMdAct : 23|1@0+ (1,0) [0|1] ""  XXX
+ SG_ RtTrnLmpAtv : 25|2@0+ (1,0) [0|3] ""  XXX
+ SG_ LftTrnLmpAtv : 29|2@0+ (1,0) [0|3] ""  XXX
+ SG_ MainLghtSw : 31|2@0+ (1,0) [0|3] "N/A"  XXX
+ SG_ HdlmpBmSelectStat : 33|2@0+ (1,0) [0|3] ""  XXX
+
+BO_ 2149646336 Vehicle_Speed_Information: 8 XXX
+ SG_ VehSpdAvgDrvnGroup : 7|16@0+ (1,0) [0|0] ""  XXX
+ SG_ VehSpdAvgDrvn : 6|15@0+ (0.015625,0) [0|511.984375] "km / h"  XXX
+ SG_ VehSpdAvgDrvnV : 7|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DstRolCntAvgDrnRstOc : 21|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DistRollCntAvgDrvnGroup : 22|15@0+ (1,0) [0|0] ""  XXX
+ SG_ DistRollCntAvgDrvn : 20|13@0+ (0.125,0) [0|1023.875] "m"  XXX
+ SG_ DistRollCntAvgDrvnV : 22|1@0+ (1,0) [0|1] ""  XXX
+ SG_ VehSpdAvgDrvnSrc : 23|1@0+ (1,0) [0|1] ""  XXX
+ SG_ VehSpdAvgNDrvnGroup : 38|17@0+ (1,0) [0|0] ""  XXX
+ SG_ VehSpdAvgNDrvn : 38|15@0+ (0.015625,0) [0|511.984375] "km / h"  XXX
+ SG_ VehSpdAvgNDrvnV : 54|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DstRolCntAvgNonDrvnGroup : 39|32@0+ (1,0) [0|0] ""  XXX
+ SG_ DstRolCntAvgNonDrvnV : 39|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DstRolCntAvgNonDrvn : 52|13@0+ (0.125,0) [0|1023.875] "m"  XXX
+ SG_ DstRolCntAvNDrRstOc : 53|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DistRollCntAvgDrvnSrc : 55|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2154053632 Dimming_Information_LS: 3 XXX
+ SG_ IntDimNtPnlAtv : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ DispNtSchmAtv : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ CargoLmpActIO : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ IntDimLvl : 15|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+ SG_ IntDimDspLvl : 23|8@0+ (0.392157,0) [0|100.000035] "%"  XXX
+
+BO_ 2149851136 System_Power_Mode_LS: 1 XXX
+ SG_ SysPwrMdGroup : 2|3@0+ (1,0) [0|0] ""  XXX
+ SG_ SysPwrMd : 1|2@0+ (1,0) [0|3] ""  XXX
+ SG_ SysPwrMdV : 2|1@0+ (1,0) [0|1] ""  XXX
+ SG_ KylsStrtAuthRq : 3|1@0+ (1,0) [0|1] ""  XXX
+
+BO_ 2159124480 ODI_AuxIP_2_TEL_LS: 8 XXX
+ SG_ ODI_AxIP2TEL : 7|64@0+ (1,0) [0|1.84467440737096E+019] ""  XXX
+
+BO_ 2151530496 TPM_Display_Commands: 6 XXX
+ SG_ TPMTrLrnMdCmplt : 0|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TrPrsMntrAtLocFld : 1|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TrPrsMntrTrLdStat : 3|2@0+ (1,0) [0|3] ""  XXX
+ SG_ TireTrdTmpStat : 6|3@0+ (1,0) [0|7] ""  XXX
+ SG_ TrFrntAxlPresStat : 9|2@0+ (1,0) [0|3] ""  XXX
+ SG_ TrRrAxlPresStat : 11|2@0+ (1,0) [0|3] ""  XXX
+ SG_ WintTrRecIndOn : 12|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TrPrsMntrFld : 13|1@0+ (1,0) [0|1] ""  XXX
+ SG_ TireLocatnWarnEn : 15|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HVChgSyChgLvPfStRmt1 : 18|3@0+ (1,0) [0|7] ""  XXX
+ SG_ StTODChrgTmpOvrdRmt1 : 20|2@0+ (1,0) [0|3] ""  XXX
+ SG_ PrtyChrgRqRmt1 : 22|2@0+ (1,0) [0|3] ""  XXX
+ SG_ OfBrdHVCVhCsChRqRmt1 : 23|1@0+ (1,0) [0|1] ""  XXX
+ SG_ HVBatTmBsDlChStRqRmt1 : 28|21@0+ (1,0) [0|0] ""  XXX
+ SG_ HVBTBDCSRR1_DChHStRq : 28|5@0+ (1,0) [0|31] "hr"  XXX
+ SG_ HVBTBDCSRR1_DChSlSRq : 35|4@0+ (1,0) [0|15] ""  XXX
+ SG_ HVBTBDCSRR1_DChDStRq : 39|4@0+ (1,0) [0|15] ""  XXX
+ SG_ HVBTBDCSRR1_DChMHSRq : 45|6@0+ (1,0) [0|63] "min"  XXX
+ SG_ HVBTBDCSRR1_DChSnSRq : 47|2@0+ (1,0) [0|3] ""  XXX
+ SG_ HVBatTmBsChgMdRqRmt1 : 31|3@0+ (1,0) [0|7] ""  XXX
+
+
+
+BA_DEF_  "UseGMParameterIDs" INT 0 0;
+BA_DEF_  "ProtocolType" STRING ;
+BA_DEF_  "BusType" STRING ;
+BA_DEF_DEF_  "UseGMParameterIDs" 1;
+BA_DEF_DEF_  "ProtocolType" "GMLAN";
+BA_DEF_DEF_  "BusType" "";
+BA_ "ProtocolType" "GMLAN";
+BA_ "BusType" "CAN";
+
