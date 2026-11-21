@@ -1,0 +1,715 @@
+DLC info for: /home/batman/xx/ml_tools/snpe/snpe-1.61.0.3358/mobilenetv2-7.dlc
+Model Version: N/A
+Model Copyright:N/A
+-----------------------------------------------------------------------------------------------------------------------------------------
+| Id  | Name                 | Type                  | Inputs  | Outputs | Out Dims     | Runtimes | Parameters                         |
+-----------------------------------------------------------------------------------------------------------------------------------------
+| 0   | input                | data                  | input   | input   | 1x224x224x3  | A D G C  | input_preprocessing: passthrough   |
+|     |                      |                       |         |         |              |          | input_type: image                  |
+| 1   | Conv_0               | convolutional         | input   | 474     | 1x112x112x32 | A D G C  | padding x: 1                       |
+|     |                      |                       |         |         |              |          | padding y: 1                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 2                        |
+|     |                      |                       |         |         |              |          | stride y: 2                        |
+|     |                      |                       |         |         |              |          | num filters: 32                    |
+|     |                      |                       |         |         |              |          | kernel: 3x3                        |
+|     |                      |                       |         |         |              |          | param count: 896 (0.0257%)         |
+|     |                      |                       |         |         |              |          | MACs per inference: 10M (3.6%)     |
+| 2   | Clip_1               | neuron                | 474     | 317     | 1x112x112x32 | A D G C  | a: 0                               |
+|     |                      |                       |         |         |              |          | b: 0                               |
+|     |                      |                       |         |         |              |          | min_clamp: 0                       |
+|     |                      |                       |         |         |              |          | max_clamp: 6                       |
+|     |                      |                       |         |         |              |          | func: relu_min_max                 |
+| 3   | Conv_2               | convolutional         | 317     | 477     | 1x112x112x32 | A D G C  | padding x: 1                       |
+|     |                      |                       |         |         |              |          | padding y: 1                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 32                    |
+|     |                      |                       |         |         |              |          | kernel: 3x3                        |
+|     |                      |                       |         |         |              |          | groups: 32                         |
+|     |                      |                       |         |         |              |          | param count: 320 (0.00917%)        |
+|     |                      |                       |         |         |              |          | MACs per inference: 3M (1.2%)      |
+| 4   | Clip_3               | neuron                | 477     | 320     | 1x112x112x32 | A D G C  | a: 0                               |
+|     |                      |                       |         |         |              |          | b: 0                               |
+|     |                      |                       |         |         |              |          | min_clamp: 0                       |
+|     |                      |                       |         |         |              |          | max_clamp: 6                       |
+|     |                      |                       |         |         |              |          | func: relu_min_max                 |
+| 5   | Conv_4               | convolutional         | 320     | 480     | 1x112x112x16 | A D G C  | padding x: 0                       |
+|     |                      |                       |         |         |              |          | padding y: 0                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 16                    |
+|     |                      |                       |         |         |              |          | kernel: 1x1                        |
+|     |                      |                       |         |         |              |          | param count: 528 (0.0151%)         |
+|     |                      |                       |         |         |              |          | MACs per inference: 6M (2.13%)     |
+| 6   | Conv_5               | convolutional         | 480     | 483     | 1x112x112x96 | A D G C  | padding x: 0                       |
+|     |                      |                       |         |         |              |          | padding y: 0                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 96                    |
+|     |                      |                       |         |         |              |          | kernel: 1x1                        |
+|     |                      |                       |         |         |              |          | param count: 1k (0.0468%)          |
+|     |                      |                       |         |         |              |          | MACs per inference: 19M (6.4%)     |
+| 7   | Clip_6               | neuron                | 483     | 325     | 1x112x112x96 | A D G C  | a: 0                               |
+|     |                      |                       |         |         |              |          | b: 0                               |
+|     |                      |                       |         |         |              |          | min_clamp: 0                       |
+|     |                      |                       |         |         |              |          | max_clamp: 6                       |
+|     |                      |                       |         |         |              |          | func: relu_min_max                 |
+| 8   | Conv_7               | convolutional         | 325     | 486     | 1x56x56x96   | A D G C  | padding x: 1                       |
+|     |                      |                       |         |         |              |          | padding y: 1                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 2                        |
+|     |                      |                       |         |         |              |          | stride y: 2                        |
+|     |                      |                       |         |         |              |          | num filters: 96                    |
+|     |                      |                       |         |         |              |          | kernel: 3x3                        |
+|     |                      |                       |         |         |              |          | groups: 96                         |
+|     |                      |                       |         |         |              |          | param count: 960 (0.0275%)         |
+|     |                      |                       |         |         |              |          | MACs per inference: 2M (0.9%)      |
+| 9   | Clip_8               | neuron                | 486     | 328     | 1x56x56x96   | A D G C  | a: 0                               |
+|     |                      |                       |         |         |              |          | b: 0                               |
+|     |                      |                       |         |         |              |          | min_clamp: 0                       |
+|     |                      |                       |         |         |              |          | max_clamp: 6                       |
+|     |                      |                       |         |         |              |          | func: relu_min_max                 |
+| 10  | Conv_9               | convolutional         | 328     | 489     | 1x56x56x24   | A D G C  | padding x: 0                       |
+|     |                      |                       |         |         |              |          | padding y: 0                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 24                    |
+|     |                      |                       |         |         |              |          | kernel: 1x1                        |
+|     |                      |                       |         |         |              |          | param count: 2k (0.0667%)          |
+|     |                      |                       |         |         |              |          | MACs per inference: 7M (2.4%)      |
+| 11  | Conv_10              | convolutional         | 489     | 492     | 1x56x56x144  | A D G C  | padding x: 0                       |
+|     |                      |                       |         |         |              |          | padding y: 0                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 144                   |
+|     |                      |                       |         |         |              |          | kernel: 1x1                        |
+|     |                      |                       |         |         |              |          | param count: 3k (0.103%)           |
+|     |                      |                       |         |         |              |          | MACs per inference: 10M (3.6%)     |
+| 12  | Clip_11              | neuron                | 492     | 333     | 1x56x56x144  | A D G C  | a: 0                               |
+|     |                      |                       |         |         |              |          | b: 0                               |
+|     |                      |                       |         |         |              |          | min_clamp: 0                       |
+|     |                      |                       |         |         |              |          | max_clamp: 6                       |
+|     |                      |                       |         |         |              |          | func: relu_min_max                 |
+| 13  | Conv_12              | convolutional         | 333     | 495     | 1x56x56x144  | A D G C  | padding x: 1                       |
+|     |                      |                       |         |         |              |          | padding y: 1                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 144                   |
+|     |                      |                       |         |         |              |          | kernel: 3x3                        |
+|     |                      |                       |         |         |              |          | groups: 144                        |
+|     |                      |                       |         |         |              |          | param count: 1k (0.0413%)          |
+|     |                      |                       |         |         |              |          | MACs per inference: 4M (1.35%)     |
+| 14  | Clip_13              | neuron                | 495     | 336     | 1x56x56x144  | A D G C  | a: 0                               |
+|     |                      |                       |         |         |              |          | b: 0                               |
+|     |                      |                       |         |         |              |          | min_clamp: 0                       |
+|     |                      |                       |         |         |              |          | max_clamp: 6                       |
+|     |                      |                       |         |         |              |          | func: relu_min_max                 |
+| 15  | Conv_14              | convolutional         | 336     | 498     | 1x56x56x24   | A D G C  | padding x: 0                       |
+|     |                      |                       |         |         |              |          | padding y: 0                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 24                    |
+|     |                      |                       |         |         |              |          | kernel: 1x1                        |
+|     |                      |                       |         |         |              |          | param count: 3k (0.0998%)          |
+|     |                      |                       |         |         |              |          | MACs per inference: 10M (3.6%)     |
+| 16  | Add_15               | elementwise_binary_op | 489     | 339     | 1x56x56x24   | A D G C  | operation: sum                     |
+|     |                      |                       | 498     |         |              |          | MACs per inference: 75k (0.025%)   |
+| 17  | Conv_16              | convolutional         | 339     | 501     | 1x56x56x144  | A D G C  | padding x: 0                       |
+|     |                      |                       |         |         |              |          | padding y: 0                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 144                   |
+|     |                      |                       |         |         |              |          | kernel: 1x1                        |
+|     |                      |                       |         |         |              |          | param count: 3k (0.103%)           |
+|     |                      |                       |         |         |              |          | MACs per inference: 10M (3.6%)     |
+| 18  | Clip_17              | neuron                | 501     | 342     | 1x56x56x144  | A D G C  | a: 0                               |
+|     |                      |                       |         |         |              |          | b: 0                               |
+|     |                      |                       |         |         |              |          | min_clamp: 0                       |
+|     |                      |                       |         |         |              |          | max_clamp: 6                       |
+|     |                      |                       |         |         |              |          | func: relu_min_max                 |
+| 19  | Conv_18              | convolutional         | 342     | 504     | 1x28x28x144  | A D G C  | padding x: 1                       |
+|     |                      |                       |         |         |              |          | padding y: 1                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 2                        |
+|     |                      |                       |         |         |              |          | stride y: 2                        |
+|     |                      |                       |         |         |              |          | num filters: 144                   |
+|     |                      |                       |         |         |              |          | kernel: 3x3                        |
+|     |                      |                       |         |         |              |          | groups: 144                        |
+|     |                      |                       |         |         |              |          | param count: 1k (0.0413%)          |
+|     |                      |                       |         |         |              |          | MACs per inference: 1M (0.338%)    |
+| 20  | Clip_19              | neuron                | 504     | 345     | 1x28x28x144  | A D G C  | a: 0                               |
+|     |                      |                       |         |         |              |          | b: 0                               |
+|     |                      |                       |         |         |              |          | min_clamp: 0                       |
+|     |                      |                       |         |         |              |          | max_clamp: 6                       |
+|     |                      |                       |         |         |              |          | func: relu_min_max                 |
+| 21  | Conv_20              | convolutional         | 345     | 507     | 1x28x28x32   | A D G C  | padding x: 0                       |
+|     |                      |                       |         |         |              |          | padding y: 0                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 32                    |
+|     |                      |                       |         |         |              |          | kernel: 1x1                        |
+|     |                      |                       |         |         |              |          | param count: 4k (0.133%)           |
+|     |                      |                       |         |         |              |          | MACs per inference: 3M (1.2%)      |
+| 22  | Conv_21              | convolutional         | 507     | 510     | 1x28x28x192  | A D G C  | padding x: 0                       |
+|     |                      |                       |         |         |              |          | padding y: 0                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 192                   |
+|     |                      |                       |         |         |              |          | kernel: 1x1                        |
+|     |                      |                       |         |         |              |          | param count: 6k (0.182%)           |
+|     |                      |                       |         |         |              |          | MACs per inference: 4M (1.6%)      |
+| 23  | Clip_22              | neuron                | 510     | 350     | 1x28x28x192  | A D G C  | a: 0                               |
+|     |                      |                       |         |         |              |          | b: 0                               |
+|     |                      |                       |         |         |              |          | min_clamp: 0                       |
+|     |                      |                       |         |         |              |          | max_clamp: 6                       |
+|     |                      |                       |         |         |              |          | func: relu_min_max                 |
+| 24  | Conv_23              | convolutional         | 350     | 513     | 1x28x28x192  | A D G C  | padding x: 1                       |
+|     |                      |                       |         |         |              |          | padding y: 1                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 192                   |
+|     |                      |                       |         |         |              |          | kernel: 3x3                        |
+|     |                      |                       |         |         |              |          | groups: 192                        |
+|     |                      |                       |         |         |              |          | param count: 1k (0.055%)           |
+|     |                      |                       |         |         |              |          | MACs per inference: 1M (0.45%)     |
+| 25  | Clip_24              | neuron                | 513     | 353     | 1x28x28x192  | A D G C  | a: 0                               |
+|     |                      |                       |         |         |              |          | b: 0                               |
+|     |                      |                       |         |         |              |          | min_clamp: 0                       |
+|     |                      |                       |         |         |              |          | max_clamp: 6                       |
+|     |                      |                       |         |         |              |          | func: relu_min_max                 |
+| 26  | Conv_25              | convolutional         | 353     | 516     | 1x28x28x32   | A D G C  | padding x: 0                       |
+|     |                      |                       |         |         |              |          | padding y: 0                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 32                    |
+|     |                      |                       |         |         |              |          | kernel: 1x1                        |
+|     |                      |                       |         |         |              |          | param count: 6k (0.177%)           |
+|     |                      |                       |         |         |              |          | MACs per inference: 4M (1.6%)      |
+| 27  | Add_26               | elementwise_binary_op | 507     | 356     | 1x28x28x32   | A D G C  | operation: sum                     |
+|     |                      |                       | 516     |         |              |          | MACs per inference: 25k (0.00833%) |
+| 28  | Conv_27              | convolutional         | 356     | 519     | 1x28x28x192  | A D G C  | padding x: 0                       |
+|     |                      |                       |         |         |              |          | padding y: 0                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 192                   |
+|     |                      |                       |         |         |              |          | kernel: 1x1                        |
+|     |                      |                       |         |         |              |          | param count: 6k (0.182%)           |
+|     |                      |                       |         |         |              |          | MACs per inference: 4M (1.6%)      |
+| 29  | Clip_28              | neuron                | 519     | 359     | 1x28x28x192  | A D G C  | a: 0                               |
+|     |                      |                       |         |         |              |          | b: 0                               |
+|     |                      |                       |         |         |              |          | min_clamp: 0                       |
+|     |                      |                       |         |         |              |          | max_clamp: 6                       |
+|     |                      |                       |         |         |              |          | func: relu_min_max                 |
+| 30  | Conv_29              | convolutional         | 359     | 522     | 1x28x28x192  | A D G C  | padding x: 1                       |
+|     |                      |                       |         |         |              |          | padding y: 1                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 192                   |
+|     |                      |                       |         |         |              |          | kernel: 3x3                        |
+|     |                      |                       |         |         |              |          | groups: 192                        |
+|     |                      |                       |         |         |              |          | param count: 1k (0.055%)           |
+|     |                      |                       |         |         |              |          | MACs per inference: 1M (0.45%)     |
+| 31  | Clip_30              | neuron                | 522     | 362     | 1x28x28x192  | A D G C  | a: 0                               |
+|     |                      |                       |         |         |              |          | b: 0                               |
+|     |                      |                       |         |         |              |          | min_clamp: 0                       |
+|     |                      |                       |         |         |              |          | max_clamp: 6                       |
+|     |                      |                       |         |         |              |          | func: relu_min_max                 |
+| 32  | Conv_31              | convolutional         | 362     | 525     | 1x28x28x32   | A D G C  | padding x: 0                       |
+|     |                      |                       |         |         |              |          | padding y: 0                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 32                    |
+|     |                      |                       |         |         |              |          | kernel: 1x1                        |
+|     |                      |                       |         |         |              |          | param count: 6k (0.177%)           |
+|     |                      |                       |         |         |              |          | MACs per inference: 4M (1.6%)      |
+| 33  | Add_32               | elementwise_binary_op | 356     | 365     | 1x28x28x32   | A D G C  | operation: sum                     |
+|     |                      |                       | 525     |         |              |          | MACs per inference: 25k (0.00833%) |
+| 34  | Conv_33              | convolutional         | 365     | 528     | 1x28x28x192  | A D G C  | padding x: 0                       |
+|     |                      |                       |         |         |              |          | padding y: 0                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 192                   |
+|     |                      |                       |         |         |              |          | kernel: 1x1                        |
+|     |                      |                       |         |         |              |          | param count: 6k (0.182%)           |
+|     |                      |                       |         |         |              |          | MACs per inference: 4M (1.6%)      |
+| 35  | Clip_34              | neuron                | 528     | 368     | 1x28x28x192  | A D G C  | a: 0                               |
+|     |                      |                       |         |         |              |          | b: 0                               |
+|     |                      |                       |         |         |              |          | min_clamp: 0                       |
+|     |                      |                       |         |         |              |          | max_clamp: 6                       |
+|     |                      |                       |         |         |              |          | func: relu_min_max                 |
+| 36  | Conv_35              | convolutional         | 368     | 531     | 1x14x14x192  | A D G C  | padding x: 1                       |
+|     |                      |                       |         |         |              |          | padding y: 1                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 2                        |
+|     |                      |                       |         |         |              |          | stride y: 2                        |
+|     |                      |                       |         |         |              |          | num filters: 192                   |
+|     |                      |                       |         |         |              |          | kernel: 3x3                        |
+|     |                      |                       |         |         |              |          | groups: 192                        |
+|     |                      |                       |         |         |              |          | param count: 1k (0.055%)           |
+|     |                      |                       |         |         |              |          | MACs per inference: 338k (0.113%)  |
+| 37  | Clip_36              | neuron                | 531     | 371     | 1x14x14x192  | A D G C  | a: 0                               |
+|     |                      |                       |         |         |              |          | b: 0                               |
+|     |                      |                       |         |         |              |          | min_clamp: 0                       |
+|     |                      |                       |         |         |              |          | max_clamp: 6                       |
+|     |                      |                       |         |         |              |          | func: relu_min_max                 |
+| 38  | Conv_37              | convolutional         | 371     | 534     | 1x14x14x64   | A D G C  | padding x: 0                       |
+|     |                      |                       |         |         |              |          | padding y: 0                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 64                    |
+|     |                      |                       |         |         |              |          | kernel: 1x1                        |
+|     |                      |                       |         |         |              |          | param count: 12k (0.354%)          |
+|     |                      |                       |         |         |              |          | MACs per inference: 2M (0.8%)      |
+| 39  | Conv_38              | convolutional         | 534     | 537     | 1x14x14x384  | A D G C  | padding x: 0                       |
+|     |                      |                       |         |         |              |          | padding y: 0                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 384                   |
+|     |                      |                       |         |         |              |          | kernel: 1x1                        |
+|     |                      |                       |         |         |              |          | param count: 24k (0.716%)          |
+|     |                      |                       |         |         |              |          | MACs per inference: 4M (1.6%)      |
+| 40  | Clip_39              | neuron                | 537     | 376     | 1x14x14x384  | A D G C  | a: 0                               |
+|     |                      |                       |         |         |              |          | b: 0                               |
+|     |                      |                       |         |         |              |          | min_clamp: 0                       |
+|     |                      |                       |         |         |              |          | max_clamp: 6                       |
+|     |                      |                       |         |         |              |          | func: relu_min_max                 |
+| 41  | Conv_40              | convolutional         | 376     | 540     | 1x14x14x384  | A D G C  | padding x: 1                       |
+|     |                      |                       |         |         |              |          | padding y: 1                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 384                   |
+|     |                      |                       |         |         |              |          | kernel: 3x3                        |
+|     |                      |                       |         |         |              |          | groups: 384                        |
+|     |                      |                       |         |         |              |          | param count: 3k (0.11%)            |
+|     |                      |                       |         |         |              |          | MACs per inference: 677k (0.225%)  |
+| 42  | Clip_41              | neuron                | 540     | 379     | 1x14x14x384  | A D G C  | a: 0                               |
+|     |                      |                       |         |         |              |          | b: 0                               |
+|     |                      |                       |         |         |              |          | min_clamp: 0                       |
+|     |                      |                       |         |         |              |          | max_clamp: 6                       |
+|     |                      |                       |         |         |              |          | func: relu_min_max                 |
+| 43  | Conv_42              | convolutional         | 379     | 543     | 1x14x14x64   | A D G C  | padding x: 0                       |
+|     |                      |                       |         |         |              |          | padding y: 0                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 64                    |
+|     |                      |                       |         |         |              |          | kernel: 1x1                        |
+|     |                      |                       |         |         |              |          | param count: 24k (0.706%)          |
+|     |                      |                       |         |         |              |          | MACs per inference: 4M (1.6%)      |
+| 44  | Add_43               | elementwise_binary_op | 534     | 382     | 1x14x14x64   | A D G C  | operation: sum                     |
+|     |                      |                       | 543     |         |              |          | MACs per inference: 12k (0.00417%) |
+| 45  | Conv_44              | convolutional         | 382     | 546     | 1x14x14x384  | A D G C  | padding x: 0                       |
+|     |                      |                       |         |         |              |          | padding y: 0                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 384                   |
+|     |                      |                       |         |         |              |          | kernel: 1x1                        |
+|     |                      |                       |         |         |              |          | param count: 24k (0.716%)          |
+|     |                      |                       |         |         |              |          | MACs per inference: 4M (1.6%)      |
+| 46  | Clip_45              | neuron                | 546     | 385     | 1x14x14x384  | A D G C  | a: 0                               |
+|     |                      |                       |         |         |              |          | b: 0                               |
+|     |                      |                       |         |         |              |          | min_clamp: 0                       |
+|     |                      |                       |         |         |              |          | max_clamp: 6                       |
+|     |                      |                       |         |         |              |          | func: relu_min_max                 |
+| 47  | Conv_46              | convolutional         | 385     | 549     | 1x14x14x384  | A D G C  | padding x: 1                       |
+|     |                      |                       |         |         |              |          | padding y: 1                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 384                   |
+|     |                      |                       |         |         |              |          | kernel: 3x3                        |
+|     |                      |                       |         |         |              |          | groups: 384                        |
+|     |                      |                       |         |         |              |          | param count: 3k (0.11%)            |
+|     |                      |                       |         |         |              |          | MACs per inference: 677k (0.225%)  |
+| 48  | Clip_47              | neuron                | 549     | 388     | 1x14x14x384  | A D G C  | a: 0                               |
+|     |                      |                       |         |         |              |          | b: 0                               |
+|     |                      |                       |         |         |              |          | min_clamp: 0                       |
+|     |                      |                       |         |         |              |          | max_clamp: 6                       |
+|     |                      |                       |         |         |              |          | func: relu_min_max                 |
+| 49  | Conv_48              | convolutional         | 388     | 552     | 1x14x14x64   | A D G C  | padding x: 0                       |
+|     |                      |                       |         |         |              |          | padding y: 0                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 64                    |
+|     |                      |                       |         |         |              |          | kernel: 1x1                        |
+|     |                      |                       |         |         |              |          | param count: 24k (0.706%)          |
+|     |                      |                       |         |         |              |          | MACs per inference: 4M (1.6%)      |
+| 50  | Add_49               | elementwise_binary_op | 382     | 391     | 1x14x14x64   | A D G C  | operation: sum                     |
+|     |                      |                       | 552     |         |              |          | MACs per inference: 12k (0.00417%) |
+| 51  | Conv_50              | convolutional         | 391     | 555     | 1x14x14x384  | A D G C  | padding x: 0                       |
+|     |                      |                       |         |         |              |          | padding y: 0                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 384                   |
+|     |                      |                       |         |         |              |          | kernel: 1x1                        |
+|     |                      |                       |         |         |              |          | param count: 24k (0.716%)          |
+|     |                      |                       |         |         |              |          | MACs per inference: 4M (1.6%)      |
+| 52  | Clip_51              | neuron                | 555     | 394     | 1x14x14x384  | A D G C  | a: 0                               |
+|     |                      |                       |         |         |              |          | b: 0                               |
+|     |                      |                       |         |         |              |          | min_clamp: 0                       |
+|     |                      |                       |         |         |              |          | max_clamp: 6                       |
+|     |                      |                       |         |         |              |          | func: relu_min_max                 |
+| 53  | Conv_52              | convolutional         | 394     | 558     | 1x14x14x384  | A D G C  | padding x: 1                       |
+|     |                      |                       |         |         |              |          | padding y: 1                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 384                   |
+|     |                      |                       |         |         |              |          | kernel: 3x3                        |
+|     |                      |                       |         |         |              |          | groups: 384                        |
+|     |                      |                       |         |         |              |          | param count: 3k (0.11%)            |
+|     |                      |                       |         |         |              |          | MACs per inference: 677k (0.225%)  |
+| 54  | Clip_53              | neuron                | 558     | 397     | 1x14x14x384  | A D G C  | a: 0                               |
+|     |                      |                       |         |         |              |          | b: 0                               |
+|     |                      |                       |         |         |              |          | min_clamp: 0                       |
+|     |                      |                       |         |         |              |          | max_clamp: 6                       |
+|     |                      |                       |         |         |              |          | func: relu_min_max                 |
+| 55  | Conv_54              | convolutional         | 397     | 561     | 1x14x14x64   | A D G C  | padding x: 0                       |
+|     |                      |                       |         |         |              |          | padding y: 0                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 64                    |
+|     |                      |                       |         |         |              |          | kernel: 1x1                        |
+|     |                      |                       |         |         |              |          | param count: 24k (0.706%)          |
+|     |                      |                       |         |         |              |          | MACs per inference: 4M (1.6%)      |
+| 56  | Add_55               | elementwise_binary_op | 391     | 400     | 1x14x14x64   | A D G C  | operation: sum                     |
+|     |                      |                       | 561     |         |              |          | MACs per inference: 12k (0.00417%) |
+| 57  | Conv_56              | convolutional         | 400     | 564     | 1x14x14x384  | A D G C  | padding x: 0                       |
+|     |                      |                       |         |         |              |          | padding y: 0                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 384                   |
+|     |                      |                       |         |         |              |          | kernel: 1x1                        |
+|     |                      |                       |         |         |              |          | param count: 24k (0.716%)          |
+|     |                      |                       |         |         |              |          | MACs per inference: 4M (1.6%)      |
+| 58  | Clip_57              | neuron                | 564     | 403     | 1x14x14x384  | A D G C  | a: 0                               |
+|     |                      |                       |         |         |              |          | b: 0                               |
+|     |                      |                       |         |         |              |          | min_clamp: 0                       |
+|     |                      |                       |         |         |              |          | max_clamp: 6                       |
+|     |                      |                       |         |         |              |          | func: relu_min_max                 |
+| 59  | Conv_58              | convolutional         | 403     | 567     | 1x14x14x384  | A D G C  | padding x: 1                       |
+|     |                      |                       |         |         |              |          | padding y: 1                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 384                   |
+|     |                      |                       |         |         |              |          | kernel: 3x3                        |
+|     |                      |                       |         |         |              |          | groups: 384                        |
+|     |                      |                       |         |         |              |          | param count: 3k (0.11%)            |
+|     |                      |                       |         |         |              |          | MACs per inference: 677k (0.225%)  |
+| 60  | Clip_59              | neuron                | 567     | 406     | 1x14x14x384  | A D G C  | a: 0                               |
+|     |                      |                       |         |         |              |          | b: 0                               |
+|     |                      |                       |         |         |              |          | min_clamp: 0                       |
+|     |                      |                       |         |         |              |          | max_clamp: 6                       |
+|     |                      |                       |         |         |              |          | func: relu_min_max                 |
+| 61  | Conv_60              | convolutional         | 406     | 570     | 1x14x14x96   | A D G C  | padding x: 0                       |
+|     |                      |                       |         |         |              |          | padding y: 0                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 96                    |
+|     |                      |                       |         |         |              |          | kernel: 1x1                        |
+|     |                      |                       |         |         |              |          | param count: 36k (1.06%)           |
+|     |                      |                       |         |         |              |          | MACs per inference: 7M (2.4%)      |
+| 62  | Conv_61              | convolutional         | 570     | 573     | 1x14x14x576  | A D G C  | padding x: 0                       |
+|     |                      |                       |         |         |              |          | padding y: 0                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 576                   |
+|     |                      |                       |         |         |              |          | kernel: 1x1                        |
+|     |                      |                       |         |         |              |          | param count: 55k (1.6%)            |
+|     |                      |                       |         |         |              |          | MACs per inference: 10M (3.6%)     |
+| 63  | Clip_62              | neuron                | 573     | 411     | 1x14x14x576  | A D G C  | a: 0                               |
+|     |                      |                       |         |         |              |          | b: 0                               |
+|     |                      |                       |         |         |              |          | min_clamp: 0                       |
+|     |                      |                       |         |         |              |          | max_clamp: 6                       |
+|     |                      |                       |         |         |              |          | func: relu_min_max                 |
+| 64  | Conv_63              | convolutional         | 411     | 576     | 1x14x14x576  | A D G C  | padding x: 1                       |
+|     |                      |                       |         |         |              |          | padding y: 1                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 576                   |
+|     |                      |                       |         |         |              |          | kernel: 3x3                        |
+|     |                      |                       |         |         |              |          | groups: 576                        |
+|     |                      |                       |         |         |              |          | param count: 5k (0.165%)           |
+|     |                      |                       |         |         |              |          | MACs per inference: 1M (0.338%)    |
+| 65  | Clip_64              | neuron                | 576     | 414     | 1x14x14x576  | A D G C  | a: 0                               |
+|     |                      |                       |         |         |              |          | b: 0                               |
+|     |                      |                       |         |         |              |          | min_clamp: 0                       |
+|     |                      |                       |         |         |              |          | max_clamp: 6                       |
+|     |                      |                       |         |         |              |          | func: relu_min_max                 |
+| 66  | Conv_65              | convolutional         | 414     | 579     | 1x14x14x96   | A D G C  | padding x: 0                       |
+|     |                      |                       |         |         |              |          | padding y: 0                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 96                    |
+|     |                      |                       |         |         |              |          | kernel: 1x1                        |
+|     |                      |                       |         |         |              |          | param count: 55k (1.59%)           |
+|     |                      |                       |         |         |              |          | MACs per inference: 10M (3.6%)     |
+| 67  | Add_66               | elementwise_binary_op | 570     | 417     | 1x14x14x96   | A D G C  | operation: sum                     |
+|     |                      |                       | 579     |         |              |          | MACs per inference: 18k (0.00625%) |
+| 68  | Conv_67              | convolutional         | 417     | 582     | 1x14x14x576  | A D G C  | padding x: 0                       |
+|     |                      |                       |         |         |              |          | padding y: 0                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 576                   |
+|     |                      |                       |         |         |              |          | kernel: 1x1                        |
+|     |                      |                       |         |         |              |          | param count: 55k (1.6%)            |
+|     |                      |                       |         |         |              |          | MACs per inference: 10M (3.6%)     |
+| 69  | Clip_68              | neuron                | 582     | 420     | 1x14x14x576  | A D G C  | a: 0                               |
+|     |                      |                       |         |         |              |          | b: 0                               |
+|     |                      |                       |         |         |              |          | min_clamp: 0                       |
+|     |                      |                       |         |         |              |          | max_clamp: 6                       |
+|     |                      |                       |         |         |              |          | func: relu_min_max                 |
+| 70  | Conv_69              | convolutional         | 420     | 585     | 1x14x14x576  | A D G C  | padding x: 1                       |
+|     |                      |                       |         |         |              |          | padding y: 1                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 576                   |
+|     |                      |                       |         |         |              |          | kernel: 3x3                        |
+|     |                      |                       |         |         |              |          | groups: 576                        |
+|     |                      |                       |         |         |              |          | param count: 5k (0.165%)           |
+|     |                      |                       |         |         |              |          | MACs per inference: 1M (0.338%)    |
+| 71  | Clip_70              | neuron                | 585     | 423     | 1x14x14x576  | A D G C  | a: 0                               |
+|     |                      |                       |         |         |              |          | b: 0                               |
+|     |                      |                       |         |         |              |          | min_clamp: 0                       |
+|     |                      |                       |         |         |              |          | max_clamp: 6                       |
+|     |                      |                       |         |         |              |          | func: relu_min_max                 |
+| 72  | Conv_71              | convolutional         | 423     | 588     | 1x14x14x96   | A D G C  | padding x: 0                       |
+|     |                      |                       |         |         |              |          | padding y: 0                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 96                    |
+|     |                      |                       |         |         |              |          | kernel: 1x1                        |
+|     |                      |                       |         |         |              |          | param count: 55k (1.59%)           |
+|     |                      |                       |         |         |              |          | MACs per inference: 10M (3.6%)     |
+| 73  | Add_72               | elementwise_binary_op | 417     | 426     | 1x14x14x96   | A D G C  | operation: sum                     |
+|     |                      |                       | 588     |         |              |          | MACs per inference: 18k (0.00625%) |
+| 74  | Conv_73              | convolutional         | 426     | 591     | 1x14x14x576  | A D G C  | padding x: 0                       |
+|     |                      |                       |         |         |              |          | padding y: 0                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 576                   |
+|     |                      |                       |         |         |              |          | kernel: 1x1                        |
+|     |                      |                       |         |         |              |          | param count: 55k (1.6%)            |
+|     |                      |                       |         |         |              |          | MACs per inference: 10M (3.6%)     |
+| 75  | Clip_74              | neuron                | 591     | 429     | 1x14x14x576  | A D G C  | a: 0                               |
+|     |                      |                       |         |         |              |          | b: 0                               |
+|     |                      |                       |         |         |              |          | min_clamp: 0                       |
+|     |                      |                       |         |         |              |          | max_clamp: 6                       |
+|     |                      |                       |         |         |              |          | func: relu_min_max                 |
+| 76  | Conv_75              | convolutional         | 429     | 594     | 1x7x7x576    | A D G C  | padding x: 1                       |
+|     |                      |                       |         |         |              |          | padding y: 1                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 2                        |
+|     |                      |                       |         |         |              |          | stride y: 2                        |
+|     |                      |                       |         |         |              |          | num filters: 576                   |
+|     |                      |                       |         |         |              |          | kernel: 3x3                        |
+|     |                      |                       |         |         |              |          | groups: 576                        |
+|     |                      |                       |         |         |              |          | param count: 5k (0.165%)           |
+|     |                      |                       |         |         |              |          | MACs per inference: 254k (0.0844%) |
+| 77  | Clip_76              | neuron                | 594     | 432     | 1x7x7x576    | A D G C  | a: 0                               |
+|     |                      |                       |         |         |              |          | b: 0                               |
+|     |                      |                       |         |         |              |          | min_clamp: 0                       |
+|     |                      |                       |         |         |              |          | max_clamp: 6                       |
+|     |                      |                       |         |         |              |          | func: relu_min_max                 |
+| 78  | Conv_77              | convolutional         | 432     | 597     | 1x7x7x160    | A D G C  | padding x: 0                       |
+|     |                      |                       |         |         |              |          | padding y: 0                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 160                   |
+|     |                      |                       |         |         |              |          | kernel: 1x1                        |
+|     |                      |                       |         |         |              |          | param count: 92k (2.65%)           |
+|     |                      |                       |         |         |              |          | MACs per inference: 4M (1.5%)      |
+| 79  | Conv_78              | convolutional         | 597     | 600     | 1x7x7x960    | A D G C  | padding x: 0                       |
+|     |                      |                       |         |         |              |          | padding y: 0                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 960                   |
+|     |                      |                       |         |         |              |          | kernel: 1x1                        |
+|     |                      |                       |         |         |              |          | param count: 154k (4.43%)          |
+|     |                      |                       |         |         |              |          | MACs per inference: 7M (2.5%)      |
+| 80  | Clip_79              | neuron                | 600     | 437     | 1x7x7x960    | A D G C  | a: 0                               |
+|     |                      |                       |         |         |              |          | b: 0                               |
+|     |                      |                       |         |         |              |          | min_clamp: 0                       |
+|     |                      |                       |         |         |              |          | max_clamp: 6                       |
+|     |                      |                       |         |         |              |          | func: relu_min_max                 |
+| 81  | Conv_80              | convolutional         | 437     | 603     | 1x7x7x960    | A D G C  | padding x: 1                       |
+|     |                      |                       |         |         |              |          | padding y: 1                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 960                   |
+|     |                      |                       |         |         |              |          | kernel: 3x3                        |
+|     |                      |                       |         |         |              |          | groups: 960                        |
+|     |                      |                       |         |         |              |          | param count: 9k (0.275%)           |
+|     |                      |                       |         |         |              |          | MACs per inference: 423k (0.141%)  |
+| 82  | Clip_81              | neuron                | 603     | 440     | 1x7x7x960    | A D G C  | a: 0                               |
+|     |                      |                       |         |         |              |          | b: 0                               |
+|     |                      |                       |         |         |              |          | min_clamp: 0                       |
+|     |                      |                       |         |         |              |          | max_clamp: 6                       |
+|     |                      |                       |         |         |              |          | func: relu_min_max                 |
+| 83  | Conv_82              | convolutional         | 440     | 606     | 1x7x7x160    | A D G C  | padding x: 0                       |
+|     |                      |                       |         |         |              |          | padding y: 0                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 160                   |
+|     |                      |                       |         |         |              |          | kernel: 1x1                        |
+|     |                      |                       |         |         |              |          | param count: 153k (4.41%)          |
+|     |                      |                       |         |         |              |          | MACs per inference: 7M (2.5%)      |
+| 84  | Add_83               | elementwise_binary_op | 597     | 443     | 1x7x7x160    | A D G C  | operation: sum                     |
+|     |                      |                       | 606     |         |              |          | MACs per inference: 7k (0.0026%)   |
+| 85  | Conv_84              | convolutional         | 443     | 609     | 1x7x7x960    | A D G C  | padding x: 0                       |
+|     |                      |                       |         |         |              |          | padding y: 0                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 960                   |
+|     |                      |                       |         |         |              |          | kernel: 1x1                        |
+|     |                      |                       |         |         |              |          | param count: 154k (4.43%)          |
+|     |                      |                       |         |         |              |          | MACs per inference: 7M (2.5%)      |
+| 86  | Clip_85              | neuron                | 609     | 446     | 1x7x7x960    | A D G C  | a: 0                               |
+|     |                      |                       |         |         |              |          | b: 0                               |
+|     |                      |                       |         |         |              |          | min_clamp: 0                       |
+|     |                      |                       |         |         |              |          | max_clamp: 6                       |
+|     |                      |                       |         |         |              |          | func: relu_min_max                 |
+| 87  | Conv_86              | convolutional         | 446     | 612     | 1x7x7x960    | A D G C  | padding x: 1                       |
+|     |                      |                       |         |         |              |          | padding y: 1                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 960                   |
+|     |                      |                       |         |         |              |          | kernel: 3x3                        |
+|     |                      |                       |         |         |              |          | groups: 960                        |
+|     |                      |                       |         |         |              |          | param count: 9k (0.275%)           |
+|     |                      |                       |         |         |              |          | MACs per inference: 423k (0.141%)  |
+| 88  | Clip_87              | neuron                | 612     | 449     | 1x7x7x960    | A D G C  | a: 0                               |
+|     |                      |                       |         |         |              |          | b: 0                               |
+|     |                      |                       |         |         |              |          | min_clamp: 0                       |
+|     |                      |                       |         |         |              |          | max_clamp: 6                       |
+|     |                      |                       |         |         |              |          | func: relu_min_max                 |
+| 89  | Conv_88              | convolutional         | 449     | 615     | 1x7x7x160    | A D G C  | padding x: 0                       |
+|     |                      |                       |         |         |              |          | padding y: 0                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 160                   |
+|     |                      |                       |         |         |              |          | kernel: 1x1                        |
+|     |                      |                       |         |         |              |          | param count: 153k (4.41%)          |
+|     |                      |                       |         |         |              |          | MACs per inference: 7M (2.5%)      |
+| 90  | Add_89               | elementwise_binary_op | 443     | 452     | 1x7x7x160    | A D G C  | operation: sum                     |
+|     |                      |                       | 615     |         |              |          | MACs per inference: 7k (0.0026%)   |
+| 91  | Conv_90              | convolutional         | 452     | 618     | 1x7x7x960    | A D G C  | padding x: 0                       |
+|     |                      |                       |         |         |              |          | padding y: 0                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 960                   |
+|     |                      |                       |         |         |              |          | kernel: 1x1                        |
+|     |                      |                       |         |         |              |          | param count: 154k (4.43%)          |
+|     |                      |                       |         |         |              |          | MACs per inference: 7M (2.5%)      |
+| 92  | Clip_91              | neuron                | 618     | 455     | 1x7x7x960    | A D G C  | a: 0                               |
+|     |                      |                       |         |         |              |          | b: 0                               |
+|     |                      |                       |         |         |              |          | min_clamp: 0                       |
+|     |                      |                       |         |         |              |          | max_clamp: 6                       |
+|     |                      |                       |         |         |              |          | func: relu_min_max                 |
+| 93  | Conv_92              | convolutional         | 455     | 621     | 1x7x7x960    | A D G C  | padding x: 1                       |
+|     |                      |                       |         |         |              |          | padding y: 1                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 960                   |
+|     |                      |                       |         |         |              |          | kernel: 3x3                        |
+|     |                      |                       |         |         |              |          | groups: 960                        |
+|     |                      |                       |         |         |              |          | param count: 9k (0.275%)           |
+|     |                      |                       |         |         |              |          | MACs per inference: 423k (0.141%)  |
+| 94  | Clip_93              | neuron                | 621     | 458     | 1x7x7x960    | A D G C  | a: 0                               |
+|     |                      |                       |         |         |              |          | b: 0                               |
+|     |                      |                       |         |         |              |          | min_clamp: 0                       |
+|     |                      |                       |         |         |              |          | max_clamp: 6                       |
+|     |                      |                       |         |         |              |          | func: relu_min_max                 |
+| 95  | Conv_94              | convolutional         | 458     | 624     | 1x7x7x320    | A D G C  | padding x: 0                       |
+|     |                      |                       |         |         |              |          | padding y: 0                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 320                   |
+|     |                      |                       |         |         |              |          | kernel: 1x1                        |
+|     |                      |                       |         |         |              |          | param count: 307k (8.82%)          |
+|     |                      |                       |         |         |              |          | MACs per inference: 15M (5%)       |
+| 96  | Conv_95              | convolutional         | 624     | 627     | 1x7x7x1280   | A D G C  | padding x: 0                       |
+|     |                      |                       |         |         |              |          | padding y: 0                       |
+|     |                      |                       |         |         |              |          | padding mode: zero                 |
+|     |                      |                       |         |         |              |          | stride x: 1                        |
+|     |                      |                       |         |         |              |          | stride y: 1                        |
+|     |                      |                       |         |         |              |          | num filters: 1280                  |
+|     |                      |                       |         |         |              |          | kernel: 1x1                        |
+|     |                      |                       |         |         |              |          | param count: 410k (11.8%)          |
+|     |                      |                       |         |         |              |          | MACs per inference: 20M (6.67%)    |
+| 97  | Clip_96              | neuron                | 627     | 463     | 1x7x7x1280   | A D G C  | a: 0                               |
+|     |                      |                       |         |         |              |          | b: 0                               |
+|     |                      |                       |         |         |              |          | min_clamp: 0                       |
+|     |                      |                       |         |         |              |          | max_clamp: 6                       |
+|     |                      |                       |         |         |              |          | func: relu_min_max                 |
+| 98  | GlobalAveragePool_97 | pooling               | 463     | 464     | 1x1x1x1280   | A D G C  | pool size x: 7                     |
+|     |                      |                       |         |         |              |          | pool size y: 7                     |
+|     |                      |                       |         |         |              |          | stride x: 7                        |
+|     |                      |                       |         |         |              |          | stride y: 7                        |
+|     |                      |                       |         |         |              |          | padding x: 0                       |
+|     |                      |                       |         |         |              |          | padding y: 0                       |
+|     |                      |                       |         |         |              |          | pool_type: POOL_AVG                |
+|     |                      |                       |         |         |              |          | MACs per inference: 62k (0.0208%)  |
+| 99  | 464.ncs              | permute               | 464     | 464.ncs | 1x1280x1x1   | A D G C  | permute_order: [0, 3, 1, 2]        |
+| 100 | Gemm_104             | fully_connected       | 464.ncs | output  | 1x1000       | A D G C  | param count: 1M (36.7%)            |
+|     |                      |                       |         |         |              |          | MACs per inference: 1M (0.425%)    |
+-----------------------------------------------------------------------------------------------------------------------------------------
+Note: The supported runtimes column assumes a processor target of Snapdragon 835 (8998)
+Key : A:AIP
+      D:DSP
+      G:GPU
+      C:CPU
+
+Total parameters: 3487816 (13 MB assuming single precision float)
+Total MACs per inference: 301M (100%)
+Converter command: snpe-onnx-to-dlc adjust_nms_features_dims=False align_matmul_ranks=True copyright_file=None custom_op_config_paths=None debug=-1 disable_batchnorm_folding=False disable_chaining_eltwise_ops=False dry_run=None dumpIR=False dump_inferred_model=False dump_value_info=False enable_strict_validation=False extract_color_transform=False force_prune_cast_ops=True handle_gather_negative_indices=False inject_cast_for_gather=False input_dim=[['input', '1,3,224,224']] input_dtype=[] input_encoding=[] input_layout=[] input_type=[['input', 'image']] keep_disconnected_nodes=False keep_quant_nodes=False match_caffe_ssd_to_tf=False model_version=None no_simplification=False out_names=['output'] perform_axes_to_spatial_first_order=True prepare_inputs_as_params=True preprocess_lstm_ops=False preprocess_roi_pool_inputs=False quantization_overrides= squash_box_decoder=False unroll_lstm_time_steps=False use_convert_quantization_nodes=True validation_target=[]
+Quantizer command: N/A
+DLC created with converter version: 1.61.0.3358
+Layers used by DLC: CONVOLUTIONAL, DATA, ELEMENTWISE_BINARY_OP_SUM, FULLY_CONNECTED, NEURON_RELU_MIN_MAX, PERMUTE, POOLING
+Est. Steady-State Memory Needed to Run: 164.3 MiB
+-----------------------------------------------------------------------------------------------------------------------------------------
+
