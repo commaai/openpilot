@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{TITLE}} · openpilot docs</title>
+  <link rel="icon" href="{{ROOT}}assets/favicon.svg">
+
+  <style>
+:root {
+  --bg: #fff;
+  --bg-elev: #f5f5f5;
+  --bg-hover: #eef0ff;
+  --fg: #262626;
+  --fg-dim: #666;
+  --accent: #4051b5;
+  --border: #e5e5e5;
+  --max-width: 76rem;
+}
+
+* { box-sizing: border-box; }
+html { scrollbar-gutter: stable; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.6;
+  font-size: 15px;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+header.site {
+  display: flex; align-items: center; gap: 0.75rem;
+  min-height: 3rem;
+  padding: 0.5rem max(1.25rem, calc((100% - var(--max-width)) / 2));
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 10;
+}
+header.site img { display: block; height: 24px; filter: invert(1); }
+header.site .brand { display: flex; align-items: center; gap: 0.75rem; color: var(--fg); }
+header.site .brand:hover { text-decoration: none; }
+header.site .site-name { font-weight: 600; font-size: 1.05rem; }
+header.site .spacer { flex: 1; }
+header.site .social { display: flex; gap: 1rem; }
+header.site .social a { display: flex; color: var(--fg); }
+header.site .social a:hover { color: var(--accent); }
+header.site .social svg { width: 1.75rem; height: 1.75rem; fill: currentColor; }
+header.site .social a[aria-label="Discord"] svg { transform: scale(1.15); }
+
+.layout { display: flex; width: 100%; max-width: var(--max-width); margin: 0 auto; }
+
+nav.sidebar {
+  width: 14rem; flex-shrink: 0;
+  padding: 3.3rem 1.25rem 2rem 0;
+  position: sticky; top: 3rem; align-self: start;
+  max-height: calc(100vh - 3rem); overflow-y: auto;
+}
+nav.sidebar .nav-section { font-weight: 600; margin: 1.15rem 0.8rem 0.45rem; }
+nav.sidebar a {
+  display: block; padding: 0.28rem 0.8rem; border-radius: 0.45rem;
+  color: var(--fg); line-height: 1.35;
+}
+nav.sidebar a:hover { background: var(--bg-hover); text-decoration: none; }
+nav.sidebar a.active { background: var(--bg-hover); color: var(--accent); font-weight: 600; }
+
+main.content { width: min(100%, 46.5rem); min-width: 0; padding: 2.7rem 2rem 5rem; }
+main.content h1, main.content h2, main.content h3 { line-height: 1.25; margin-top: 1.8rem; }
+main.content h1 { margin-top: 0; }
+main.content img { max-width: 100%; }
+main.content table { border-collapse: collapse; display: block; overflow-x: auto; }
+main.content th, main.content td { border: 1px solid var(--border); padding: 0.4rem 0.6rem; text-align: left; }
+main.content th { background: var(--bg-elev); }
+main.content pre {
+  position: relative;
+  background: var(--bg-elev);
+  padding: 0.9rem 1rem;
+  border-radius: 0.25rem;
+  overflow-x: auto;
+}
+main.content code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+main.content :not(pre) > code { background: var(--bg-elev); padding: 0.1rem 0.35rem; border-radius: 0.2rem; font-size: 0.88em; }
+main.content blockquote { border-left: 3px solid var(--border); margin: 1rem 0; padding: 0.2rem 1rem; color: var(--fg-dim); }
+main.content .admonition {
+  margin: 1rem 0; padding: 0.5rem 1rem; border-radius: 0.3rem; border-left: 3px solid var(--border);
+  background: var(--bg-elev);
+}
+main.content .admonition .admonition-title { margin: 0.2rem 0 0.4rem; font-weight: 600; }
+main.content .admonition.note { border-left-color: #0969da; }
+main.content .admonition.note .admonition-title { color: #0969da; }
+main.content .admonition.tip { border-left-color: #1a7f37; }
+main.content .admonition.tip .admonition-title { color: #1a7f37; }
+main.content .admonition.important { border-left-color: #8250df; }
+main.content .admonition.important .admonition-title { color: #8250df; }
+main.content .admonition.warning { border-left-color: #9a6700; }
+main.content .admonition.warning .admonition-title { color: #9a6700; }
+main.content .admonition.caution { border-left-color: #cf222e; }
+main.content .admonition.caution .admonition-title { color: #cf222e; }
+main.content details { margin: 0.5rem 0; }
+main.content hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+.headerlink { margin-left: 0.25rem; opacity: 0; font-size: 0.7em; }
+h1:hover .headerlink, h2:hover .headerlink, h3:hover .headerlink { opacity: 1; }
+
+.edit-link { margin-top: 3rem; font-size: 0.85rem; }
+
+.copy-btn {
+  position: absolute; top: 0.4rem; right: 0.4rem;
+  background: var(--bg); color: var(--fg-dim);
+  border: 1px solid var(--border); border-radius: 0.35rem;
+  padding: 0.2rem 0.5rem; font-size: 0.78rem; cursor: pointer;
+  opacity: 0; transition: opacity 120ms;
+}
+main.content pre:hover .copy-btn { opacity: 1; }
+
+@media (max-width: 48rem) {
+  nav.sidebar { display: none; }
+  main.content { padding: 2rem 1.25rem 4rem; }
+}
+
+.glossary-term {
+  position: relative;
+  color: inherit;
+}
+
+.glossary-term__label {
+  border-bottom: 1px dotted currentColor;
+}
+
+.glossary-term__tooltip {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  left: 50%;
+  width: max-content;
+  max-width: min(30rem, 80vw);
+  padding: 0.65rem 0.8rem;
+  border-radius: 0.6rem;
+  background: rgb(26 26 26 / 96%);
+  color: white;
+  box-shadow: 0 0.6rem 1.8rem rgb(0 0 0 / 22%);
+  font-size: 0.85rem;
+  line-height: 1.45;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(-0.15rem);
+  transition: opacity 120ms ease, transform 120ms ease;
+  visibility: hidden;
+  z-index: 20;
+}
+
+.glossary-term:hover .glossary-term__tooltip,
+.glossary-term:focus-visible .glossary-term__tooltip,
+.glossary-term:focus-within .glossary-term__tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  visibility: visible;
+}
+  </style>
+</head>
+<body>
+  <header class="site">
+    <a class="brand" href="{{HOME_HREF}}">
+      <img src="{{ROOT}}assets/comma-logo.png" alt="">
+      <span class="site-name">openpilot docs</span>
+    </a>
+    <span class="spacer"></span>
+    <div class="social">
+      <a href="https://github.com/commaai" aria-label="GitHub">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="
+          M12 .7A11.5 11.5 0 0 0 8.4 23c.6.1.8-.2.8-.5v-2c-3.3.7-4-1.4-4-1.4-.5-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7
+          1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.7 0-1.3.5-2.3 1.2-3.1
+          -.1-.3-.5-1.6.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0C15.8 6 16.8 6.3 16.8 6.3c.6 1.5.2 2.8.1 3.1
+          .8.8 1.2 1.8 1.2 3.1 0 4.4-2.8 5.4-5.5 5.7.4.4.8 1.1.8 2.2v2.1c0 .3.2.6.8.5A11.5 11.5 0 0 0 12 .7Z"/></svg>
+      </a>
+      <a href="https://discord.comma.ai" aria-label="Discord">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="
+          M20.3 4.4A16 16 0 0 0 16.3 3l-.5 1.1a15 15 0 0 0-7.6 0L7.7 3a16 16 0 0 0-4 1.4C1.1 8.2.4 11.9.8 15.5
+          a16 16 0 0 0 4.9 2.6l1.2-1.7-1.8-.9.4-.3c3.5 1.6 9.4 1.6 13 0l.4.3-1.8.9 1.2 1.7a16 16 0 0 0 4.9-2.6
+          c.5-4.2-.8-7.8-2.9-11.1ZM8.3 13.3c-1.1 0-1.9-1-1.9-2.2 0-1.3.8-2.3 1.9-2.3s2 1 1.9 2.3c0 1.2-.8 2.2-1.9 2.2Z
+          m7.4 0c-1.1 0-1.9-1-1.9-2.2 0-1.3.8-2.3 1.9-2.3s2 1 1.9 2.3c0 1.2-.8 2.2-1.9 2.2Z"/></svg>
+      </a>
+      <a href="https://x.com/comma_ai" aria-label="X">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="
+          M18.2 2.3h3.3l-7.2 8.3 8.5 11.2h-6.7l-5.2-6.8-6 6.8H1.6l7.8-8.9L1.2 2.3h6.8l4.7 6.2 5.5-6.2Z
+          m-1.2 17.5h1.8L7 4.2H5Z"/></svg>
+      </a>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="sidebar">
+      {{NAV}}
+    </nav>
+
+    <main class="content">
+      {{BODY}}
+      <div class="edit-link">
+        <a href="{{EDIT_URL}}">Edit this page on GitHub</a>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      document.querySelectorAll('pre').forEach(function (el) {
+        var btn = document.createElement('button');
+        btn.className = 'copy-btn';
+        btn.textContent = 'copy';
+        btn.addEventListener('click', function () {
+          var code = el.querySelector('code');
+          if (!code) return;
+          navigator.clipboard.writeText(code.innerText).then(function () {
+            btn.textContent = 'copied';
+            setTimeout(function () { btn.textContent = 'copy'; }, 1200);
+          });
+        });
+        el.appendChild(btn);
+      });
+    });
+  </script>
+</body>
+</html>
