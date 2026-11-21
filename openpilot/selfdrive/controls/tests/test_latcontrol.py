@@ -48,3 +48,49 @@ class TestLatControl(OpenpilotTestCase):
     for _ in range(1000):
       _, _, lac_log = controller.update(True, CS, VM, params, False, 1, False, 0.2)
     assert lac_log.saturated
+
+  def test_torque_integrator_unwind_when_limited(self):
+    car_name = TOYOTA.TOYOTA_RAV4
+    CarInterface = interfaces[car_name]
+    CP = CarInterface.get_non_essential_params(car_name)
+    CI = CarInterface(CP)
+    VM = VehicleModel(CP)
+
+    controller = LatControlTorque(CP.as_reader(), CI, DT_CTRL)
+    CS = car.CarState.new_message()
+    CS.vEgo = 25.0
+    CS.steeringPressed = False
+    params = log.VehicleParameters.new_message()
+
+    # While safety-limited starting from zero, integrator must stay frozen (no windup)
+    for _ in range(50):
+      controller.update(True, CS, VM, params, True, 0.0008, False, 0.2)
+    assert controller.pid.i == 0.0
+
+    # Build positive integrator while not safety-limited (below torque saturation limit)
+    for _ in range(150):
+      controller.update(True, CS, VM, params, False, 0.0008, False, 0.2)
+    i_positive = controller.pid.i
+    assert i_positive > 0.05
+
+    # Same-sign error while safety-limited must freeze integrator (anti-windup)
+    for _ in range(50):
+      controller.update(True, CS, VM, params, True, 0.0008, False, 0.2)
+    assert controller.pid.i == i_positive
+
+    # Opposite-sign error while safety-limited must allow integrator to unwind toward zero without winding up negatively
+    for _ in range(250):
+      controller.update(True, CS, VM, params, True, -0.0008, False, 0.2)
+    assert controller.pid.i < i_positive
+    assert controller.pid.i >= -0.01
+
+    # Driver steering override must still freeze integrator even when error opposes pid.i
+    controller.pid.reset()
+    for _ in range(150):
+      controller.update(True, CS, VM, params, False, 0.0008, False, 0.2)
+    i_before_override = controller.pid.i
+    assert i_before_override > 0.05
+    CS.steeringPressed = True
+    for _ in range(100):
+      controller.update(True, CS, VM, params, False, -0.0008, False, 0.2)
+    assert controller.pid.i == i_before_override
