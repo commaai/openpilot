@@ -1,0 +1,1 @@
+{"alpha_long": false, "dur": 10.0, "faults": [["cameraOdometry", "invalid", 0.0, 1.0, 10]], "fp": "ACURA_ADX", "genes": {"cameraOdometry.transStd[]": {"a": -8.0, "b": 1.2e-38, "idx": "alt", "k": 1.0, "rel": null, "shape": "hold", "t0": 7.815747224614834, "t1": 10.815747224614835}}, "params": {}, "perturb": null, "proc": "locationd", "sim": true}

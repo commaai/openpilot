@@ -1,0 +1,1 @@
+{"alpha_long": false, "dur": 30.0, "faults": [], "fp": "ACURA_ADX", "genes": {"ubloxRaw[004]": {"a": 349813761, "b": 0.0, "idx": "pvt extra=8", "k": 1.0, "rel": null, "shape": "hold", "t0": 2.241615075279688, "t1": 0.7478660739481916}}, "params": {}, "perturb": null, "proc": "ubloxd", "sim": true}

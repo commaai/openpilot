@@ -1,0 +1,1 @@
+{"alpha_long": false, "dur": 3.0, "faults": [], "fp": "TOYOTA_YARIS", "genes": {}, "params": {"DisengageOnAccelerator": false, "IsLdwEnabled": true, "OpenpilotEnabledToggle": true, "SecOCKey": "0123456789abcdef0123456789abcdef"}, "perturb": null, "proc": "selfdrived", "sim": true}

@@ -1,0 +1,1 @@
+{"alpha_long": false, "dur": 15.0, "faults": [], "fp": "TOYOTA_PRIUS", "genes": {}, "params": {"CarParamsPrevRoute": {"car": "same"}, "LiveDelay": {"event": {"lateralDelay": {"lateralDelayEstimate": 0.2, "status": "estimated", "validBlocks": -7, "version": 1}}}}, "perturb": null, "proc": "lagd", "sim": true}

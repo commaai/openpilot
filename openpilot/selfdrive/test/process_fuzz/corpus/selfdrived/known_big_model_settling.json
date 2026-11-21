@@ -1,0 +1,1 @@
+{"alpha_long": false, "dur": 8.0, "faults": [["radarState", "invalid", 3.0, 6.0, 1]], "fp": "HONDA_CIVIC", "genes": {}, "params": {"ChestnutLoading": true, "OpenpilotEnabledToggle": true}, "perturb": null, "proc": "selfdrived", "sim": true}

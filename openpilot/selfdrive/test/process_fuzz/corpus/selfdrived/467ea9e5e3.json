@@ -1,0 +1,1 @@
+{"alpha_long": false, "dur": 6.0, "faults": [], "fp": "CHRYSLER_PACIFICA_2018", "genes": {"carState.vEgo": {"a": 0.0, "b": 10.0, "idx": "same", "k": 1.0, "rel": null, "shape": "ramp", "t0": 0.0, "t1": 10.0}}, "params": {"DisengageOnAccelerator": false, "IsLdwEnabled": true, "OpenpilotEnabledToggle": true}, "perturb": null, "proc": "selfdrived", "sim": true}
