@@ -8,11 +8,12 @@ from openpilot.common.constants import CV
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.modeld.constants import ModelConstants
+from openpilot.selfdrive.controls.lib.accel_boost import AccelBoost
 from openpilot.selfdrive.controls.lib.curve_speed import CurveSpeed
 from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc, LongitudinalPlanSource
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import T_IDXS as T_IDXS_MPC
-from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N, get_accel_from_plan, should_stop, smooth_value
+from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N, get_accel_from_plan, should_stop
 from openpilot.selfdrive.car.cruise import V_CRUISE_MAX, V_CRUISE_UNSET
 from openpilot.common.swaglog import cloudlog
 
@@ -24,8 +25,7 @@ CONTROL_N_T_IDX = ModelConstants.T_IDXS[:CONTROL_N]
 
 
 def get_cruise_accel(v_cruise, v_ego, a_cruise_prev, a_target_prev, dt):
-  target_accel = smooth_value(v_cruise - v_ego, a_cruise_prev, tau=1.0, dt=dt)
-  target_accel = np.clip(target_accel, A_CRUISE_MIN, ACCEL_MAX)
+  target_accel = np.clip(v_cruise - v_ego, A_CRUISE_MIN, ACCEL_MAX)
   j_cruise = np.interp(v_ego, J_CRUISE_BP, J_CRUISE_VALS)
   target_accel = float(np.clip(target_accel, min(a_cruise_prev, a_target_prev) - j_cruise * dt, a_cruise_prev + j_cruise * dt))
 
@@ -38,6 +38,7 @@ class LongitudinalPlanner:
     self.mpc = LongitudinalMpc(dt=dt)
     self.fcw = False
     self.dt = dt
+    self.accel_boost = AccelBoost()
     self.curve_speed = CurveSpeed(dt)
 
     self.v_desired_filter = FirstOrderFilter(init_v, 2.0, self.dt)
@@ -69,6 +70,7 @@ class LongitudinalPlanner:
       self.v_desired_filter.x = v_ego
       self.output_a_target = np.clip(sm['carState'].aEgo, ACCEL_MIN, ACCEL_MAX)
       self.a_cruise = self.output_a_target
+      self.accel_boost.reset()
       self.curve_speed.reset()
 
     # Prevent divergence, smooth in current v_ego
@@ -110,6 +112,8 @@ class LongitudinalPlanner:
 
     self.a_cruise = get_cruise_accel(v_cruise, v_ego, self.a_cruise, self.output_a_target, self.dt)
     cruise_should_stop = should_stop(v_ego, self.a_cruise)
+
+    output_a_target_e2e = self.accel_boost.update(sm, output_a_target_e2e, curve_offset)
 
     candidates = [(output_a_target_mpc, self.mpc.source, output_should_stop_mpc),
                   (self.a_cruise, LongitudinalPlanSource.cruise, cruise_should_stop),
