@@ -6,7 +6,7 @@ BLOCKED = 192
 # once the car's CAN stops, the panda flags its rx checks lagging 1 s after their own last frame, checked at 1 Hz, and drops
 # controls_allowed. they're >= 10 Hz, the last can come 0.1 s before the car's last frame
 CAN_LOSS_DROP = (0.9, 2.5)
-# seconds around openpilot stopping an actuation the frame it sent before it saw why reaches the panda
+# seconds around openpilot stopping a command the frame it sent before it saw why reaches the panda
 IN_FLIGHT = 0.1
 
 Check = tuple[bool, str]
@@ -43,16 +43,20 @@ def engaged_at_edge(msgs) -> Check:
   return abs(engaged - edge) <= ENGAGE_LIMIT, f"panda allowed controls at t={edge:.2f}, openpilot engaged at t={engaged:.2f}"
 
 
+def _commands(cc) -> tuple[bool, ...]:
+  return cc.latActive, cc.longActive, cc.cruiseControl.cancel, cc.cruiseControl.resume
+
+
 def none_blocked(msgs) -> Check:
   engaged = _first_engaged(msgs)
   if engaged is None:
     return True, "never engaged, no TX checked"
-  # while the car's CAN runs. when openpilot stops actuating, disengaged or overridden by the driver, the panda sees why on its CAN
-  # before openpilot does, the one frame of each message openpilot already sent is rightly blocked. a second is openpilot actuating
-  # after it should have seen it
+  # while the car's CAN runs. when openpilot stops a command, disengaged, overridden or cruise already off, the panda sees why on its
+  # CAN before openpilot does, the one frame of each message openpilot already sent is rightly blocked. a second is openpilot
+  # commanding after it should have seen it
   last = max((_t(msgs, m) for m in _of(msgs, 'can') if any(c.src < 3 for c in m.can)), default=0.)
-  active = [(_t(msgs, m), m.carControl.latActive, m.carControl.longActive) for m in _of(msgs, 'carControl')]
-  stops = [t for (_, lat0, long0), (t, lat, long) in zip(active, active[1:], strict=False) if (lat0 and not lat) or (long0 and not long)]
+  commands = [(_t(msgs, m), _commands(m.carControl)) for m in _of(msgs, 'carControl')]
+  stops = [t for (_, before), (t, now) in zip(commands, commands[1:], strict=False) if any(b and not n for b, n in zip(before, now, strict=True))]
   in_flight: set[tuple[float, int, int]] = set()
   blocked = []
   for m in _of(msgs, 'can'):
@@ -70,7 +74,7 @@ def none_blocked(msgs) -> Check:
   if blocked:
     t, c = blocked[0]
     return False, f"{len(blocked)} TX frames blocked, first {c.address:#x} bus {c.src - BLOCKED} at t={t:.2f}, data {bytes(c.dat).hex()}"
-  return True, f"no TX frames blocked, {len(in_flight)} in flight at {len(stops)} actuation stops"
+  return True, f"no TX frames blocked, {len(in_flight)} in flight at {len(stops)} stopped commands"
 
 
 def no_new_faults(msgs) -> Check:

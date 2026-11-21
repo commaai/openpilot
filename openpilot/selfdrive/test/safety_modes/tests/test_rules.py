@@ -69,6 +69,15 @@ class TestRules(OpenpilotTestCase):
     assert not blocked((8.01, 0x343), (8.04, 0x343))
     assert not blocked((9., 0x343))
 
+  def test_blocked_at_cancel_stop(self):
+    # openpilot cancels the car's cruise after disengaging, the car's cruise turns off at t=10
+    msgs = drive(disengage_at=9.)
+    for m in msgs:
+      if m.which() == 'carControl':
+        m.carControl.cruiseControl.cancel = 9. <= m.logMonoTime * 1e-9 < 10.
+    assert none_blocked(msgs + [can(10.01, [(0x4f1, 192)])])[0]
+    assert not none_blocked(msgs + [can(10.01, [(0x4f1, 192)]), can(10.05, [(0x4f1, 192)])])[0]
+
   def test_faults(self):
     msgs = sorted(drive(), key=lambda m: m.logMonoTime)
     assert no_new_faults([panda(0., False, ['heartbeatLoopWatchdog'])] + msgs + [panda(9., True, ['heartbeatLoopWatchdog'])])[0]
