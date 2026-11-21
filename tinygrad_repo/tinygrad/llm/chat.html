@@ -1,0 +1,80 @@
+<!DOCTYPE html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content">
+<title>tinygrad chat</title><style>
+  * { margin: 0 }
+  body { background: #212121; color: #e3e3e3; font-family: system-ui;
+         height: 100dvh; overflow: hidden; display: flex; flex-direction: column }
+  #chat { flex: 1; min-height: 0; overflow-y: auto; padding: 20px }
+  .msg { padding: 10px 16px; margin: 8px 0; white-space: pre-wrap; overflow-wrap: anywhere; border-radius: 18px }
+  table { border-collapse: collapse; table-layout: fixed; width: 100%; overflow-wrap: anywhere }
+  th, td { border: 1px solid #555; padding: 6px 10px; text-align: left }
+  a { color: #8ab4f8 } hr { border: 0; border-top: 1px solid #555 }
+  .answer { white-space: normal; line-height: 1.65 } .answer > * { margin: 12px 0 }
+  pre, blockquote { background: #2f2f2f; padding: 12px 16px; border-radius: 8px } pre { white-space: pre-wrap }
+  .user { background: #2f2f2f; margin-left: auto; width: fit-content; max-width: 70% }
+  #composer { display: flex; flex-shrink: 0; align-items: center; gap: 12px; max-width: 808px; width: calc(100% - 24px);
+              box-sizing: border-box; margin: 12px auto max(12px, env(safe-area-inset-bottom));
+              padding: 12px 16px 12px 20px; background: #2f2f2f; border-radius: 24px }
+  #input { flex: 1; min-width: 0; padding: 0; background: transparent; color: inherit; font: inherit;
+           border: none; outline: none; resize: none; field-sizing: content }
+  #model { min-width: 0; max-width: 45%; padding: 6px 10px; background: #383838; color: inherit; font: inherit;
+           border: 1px solid #484848; border-radius: 16px; cursor: pointer }
+</style></head><body><div id="chat"></div>
+<div id="composer">
+<textarea id="input" rows="1" placeholder="Ask anything" autofocus></textarea>
+<select id="model" aria-label="Model"></select></div>
+<script src="./assets/cdn.jsdelivr.net/npm/markdown-it@15.0.1/dist/browser/markdown-it.umd.min.js"></script>
+<script>
+  const params = new URLSearchParams(location.hash.slice(1)), server = (params.get('server') || '').replace(/\/+$/, '');
+  const headers = {'Content-Type': 'application/json'};
+  if (params.get('api_key')) headers.Authorization = 'Bearer ' + params.get('api_key');
+  function showError(e) {
+    const d = document.createElement('div'); d.className = 'msg'; d.style.color = '#f88'; d.setAttribute('role', 'alert');
+    d.textContent = e.message; chat.appendChild(d); chat.scrollTop = chat.scrollHeight;
+  }
+  async function request(path, options = {}) {
+    const r = await fetch(server + path, {headers, ...options});
+    if (!r.ok) throw new Error(`HTTP ${r.status}: ${(await r.text()).slice(0, 500)}`);
+    return r;
+  }
+  request('/v1/models').then(r => r.json()).then(r => {
+    if (!r.data?.length) throw new Error('No models returned by the server.');
+    model.replaceChildren(...r.data.map(m => new Option(m.id, m.id, false, m.id === params.get('model'))));
+  }).catch(showError);
+  let generating = false;
+  input.onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+    e.preventDefault(); if (generating || !model.value) return;
+    generating = true; send().catch(showError).finally(() => generating = false);
+  } };
+  const msgs = [];
+  const md = markdownit();
+  async function send() {
+    if (!input.value.trim()) return;
+    msgs.push({role: 'user', content: input.value.trim()});
+    const user = document.createElement('div'); user.className = 'msg user';
+    user.textContent = input.value.trim(); chat.appendChild(user);
+    input.value = '';
+    const d = document.createElement('div'); d.className = 'msg'; chat.appendChild(d);
+    d.innerHTML = '<span style="color:#888"></span><div class="answer"></div>'; const [thinking, answer] = d.children;
+    const r = await request('/v1/chat/completions', {method: 'POST',
+      body: JSON.stringify({model: model.value, messages: msgs, stream: true, temperature: 0.7})});
+    let buf = '', txt = '', rsn = '';
+    for (const rd = r.body.getReader(), dec = new TextDecoder();;) {
+      const {done, value} = await rd.read();
+      if (done) break;
+      buf += dec.decode(value, {stream: true});
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for (const ln of lines)
+        if (ln.startsWith('data: ') && ln.slice(6).trim() !== '[DONE]') {
+          const data = JSON.parse(ln.slice(6));
+          if (data.error) throw new Error(data.error.message || 'API error');
+          const dl = data.choices?.[0]?.delta;
+          if (dl?.reasoning_content) { rsn += dl.reasoning_content; thinking.textContent = rsn }
+          if (dl?.content) { txt += dl.content; answer.innerHTML = md.render(txt) }
+        }
+      chat.scrollTop = chat.scrollHeight;
+    }
+    const m = {role:'assistant', content:txt}; if (rsn) m.reasoning_content = rsn; msgs.push(m);
+  }
+</script></body></html>
