@@ -5,7 +5,6 @@ import sysconfig
 import platform
 import shlex
 import importlib
-import numpy as np
 import nanobind
 import eigen
 
@@ -57,16 +56,10 @@ assert arch in [
   "Darwin",       # macOS arm64 (x86 not supported)
 ]
 
-pkg_names = ['acados', 'capnproto', 'ffmpeg', 'json11', 'ncurses', 'zstd']
+pkg_names = ['capnproto', 'ffmpeg', 'json11', 'ncurses', 'zstd']
 pkgs = [importlib.import_module(name) for name in pkg_names]
-acados = pkgs[pkg_names.index('acados')]
 ffmpeg = pkgs[pkg_names.index('ffmpeg')]
 ffmpeg_libs = ['avformat', 'avcodec', 'swresample', 'avutil']
-acados_include_dirs = [
-  acados.INCLUDE_DIR,
-  os.path.join(acados.INCLUDE_DIR, "blasfeo", "include"),
-  os.path.join(acados.INCLUDE_DIR, "hpipm", "include"),
-]
 
 
 # ***** enforce a whitelist of system libraries *****
@@ -110,9 +103,6 @@ env = Environment(
   ENV={
     "PATH": os.environ['PATH'],
     "PYTHONPATH": os.pathsep.join(submodule_python_paths),
-    "ACADOS_SOURCE_DIR": acados.DIR,
-    "ACADOS_PYTHON_INTERFACE_PATH": acados.TEMPLATE_DIR,
-    "TERA_PATH": acados.TERA_PATH
   },
   CCFLAGS=[
     "-g",
@@ -137,7 +127,6 @@ env = Environment(
     "#rednose_repo",         # #include "rednose/..."
     "#rednose_repo/rednose", # #include "logger/..." (rednose package root)
     "#openpilot/cereal/gen/cpp",
-    acados_include_dirs,
     [x.INCLUDE_DIR for x in pkgs],
     "#",
   ],
@@ -203,21 +192,6 @@ if not GetOption('verbose'):
   ):
     env[f"{action}COMSTR"] = f"  [{short}] $TARGET"
 
-# ********** Cython build environment **********
-envCython = env.Clone()
-envCython["CPPPATH"] += [sysconfig.get_paths()['include'], np.get_include()]
-envCython["CCFLAGS"] += ["-Wno-#warnings", "-Wno-cpp", "-Wno-shadow", "-Wno-deprecated-declarations"]
-envCython["CCFLAGS"].remove("-Werror")
-
-envCython["LIBS"] = []
-if arch == "Darwin":
-  envCython["LINKFLAGS"] = env["LINKFLAGS"] + ["-bundle", "-undefined", "dynamic_lookup"]
-else:
-  envCython["LINKFLAGS"] = ["-pthread", "-shared"]
-
-np_version = SCons.Script.Value(np.__version__)
-Export('envCython', 'np_version')
-
 # ********** nanobind build environment **********
 envNanobind = env.Clone(LIBS=[])
 nanobind_dir = os.path.dirname(nanobind.__file__)
@@ -232,7 +206,7 @@ else:
   envNanobind["LINKFLAGS"] = ["-pthread", "-shared"]
 Export('envNanobind')
 
-Export('env', 'arch', 'acados', 'ffmpeg_libs')
+Export('env', 'arch', 'ffmpeg_libs')
 
 # Setup cache dir
 cache_dir = '/data/scons_cache' if arch == "comma_arm64" else '/tmp/scons_cache'
@@ -284,7 +258,6 @@ if arch == "comma_arm64":
 # Build selfdrive
 SConscript([
   'openpilot/selfdrive/pandad/SConscript',
-  'openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/SConscript',
   'openpilot/selfdrive/locationd/SConscript',
   'openpilot/selfdrive/modeld/SConscript',
   'openpilot/selfdrive/ui/SConscript',
