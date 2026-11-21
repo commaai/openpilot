@@ -78,6 +78,9 @@ class TestRules(OpenpilotTestCase):
     assert dropped_on_can_loss(drive())[0]
     # a timer running fast or slow, or no tick at all
     assert not dropped_on_can_loss(drive(drop_after=0.5))[0]
+    # an rx check's last frame up to 0.1 s before the car's last one
+    assert dropped_on_can_loss(drive(drop_after=0.85))[0]
+    assert not dropped_on_can_loss(drive(drop_after=0.75))[0]
     assert not dropped_on_can_loss(drive(drop_after=2.8))[0]
     assert not dropped_on_can_loss(drive(drop_after=10.))[0]
 

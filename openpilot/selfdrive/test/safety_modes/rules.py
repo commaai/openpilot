@@ -3,8 +3,9 @@
 ENGAGE_LIMIT = 2.
 # the panda echoes what it blocked with src 192 + bus
 BLOCKED = 192
-# once the car's CAN stops, the panda flags its rx checks lagging after 1 s, checked at 1 Hz, and drops controls_allowed
-CAN_LOSS_DROP = (1., 2.5)
+# once the car's CAN stops, the panda flags its rx checks lagging 1 s after their own last frame, checked at 1 Hz, and drops
+# controls_allowed. they're >= 10 Hz, the last can come 0.1 s before the car's last frame
+CAN_LOSS_DROP = (0.9, 2.5)
 # seconds around openpilot stopping an actuation the frame it sent before it saw why reaches the panda
 IN_FLIGHT = 0.1
 
