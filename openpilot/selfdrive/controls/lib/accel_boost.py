@@ -3,8 +3,9 @@ from openpilot.cereal import log
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import DT_MDL
 
-LIFT_GATE_STDS = [-1.0, 2.0]  # less lift if the future plan is behind compared to maintaining current speed, more if ahead
-LIFT_FADE_ACCEL = [-0.15, 0.05]  # less lift as the model stops asking for more accel, none once it asks to slow by 0.15 m/s^2
+LIFT_GATE_SPEED = [-0.5, 1.0]  # m/s the plan runs ahead of holding the current speed: no boost at 0.5 behind, full boost at 1 ahead
+PLAN_AHEAD_TAU = 0.3  # s, smooths 1-3 frame blips in the plan before the gate
+LIFT_REARM_TAU = 2.0  # s, the lift drops at once when the gate closes and comes back with this time constant
 
 
 def get_accel_boost(personality=log.LongitudinalPersonality.standard):
@@ -12,20 +13,23 @@ def get_accel_boost(personality=log.LongitudinalPersonality.standard):
   if personality==log.LongitudinalPersonality.relaxed:
     return 0.0, 1.0
   elif personality==log.LongitudinalPersonality.standard:
-    return 0.2, 1.1
+    return 0.2, 1.2
   elif personality==log.LongitudinalPersonality.aggressive:
-    return 0.4, 1.2
+    return 0.4, 1.4
   else:
     raise NotImplementedError("Longitudinal personality not supported")
 
 
 class AccelBoost:
   def __init__(self, dt=DT_MDL):
-    self.lift_filter = FirstOrderFilter(0.0, 0.3, dt)
+    self.dt = dt
+    self.plan_ahead_filter = FirstOrderFilter(0.0, PLAN_AHEAD_TAU, dt, initialized=False)
+    self.arm = 0.0
     self.total_boost = 0.0
 
   def reset(self):
-    self.lift_filter.x = 0.0
+    self.plan_ahead_filter.initialized = False
+    self.arm = 0.0
     self.total_boost = 0.0
 
   def update(self, sm, output_a_target_e2e, curve_offset):
@@ -33,13 +37,13 @@ class AccelBoost:
     v_ego = max(sm['carState'].vEgo, 1.0)
 
     pos = sm['modelV2'].position
-    t, x, x_std = np.array(pos.t), np.array(pos.x), np.array(pos.xStd)
-    # how many stds the plan is ahead compared to holding the current speed, at its worst point after 1 s
-    plan_ahead = ((x - v_ego * t) / x_std)[t >= 1.0].min() if len(x_std) else LIFT_GATE_STDS[0]
-    gate = np.interp(plan_ahead, LIFT_GATE_STDS, [0.0, 1.0])  # a slowdown ahead in the plan
-    fade = np.interp(output_a_target_e2e, LIFT_FADE_ACCEL, [0.0, 1.0])  # the model pushing back on the speed
-    lift = self.lift_filter.update(lift * gate * fade if curve_offset == 0.0 else 0.0)  # no lift while slowing for a curve ahead
+    t, x = np.array(pos.t), np.array(pos.x)
+    # m/s the plan's average speed runs ahead of holding the current speed, at its worst point after 1 s
+    plan_ahead = ((x - v_ego * t) / np.maximum(t, 1e-3))[t >= 1.0].min() if len(x) else LIFT_GATE_SPEED[0]
+    plan_ahead = self.plan_ahead_filter.update(plan_ahead)
+    gate = np.interp(plan_ahead, LIFT_GATE_SPEED, [0.0, 1.0]) if curve_offset == 0.0 else 0.0  # clear road ahead, none while slowing for a curve
+    self.arm = min(gate, self.arm + (gate - self.arm) * self.dt / (LIFT_REARM_TAU + self.dt))  # falls at once, re-arms slowly
 
-    gain = gas_gain if output_a_target_e2e > 0.0 else 1.0  # boost gas only, braking is left to the model
-    self.total_boost = output_a_target_e2e * (gain - 1.0) + lift
+    gain = 1.0 + gate * (gas_gain - 1.0) if output_a_target_e2e > 0.0 else 1.0  # boost gas only while the road ahead is clear, braking is left to the model
+    self.total_boost = output_a_target_e2e * (gain - 1.0) + self.arm * lift
     return output_a_target_e2e + self.total_boost
