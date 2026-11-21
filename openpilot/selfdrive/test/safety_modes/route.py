@@ -13,13 +13,13 @@ from opendbc.car.tests.routes import CarTestRoute
 from opendbc.car.tests.test_models import DOWNLOAD_CACHE_ROOT, get_cached_segment
 from opendbc.car.vin import VIN_UNKNOWN
 from openpilot.tools.lib.logreader import LogReader
+from openpilot.selfdrive.test.safety_modes.rules import BUSES
 
 DT = 0.01
 # seconds of CAN before the panda's controls_allowed edge, the panda is in the car's safety mode up to ~8 s after the first CAN,
 # and seconds it holds controls_allowed after it
 LEAD = 10.
 ENGAGED = 3.
-BUSES = 3
 # before the route's panda is in a car's safety mode the recording is the old device's relay and forwarding, not the car's
 NO_CAR_MODES = ('silent', 'noOutput', 'elm327', 'allOutput')
 
@@ -35,7 +35,7 @@ class Window:
   # segment seconds from its first CAN
   start: float
   frames: list[Frame]
-  # the route's panda disallowing controls after the edge, each one the DUT must follow too
+  # the route's panda disallowing controls after the edge, the route that does it most is played
   disengages: int
   # the route's carParams for CarParamsCache, None when card wouldn't take its firmware
   cache: bytes | None
@@ -118,12 +118,14 @@ def make_window(route: CarTestRoute, segment: int, start: float, frames: list[Fr
     return Window(segment, start, frames, disengages, logged_bytes if has_fw else None, given, logged.openpilotLongitudinalControl)
 
 
-def parse_window(route: CarTestRoute) -> tuple[int, float, list[Frame], int, bytes | None] | None:
-  # in the segments test_models uses
+def parse_window(route: CarTestRoute) -> tuple[tuple[int, float, list[Frame], int, bytes | None] | None, bool]:
+  # in the segments test_models uses. and whether all were read, a segment that didn't download isn't a route without a window
+  complete = True
   for segment in [route.segment] if route.segment is not None else [2, 1, 0]:
     try:
       msgs = list(LogReader(str(get_cached_segment(route.route, segment)), sort_by_time=True))
     except OSError:
+      complete = False
       continue
     samples = car_mode_samples(msgs)
     can = [m.logMonoTime * 1e-9 for m in msgs if m.which() == 'can']
@@ -133,16 +135,19 @@ def parse_window(route: CarTestRoute) -> tuple[int, float, list[Frame], int, byt
     if edge is not None:
       start = edge - LEAD
       logged_bytes = None if logged is None else logged.as_builder().to_bytes()
-      return segment, start - can[0], bin_frames(msgs, start, can[-1] - start), count_disengages(samples, edge), logged_bytes
-  return None
+      return (segment, start - can[0], bin_frames(msgs, start, can[-1] - start + DT), count_disengages(samples, edge), logged_bytes), complete
+  return None, complete
 
 
 def find_window(route: CarTestRoute) -> Window | None:
-  path = WINDOW_CACHE / f"safety_modes_{CACHE_KEY}_{route.route.replace('/', '|')}.pkl"
+  path = WINDOW_CACHE / f"safety_modes_{CACHE_KEY}_{route.route.replace('/', '|')}_{route.segment}.pkl"
   if path.exists():
     parsed = pickle.loads(path.read_bytes())
   else:
-    parsed = parse_window(route)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(pickle.dumps(parsed))
+    parsed, complete = parse_window(route)
+    if complete:
+      path.parent.mkdir(parents=True, exist_ok=True)
+      tmp = path.with_suffix(f".{os.getpid()}.tmp")
+      tmp.write_bytes(pickle.dumps(parsed))
+      tmp.replace(path)
   return None if parsed is None else make_window(route, *parsed)

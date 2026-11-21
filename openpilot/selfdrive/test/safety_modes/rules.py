@@ -1,15 +1,18 @@
-# the rules a drive's recording passes, each a (passed, evidence) check
+# the rules a drive's recording passes, each a (passed, evidence) check, passed None when there was nothing to check
 # seconds after the DUT panda's controls_allowed edge by which openpilot must be enabled
 ENGAGE_LIMIT = 2.
-# the panda echoes what it blocked with src 192 + bus
+# seconds the DUT panda's edge may be from the route's, the panda samples at 10 Hz and the replay starts within a second of the recording
+EDGE_LIMIT = 3.
+# a can message's src: the car's frames on bus 0-2, what the panda sent 128 + bus, what it blocked 192 + bus
+BUSES = 3
 BLOCKED = 192
 # once the car's CAN stops, the panda flags its rx checks lagging 1 s after their own last frame, checked at 1 Hz, and drops
 # controls_allowed. they're >= 10 Hz, the last can come 0.1 s before the car's last frame
 CAN_LOSS_DROP = (0.9, 2.5)
-# seconds around openpilot stopping a command the frame it sent before it saw why reaches the panda
-IN_FLIGHT = 0.1
+# seconds between a blocked frame and the event in openpilot's carState that explains it
+EVENT_WINDOW = 0.5
 
-Check = tuple[bool, str]
+Check = tuple[bool | None, str]
 
 
 def _t(msgs, m) -> float:
@@ -18,6 +21,10 @@ def _t(msgs, m) -> float:
 
 def _of(msgs, which: str) -> list:
   return [m for m in msgs if m.which() == which and (which != 'pandaStates' or len(m.pandaStates))]
+
+
+def _car_can(msgs) -> list[float]:
+  return [_t(msgs, m) for m in _of(msgs, 'can') if any(c.src < BUSES for c in m.can)]
 
 
 def _first_engaged(msgs) -> float | None:
@@ -32,33 +39,45 @@ def fingerprinted(msgs, car_model: str) -> Check:
   return fingerprint == car_model, f"fingerprinted {fingerprint}, route is {car_model}"
 
 
-def engaged_at_edge(msgs) -> Check:
+def engaged_at_edge(msgs, expected: float) -> Check:
   allowed = [(_t(msgs, m), m.pandaStates[0].controlsAllowed) for m in _of(msgs, 'pandaStates')]
   edge = next((t for (_, before), (t, a) in zip([(0., False)] + allowed, allowed, strict=False) if a and not before), None)
   if edge is None:
     return False, "the DUT panda never allowed controls"
+  if abs(edge - expected) > EDGE_LIMIT:
+    return False, f"panda allowed controls at t={edge:.2f}, the route's panda at t={expected:.2f}"
   engaged = _first_engaged(msgs)
   if engaged is None:
     return False, f"panda allowed controls at t={edge:.2f}, openpilot never engaged"
   return abs(engaged - edge) <= ENGAGE_LIMIT, f"panda allowed controls at t={edge:.2f}, openpilot engaged at t={engaged:.2f}"
 
 
-def _commands(cc) -> tuple[bool, ...]:
-  return cc.latActive, cc.longActive, cc.cruiseControl.cancel, cc.cruiseControl.resume
+def _events(msgs) -> list[float]:
+  # when openpilot's carState shows what makes the panda restrict openpilot: gas or brake pressed, the car's cruise off, cancel pressed
+  events, before = [], None
+  for m in _of(msgs, 'carState'):
+    cs = m.carState
+    now = (cs.gasPressed, cs.brakePressed, not cs.cruiseState.enabled)
+    cancel = any(str(b.type) == 'cancel' and b.pressed for b in cs.buttonEvents)
+    if (before is not None and any(n and not b for n, b in zip(now, before, strict=True))) or cancel:
+      events.append(_t(msgs, m))
+    before = now
+  return events
 
 
 def none_blocked(msgs) -> Check:
   engaged = _first_engaged(msgs)
   if engaged is None:
-    return True, "never engaged, no TX checked"
-  # while the car's CAN runs. when openpilot stops a command, disengaged, overridden or cruise already off, the panda sees why on its
-  # CAN before openpilot does, the one frame of each message openpilot already sent is rightly blocked. a second is openpilot
-  # commanding after it should have seen it
-  last = max((_t(msgs, m) for m in _of(msgs, 'can') if any(c.src < 3 for c in m.can)), default=0.)
-  commands = [(_t(msgs, m), _commands(m.carControl)) for m in _of(msgs, 'carControl')]
-  stops = [t for (_, before), (t, now) in zip(commands, commands[1:], strict=False) if any(b and not n for b, n in zip(before, now, strict=True))]
-  in_flight: set[tuple[float, int, int]] = set()
-  blocked = []
+    return None, "never engaged, no TX checked"
+  # while the car's CAN runs. the panda restricts openpilot when the car's CAN shows why, openpilot when its carState does. a blocked
+  # frame openpilot sent before that carState was on its way, one sent after is openpilot acting on what it knew before
+  last = max(_car_can(msgs), default=0.)
+  events = _events(msgs)
+  sent: dict[tuple[int, int, bytes], list[float]] = {}
+  for m in _of(msgs, 'sendcan'):
+    for c in m.sendcan:
+      sent.setdefault((c.address, c.src, bytes(c.dat)), []).append(_t(msgs, m))
+  excused, blocked = 0, []
   for m in _of(msgs, 'can'):
     t = _t(msgs, m)
     if not engaged <= t <= last:
@@ -66,15 +85,19 @@ def none_blocked(msgs) -> Check:
     for c in m.can:
       if c.src < BLOCKED:
         continue
-      stop = next((s for s in stops if abs(t - s) <= IN_FLIGHT), None)
-      if stop is not None and (stop, c.address, c.src) not in in_flight:
-        in_flight.add((stop, c.address, c.src))
+      send = max((s for s in sent.get((c.address, c.src - BLOCKED, bytes(c.dat)), []) if s <= t), default=None)
+      if send is None:
+        blocked.append((t, c, "not sent by openpilot"))
+      elif any(send < e and abs(e - t) <= EVENT_WINDOW for e in events):
+        excused += 1
       else:
-        blocked.append((t, c))
+        event = max((e for e in events if e <= send), default=None)
+        why = "no event explains it" if event is None or t - event > EVENT_WINDOW else f"sent {send - event:.3f} s after carState showed the event"
+        blocked.append((t, c, why))
   if blocked:
-    t, c = blocked[0]
-    return False, f"{len(blocked)} TX frames blocked, first {c.address:#x} bus {c.src - BLOCKED} at t={t:.2f}, data {bytes(c.dat).hex()}"
-  return True, f"no TX frames blocked, {len(in_flight)} in flight at {len(stops)} stopped commands"
+    t, c, why = blocked[0]
+    return False, f"{len(blocked)} TX frames blocked, first {c.address:#x} bus {c.src - BLOCKED} at t={t:.2f} {why}, data {bytes(c.dat).hex()}"
+  return True, f"no TX frames blocked, {excused} sent before an event openpilot couldn't know yet"
 
 
 def no_new_faults(msgs) -> Check:
@@ -83,18 +106,19 @@ def no_new_faults(msgs) -> Check:
     return False, "no pandaStates"
   before = {str(f) for f in states[0].pandaStates[0].faults}
   new = sorted({str(f) for m in states for f in m.pandaStates[0].faults} - before)
-  return not new, f"new panda faults {', '.join(new)}" if new else "no new panda faults"
+  start = f", at start {', '.join(sorted(before))}" if before else ""
+  return not new, (f"new panda faults {', '.join(new)}" if new else "no new panda faults") + start
 
 
 def dropped_on_can_loss(msgs) -> Check:
   # the panda's own timer and safety tick: controls_allowed drops CAN_LOSS_DROP s after the last car frame it received
-  received = [_t(msgs, m) for m in _of(msgs, 'can') if any(c.src < 3 for c in m.can)]
+  received = _car_can(msgs)
   if not received:
     return False, "no car CAN received"
   last = received[-1]
   after = [m for m in _of(msgs, 'pandaStates') if _t(msgs, m) > last]
   if not after or not after[0].pandaStates[0].controlsAllowed:
-    return True, f"controls weren't allowed when the car's CAN stopped at t={last:.2f}, nothing to time"
+    return None, f"controls weren't allowed when the car's CAN stopped at t={last:.2f}, nothing to time"
   drop = next((m for m in after if not m.pandaStates[0].controlsAllowed), None)
   if drop is None:
     return False, f"car CAN stopped at t={last:.2f}, the panda still allowed controls {_t(msgs, after[-1]) - last:.2f} s later"
@@ -108,12 +132,13 @@ def dropped_on_can_loss(msgs) -> Check:
   # else openpilot saw the CAN missing first and disengaged, the panda follows its heartbeat
   disengaged = next((_t(msgs, m) for m in _of(msgs, 'selfdriveState') if _t(msgs, m) > last and not m.selfdriveState.enabled), None)
   ok = disengaged is not None and disengaged < _t(msgs, drop) and delay <= CAN_LOSS_DROP[1]
-  after = "never disengaged" if disengaged is None else f"disengaged {disengaged - last:.2f} s later"
-  return ok, f"car CAN stopped at t={last:.2f}, openpilot {after}, controls dropped {delay:.2f} s later with rx checks valid (limit {CAN_LOSS_DROP[1]:g} s)"
+  seen = "never disengaged" if disengaged is None else f"disengaged {disengaged - last:.2f} s later"
+  return ok, f"car CAN stopped at t={last:.2f}, openpilot {seen}, controls dropped {delay:.2f} s later with rx checks valid (limit {CAN_LOSS_DROP[1]:g} s)"
 
 
-def check(msgs, car_model: str) -> list[Check]:
+def check(msgs, car_model: str, edge: float) -> list[Check]:
+  # edge: when the route's panda allowed controls, seconds from the start of the recording
   msgs = sorted(msgs, key=lambda m: m.logMonoTime)
   if not msgs:
     return [(False, "nothing recorded")]
-  return [fingerprinted(msgs, car_model), engaged_at_edge(msgs), none_blocked(msgs), no_new_faults(msgs), dropped_on_can_loss(msgs)]
+  return [fingerprinted(msgs, car_model), engaged_at_edge(msgs, edge), none_blocked(msgs), no_new_faults(msgs), dropped_on_can_loss(msgs)]

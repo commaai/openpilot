@@ -21,3 +21,11 @@ def can(t: float, frames: list[tuple[int, int]], dat: bytes = bytes(8)):
   for c, (addr, src) in zip(m.can, frames, strict=True):
     c.address, c.dat, c.src = addr, dat, src
   return m
+
+
+def sendcan(t: float, frames: list[tuple[int, int]], dat: bytes = bytes(8)):
+  m = new_message('sendcan', len(frames))
+  m.logMonoTime = int(t * 1e9)
+  for c, (addr, bus) in zip(m.sendcan, frames, strict=True):
+    c.address, c.dat, c.src = addr, dat, bus
+  return m

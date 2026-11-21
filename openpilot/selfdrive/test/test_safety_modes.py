@@ -7,6 +7,7 @@ import signal
 import subprocess
 import sys
 import time
+import traceback
 from concurrent.futures import ProcessPoolExecutor
 
 import openpilot.cereal.messaging as messaging
@@ -22,7 +23,7 @@ PANDA_LIMIT = 45.
 # seconds recorded after the car's CAN stops, the panda drops controls within 2 s
 QUIET = 3.
 ROAD_CAMERAS = ('narrowRoadCameraState', 'wideRoadCameraState')
-RECORD = ('can', 'pandaStates', 'selfdriveState', 'carControl', 'carParams', 'cabinCameraState', *ROAD_CAMERAS)
+RECORD = ('can', 'sendcan', 'pandaStates', 'selfdriveState', 'carState', 'carParams', 'cabinCameraState', *ROAD_CAMERAS)
 
 
 class RigProblem(Exception):
@@ -46,7 +47,7 @@ def start_manager(route: CarTestRoute, window: Window) -> subprocess.Popen:
   env = os.environ | {'TESTING_CLOSET': '1', 'BLOCK': 'soundd'}
   # card fingerprints from the CAN and the route's firmware, and gets the car when the firmware doesn't identify it.
   # without firmware it would query the UP, which doesn't answer
-  env.pop('FINGERPRINT')
+  env.pop('FINGERPRINT', None)
   if window.given:
     env['FINGERPRINT'] = str(route.car_model)
   if window.cache is None:
@@ -171,15 +172,16 @@ def run(up, route: CarTestRoute, window: Window) -> tuple[str, list[str]]:
   msgs = []
   try:
     msgs = drive(up, route, window, times)
-    checks = check(msgs, str(route.car_model))
-    status = "passed" if all(ok for ok, _ in checks) else "failed"
-    lines = [f"{'✓' if ok else '✗'} {text}" for ok, text in checks]
+    checks = check(msgs, str(route.car_model), LEAD)
+    status = "passed" if all(ok is not False for ok, _ in checks) else "failed"
+    lines = [f"{'–' if ok is None else '✓' if ok else '✗'} {text}" for ok, text in checks]
   except RigProblem as e:
     status, lines = "rig problem", [str(e)]
-  except Exception as e:
-    status, lines = "failed", [repr(e)]
+  except Exception:
+    status, lines = "failed", traceback.format_exc().splitlines()
   given = ", fingerprint given, the route's firmware doesn't identify the car" if window.given else ""
-  lines.insert(0, f"route {route.route} segment {window.segment}, engage edge at {window.start + LEAD:.1f} s, {window.disengages} disengagements{given}")
+  edge = f"its panda allows controls {window.start + LEAD:.1f} s into the segment, t={LEAD:.1f} s in the recording"
+  lines.insert(0, f"route {route.route} segment {window.segment}, {edge}, {window.disengages} disengagements{given}")
   lines.insert(1, timing(times, msgs))
   return status, lines
 
@@ -203,7 +205,7 @@ def main() -> None:
     t = time.monotonic()
     if route is None or window is None:
       counts["not driven"] += 1
-      print(f"⚪ {mode} {param}  none of its {len(group)} routes engages in its test segments", flush=True)
+      print(f"⚪ {mode} {param}  none of its {len(group)} routes engages in its test segments with the longitudinal the DUT gets", flush=True)
       continue
     print(f"=== {mode} {param} {route.car_model} {route.route} ===", flush=True)
     status, lines = run(up, route, window)
@@ -217,7 +219,9 @@ def main() -> None:
       break
 
   end_manager_output()
-  extra = "".join(f", {counts[k]} {k}" for k in ("rig problem", "not driven") if counts[k])
+  # after a rig problem the rest isn't run
+  counts["not run"] = len(groups) - sum(counts.values())
+  extra = "".join(f", {counts[k]} {k}" for k in ("rig problem", "not driven", "not run") if counts[k])
   print(f"{job}: {counts['passed']} passed, {counts['failed']} failed{extra}, {(time.monotonic() - start) / 60:.1f} min", flush=True)
   sys.exit(counts["failed"] + counts["rig problem"] > 0)
 
