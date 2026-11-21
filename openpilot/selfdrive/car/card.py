@@ -66,11 +66,12 @@ class Car:
   def __init__(self, CI=None, RI=None) -> None:
     self.can_sock = messaging.sub_sock('can', timeout=20)
     self.sm = messaging.SubMaster(['pandaStates', 'carControl', 'onroadEvents'])
+    self.cc_sock = messaging.sub_sock('carControl', conflate=True)
     self.pm = messaging.PubMaster(['sendcan', 'carState', 'carParams', 'carOutput', 'radarTracks'])
 
     self.can_rcv_cum_timeout_counter = 0
 
-    self.CC_prev = car.CarControl.new_message()
+    self.enabled_prev = False
     self.CS_prev = car.CarState.new_message()
     self.initialized_prev = False
 
@@ -180,10 +181,12 @@ class Car:
     if can_rcv_valid and REPLAY:
       self.can_log_mono_time = messaging.log_from_bytes(can_strs[0]).logMonoTime
 
-    self.v_cruise_helper.update_v_cruise(CS, self.sm['carControl'].enabled, self.is_metric)
-    if self.sm['carControl'].enabled and not self.CC_prev.enabled:
+    enabled = self.sm['carControl'].enabled
+    self.v_cruise_helper.update_v_cruise(CS, enabled, self.is_metric)
+    if enabled and not self.enabled_prev:
       # Use CarState w/ buttons from the step selfdrived enables on
       self.v_cruise_helper.initialize_v_cruise(self.CS_prev, self.initial_cruise_speed)
+    self.enabled_prev = enabled
 
     # TODO: mirror the carState.cruiseState struct?
     CS.vCruise = float(self.v_cruise_helper.v_cruise_kph)
@@ -238,17 +241,28 @@ class Car:
       self.last_actuators_output, can_sends = self.CI.apply(CC, now_nanos)
       self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
 
-      self.CC_prev = CC
+  def recv_carcontrol(self, after_nanos: int):
+    # the first carControl controlsd sends after this carState, None if it misses the deadline
+    deadline = time.monotonic() + 0.01
+    while (remaining := deadline - time.monotonic()) > 0:
+      self.cc_sock.setTimeout(max(1, int(remaining * 1000)))
+      msg = messaging.recv_one(self.cc_sock)
+      if msg is not None and msg.logMonoTime > after_nanos:
+        return msg.carControl
+    return None
 
   def step(self):
     CS, RD = self.state_update()
 
+    cs_nanos = int(time.monotonic() * 1e9)
     self.state_publish(CS, RD)
 
     initialized = (not any(e.name == EventName.selfdriveInitializing for e in self.sm['onroadEvents']) and
                    self.sm.seen['onroadEvents'])
     if not self.CP.passive and initialized:
-      self.controls_update(CS, self.sm['carControl'])
+      # the panda already acts on this carState's CAN, actuate the carControl controlsd makes from it
+      cc = None if REPLAY or not self.sm.all_alive(['carControl']) else self.recv_carcontrol(cs_nanos)
+      self.controls_update(CS, self.sm['carControl'] if cc is None else cc)
 
     self.initialized_prev = initialized
     self.CS_prev = CS

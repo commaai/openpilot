@@ -530,6 +530,14 @@ class SelfdriveD:
     self.AM.process_alerts(self.sm.frame, clear_event_types)
 
   def publish_selfdriveState(self, CS):
+    # onroadEvents first, controlsd runs on selfdriveState and uses them, logged every second or on change
+    if (self.sm.frame % int(1. / DT_CTRL) == 0) or (self.events.names != self.events_prev):
+      ce_send = messaging.new_message('onroadEvents', len(self.events))
+      ce_send.valid = True
+      ce_send.onroadEvents = self.events.to_msg()
+      self.pm.send('onroadEvents', ce_send)
+    self.events_prev = self.events.names.copy()
+
     # selfdriveState
     ss_msg = messaging.new_message('selfdriveState')
     ss_msg.valid = True
@@ -549,14 +557,6 @@ class SelfdriveD:
     ss.alertHudVisual = self.AM.current_alert.visual_alert
 
     self.pm.send('selfdriveState', ss_msg)
-
-    # onroadEvents - logged every second or on change
-    if (self.sm.frame % int(1. / DT_CTRL) == 0) or (self.events.names != self.events_prev):
-      ce_send = messaging.new_message('onroadEvents', len(self.events))
-      ce_send.valid = True
-      ce_send.onroadEvents = self.events.to_msg()
-      self.pm.send('onroadEvents', ce_send)
-    self.events_prev = self.events.names.copy()
 
   def step(self):
     CS = self.data_sample()
