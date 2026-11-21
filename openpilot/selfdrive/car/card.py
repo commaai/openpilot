@@ -232,7 +232,10 @@ class Car:
       # signal pandad to switch to car safety mode
       self.params.put_bool("ControlsReady", True)
 
-    if self.sm.all_alive(['carControl']):
+    # until pandad set the car's safety mode the panda blocks every frame
+    pandas = self.sm['pandaStates']
+    safety_set = len(pandas) > 0 and all(ps.safetyModel == cfg.safetyModel for ps, cfg in zip(pandas, self.CP.safetyConfigs, strict=False))
+    if self.sm.all_alive(['carControl']) and safety_set:
       # send car controls over can
       now_nanos = self.can_log_mono_time if REPLAY else int(time.monotonic() * 1e9)
       self.last_actuators_output, can_sends = self.CI.apply(CC, now_nanos)
