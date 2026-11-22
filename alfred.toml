@@ -13,7 +13,6 @@ MKL_NUM_THREADS = "1"
 NUMEXPR_NUM_THREADS = "1"
 OPENBLAS_NUM_THREADS = "1"
 VECLIB_MAXIMUM_THREADS = "1"
-QCOM_PRIORITY = "12"
 
 # with the submodule package symlinks launch_chffrplus.sh makes
 [steps.build]
