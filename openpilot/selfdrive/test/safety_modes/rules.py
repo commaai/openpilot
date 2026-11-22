@@ -5,6 +5,7 @@ ENGAGE_LIMIT = 2.
 EDGE_LIMIT = 3.
 # a can message's src: the car's frames on bus 0-2, what the panda sent 128 + bus, what it blocked 192 + bus
 BUSES = 3
+SENT = 128
 BLOCKED = 192
 # once the car's CAN stops, the panda flags its rx checks lagging 1 s after their own last frame, checked at 1 Hz, and drops
 # controls_allowed. they're >= 10 Hz, the last can come 0.1 s before the car's last frame
@@ -51,11 +52,12 @@ def engaged_at_edge(msgs, expected: float) -> Check:
 
 
 def none_blocked(msgs) -> Check:
-  # no frame openpilot sends is blocked while the car's CAN runs, after it stops the panda drops controls on its own timer
+  # openpilot sends and no frame is blocked while the car's CAN runs, after it stops the panda drops controls on its own timer
   last = max(_car_can(msgs), default=0.)
-  blocked = [(_t(msgs, m), c) for m in _of(msgs, 'can') if _t(msgs, m) <= last for c in m.can if c.src >= BLOCKED]
+  tx = [(_t(msgs, m), c) for m in _of(msgs, 'can') if _t(msgs, m) <= last for c in m.can if c.src >= SENT]
+  blocked = [(t, c) for t, c in tx if c.src >= BLOCKED]
   if not blocked:
-    return True, "no TX frames blocked"
+    return len(tx) > 0, f"{len(tx)} TX frames sent, none blocked"
   t, c = blocked[0]
   return False, f"{len(blocked)} TX frames blocked, first {c.address:#x} bus {c.src - BLOCKED} at t={t:.2f}, data {bytes(c.dat).hex()}"
 

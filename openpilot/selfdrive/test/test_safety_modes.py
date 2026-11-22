@@ -174,7 +174,7 @@ def run(up, route: CarTestRoute, window: Window) -> tuple[str, list[str]]:
     msgs = drive(up, route, window, times)
     checks = check(msgs, str(route.car_model), LEAD)
     status = "passed" if all(ok is not False for ok, _ in checks) else "failed"
-    lines = [f"{'–' if ok is None else '✓' if ok else '✗'} {text}" for ok, text in checks]
+    lines = [f"{'-' if ok is None else '✓' if ok else '✗'} {text}" for ok, text in checks]
   except RigProblem as e:
     status, lines = "rig problem", [str(e)]
   except Exception:

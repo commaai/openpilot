@@ -1,5 +1,5 @@
 from openpilot.common.test import OpenpilotTestCase
-from openpilot.selfdrive.test.safety_modes.rules import check, dropped_on_can_loss, engaged_at_edge, fingerprinted, no_new_faults, none_blocked
+from openpilot.selfdrive.test.safety_modes.rules import SENT, check, dropped_on_can_loss, engaged_at_edge, fingerprinted, no_new_faults, none_blocked
 from openpilot.selfdrive.test.safety_modes.tests.helpers import can, msg, panda
 
 CAR = 'TOYOTA_COROLLA_TSS2'
@@ -61,6 +61,11 @@ class TestRules(OpenpilotTestCase):
     assert none_blocked(drive(engage_at=99.) + [can(1., [(0x2e4, 192)])])[0] is False
     # after the car's CAN stopped the panda drops controls on its own timer
     assert none_blocked(blocked(14.))[0]
+
+  def test_nothing_sent(self):
+    # a card that never sends doesn't pass
+    assert none_blocked(drive())[0]
+    assert none_blocked([m for m in drive() if m.which() != 'can' or m.can[0].src < SENT])[0] is False
 
   def test_faults(self):
     msgs = sorted(drive(), key=lambda m: m.logMonoTime)
