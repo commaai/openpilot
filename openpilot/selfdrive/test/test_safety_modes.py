@@ -23,7 +23,7 @@ PANDA_LIMIT = 45.
 # seconds recorded after the car's CAN stops, the panda drops controls within 2 s
 QUIET = 3.
 ROAD_CAMERAS = ('narrowRoadCameraState', 'wideRoadCameraState')
-RECORD = ('can', 'sendcan', 'pandaStates', 'selfdriveState', 'carState', 'carParams', 'cabinCameraState', *ROAD_CAMERAS)
+RECORD = ('can', 'pandaStates', 'selfdriveState', 'carParams', 'cabinCameraState', *ROAD_CAMERAS)
 
 
 class RigProblem(Exception):

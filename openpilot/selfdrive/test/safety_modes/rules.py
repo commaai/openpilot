@@ -9,8 +9,6 @@ BLOCKED = 192
 # once the car's CAN stops, the panda flags its rx checks lagging 1 s after their own last frame, checked at 1 Hz, and drops
 # controls_allowed. they're >= 10 Hz, the last can come 0.1 s before the car's last frame
 CAN_LOSS_DROP = (0.9, 2.5)
-# seconds between a blocked frame and the event in openpilot's carState that explains it
-EVENT_WINDOW = 0.5
 
 Check = tuple[bool | None, str]
 
@@ -52,52 +50,14 @@ def engaged_at_edge(msgs, expected: float) -> Check:
   return abs(engaged - edge) <= ENGAGE_LIMIT, f"panda allowed controls at t={edge:.2f}, openpilot engaged at t={engaged:.2f}"
 
 
-def _events(msgs) -> list[float]:
-  # when openpilot's carState shows what makes the panda restrict openpilot: gas or brake pressed, the car's cruise off, cancel pressed
-  events, before = [], None
-  for m in _of(msgs, 'carState'):
-    cs = m.carState
-    now = (cs.gasPressed, cs.brakePressed, not cs.cruiseState.enabled)
-    cancel = any(str(b.type) == 'cancel' and b.pressed for b in cs.buttonEvents)
-    if (before is not None and any(n and not b for n, b in zip(now, before, strict=True))) or cancel:
-      events.append(_t(msgs, m))
-    before = now
-  return events
-
-
 def none_blocked(msgs) -> Check:
-  engaged = _first_engaged(msgs)
-  if engaged is None:
-    return None, "never engaged, no TX checked"
-  # while the car's CAN runs. the panda restricts openpilot when the car's CAN shows why, openpilot when its carState does. a blocked
-  # frame openpilot sent before that carState was on its way, one sent after is openpilot acting on what it knew before
+  # no frame openpilot sends is blocked while the car's CAN runs, after it stops the panda drops controls on its own timer
   last = max(_car_can(msgs), default=0.)
-  events = _events(msgs)
-  sent: dict[tuple[int, int, bytes], list[float]] = {}
-  for m in _of(msgs, 'sendcan'):
-    for c in m.sendcan:
-      sent.setdefault((c.address, c.src, bytes(c.dat)), []).append(_t(msgs, m))
-  excused, blocked = 0, []
-  for m in _of(msgs, 'can'):
-    t = _t(msgs, m)
-    if not engaged <= t <= last:
-      continue
-    for c in m.can:
-      if c.src < BLOCKED:
-        continue
-      send = max((s for s in sent.get((c.address, c.src - BLOCKED, bytes(c.dat)), []) if s <= t), default=None)
-      if send is None:
-        blocked.append((t, c, "not sent by openpilot"))
-      elif any(send < e and abs(e - t) <= EVENT_WINDOW for e in events):
-        excused += 1
-      else:
-        event = max((e for e in events if e <= send), default=None)
-        why = "no event explains it" if event is None or t - event > EVENT_WINDOW else f"sent {send - event:.3f} s after carState showed the event"
-        blocked.append((t, c, why))
-  if blocked:
-    t, c, why = blocked[0]
-    return False, f"{len(blocked)} TX frames blocked, first {c.address:#x} bus {c.src - BLOCKED} at t={t:.2f} {why}, data {bytes(c.dat).hex()}"
-  return True, f"no TX frames blocked, {excused} sent before an event openpilot couldn't know yet"
+  blocked = [(_t(msgs, m), c) for m in _of(msgs, 'can') if _t(msgs, m) <= last for c in m.can if c.src >= BLOCKED]
+  if not blocked:
+    return True, "no TX frames blocked"
+  t, c = blocked[0]
+  return False, f"{len(blocked)} TX frames blocked, first {c.address:#x} bus {c.src - BLOCKED} at t={t:.2f}, data {bytes(c.dat).hex()}"
 
 
 def no_new_faults(msgs) -> Check:

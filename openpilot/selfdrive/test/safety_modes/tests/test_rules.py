@@ -1,6 +1,6 @@
 from openpilot.common.test import OpenpilotTestCase
 from openpilot.selfdrive.test.safety_modes.rules import check, dropped_on_can_loss, engaged_at_edge, fingerprinted, no_new_faults, none_blocked
-from openpilot.selfdrive.test.safety_modes.tests.helpers import can, msg, panda, sendcan
+from openpilot.selfdrive.test.safety_modes.tests.helpers import can, msg, panda
 
 CAR = 'TOYOTA_COROLLA_TSS2'
 # when the fake drive's panda allows controls
@@ -11,16 +11,12 @@ QUIET = 3.
 DT_LAST = 0.1
 
 
-def drive(engage_at: float = 2.5, allowed_at: float = 2., end: float = 15., drop_after: float = 1.5, disengage_at: float = 99.,
-          gas_at: float = 99.) -> list:
-  # 10 Hz from t=0, the panda allows controls at allowed_at, openpilot engages at engage_at, the driver brakes at disengage_at
-  # and presses gas at gas_at
+def drive(engage_at: float = 2.5, allowed_at: float = 2., end: float = 15., drop_after: float = 1.5, disengage_at: float = 99.) -> list:
+  # 10 Hz from t=0, the panda allows controls at allowed_at, openpilot engages at engage_at and disengages at disengage_at
   msgs = [msg('carParams', 0., carFingerprint=CAR)]
   for i in range(int(end * 10)):
     t = i / 10
-    cs = msg('carState', t, gasPressed=t >= gas_at, brakePressed=t >= disengage_at)
-    cs.carState.cruiseState.enabled = engage_at <= t < disengage_at
-    msgs += [panda(t, t >= allowed_at), msg('selfdriveState', t, enabled=engage_at <= t < disengage_at), cs, can(t, [(0x2e4, 128)])]
+    msgs += [panda(t, t >= allowed_at), msg('selfdriveState', t, enabled=engage_at <= t < disengage_at), can(t, [(0x2e4, 128)])]
     if t < end - QUIET:
       msgs.append(can(t, [(0xaa, 0)]))
   # the panda drops controls drop_after s after the car's last frame
@@ -31,9 +27,8 @@ def drive(engage_at: float = 2.5, allowed_at: float = 2., end: float = 15., drop
   return msgs
 
 
-def blocked(msgs: list, *frames: tuple[float, float, int]) -> bool | None:
-  # (sent, blocked, address) of frames openpilot sent and the panda blocked
-  return none_blocked(msgs + [m for s, b, addr in frames for m in (sendcan(s, [(addr, 0)]), can(b, [(addr, 192)]))])[0]
+def blocked(t: float) -> list:
+  return drive() + [can(t, [(0x2e4, 192)])]
 
 
 class TestRules(OpenpilotTestCase):
@@ -56,40 +51,16 @@ class TestRules(OpenpilotTestCase):
     assert engaged_at_edge(drive(), 2. + 3.1)[0] is False
 
   def test_nothing_to_check(self):
-    # never engaged, controls not allowed when the CAN stopped: skipped, not passed
-    assert none_blocked(drive(engage_at=99.))[0] is None
+    # controls not allowed when the CAN stopped: skipped, not passed
     assert dropped_on_can_loss(drive(allowed_at=99., engage_at=99.))[0] is None
 
   def test_blocked(self):
-    # before openpilot engaged and after the car's CAN stopped nothing is checked, while engaged a block nothing explains fails
-    assert blocked(drive(), (0.9, 1., 0x2e4))
-    assert blocked(drive(), (13.9, 14., 0x2e4))
-    assert blocked(drive(), (2.9, 3., 0x2e4)) is False
-    # a blocked frame openpilot never sent
-    assert none_blocked(drive(disengage_at=8.) + [can(8.01, [(0x2e4, 192)])])[0] is False
-
-  def test_blocked_at_disengage(self):
-    # the driver brakes, openpilot's carState shows it at t=8. what it sent before was on its way, batched or not
-    assert blocked(drive(disengage_at=8.), (7.99, 8.01, 0x2e4))
-    assert blocked(drive(disengage_at=8.), (7.98, 8.01, 0x2e4), (7.99, 8.01, 0x2e4))
-    # sent after its carState showed the brake: acting on what it knew before
-    assert blocked(drive(disengage_at=8.), (8.01, 8.02, 0x2e4)) is False
-    # an event long after doesn't explain it
-    assert blocked(drive(disengage_at=8.), (6.99, 7., 0x2e4)) is False
-
-  def test_blocked_at_gas(self):
-    # openpilot stays engaged, the panda blocks its acceleration while gas is pressed
-    assert blocked(drive(gas_at=8.), (7.99, 8.01, 0x343))
-    assert blocked(drive(gas_at=8.), (8.01, 8.02, 0x343)) is False
-
-  def test_blocked_at_cruise_off(self):
-    # the car's cruise turns off at t=10, openpilot's cancel it sent before is blocked
-    msgs = drive()
-    for m in msgs:
-      if m.which() == 'carState':
-        m.carState.cruiseState.enabled = 2.5 <= m.logMonoTime * 1e-9 < 10.
-    assert blocked(msgs, (9.99, 10.01, 0x4f1))
-    assert blocked(msgs, (10.01, 10.02, 0x4f1)) is False
+    # any blocked frame while the car's CAN runs, before openpilot engaged too
+    assert none_blocked(blocked(1.))[0] is False
+    assert none_blocked(blocked(8.))[0] is False
+    assert none_blocked(drive(engage_at=99.) + [can(1., [(0x2e4, 192)])])[0] is False
+    # after the car's CAN stopped the panda drops controls on its own timer
+    assert none_blocked(blocked(14.))[0]
 
   def test_faults(self):
     msgs = sorted(drive(), key=lambda m: m.logMonoTime)

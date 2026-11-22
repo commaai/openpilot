@@ -1,4 +1,5 @@
-# a test route's window the UP plays: its first engagement after the route's panda was in the car's safety mode, to the segment's end
+# a test route's window the UP plays: its first engagement after the route's panda was in the car's safety mode, to TAIL s after the
+# last event the route shows
 import hashlib
 import os
 import pickle
@@ -20,6 +21,8 @@ DT = 0.01
 # and seconds it holds controls_allowed after it
 LEAD = 10.
 ENGAGED = 3.
+# seconds played after the route's last event, openpilot's frames around it are what's checked
+TAIL = 2.
 # before the route's panda is in a car's safety mode the recording is the old device's relay and forwarding, not the car's
 NO_CAR_MODES = ('silent', 'noOutput', 'elm327', 'allOutput')
 
@@ -85,8 +88,29 @@ def find_edge(samples: list[tuple[float, bool]], can_end: float, cruise_on: Sequ
   return None
 
 
-def count_disengages(samples: list[tuple[float, bool]], edge: float) -> int:
-  return sum(before and not allowed and t > edge for (_, before), (t, allowed) in zip(samples, samples[1:], strict=False))
+def disengages(samples: list[tuple[float, bool]], edge: float) -> list[float]:
+  return [t for (_, before), (t, allowed) in zip(samples, samples[1:], strict=False) if before and not allowed and t > edge]
+
+
+def car_events(msgs) -> list[float]:
+  # when the route's carState shows what makes the panda restrict openpilot: gas or brake pressed, the car's cruise off, cancel pressed
+  events, before = [], None
+  for m in msgs:
+    if m.which() != 'carState':
+      continue
+    cs = m.carState
+    now = (cs.gasPressed, cs.brakePressed, not cs.cruiseState.enabled)
+    cancel = any(str(b.type) == 'cancel' and b.pressed for b in cs.buttonEvents)
+    if (before is not None and any(n and not b for n, b in zip(now, before, strict=True))) or cancel:
+      events.append(m.logMonoTime * 1e-9)
+    before = now
+  return events
+
+
+def window_end(msgs, samples: list[tuple[float, bool]], edge: float, can_end: float) -> float:
+  # TAIL s after the last disengagement or carState event of the route that makes the panda restrict openpilot
+  events = disengages(samples, edge) + [t for t in car_events(msgs) if t > edge]
+  return min(max([edge + ENGAGED] + [t + TAIL for t in events]), can_end)
 
 
 def bin_frames(msgs, start: float, seconds: float) -> list[Frame]:
@@ -135,7 +159,8 @@ def parse_window(route: CarTestRoute) -> tuple[tuple[int, float, list[Frame], in
     if edge is not None:
       start = edge - LEAD
       logged_bytes = None if logged is None else logged.as_builder().to_bytes()
-      return (segment, start - can[0], bin_frames(msgs, start, can[-1] - start + DT), count_disengages(samples, edge), logged_bytes), complete
+      end = window_end(msgs, samples, edge, can[-1])
+      return (segment, start - can[0], bin_frames(msgs, start, end - start + DT), len(disengages(samples, edge)), logged_bytes), complete
   return None, complete
 
 

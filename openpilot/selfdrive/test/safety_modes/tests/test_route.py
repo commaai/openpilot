@@ -1,5 +1,7 @@
+import pytest
+
 from openpilot.common.test import OpenpilotTestCase
-from openpilot.selfdrive.test.safety_modes.route import ENGAGED, LEAD, bin_frames, car_mode_samples, count_disengages, find_edge
+from openpilot.selfdrive.test.safety_modes.route import ENGAGED, LEAD, TAIL, bin_frames, car_mode_samples, disengages, find_edge, window_end
 from openpilot.selfdrive.test.safety_modes.tests.helpers import can, msg, panda
 
 
@@ -42,8 +44,17 @@ class TestWindow(OpenpilotTestCase):
   def test_disengages(self):
     # only the falls after the edge
     s = samples((0., True), (5., False), (20., True), (30., False), (35., True), (40., False))
-    assert count_disengages(s, 20.) == 2
-    assert count_disengages(s, 35.) == 1
+    assert disengages(s, 20.) == pytest.approx([30., 40.])
+    assert disengages(s, 35.) == pytest.approx([40.])
+
+  def test_end(self):
+    # TAIL s after the route's last disengagement or carState event, at least ENGAGED s after the edge, at most the CAN's end
+    s = samples((0., False), (20., True), (30., False))
+    gas = [msg('carState', 0.), msg('carState', 26., gasPressed=True)]
+    assert window_end(gas, samples((0., False), (20., True)), 20., 60.) == 26. + TAIL
+    assert window_end(gas, s, 20., 60.) == 30. + TAIL
+    assert window_end([msg('carState', 0.)], samples((0., False), (20., True)), 20., 60.) == 20. + ENGAGED
+    assert window_end(gas, s, 20., 31.) == 31.
 
 
 class TestFrames:
