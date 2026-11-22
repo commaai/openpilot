@@ -21,3 +21,13 @@ def can(t: float, frames: list[tuple[int, int]], dat: bytes = bytes(8)):
   for c, (addr, src) in zip(m.can, frames, strict=True):
     c.address, c.dat, c.src = addr, dat, src
   return m
+
+
+def manager(t: float, procs: dict[str, tuple[bool, int]]):
+  # name: (running, pid) of processes that should run
+  m = new_message('managerState')
+  m.logMonoTime = int(t * 1e9)
+  ps = m.managerState.init('processes', len(procs))
+  for p, (name, (running, pid)) in zip(ps, procs.items(), strict=True):
+    p.name, p.running, p.pid, p.shouldBeRunning = name, running, pid, True
+  return m

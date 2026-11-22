@@ -62,6 +62,24 @@ def none_blocked(msgs) -> Check:
   return False, f"{len(blocked)} TX frames blocked, first {c.address:#x} bus {c.src - BLOCKED} at t={t:.2f}, data {bytes(c.dat).hex()}"
 
 
+def none_died(msgs) -> Check:
+  # a process that should run stops or restarts, like card crashing on a frame it makes
+  states = _of(msgs, 'managerState')
+  if not states:
+    return False, "no managerState"
+  pids: dict[str, int] = {}
+  died: set[str] = set()
+  for m in states:
+    for p in m.managerState.processes:
+      if not p.shouldBeRunning:
+        pids.pop(p.name, None)
+      elif p.running and p.name not in pids:
+        pids[p.name] = p.pid
+      elif p.name in pids and (not p.running or p.pid != pids[p.name]):
+        died.add(p.name)
+  return not died, f"died: {', '.join(sorted(died))}" if died else "no process died"
+
+
 def no_new_faults(msgs) -> Check:
   states = _of(msgs, 'pandaStates')
   if not states:
@@ -103,4 +121,5 @@ def check(msgs, car_model: str, edge: float) -> list[Check]:
   msgs = sorted(msgs, key=lambda m: m.logMonoTime)
   if not msgs:
     return [(False, "nothing recorded")]
-  return [fingerprinted(msgs, car_model), engaged_at_edge(msgs, edge), none_blocked(msgs), no_new_faults(msgs), dropped_on_can_loss(msgs)]
+  return [fingerprinted(msgs, car_model), engaged_at_edge(msgs, edge), none_blocked(msgs), none_died(msgs), no_new_faults(msgs),
+          dropped_on_can_loss(msgs)]

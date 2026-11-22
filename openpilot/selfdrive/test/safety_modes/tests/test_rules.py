@@ -1,6 +1,7 @@
 from openpilot.common.test import OpenpilotTestCase
-from openpilot.selfdrive.test.safety_modes.rules import SENT, check, dropped_on_can_loss, engaged_at_edge, fingerprinted, no_new_faults, none_blocked
-from openpilot.selfdrive.test.safety_modes.tests.helpers import can, msg, panda
+from openpilot.selfdrive.test.safety_modes.rules import SENT, check, dropped_on_can_loss, engaged_at_edge, fingerprinted, no_new_faults, none_blocked, \
+  none_died
+from openpilot.selfdrive.test.safety_modes.tests.helpers import can, manager, msg, panda
 
 CAR = 'TOYOTA_COROLLA_TSS2'
 # when the fake drive's panda allows controls
@@ -16,7 +17,8 @@ def drive(engage_at: float = 2.5, allowed_at: float = 2., end: float = 15., drop
   msgs = [msg('carParams', 0., carFingerprint=CAR)]
   for i in range(int(end * 10)):
     t = i / 10
-    msgs += [panda(t, t >= allowed_at), msg('selfdriveState', t, enabled=engage_at <= t < disengage_at), can(t, [(0x2e4, 128)])]
+    msgs += [panda(t, t >= allowed_at), msg('selfdriveState', t, enabled=engage_at <= t < disengage_at), can(t, [(0x2e4, 128)]),
+             manager(t, {'card': (True, 1)})]
     if t < end - QUIET:
       msgs.append(can(t, [(0xaa, 0)]))
   # the panda drops controls drop_after s after the car's last frame
@@ -66,6 +68,16 @@ class TestRules(OpenpilotTestCase):
     # a card that never sends doesn't pass
     assert none_blocked(drive())[0]
     assert none_blocked([m for m in drive() if m.which() != 'can' or m.can[0].src < SENT])[0] is False
+
+  def test_died(self):
+    alive = [manager(t, {'card': (True, 1)}) for t in (1., 2., 3.)]
+    assert none_died(alive)[0]
+    # starting up isn't dying
+    assert none_died([manager(0., {'card': (False, 0)})] + alive)[0]
+    # stopped, or crashed and restarted by manager
+    assert none_died(alive + [manager(4., {'card': (False, 1)})])[0] is False
+    assert none_died(alive + [manager(4., {'card': (True, 2)})])[0] is False
+    assert none_died([])[0] is False
 
   def test_faults(self):
     msgs = sorted(drive(), key=lambda m: m.logMonoTime)
