@@ -17,8 +17,8 @@ DESCRIPTIONS = {
   ),
   "DisengageOnAccelerator": tr_noop("When enabled, pressing the accelerator pedal will disengage openpilot."),
   "LongitudinalPersonality": tr_noop(
-    "Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. " +
-    "Relaxed uses the same following distance as Standard with gentler acceleration. On supported cars, you can cycle through these personalities with " +
+    "Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and more confidently accelerate towards the max speed. " +
+    "Relaxed let's the driving model decide your speed, regardless of max speed. On supported cars, you can cycle through these personalities with " +
     "your steering wheel distance button."
   ),
   "IsLdwEnabled": tr_noop(
