@@ -212,7 +212,13 @@ def main() -> NoReturn:
 
   # connect to modem
   diag = ModemDiag()
-  setup_quectel(diag)
+  # keep trying instead of exiting, a dead qcomgpsd blocks engagement for the whole drive
+  while True:
+    try:
+      setup_quectel(diag)
+      break
+    except Exception:
+      cloudlog.exception("quectel setup failed")
   cloudlog.warning("quectel setup done")
   gpio_init(GPIO.GNSS_PWR_EN, True)
   gpio_set(GPIO.GNSS_PWR_EN, True)
