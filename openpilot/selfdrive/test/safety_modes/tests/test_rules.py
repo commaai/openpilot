@@ -12,12 +12,17 @@ QUIET = 3.
 DT_LAST = 0.1
 
 
-def drive(engage_at: float = 2.5, allowed_at: float = 2., end: float = 15., drop_after: float = 1.5, disengage_at: float = 99.) -> list:
-  # 10 Hz from t=0, the panda allows controls at allowed_at, openpilot engages at engage_at and disengages at disengage_at
-  msgs = [msg('carParams', 0., carFingerprint=CAR)]
+def drive(engage_at: float = 2.5, allowed_at: float = 2., end: float = 15., drop_after: float = 1.5, disengage_at: float = 99.,
+          mode_at: float = 0.5) -> list:
+  # 10 Hz from t=0, pandad sets the car's safety mode at mode_at, the panda allows controls at allowed_at,
+  # openpilot engages at engage_at and disengages at disengage_at
+  cp = msg('carParams', 0., carFingerprint=CAR)
+  cp.carParams.init('safetyConfigs', 1)[0].safetyModel = 'toyota'
+  msgs = [cp]
   for i in range(int(end * 10)):
     t = i / 10
-    msgs += [panda(t, t >= allowed_at), msg('selfdriveState', t, enabled=engage_at <= t < disengage_at), can(t, [(0x2e4, 128)]),
+    mode = 'toyota' if t >= mode_at else 'elm327'
+    msgs += [panda(t, t >= allowed_at, mode=mode), msg('selfdriveState', t, enabled=engage_at <= t < disengage_at), can(t, [(0x2e4, 128)]),
              manager(t, {'card': (True, 1)})]
     if t < end - QUIET:
       msgs.append(can(t, [(0xaa, 0)]))
@@ -63,6 +68,12 @@ class TestRules(OpenpilotTestCase):
     assert none_blocked(drive(engage_at=99.) + [can(1., [(0x2e4, 192)])])[0] is False
     # after the car's CAN stopped the panda drops controls on its own timer
     assert none_blocked(blocked(14.))[0]
+
+  def test_blocked_before_car_mode(self):
+    # before pandad sets the car's safety mode the relay is open and the panda drops every frame
+    assert none_blocked(blocked(0.2))[0]
+    assert none_blocked(blocked(0.5))[0] is False
+    assert none_blocked(drive(mode_at=99.))[0] is False
 
   def test_nothing_sent(self):
     # a card that never sends doesn't pass

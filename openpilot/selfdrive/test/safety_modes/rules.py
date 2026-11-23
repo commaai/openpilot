@@ -52,9 +52,17 @@ def engaged_at_edge(msgs, expected: float) -> Check:
 
 
 def none_blocked(msgs) -> Check:
-  # openpilot sends and no frame is blocked while the car's CAN runs, after it stops the panda drops controls on its own timer
+  # openpilot sends and no frame is blocked from when the panda is in the car's safety mode until the car's CAN stops.
+  # before it the relay is open and the car gets its own frames, after it the panda drops controls on its own timer
+  cps = _of(msgs, 'carParams')
+  if not cps:
+    return False, "no carParams"
+  mode = cps[-1].carParams.safetyConfigs[0].safetyModel
+  start = next((_t(msgs, m) for m in _of(msgs, 'pandaStates') if m.pandaStates[0].safetyModel == mode), None)
+  if start is None:
+    return False, f"the panda never got the car's safety mode {mode}"
   last = max(_car_can(msgs), default=0.)
-  tx = [(_t(msgs, m), c) for m in _of(msgs, 'can') if _t(msgs, m) <= last for c in m.can if c.src >= SENT]
+  tx = [(_t(msgs, m), c) for m in _of(msgs, 'can') if start <= _t(msgs, m) <= last for c in m.can if c.src >= SENT]
   blocked = [(t, c) for t, c in tx if c.src >= BLOCKED]
   if not blocked:
     return len(tx) > 0, f"{len(tx)} TX frames sent, none blocked"
