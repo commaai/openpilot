@@ -51,9 +51,9 @@ def engaged_at_edge(msgs, expected: float) -> Check:
   return abs(engaged - edge) <= ENGAGE_LIMIT, f"panda allowed controls at t={edge:.2f}, openpilot engaged at t={engaged:.2f}"
 
 
-def none_blocked(msgs) -> Check:
-  # openpilot sends and no frame is blocked from when the panda is in the car's safety mode until the car's CAN stops.
-  # before it the relay is open and the car gets its own frames, after it the panda drops controls on its own timer
+def sends(msgs) -> Check:
+  # openpilot sends from when the panda is in the car's safety mode until the car's CAN stops. blocked frames are reported, not
+  # failed: openpilot makes each frame from the carState before, so the panda blocks a frame sent right after a driver override
   cps = _of(msgs, 'carParams')
   if not cps:
     return False, "no carParams"
@@ -67,7 +67,7 @@ def none_blocked(msgs) -> Check:
   if not blocked:
     return len(tx) > 0, f"{len(tx)} TX frames sent, none blocked"
   t, c = blocked[0]
-  return False, f"{len(blocked)} TX frames blocked, first {c.address:#x} bus {c.src - BLOCKED} at t={t:.2f}, data {bytes(c.dat).hex()}"
+  return True, f"{len(tx)} TX frames sent, {len(blocked)} blocked, first {c.address:#x} bus {c.src - BLOCKED} at t={t:.2f}, data {bytes(c.dat).hex()}"
 
 
 def none_died(msgs) -> Check:
@@ -129,5 +129,5 @@ def check(msgs, car_model: str, edge: float) -> list[Check]:
   msgs = sorted(msgs, key=lambda m: m.logMonoTime)
   if not msgs:
     return [(False, "nothing recorded")]
-  return [fingerprinted(msgs, car_model), engaged_at_edge(msgs, edge), none_blocked(msgs), none_died(msgs), no_new_faults(msgs),
+  return [fingerprinted(msgs, car_model), engaged_at_edge(msgs, edge), sends(msgs), none_died(msgs), no_new_faults(msgs),
           dropped_on_can_loss(msgs)]

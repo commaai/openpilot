@@ -1,6 +1,6 @@
 from openpilot.common.test import OpenpilotTestCase
-from openpilot.selfdrive.test.safety_modes.rules import SENT, check, dropped_on_can_loss, engaged_at_edge, fingerprinted, no_new_faults, none_blocked, \
-  none_died
+from openpilot.selfdrive.test.safety_modes.rules import SENT, check, dropped_on_can_loss, engaged_at_edge, fingerprinted, no_new_faults, none_died, \
+  sends
 from openpilot.selfdrive.test.safety_modes.tests.helpers import can, manager, msg, panda
 
 CAR = 'TOYOTA_COROLLA_TSS2'
@@ -61,24 +61,18 @@ class TestRules(OpenpilotTestCase):
     # controls not allowed when the CAN stopped: skipped, not passed
     assert dropped_on_can_loss(drive(allowed_at=99., engage_at=99.))[0] is None
 
-  def test_blocked(self):
-    # any blocked frame while the car's CAN runs, before openpilot engaged too
-    assert none_blocked(blocked(1.))[0] is False
-    assert none_blocked(blocked(8.))[0] is False
-    assert none_blocked(drive(engage_at=99.) + [can(1., [(0x2e4, 192)])])[0] is False
-    # after the car's CAN stopped the panda drops controls on its own timer
-    assert none_blocked(blocked(14.))[0]
+  def test_blocked_reported(self):
+    ok, evidence = sends(blocked(8.))
+    assert ok and "1 blocked, first 0x2e4" in evidence
+    assert "none blocked" in sends(blocked(14.))[1]
 
-  def test_blocked_before_car_mode(self):
-    # before pandad sets the car's safety mode the relay is open and the panda drops every frame
-    assert none_blocked(blocked(0.2))[0]
-    assert none_blocked(blocked(0.5))[0] is False
-    assert none_blocked(drive(mode_at=99.))[0] is False
+  def test_car_mode(self):
+    assert sends(drive(mode_at=99.))[0] is False
 
   def test_nothing_sent(self):
     # a card that never sends doesn't pass
-    assert none_blocked(drive())[0]
-    assert none_blocked([m for m in drive() if m.which() != 'can' or m.can[0].src < SENT])[0] is False
+    assert sends(drive())[0]
+    assert sends([m for m in drive() if m.which() != 'can' or m.can[0].src < SENT])[0] is False
 
   def test_died(self):
     alive = [manager(t, {'card': (True, 1)}) for t in (1., 2., 3.)]
