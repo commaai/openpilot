@@ -237,6 +237,25 @@ class ModelState:
       self.input_queues[key].assign(0).realize()
     self.prev_desire[:] = 0
 
+  def recover(self) -> bool:
+    # after a failed USB transfer, synchronize resets the GPU queues and the link, then the history starts over
+    dev = Device[self.outputs['outputs'].device]
+    try:
+      dev.iface.dev_impl.ih.drain()  # reading the interrupts that piled up over USB takes seconds
+    except Exception:
+      return False
+    try:
+      dev.synchronize()
+    except Exception:
+      pass
+    try:
+      for key in self.state_pairs:
+        self.input_queues[key].assign(0).realize()
+      dev.synchronize()
+    except Exception:
+      return False
+    return True
+
 
 def main(demo=False):
   cloudlog.warning("modeld init")
@@ -326,6 +345,7 @@ def main(demo=False):
   frame_id = 0
   last_vipc_frame_id = 0
   run_count = 0
+  last_recovery = 0.
 
   model_transform_main = np.zeros((3, 3), dtype=np.float32)
   model_transform_extra = np.zeros((3, 3), dtype=np.float32)
@@ -433,12 +453,16 @@ def main(demo=False):
     except Exception:
       if not model.chestnut:
         raise
-      # fallback to small model
-      cloudlog.exception("big model failed, fall back to small")
-      params.put_bool("ChestnutActive", False)
-      model = small_model
-      if chestnut_state is not None:
-        chestnut_state.big = False
+      if mt1 - last_recovery > 10. and model.recover():
+        cloudlog.exception("big model failed, recovered")
+        last_recovery = mt1
+      else:
+        # fallback to small model
+        cloudlog.exception("big model failed, fall back to small")
+        params.put_bool("ChestnutActive", False)
+        model = small_model
+        if chestnut_state is not None:
+          chestnut_state.big = False
       run_count = 0
       model_output = None
     mt2 = time.perf_counter()
