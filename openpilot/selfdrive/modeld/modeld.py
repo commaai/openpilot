@@ -244,6 +244,9 @@ class ModelState:
       dev.iface.dev_impl.ih.drain()  # reading the interrupts that piled up over USB takes seconds
     except Exception:
       return False
+    # the failed run read the timeline as all ones and wrapped it to 0, the next fence would wait 30 s for it
+    timeline = dev.timeline.host.view(fmt='Q')
+    timeline[1] = max(timeline[0], timeline[1])
     try:
       dev.synchronize()
     except Exception:
