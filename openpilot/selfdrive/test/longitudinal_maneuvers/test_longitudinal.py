@@ -127,17 +127,66 @@ def create_maneuvers(kwargs):
   ]
   if not kwargs['force_decel']:
     # controls relies on planner commanding to move for stock-ACC resume spamming
-    maneuvers.append(Maneuver(
-      "resume from a stop",
-      duration=20.,
-      initial_speed=0.,
-      lead_relevancy=True,
-      initial_distance_lead=STOP_DISTANCE,
-      speed_lead_values=[0., 0., 7.],
-      breakpoints=[1., 10., 15.],
-      ensure_start=True,
-      **kwargs,
-    ))
+    maneuvers.extend([
+      Maneuver(
+        "resume from a stop",
+        duration=20.,
+        initial_speed=0.,
+        lead_relevancy=True,
+        initial_distance_lead=STOP_DISTANCE,
+        speed_lead_values=[0., 0., 7.],
+        breakpoints=[1., 10., 15.],
+        ensure_start=True,
+        **kwargs,
+      ),
+      Maneuver(
+        "adversarial: approach stopped car at 20m/s, optimistic model (+2m/s^2)",
+        duration=20.,
+        initial_speed=20.,
+        lead_relevancy=True,
+        initial_distance_lead=90.,
+        speed_lead_values=[0., 0.],
+        breakpoints=[0., 20.],
+        model_speed_lead_values=[0., 60.],
+        model_breakpoints=[0., 30.],
+        **kwargs,
+      ),
+      Maneuver(
+        "adversarial: stay stopped behind lead, model predicts acceleration (+2m/s^2)",
+        duration=15.,
+        initial_speed=0.,
+        lead_relevancy=True,
+        initial_distance_lead=STOP_DISTANCE,
+        speed_lead_values=[0., 0.],
+        breakpoints=[0., 15.],
+        model_speed_lead_values=[0., 50.],
+        model_breakpoints=[0., 25.],
+        **kwargs,
+      ),
+      Maneuver(
+        "adversarial: hard lead decel (3m/s^2), model predicts constant speed",
+        duration=35.,
+        initial_speed=20.,
+        lead_relevancy=True,
+        initial_distance_lead=35.,
+        speed_lead_values=[20., 20., 0.],
+        breakpoints=[0., 15., 21.66],
+        model_speed_lead_values=[20., 20., 20.],
+        **kwargs,
+      ),
+      Maneuver(
+        "adversarial: hard lead decel (3m/s^2), optimistic model (+2m/s^2)",
+        duration=35.,
+        initial_speed=20.,
+        lead_relevancy=True,
+        initial_distance_lead=35.,
+        speed_lead_values=[20., 20., 0.],
+        breakpoints=[0., 15., 21.66],
+        model_speed_lead_values=[20., 20., 80.],
+        model_breakpoints=[0., 15., 45.],
+        **kwargs,
+      ),
+    ])
   return maneuvers
 
 
