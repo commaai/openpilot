@@ -3,7 +3,7 @@ import numpy as np
 import raylib_nb as rl
 from dataclasses import dataclass
 from openpilot.common.constants import CV
-from openpilot.selfdrive.ui.mici.onroad import DIMMED_ICON_ALPHA, alpha_texture, gaussian_blur, texture_from_rgba
+from openpilot.selfdrive.ui.mici.onroad import DIMMED_ICON_ALPHA
 from openpilot.selfdrive.ui.mici.onroad.status import STATUS_FADE_RC, lerp_color, status_fade
 from openpilot.selfdrive.ui.mici.onroad.torque_bar import TorqueBar
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus, ChestnutState
@@ -26,6 +26,14 @@ WHEEL_GREEN = rl.Color(0, 255, 64, 255)
 WHEEL_ORANGE = rl.Color(255, 115, 0, 255)
 
 
+def _texture(rgba: np.ndarray, px: float) -> rl.Texture:
+  texture = rl.load_texture_from_image(rl.Image(None, rgba.shape[1], rgba.shape[0], 1, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8))
+  rl.update_texture(texture, np.ascontiguousarray(rgba))
+  rl.set_texture_filter(texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
+  texture.width, texture.height = round(rgba.shape[1] / px), round(rgba.shape[0] / px)
+  return texture
+
+
 def _wheel_effect_textures(asset: str, size: int) -> tuple[rl.Texture, rl.Texture]:
   """White glow and center highlight for the wheel, matching the design's render. Tint the glow when drawing."""
   image = gui_app._load_image_from_path((ASSETS_DIR / asset).as_posix(), size, size)
@@ -34,7 +42,16 @@ def _wheel_effect_textures(asset: str, size: int) -> tuple[rl.Texture, rl.Textur
   rl.unload_image(image)
 
   # glow: Figma's drop shadow (blur 24 at 128px) renders as a gaussian with sigma 10, its spread is ignored on vectors
-  glow = gaussian_blur(alpha, 10 * size / 128 * px)
+  sigma = 10 * size / 128 * px
+  pad = math.ceil(3 * sigma)
+  glow = np.pad(alpha, pad)
+  x = np.arange(-pad, pad + 1)
+  kernel = np.exp(-x ** 2 / (2 * sigma ** 2))
+  kernel /= kernel.sum()
+  for axis in (0, 1):
+    glow = np.apply_along_axis(np.convolve, axis, glow, kernel, mode='same')
+  glow_rgba = np.full((*glow.shape, 4), 255, dtype=np.uint8)
+  glow_rgba[..., 3] = np.clip(glow * 255, 0, 255)
 
   # highlight: the fill is a radial gradient from 35% lighter at the center to the base color at the rim
   yy, xx = np.mgrid[:h, :w]
@@ -42,7 +59,7 @@ def _wheel_effect_textures(asset: str, size: int) -> tuple[rl.Texture, rl.Textur
   highlight_rgba = np.full((h, w, 4), 255, dtype=np.uint8)
   highlight_rgba[..., 3] = np.clip(alpha * 89 * (1 - r), 0, 255)
 
-  return alpha_texture(glow, px), texture_from_rgba(highlight_rgba, px)
+  return _texture(glow_rgba, px), _texture(highlight_rgba, px)
 
 
 @dataclass(frozen=True)

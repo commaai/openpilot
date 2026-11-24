@@ -259,18 +259,13 @@ class AugmentedRoadView(CameraView):
     # Fade out bottom of overlays for looks
     rl.draw_texture_ex(self._fade_texture, rl.Vector2(self._content_rect.x, self._content_rect.y), 0.0, 1.0, rl.WHITE)
 
-    # the personality takes the top left over the set speed
-    self._hud_renderer.set_can_draw_top_icons(alert_to_render is None and not self._long_indicator.showing_personality())
+    self._hud_renderer.set_can_draw_top_icons(alert_to_render is None)
     # critical alerts show a warning icon where the torque bar is
     self._hud_renderer.set_torque_bar_hidden(alert_to_render is not None and alert_to_render.status == log.SelfdriveState.AlertStatus.critical)
     self._hud_renderer.set_wheel_critical_icon(alert_to_render is not None and not not_animating_out and
                                                alert_to_render.visual_alert == car.CarControl.HUDControl.VisualAlert.steerRequired)
     self._alert_renderer.render(self._content_rect)
     self._hud_renderer.render(self._content_rect)
-    personality_x = LEFT_COLUMN_WIDTH if show_navigation else 0
-    self._long_indicator.render_personality(rl.Rectangle(self._content_rect.x + personality_x, self._content_rect.y,
-                                                         self._content_rect.width - personality_x, self._content_rect.height),
-                                            alert_to_render is None)
 
     if not show_navigation:
       self._confidence_ball.set_hidden(alert_to_render is not None and not not_animating_out)
