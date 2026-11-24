@@ -81,7 +81,6 @@ procs = [
 
   NativeProcess("camerad", "openpilot/system/camerad", ["./camerad"], always_run if ARM_TELEOP else or_(driverview, livestream), enabled=not WEBCAM),
   NativeProcess("arm_teleop", "tools/arm_teleop", ["python3", "device.py"], always_run, enabled=ARM_TELEOP),
-  NativeProcess("arm_power", "tools/arm_teleop", ["sudo", "/usr/local/venv/bin/python", "power.py", "--watch"], always_run, enabled=ARM_TELEOP),
   PythonProcess("webcamerad", "openpilot.system.camerad.webcam.camerad", driverview, enabled=WEBCAM),
   PythonProcess("proclogd", "openpilot.system.proclogd", only_onroad, enabled=platform.system() != "Darwin"),
   PythonProcess("journald", "openpilot.system.journald", only_onroad, platform.system() != "Darwin"),

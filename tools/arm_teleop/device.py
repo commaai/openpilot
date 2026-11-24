@@ -11,15 +11,17 @@ import socket
 import sys
 import threading
 import time
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import ThreadingHTTPServer
 
-import numpy as np
 from PIL import Image
 
 sys.path.insert(0, "/data/arm_teleop_deps")
 from servos import Arm, IDS, JOINTS
 from msgq.visionipc import VisionIpcClient
 from openpilot.cereal.visionipc import VisionStreamType
+from openpilot.common.http_server import HTTPRequestHandler
+from openpilot.common.realtime import Ratekeeper
+from openpilot.system.camerad.cameras.nv12_info import nv12_planes
 
 FOLLOWERS = {"left": "5CBC431994", "middle": "5CBC431998", "right": "5CBC453422"}
 WATCHDOG = 0.4
@@ -51,12 +53,9 @@ class Camera:
             if time.monotonic() - last > 2:
               raise TimeoutError("Wide camera stopped sending frames")
             continue
-          data = np.asarray(buf.data, dtype=np.uint8)
           captured_at = time.time() - (time.monotonic() - client.timestamp_sof / 1e9)  # noqa: TID251
-          y = data[:buf.uv_offset].reshape(-1, buf.stride)[:buf.height, :buf.width]
-          uv = data[buf.uv_offset:buf.uv_offset + buf.stride * (buf.height // 2)].reshape(-1, buf.stride)[:, :buf.width]
           size = (1008, round(buf.height * 1008 / buf.width))
-          planes = [Image.fromarray(plane).resize(size, Image.Resampling.BILINEAR) for plane in (y, uv[:, ::2], uv[:, 1::2])]
+          planes = [Image.fromarray(plane).resize(size, Image.Resampling.BILINEAR) for plane in nv12_planes(buf)]
           planes[0] = planes[0].point(LUMA)
           image = Image.merge("YCbCr", planes).convert("RGB")
           output = io.BytesIO()
@@ -218,6 +217,7 @@ class Robot:
     return position
 
   def run(self):
+    rk = Ratekeeper(30, print_delay_threshold=None)
     last = time.monotonic()
     retry_at = 0.
     while self.running:
@@ -266,7 +266,7 @@ class Robot:
             self.arm = None
           self.holding = False
         last = now
-      time.sleep(max(0, 1 / 30 - (time.monotonic() - now)))
+      rk.keep_time()
 
   def status(self):
     with self.lock:
@@ -298,25 +298,15 @@ def command(body):
   return robots[name].command(body)
 
 
-class Handler(BaseHTTPRequestHandler):
-  protocol_version = "HTTP/1.1"
+class Handler(HTTPRequestHandler):
   disable_nagle_algorithm = True
 
-  def setup(self):
-    super().setup()
-    self.connection.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-
-  def log_message(self, *args):
-    pass
+  def end_headers(self):
+    self.send_header("Cache-Control", "no-store")
+    super().end_headers()
 
   def json(self, body, status=200):
-    data = json.dumps(body).encode()
-    self.send_response(status)
-    self.send_header("Content-Type", "application/json")
-    self.send_header("Content-Length", str(len(data)))
-    self.send_header("Cache-Control", "no-store")
-    self.end_headers()
-    self.wfile.write(data)
+    self.send_body(status, json.dumps(body).encode(), "application/json")
 
   def do_GET(self):
     if not self.authorized():
@@ -333,20 +323,12 @@ class Handler(BaseHTTPRequestHandler):
       if not jpeg or time.monotonic() - camera.updated > 1:
         self.json({"error": "Waiting for wide camera"}, 503)
         return
-      self.send_response(200)
-      self.send_header("Content-Type", "image/jpeg")
-      self.send_header("Content-Length", str(len(jpeg)))
-      self.send_header("X-Frame-Id", str(frame))
-      self.send_header("X-Capture-Time", str(captured_at))
-      self.send_header("Cache-Control", "no-store")
-      self.end_headers()
-      self.wfile.write(jpeg)
+      self.send_body(200, jpeg, "image/jpeg", {"X-Frame-Id": str(frame), "X-Capture-Time": str(captured_at)})
     elif self.path == "/video":
       self.connection.settimeout(.2)
       self.connection.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 32768)
       self.send_response(200)
       self.send_header("Content-Type", "multipart/x-mixed-replace; boundary=frame")
-      self.send_header("Cache-Control", "no-store")
       self.send_header("Connection", "close")
       self.end_headers()
       frame = -1

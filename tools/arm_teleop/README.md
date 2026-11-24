@@ -32,7 +32,7 @@ scp -r -i ~/xx/private/key/id_rsa tools/arm_teleop/.venv/lib/python*/site-packag
   comma@192.168.63.237:/data/arm_teleop_deps/
 ```
 
-Switch the device to this branch with `tools/op.sh switch robot-arm-teleop`, then reboot. Openpilot's manager starts `camerad`, `arm_teleop`, and `arm_power`; the control service listens only on device loopback port 8022. The workstation also listens only on loopback. No cloud hosting is involved.
+Switch the device to this branch with `tools/op.sh switch robot-arm-teleop`, then reboot. Openpilot's manager starts `camerad` and `arm_teleop`; the control service listens only on device loopback port 8022. The workstation also listens only on loopback. No cloud hosting is involved.
 
 `launch_env.sh` enables `ARM_TELEOP=1` on this branch. This keeps the cameras, display, CPU cores, performance governors, and Panda awake; uses the active cooling curve; blocks openpilot shutdown requests; masks AGNOS idle power monitors and OS sleep targets; and disables USB autosuspend, including hotplugged hubs. NetworkManager profiles use permanent MAC addresses and disable Wi-Fi power saving and scan randomization. Wi-Fi changes apply when the connection next activates, so reboot after installation. Hardware thermal protections remain active; software cannot prevent loss of physical power.
 
@@ -40,7 +40,7 @@ Automatic openpilot updates are disabled in this mode. Switch to a stock branch 
 
 ## Development
 
-`device.py` owns one bus, control session, and command watchdog per follower, plus the shared MJPEG encoder. `workstation.py` owns the leader bus, SSH tunnel, and browser session. `servos.py` is a small wrapper around the Feetech SDK with read-only discovery. `power.py` applies the device runtime settings and maintains USB power/permissions after reconnects.
+`device.py` owns one bus, control session, and command watchdog per follower, plus the shared MJPEG encoder. `workstation.py` owns the leader bus, SSH tunnel, and browser session. `servos.py` is a small wrapper around the Feetech SDK with read-only discovery. `power.py` applies the device settings at boot. Runtime udev rules restore USB power and serial permissions on reconnect.
 
 Neither server starts motion on its own. Probe and status reads do not enable torque. Motion commands are accepted only after an explicit Start and require the current session ID and increasing sequence numbers.
 

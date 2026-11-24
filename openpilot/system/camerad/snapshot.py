@@ -6,6 +6,7 @@ import openpilot.cereal.messaging as messaging
 from openpilot.cereal.visionipc import VisionStreamType
 from msgq.visionipc import VisionIpcClient
 from openpilot.common.realtime import DT_MDL
+from openpilot.system.camerad.cameras.nv12_info import nv12_planes
 
 
 VISION_STREAMS = {
@@ -32,17 +33,7 @@ def yuv_to_rgb(y, u, v):
 
 
 def extract_image(buf):
-  # NV12 format: Y plane followed by interleaved UV plane
-  # UV plane size is stride * uv_height, where uv_height = align(height/2, 16)
-  uv_height = ((buf.height // 2) + 15) // 16 * 16
-  uv_plane_size = buf.stride * uv_height
-
-  y = np.array(buf.data[:buf.uv_offset], dtype=np.uint8).reshape((-1, buf.stride))[:buf.height, :buf.width]
-  uv_data = buf.data[buf.uv_offset:buf.uv_offset + uv_plane_size]
-  u = np.array(uv_data[::2], dtype=np.uint8).reshape((-1, buf.stride//2))[:buf.height//2, :buf.width//2]
-  v = np.array(uv_data[1::2], dtype=np.uint8).reshape((-1, buf.stride//2))[:buf.height//2, :buf.width//2]
-
-  return yuv_to_rgb(y, u, v)
+  return yuv_to_rgb(*nv12_planes(buf))
 
 
 def get_snapshots(frame="narrowRoadCameraState", front_frame="cabinCameraState"):
