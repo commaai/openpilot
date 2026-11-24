@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "openpilot-rtc-camera"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = ["aiohttp>=3.11,<4", "aiortc>=1.16,<2", "av>=19,<20", "Pillow>=10,<13"]
+
+[tool.setuptools]
+py-modules = ["rtc_camera"]

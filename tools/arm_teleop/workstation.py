@@ -35,7 +35,8 @@ class Station:
     self.clients = set()
     self.lock = asyncio.Lock()
     self.base = f"{args.game_url.rstrip('/')}/api/reservations/{args.reservation}" if args.game_url else f"http://127.0.0.1:{args.tunnel_port}"
-    self.video_base = self.base if args.game_url else f"http://127.0.0.1:{args.video_tunnel_port}"
+    self.camera_condition = asyncio.Condition()
+    self.captured_at, self.jpeg = 0., b""
     self.headers = {"Authorization": "Bearer " + Path(args.token_file).read_text().strip()} if args.game_url else {}
 
   async def command(self, body):
@@ -135,7 +136,7 @@ class Station:
           if self.active:
             if started - self.heartbeat > 0.6:
               await self.stop("Browser connection lost; holding pose")
-            elif self.device_error or (self.device.get("camera", {}).get("age") or 0) > 1:
+            elif self.device_error or self.device.get("camera", {}).get("age") is None or self.device["camera"]["age"] > 1:
               await self.stop("Camera connection lost; holding pose")
             else:
               deltas = [(p - prev + 2048) % 4096 - 2048 for p, prev in zip(self.leader_positions, self.previous_leader, strict=True)]
@@ -185,6 +186,8 @@ class Station:
           async with self.http.get(self.base + "/status", timeout=ClientTimeout(total=0.7)) as response:
             response.raise_for_status()
             self.device = await response.json()
+            if not self.args.game_url:
+              self.device["camera"]["age"] = time.time() - self.captured_at if self.captured_at else None  # noqa: TID251
             self.device_error = ""
       except Exception:
         self.device_error = "Reconnecting to comma four"
@@ -194,13 +197,13 @@ class Station:
           await ws.send_json(state)
       await asyncio.sleep(0.1)
 
-  async def tunnel(self, port, qos):
+  async def tunnel(self, port):
     while True:
       proc = await asyncio.create_subprocess_exec(
         "ssh", "-N", "-T", "-i", self.args.key, "-o", "IdentitiesOnly=yes", "-o", "BatchMode=yes",
         "-o", "StrictHostKeyChecking=yes", "-o", "ExitOnForwardFailure=yes", "-o", "ConnectTimeout=5",
         "-o", "ServerAliveInterval=2", "-o", "ServerAliveCountMax=2",
-        "-o", "ControlMaster=no", "-o", "ControlPath=none", "-o", f"IPQoS={qos}",
+        "-o", "ControlMaster=no", "-o", "ControlPath=none", "-o", "IPQoS=lowdelay",
         "-L", f"127.0.0.1:{port}:127.0.0.1:8022", f"comma@{self.args.device}")
       try:
         await proc.wait()
@@ -214,8 +217,9 @@ class Station:
     self.http = ClientSession(headers=self.headers)
     tasks = [asyncio.create_task(fn()) for fn in (self.controls, self.monitor)]
     if not self.args.game_url:
-      tasks.extend(asyncio.create_task(self.tunnel(port, qos)) for port, qos in
-                   [(self.args.tunnel_port, "lowdelay"), (self.args.video_tunnel_port, "throughput")])
+      tasks.extend([asyncio.create_task(self.tunnel(self.args.tunnel_port)), asyncio.create_task(self.receive_camera())])
+      if self.args.video_tunnel_port and self.args.video_tunnel_port != self.args.tunnel_port:
+        tasks.append(asyncio.create_task(self.tunnel(self.args.video_tunnel_port)))
     yield
     async with self.lock:
       await self.stop("Workstation service stopped")
@@ -251,9 +255,33 @@ class Station:
           await self.stop("Browser closed; holding pose")
     return ws
 
+  async def receive_camera(self):
+    from rtc_camera import camera_frames
+    url = f"http://127.0.0.1:{self.args.video_tunnel_port}" if self.args.video_tunnel_port else self.base
+    async with contextlib.aclosing(camera_frames(self.http, url)) as frames:
+      async for captured, jpeg in frames:
+        async with self.camera_condition:
+          self.captured_at, self.jpeg = captured, jpeg
+          self.camera_condition.notify_all()
+
   async def video(self, request):
+    if not self.args.game_url:
+      response = web.StreamResponse(headers={"Content-Type": "multipart/x-mixed-replace; boundary=frame", "Cache-Control": "no-store"})
+      await response.prepare(request)
+      previous = 0.
+      try:
+        while True:
+          async with asyncio.timeout(3), self.camera_condition:
+            await self.camera_condition.wait_for(lambda last=previous: self.captured_at > last)
+            previous, jpeg = self.captured_at, self.jpeg
+          if time.time() - previous < .2:  # noqa: TID251
+            header = f"--frame\r\nContent-Type: image/jpeg\r\nContent-Length: {len(jpeg)}\r\nX-Capture-Time: {previous}\r\n\r\n".encode()
+            async with asyncio.timeout(.2):
+              await response.write(header + jpeg + b"\r\n")
+      except (TimeoutError, ConnectionError):
+        return response
     try:
-      upstream = await self.http.get(self.video_base + "/video", timeout=ClientTimeout(total=None, connect=2, sock_read=4))
+      upstream = await self.http.get(self.base + "/video", timeout=ClientTimeout(total=None, connect=2, sock_read=4))
     except Exception:
       raise web.HTTPServiceUnavailable(text="Waiting for wide camera") from None
     async with upstream:
@@ -278,7 +306,7 @@ def main():
   parser.add_argument("--follower", choices=("left", "middle", "right"), default="left")
   parser.add_argument("--port", type=int, default=8070)
   parser.add_argument("--tunnel-port", type=int, default=18022)
-  parser.add_argument("--video-tunnel-port", type=int, default=18023)
+  parser.add_argument("--video-tunnel-port", type=int, help="Separate local port for camera signaling (defaults to the command tunnel)")
   args = parser.parse_args()
   if args.game_url:
     if not args.reservation or not args.token_file:

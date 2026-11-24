@@ -1,6 +1,6 @@
 # Arm control
 
-Wide-camera video from a comma four and leader/follower control for a six-servo LeRobot SO arm. The device runs the `robot-arm-teleop` openpilot branch. The workstation serves a local UI and reads the USB leader; video and commands travel through SSH.
+Wide-camera video from a comma four and leader/follower control for a six-servo LeRobot SO arm. The device runs the `robot-arm-teleop` openpilot branch. The workstation serves a local UI and reads the USB leader. Commands and camera signaling use SSH. Body’s WebRTC stack carries H.264 video over the LAN.
 
 This setup uses leader `5CBC431223` on the workstation and three followers on the device: left `5CBC431994`, middle `5CBC431998`, and right `5CBC453422`. Names refer to the wide-camera view. USB serial numbers are used instead of changing `/dev/ttyACM` numbers.
 
@@ -10,7 +10,7 @@ This setup uses leader `5CBC431223` on the workstation and three followers on th
 tools/arm_teleop/run.sh --device 192.168.63.237 --key ~/xx/private/key/id_rsa
 ```
 
-Open http://127.0.0.1:8070. `uv` installs the small Python environment on the first run. The SSH host key must already be trusted. `--leader`, `--follower left|middle|right`, `--port`, and `--tunnel-port` override the defaults.
+Open http://127.0.0.1:8070. `uv` installs the workstation dependencies. The SSH host key must already be trusted. `--leader`, `--follower left|middle|right`, `--port`, and `--tunnel-port` override the defaults.
 
 1. Wait for live video and both arm connections.
 2. Select the follower arm and movement scale. Leave the joint speed limit blank for full servo speed, or enter a positive value in degrees per second.
@@ -24,7 +24,7 @@ These arms currently have factory position limits, not calibrated mechanical joi
 
 ## Device installation
 
-The device needs `scservo_sdk` from `feetech-servo-sdk==1.0.0` in `/data/arm_teleop_deps`. AGNOS already supplies pyserial, NumPy, and Pillow. From a prepared workstation environment:
+The device needs `scservo_sdk` from `feetech-servo-sdk==1.0.0` in `/data/arm_teleop_deps`. AGNOS already supplies pyserial. From a prepared workstation environment:
 
 ```bash
 ssh -i ~/xx/private/key/id_rsa comma@192.168.63.237 'mkdir -p /data/arm_teleop_deps'
@@ -32,7 +32,7 @@ scp -r -i ~/xx/private/key/id_rsa tools/arm_teleop/.venv/lib/python*/site-packag
   comma@192.168.63.237:/data/arm_teleop_deps/
 ```
 
-Switch the device to this branch with `tools/op.sh switch robot-arm-teleop`, then reboot. Openpilot's manager starts `camerad` and `arm_teleop`; the control service listens only on device loopback port 8022. The workstation also listens only on loopback. No cloud hosting is involved.
+Switch the device to this branch with `tools/op.sh switch robot-arm-teleop`, then reboot. Openpilot's manager starts `camerad`, `stream_encoderd`, `webrtcd`, and `arm_teleop`. The control service listens on device loopback port 8022. The workstation also listens only on loopback. No cloud hosting is involved.
 
 `launch_env.sh` enables `ARM_TELEOP=1` on this branch. This keeps the cameras, display, CPU cores, performance governors, and Panda awake; uses the active cooling curve; blocks openpilot shutdown requests; masks AGNOS idle power monitors and OS sleep targets; and disables USB autosuspend, including hotplugged hubs. NetworkManager profiles use permanent MAC addresses and disable Wi-Fi power saving and scan randomization. Wi-Fi changes apply when the connection next activates, so reboot after installation. Hardware thermal protections remain active; software cannot prevent loss of physical power.
 
@@ -40,7 +40,7 @@ Automatic openpilot updates are disabled in this mode. Switch to a stock branch 
 
 ## Development
 
-`device.py` owns one bus, control session, and command watchdog per follower, plus the shared MJPEG encoder. `workstation.py` owns the leader bus, SSH tunnel, and browser session. `servos.py` is a small wrapper around the Feetech SDK with read-only discovery. `power.py` applies the device settings at boot. Runtime udev rules restore USB power and serial permissions on reconnect.
+`device.py` owns one bus, control session, and command watchdog per follower. `workstation.py` owns the leader bus, SSH tunnel, and browser session. `servos.py` is a small wrapper around the Feetech SDK with read-only discovery. `power.py` applies the device settings at boot. Runtime udev rules restore USB power and serial permissions on reconnect.
 
 Neither server starts motion on its own. Probe and status reads do not enable torque. Motion commands are accepted only after an explicit Start and require the current session ID and increasing sequence numbers.
 
@@ -71,4 +71,8 @@ Include `"arm":"left"`, `"arm":"middle"`, or `"arm":"right"` on `start`, `target
 
 Omitting `arm` selects the left arm, except for `stop`, which stops all arms. `{"op":"stop","arm":"all"}` also stops all arms. Torque release always applies to one arm. In managed mode all three arms use the same reservation deadline; expiry, cancellation, and gateway shutdown stop all three.
 
-The device disables TCP delayed packet coalescing for HTTP responses and resizes YUV planes before RGB conversion to reduce encoding time. `/frame` returns the latest JPEG with `X-Capture-Time` (exposure start in Unix seconds) and `X-Frame-Id`; `/video` includes the capture timestamp on each MJPEG part. Direct workstation mode uses independent SSH connections for controls and video; `--video-tunnel-port` defaults to 18023. The reservation gateway pulls one fresh frame at a time and discards stale frames.
+## Camera transport
+
+The direct workstation or the reservation gateway negotiates one receive-only wide-camera stream at `POST /camera/offer` through its existing SSH tunnel. The receiver and device need direct LAN UDP connectivity for encrypted WebRTC media. The device encodes H.264 in hardware. Timing metadata in each frame supplies the camera exposure start in Unix seconds.
+
+The receiver decodes once, restores the 1008 × 570 scoring image and drops frames older than 200 ms. The workstation’s `/video` and the gateway’s MJPEG endpoints send that JPEG with its `X-Capture-Time` header. In booked mode the workstation uses the gateway’s video endpoint. `--video-tunnel-port` selects an optional separate signaling tunnel in direct mode.

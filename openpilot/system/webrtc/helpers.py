@@ -13,6 +13,7 @@ class StreamRequestBody:
   bridge_services_in: list[str] = field(default_factory=list)
   bridge_services_out: list[str] = field(default_factory=list)
   raw: bool = False  # bridge services as raw capnp bytes instead of JSON
+  continuous_camera: bool = False  # timestamped video feed for a long-running camera receiver
 
 
 def post_stream_request(body: StreamRequestBody) -> dict:

@@ -52,6 +52,7 @@ class StreamSession:
     self.identifier = str(uuid.uuid4())
     self.params = Params()
     self.is_body = "testJoystick" in body.bridge_services_in
+    self.continuous_camera = body.continuous_camera
 
     builder = WebRTCAnswerBuilder(body.sdp, bind_address=_default_route_ip())
 
@@ -61,6 +62,7 @@ class StreamSession:
     self.video_tracks = []
     for camera in body.cameras:
       track = LiveStreamVideoStreamTrack(camera, self.video_enabled)
+      track.timing_sei_enabled = body.continuous_camera
       self.video_tracks.append(track)
       builder.add_video_stream(camera, track)
     self.stream = builder.stream()
@@ -184,7 +186,7 @@ class StreamSession:
 
       with cloudlog.ctx(session_id=self.identifier):
         cloudlog.warning("webrtcd.session.connected")
-      if self.is_body or self.raw:
+      if self.is_body or self.raw or self.continuous_camera:
         await self.run_body_session()
       else:
         await self.run_normal_session()

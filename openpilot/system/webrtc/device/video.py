@@ -72,12 +72,19 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
       return encode_data.header + encode_data.data
 
     idx = encode_data.idx
-    sei_nal = _SEI_PREFIX + struct.pack('>4d',
+    timing = struct.pack('>4d',
       (idx.timestampEof - idx.timestampSof) / 1e6,
       (msg.logMonoTime - idx.timestampEof) / 1e6,
       (time.monotonic_ns() - msg.logMonoTime) / 1e6,
       time.time() * 1000,  # noqa: TID251
-    ) + b'\x80'
+    )
+    # Escape the binary payload so timing values cannot introduce an Annex B start code.
+    escaped = bytearray()
+    for value in timing:
+      if value <= 3 and escaped.endswith(b'\x00\x00'):
+        escaped.append(3)
+      escaped.append(value)
+    sei_nal = _SEI_PREFIX + escaped + b'\x80'
     return encode_data.header + sei_nal + encode_data.data
 
   async def recv(self):

@@ -1,78 +1,51 @@
 #!/usr/bin/env python3
 from dataclasses import dataclass
-import io
 import json
 import math
 import os
 from pathlib import Path
 import secrets
 import signal
-import socket
 import sys
 import threading
 import time
 from http.server import ThreadingHTTPServer
 
-from PIL import Image
-
 sys.path.insert(0, "/data/arm_teleop_deps")
 from servos import Arm, IDS, JOINTS
-from msgq.visionipc import VisionIpcClient
-from openpilot.cereal.visionipc import VisionStreamType
+from openpilot.cereal import messaging
 from openpilot.common.http_server import HTTPRequestHandler
 from openpilot.common.realtime import Ratekeeper
-from openpilot.system.camerad.cameras.nv12_info import nv12_planes
+from openpilot.system.webrtc.helpers import StreamRequestBody, post_stream_request
 
 FOLLOWERS = {"left": "5CBC431994", "middle": "5CBC431998", "right": "5CBC453422"}
 WATCHDOG = 0.4
 TICKS_PER_DEGREE = 4096 / 360
 MAX_SERVO_SPEED = 0x7fff  # STS register 46 uses bit 15 for direction.
-LUMA = [max(0, min(255, int((value - 16) * 255 / 219))) for value in range(256)]
 
 
 class Camera:
   def __init__(self):
-    self.condition = threading.Condition()
-    self.jpeg = b""
-    self.frame = 0
-    self.updated = 0.
-    self.captured_at = 0.
-    self.fps = 0.
-    self.error = "Waiting for wide camera"
-    threading.Thread(target=self.run, daemon=True).start()
+    self.sample = (0, 0., 0.)
+    threading.Thread(target=self.monitor, daemon=True).start()
 
-  def run(self):
+  def monitor(self):
+    sm = messaging.SubMaster(["wideRoadCameraState"])
     while True:
-      try:
-        client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_WIDE_ROAD, True)
-        client.connect(True)
-        last = time.monotonic()
-        while True:
-          buf = client.recv()
-          if buf is None:
-            if time.monotonic() - last > 2:
-              raise TimeoutError("Wide camera stopped sending frames")
-            continue
-          captured_at = time.time() - (time.monotonic() - client.timestamp_sof / 1e9)  # noqa: TID251
-          size = (1008, round(buf.height * 1008 / buf.width))
-          planes = [Image.fromarray(plane).resize(size, Image.Resampling.BILINEAR) for plane in nv12_planes(buf)]
-          planes[0] = planes[0].point(LUMA)
-          image = Image.merge("YCbCr", planes).convert("RGB")
-          output = io.BytesIO()
-          image.save(output, "JPEG", quality=75)
-          now = time.monotonic()
-          with self.condition:
-            self.jpeg = output.getvalue()
-            self.frame += 1
-            self.fps = 0.9 * self.fps + 0.1 / max(now - last, 0.001)
-            self.updated = now
-            self.captured_at = captured_at
-            self.error = ""
-            self.condition.notify_all()
-          last = now
-      except Exception as e:
-        self.error = str(e)
-        time.sleep(1)
+      sm.update(1000)
+      if sm.updated["wideRoadCameraState"]:
+        msg = sm["wideRoadCameraState"]
+        sof = msg.timestampSof / 1e9
+        frame, last, fps = self.sample
+        if last and sof > last and msg.frameId > frame:
+          fps = .9 * fps + .1 * (msg.frameId - frame) / (sof - last)
+        self.sample = (msg.frameId, sof, fps)
+
+  def status(self):
+    frame, sof, fps = self.sample
+    age = time.monotonic() - sof if sof else None
+    return {"fps": round(fps, 1), "frames": frame, "age": age, "captured_at": time.time() - age if age is not None else 0.,  # noqa: TID251
+            "error": "" if age is not None and age < 1 else "Waiting for wide camera"}
 
 
 @dataclass
@@ -302,6 +275,8 @@ class Handler(HTTPRequestHandler):
   disable_nagle_algorithm = True
 
   def end_headers(self):
+    if self.close_connection:
+      self.send_header("Connection", "close")
     self.send_header("Cache-Control", "no-store")
     super().end_headers()
 
@@ -313,60 +288,47 @@ class Handler(HTTPRequestHandler):
       return
     if self.path == "/status":
       arms = {name: robot.status() for name, robot in robots.items()}
-      self.json({"arm": arms["left"], "arms": arms, "joints": JOINTS, "camera": {"fps": round(camera.fps, 1), "frames": camera.frame,
-                 "age": time.monotonic() - camera.updated if camera.updated else None, "captured_at": camera.captured_at, "error": camera.error},
+      self.json({"arm": arms["left"], "arms": arms, "joints": JOINTS, "camera": camera.status(),
                  "device_time": time.time(),  # noqa: TID251
                  "os": Path("/VERSION").read_text().strip(), "performance": os.getenv("ARM_TELEOP") == "1"})
-    elif self.path == "/frame":
-      with camera.condition:
-        jpeg, frame, captured_at = camera.jpeg, camera.frame, camera.captured_at
-      if not jpeg or time.monotonic() - camera.updated > 1:
-        self.json({"error": "Waiting for wide camera"}, 503)
-        return
-      self.send_body(200, jpeg, "image/jpeg", {"X-Frame-Id": str(frame), "X-Capture-Time": str(captured_at)})
-    elif self.path == "/video":
-      self.connection.settimeout(.2)
-      self.connection.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 32768)
-      self.send_response(200)
-      self.send_header("Content-Type", "multipart/x-mixed-replace; boundary=frame")
-      self.send_header("Connection", "close")
-      self.end_headers()
-      frame = -1
-      try:
-        while True:
-          with camera.condition:
-            camera.condition.wait_for(lambda previous=frame: camera.frame != previous and camera.jpeg, timeout=3)
-            if not camera.jpeg or time.monotonic() - camera.updated > 2:
-              break
-            frame, jpeg, captured_at = camera.frame, camera.jpeg, camera.captured_at
-          header = f"--frame\r\nContent-Type: image/jpeg\r\nContent-Length: {len(jpeg)}\r\nX-Capture-Time: {captured_at}\r\n\r\n".encode()
-          self.wfile.write(header + jpeg + b"\r\n")
-          self.wfile.flush()
-      except (BrokenPipeError, ConnectionResetError, TimeoutError):
-        pass
-      self.close_connection = True
     else:
       self.json({"error": "Not found"}, 404)
 
   def do_POST(self):
     if not self.authorized():
       return
-    if self.path != "/command" or self.headers.get("Origin") or self.headers.get_content_type() != "application/json":
-      self.json({"error": "Unsupported request"}, 400)
+    if self.path not in ("/command", "/camera/offer") or self.headers.get("Origin") or self.headers.get_content_type() != "application/json":
       self.close_connection = True
+      self.json({"error": "Unsupported request"}, 400)
       return
     try:
       size = int(self.headers.get("Content-Length", "0"))
-      if not 0 < size < 8192:
-        raise ValueError("Invalid command length")
-      self.json(command(json.loads(self.rfile.read(size))))
+      offer = self.path == "/camera/offer"
+      if not 0 < size < (65536 if offer else 8192):
+        raise ValueError("Invalid request length")
+      body = json.loads(self.rfile.read(size))
+      if offer:
+        sdp = body["sdp"]
+        media = [line for line in sdp.splitlines() if line.startswith("m=")] if isinstance(sdp, str) else []
+        if len(media) != 1 or not media[0].startswith("m=video "):
+          raise ValueError("Expected a single video track")
+        try:
+          answer = post_stream_request(StreamRequestBody(sdp, ["wideRoad"], enabled=True, continuous_camera=True))
+          sdp = answer["sdp"]
+        except Exception:
+          self.json({"error": "Camera signaling unavailable"}, 503)
+          return
+        self.json({"type": "answer", "sdp": sdp})
+      else:
+        self.json(command(body))
     except (ValueError, KeyError, TypeError, OverflowError, OSError) as e:
+      self.close_connection = True
       self.json({"error": str(e)}, 400)
 
   def authorized(self):
     if gateway_key is not None and not secrets.compare_digest(self.headers.get("Authorization", ""), "Bearer " + gateway_key):
-      self.json({"error": "Use the reservation gateway"}, 401)
       self.close_connection = True
+      self.json({"error": "Use the reservation gateway"}, 401)
       return False
     return True
 
