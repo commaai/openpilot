@@ -94,8 +94,7 @@ class LongitudinalPlanner:
     # Save starting point for next iteration
     a_prev = self.output_a_target
 
-    curve_offset = self.curve_speed.update(sm['modelV2'], sm['vehicleParameters'].roll)
-    output_a_target_e2e = sm['modelV2'].action.desiredAcceleration + curve_offset
+    output_a_target_e2e = self.curve_speed.update(sm['modelV2'], sm['vehicleParameters'].roll, sm['modelV2'].action.desiredAcceleration)
     output_should_stop_e2e = sm['modelV2'].action.shouldStop
 
     self.a_cruise = get_cruise_accel(v_cruise, v_ego, self.a_cruise, self.output_a_target, self.dt)
