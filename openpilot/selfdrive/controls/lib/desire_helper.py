@@ -15,10 +15,10 @@ TURN_LIKELY_SPEED = 25 * CV.MPH_TO_MS
 TURN_PULL_AWAY_ACCEL = 0.2  # m/s^2, the car starts to move out of a stop
 TURN_PLAN_SPEEDUP = 0.3  # m/s the plan gains in 2 s: the car is about to speed up, out of a stop or out of a slow turn
 TURN_POSSIBLE_DECAY = 0.5  # 1/s, holds the prediction peak for 2 s
-TURN_MOVING_SPEED = 0.3  # m/s
 TURN_ROLLING_SPEED = 2.0  # m/s, below this the blinker alone is enough
-TURN_REARM_STOP_TIME = 1.5  # s stopped before a new pulse is allowed
+TURN_REARM_STOP_TIME = 1.0  # s below TURN_ROLLING_SPEED (a stop or a rolling stop) before a new pulse is allowed
 TURN_RESET_TIME = 1.0  # s without blinker or cruise before a new blinker gets a new pulse (both flicker)
+TURN_BLINKER_HOLD = 3.0  # s the turn stays armed after the blinker goes off, it can cancel right at the pull-away
 
 class DesireHelper:
   def __init__(self):
@@ -32,6 +32,8 @@ class DesireHelper:
     self.turn_possible = 0.0
     self.prev_plan_speedup = True
     self.turn_moved = False
+    self.turn_blinker = LaneChangeDirection.none
+    self.turn_blinker_timer = 0.0
     self.turn_stop_timer = 0.0
     self.turn_off_timer = 0.0
     self.turn_direction = LaneChangeDirection.none
@@ -92,14 +94,22 @@ class DesireHelper:
 
     # experiment: with the blinker on below 25 mph, pulse the turn desire once when the model itself predicts that turn.
     # one pulse per blinker, but a stop allows a new one: the model can see the turn early, then stop for a light first
-    stopped = v_ego < TURN_MOVING_SPEED
-    self.turn_stop_timer = self.turn_stop_timer + DT_MDL if stopped else 0.0
-    side_pred = turn_pred[0] if carstate.leftBlinker else turn_pred[1]
-    self.turn_possible = max(side_pred, self.turn_possible - TURN_POSSIBLE_DECAY * DT_MDL)
+    self.turn_stop_timer = self.turn_stop_timer + DT_MDL if v_ego < TURN_ROLLING_SPEED else 0.0
     speeding_up = plan_speedup > TURN_PLAN_SPEEDUP
     speedup_edge = speeding_up and not self.prev_plan_speedup
     self.prev_plan_speedup = speeding_up
-    turn_allowed = one_blinker and carstate.cruiseState.enabled
+    # keep the last blinker direction for a moment after it goes off
+    if one_blinker:
+      self.turn_blinker = self.get_lane_change_direction(carstate)
+      self.turn_blinker_timer = 0.0
+    else:
+      self.turn_blinker_timer += DT_MDL
+      if self.turn_blinker_timer > TURN_BLINKER_HOLD:
+        self.turn_blinker = LaneChangeDirection.none
+    blinker_on = self.turn_blinker != LaneChangeDirection.none
+    side_pred = turn_pred[0] if self.turn_blinker == LaneChangeDirection.left else turn_pred[1]
+    self.turn_possible = max(side_pred, self.turn_possible - TURN_POSSIBLE_DECAY * DT_MDL)
+    turn_allowed = blinker_on and carstate.cruiseState.enabled
     self.turn_off_timer = 0.0 if turn_allowed else self.turn_off_timer + DT_MDL
     if self.turn_off_timer > TURN_RESET_TIME:
       self.turn_fired = False
@@ -113,7 +123,7 @@ class DesireHelper:
         self.turn_direction = LaneChangeDirection.none
       lane_changing = self.lane_change_state in (LaneChangeState.laneChangeStarting, LaneChangeState.laneChangeFinishing)
       if v_ego < TURN_ARM_SPEED and not self.turn_fired and self.turn_direction == LaneChangeDirection.none and not lane_changing:
-        self.turn_armed = self.get_lane_change_direction(carstate)
+        self.turn_armed = self.turn_blinker
       else:
         self.turn_armed = LaneChangeDirection.none
 
