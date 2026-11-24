@@ -198,11 +198,10 @@ class HudRenderer(Widget):
     rl.draw_texture_ex(icon, pos, 0.0, 1.0, rl.Color(255, 255, 255, int(255 * opacity * alpha)))
 
   def _draw_steering_wheel(self, rect: rl.Rectangle) -> None:
-    # The wheel is the source of truth for engagement: green if and only if openpilot is engaged.
-    # When disengaged it's grayed out, except for steerRequired alerts which show it orange.
+    # Green when engaged and grayed out when disengaged. steerRequired alerts show it orange in any state.
     critical = self._wheel_critical_filter.update(self._show_wheel_critical)
-    idle_color = lerp_color(WHEEL_WHITE, WHEEL_ORANGE, critical)
-    wheel_color = status_fade.color({UIStatus.ENGAGED: WHEEL_GREEN, UIStatus.OVERRIDE: idle_color, UIStatus.DISENGAGED: idle_color})
+    status_color = status_fade.color({UIStatus.ENGAGED: WHEEL_GREEN, UIStatus.OVERRIDE: WHEEL_WHITE, UIStatus.DISENGAGED: WHEEL_WHITE})
+    wheel_color = lerp_color(status_color, WHEEL_ORANGE, critical)
     engaged = status_fade.weight(UIStatus.ENGAGED)
     glow = engaged + (1 - engaged) * critical
     wheel_txt = self._txt_wheel
