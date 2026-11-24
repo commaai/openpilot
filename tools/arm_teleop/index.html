@@ -111,7 +111,7 @@ $('arm').onchange=()=>send('select',{arm:$('arm').value});
 $('stop').onclick=stop;$('release').onclick=()=>{$('error').textContent='';send('release');};
 function updateScale(){const match=$('mode').value==='match';$('scale').disabled=match||state?.active;$('scaleLabel').textContent=match?'1.00×':(+$('scale').value).toFixed(2)+'×';}
 $('mode').onchange=updateScale;$('scale').oninput=updateScale;
-document.addEventListener('keydown',e=>{if(e.code==='Space'||e.code==='Escape'){e.preventDefault();stop();}});
+document.addEventListener('keydown',e=>{if(e.code==='Escape'||(e.code==='Space'&&(!play||state?.active))){e.preventDefault();stop();}});
 window.addEventListener('blur',()=>{if(state?.active)stop();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});
 window.addEventListener('pagehide',stop);
