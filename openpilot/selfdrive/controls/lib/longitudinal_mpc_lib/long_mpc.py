@@ -7,7 +7,7 @@ from opendbc.car.interfaces import ACCEL_MIN, ACCEL_MAX
 from openpilot.common.realtime import DT_MDL
 from openpilot.common.swaglog import cloudlog
 # WARNING: imports outside of constants will not trigger a rebuild
-from openpilot.selfdrive.modeld.constants import index_function
+from openpilot.selfdrive.modeld.constants import index_function, ModelConstants
 from openpilot.selfdrive.controls.radard import _LEAD_ACCEL_TAU
 
 if __name__ == '__main__':  # generating code
@@ -52,9 +52,18 @@ T_IDXS_LST = [index_function(idx, max_val=MAX_T, max_idx=N) for idx in range(N+1
 T_IDXS = np.array(T_IDXS_LST)
 FCW_IDXS = T_IDXS < 5.0
 T_DIFFS = np.diff(T_IDXS, prepend=[0.])
+LEAD_T_IDXS_MODEL = np.array(ModelConstants.LEAD_T_IDXS)
+LEAD_T_DIFFS_MODEL = np.diff(LEAD_T_IDXS_MODEL)
+MODEL_LEAD_T_IDX = np.clip(np.searchsorted(LEAD_T_IDXS_MODEL[1:], T_IDXS - 0.5 * T_DIFFS, side='right'), 0, len(LEAD_T_DIFFS_MODEL) - 1)
 COMFORT_BRAKE = 2.5
 STOP_DISTANCE = 6.0
 MIN_X_LEAD_FACTOR = 0.5
+
+# Worst-case stopping envelope for trusting model lead trajectory
+LEAD_BRAKE_WORST = 3.5
+EGO_BRAKE_SAFE = 3.0
+EGO_BRAKE_DELAY = 0.5
+MIN_STOP_MARGIN = 3.0
 
 def get_jerk_factor(personality=log.LongitudinalPersonality.standard):
   if personality==log.LongitudinalPersonality.relaxed:
@@ -274,41 +283,59 @@ class LongitudinalMpc:
         self.solver.set(i, 'x', self.x0)
 
   @staticmethod
-  def extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau):
-    a_lead_traj = a_lead * np.exp(-a_lead_tau * (T_IDXS**2)/2.)
+  def integrate_lead(x_lead, v_lead, a_lead_traj):
     v_lead_traj = np.clip(v_lead + np.cumsum(T_DIFFS * a_lead_traj), 0.0, 1e8)
     x_lead_traj = x_lead + np.cumsum(T_DIFFS * v_lead_traj)
-    lead_xv = np.column_stack((x_lead_traj, v_lead_traj))
-    return lead_xv
+    return np.column_stack((x_lead_traj, v_lead_traj))
 
-  def process_lead(self, lead):
+  @staticmethod
+  def extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau):
+    a_lead_traj = a_lead * np.exp(-a_lead_tau * (T_IDXS**2)/2.)
+    return LongitudinalMpc.integrate_lead(x_lead, v_lead, a_lead_traj)
+
+  def process_lead(self, model_lead, radar_lead):
     v_ego = self.x0[1]
-    if lead is not None and lead.present:
-      x_lead = lead.dRel
-      v_lead = lead.vLead
-      a_lead = lead.aLeadK
-      a_lead_tau = lead.aLeadTau
+    if radar_lead is not None and radar_lead.present:
+      x_lead = radar_lead.dRel
+      v_lead = radar_lead.vLead
+      a_lead = radar_lead.aLeadK
+      a_lead_tau = radar_lead.aLeadTau
+      model_prob = radar_lead.modelProb
     else:
       # Fake a fast lead car, so mpc can keep running in the same mode
       x_lead = 50.0
       v_lead = v_ego + 10.0
       a_lead = 0.0
       a_lead_tau = _LEAD_ACCEL_TAU
+      model_prob = 0.0
 
     # MPC will not converge if immediate crash is expected
     # Clip lead distance to what is still possible to brake for
     min_x_lead = MIN_X_LEAD_FACTOR * (v_ego + v_lead) * (v_ego - v_lead) / (-ACCEL_MIN * 2)
-    x_lead = np.clip(x_lead, min_x_lead, 1e8)
+    x_start = np.clip(x_lead, min_x_lead, 1e8)
     v_lead = np.clip(v_lead, 0.0, 1e8)
     a_lead = np.clip(a_lead, -10., 5.)
-    lead_xv = self.extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau)
-    return lead_xv
 
-  def update(self, radarstate, personality=log.LongitudinalPersonality.standard):
+    has_model = model_lead is not None and len(model_lead.v) == len(LEAD_T_IDXS_MODEL)
+    lead_brake = max(LEAD_BRAKE_WORST, -a_lead)
+    margin = (x_lead + v_lead**2 / (2.0 * lead_brake)) - (v_ego * EGO_BRAKE_DELAY + v_ego**2 / (2.0 * EGO_BRAKE_SAFE) + MIN_STOP_MARGIN)
+
+    # TODO latch or smooth blend
+    if has_model and (model_prob > 0.5) and (margin > 0.0):
+      # TODO fuse with aleadk
+      dv_dt = np.diff(np.asarray(model_lead.v, dtype=np.float64)) / LEAD_T_DIFFS_MODEL
+      a_lead_traj = np.clip(dv_dt[MODEL_LEAD_T_IDX], -10., 5.)
+    else:
+      a_lead_traj = a_lead * np.exp(-a_lead_tau * (T_IDXS**2) / 2.)
+
+    return self.integrate_lead(x_start, v_lead, a_lead_traj)
+
+  def update(self, modelV2, radarstate, personality=log.LongitudinalPersonality.standard):
     t_follow = get_T_FOLLOW(personality)
+    model_leads = modelV2.leadsV3
 
-    lead_xv_0 = self.process_lead(radarstate.leadOne)
-    lead_xv_1 = self.process_lead(radarstate.leadTwo)
+    lead_xv_0 = self.process_lead(model_leads[0] if len(model_leads) > 0 else None, radarstate.leadOne)
+    lead_xv_1 = self.process_lead(model_leads[1] if len(model_leads) > 1 else None, radarstate.leadTwo)
 
     # To estimate a safe distance from a moving lead, we calculate how much stopping
     # distance that lead needs as a minimum. We can add that to the current distance
