@@ -7,6 +7,11 @@ Version 0.11.3 (2026-XX-XX)
     * adjusting speed based on surrounding traffic
   * This behavior was previously available with openpilot's "Experimental mode", but is now out of beta and always enabled
   * With openpilot deciding which speed to drive, the car's cruise speed is treated as a maximum speed openpilot will not exceed
+* New driver monitoring model
+  * Always-on sleep detection
+  * Improved sleep detection
+* comma four UI updates
+* Romanian translation thanks to adriantabirta!
 
 Version 0.11.2 (2026-10-14)
 =======================

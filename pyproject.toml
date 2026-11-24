@@ -142,6 +142,9 @@ lint.flake8-implicit-str-concat.allow-multiline = false
 "raylib_nb.is_mouse_button_released".msg = "This can miss events. Use Widget._handle_mouse_release"
 "raylib_nb.draw_text".msg = "Use a function (such as rl.draw_font_ex) that takes font as an argument"
 "raylib_nb.draw_texture".msg = "Use rl.draw_texture_ex for float position support"
+"raylib_nb.load_shader".msg = "raylib draws on the CPU, where shaders don't run. Draw with rl.cpu"
+"raylib_nb.load_shader_from_memory".msg = "raylib draws on the CPU, where shaders don't run. Draw with rl.cpu"
+"raylib_nb.load_render_texture".msg = "raylib draws on the CPU, and quickly only onto the screen"
 
 [tool.ruff.format]
 quote-style = "preserve"

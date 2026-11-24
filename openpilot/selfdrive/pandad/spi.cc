@@ -151,7 +151,6 @@ int PandaSpiHandle::bulk_write(unsigned char endpoint, unsigned char* data, int 
   for (int pos = 0; pos < length; pos += SPI_XFER_SIZE) {
     int ret = spi_transfer_retry(endpoint, data + pos, std::min(SPI_XFER_SIZE, length - pos), NULL, 0, timeout);
     if (ret < 0) {
-      comms_healthy = false;
       return ret;
     }
   }
@@ -164,7 +163,6 @@ int PandaSpiHandle::bulk_read(unsigned char endpoint, unsigned char* data, int l
     int to_read = std::min(pos == 0 ? (int)SPI_FIRST_READ_SIZE : SPI_XFER_SIZE, length - pos);
     int ret = spi_transfer_retry(endpoint, NULL, 0, data + pos, to_read, timeout);
     if (ret < 0) {
-      comms_healthy = false;
       return ret;
     }
     pos += ret;
@@ -234,7 +232,7 @@ int PandaSpiHandle::spi_transfer_retry(uint8_t endpoint, uint8_t *tx_data, uint1
   int nack_count = 0;
   while (true) {
     ret = spi_transfer(endpoint, id, tx_data, tx_len, rx_data, max_rx_len, deadline);
-    if (ret >= 0 || !connected) {
+    if (ret >= 0) {
       break;
     }
 

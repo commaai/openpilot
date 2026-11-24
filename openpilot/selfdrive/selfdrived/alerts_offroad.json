@@ -1,21 +1,20 @@
 {
   "Offroad_TemperatureTooHigh": {
-    "text": "Device temperature too high. System cooling down before starting. Current internal component temperature: %1",
+    "text": "Device overheated. The system is cooling down before starting. Current internal component temperature: %1.",
     "severity": 0
   },
   "Offroad_ConnectivityNeededPrompt": {
-    "text": "Immediately connect to the internet to check for updates. If you do not connect to the internet, openpilot won't engage in %1",
+    "text": "Update check needed. Connect to the internet to check for updates. If you don't connect, openpilot won't engage in %1.",
     "severity": 0,
     "_comment": "Set extra field to number of days"
   },
   "Offroad_ConnectivityNeeded": {
-    "text": "Connect to internet to check for updates. openpilot won't automatically start until it connects to internet to check for updates.",
+    "text": "Connect to the internet. openpilot won't automatically start until it connects to the internet to check for updates.",
     "severity": 1
   },
   "Offroad_UpdateFailed": {
-    "text": "Unable to download updates\n%1",
-    "severity": 1,
-    "_comment": "Set extra field to the failed reason."
+    "text": "Update failed. Ensure the software is correctly installed. Uninstall and re-install if this error persists, or reflash the device at flash.comma.ai.",
+    "severity": 1
   },
   "Offroad_ChestnutBranch": {
     "text": "Chestnut detected! Switch to the nightly-chestnut branch to use chestnut-class models.",
@@ -46,27 +45,27 @@
     "severity": 0
   },
   "Offroad_UnregisteredHardware": {
-    "text": "Failed to register with comma.ai backend. It will not connect or upload to comma.ai servers, and receives no support from comma.ai. If this is a device purchased at comma.ai/shop, open a ticket at https://comma.ai/support.",
+    "text": "Device not registered. This device failed to register with comma.ai, so it won't connect or upload to comma.ai servers and receives no support. If you purchased it at comma.ai/shop, open a ticket at comma.ai/support.",
     "severity": 1
   },
   "Offroad_UploadsIgnored": {
-    "text": "Uploads ignored due to a potential detected safety policy violation. Contact comma.ai/support if you believe this was made in error.",
+    "text": "Uploads ignored. Uploads are being ignored due to a potential safety policy violation. Contact comma.ai/support if you believe this was made in error.",
     "severity": 1
   },
   "Offroad_CarUnrecognized": {
-    "text": "openpilot was unable to identify your car. Your car is either unsupported or its ECUs are not recognized. Please submit a pull request to add the firmware versions to the proper vehicle. Need help? Join discord.comma.ai.",
+    "text": "Car not recognized. openpilot was unable to identify your car. It's either unsupported or its ECUs are not recognized. Please submit a pull request to add the firmware versions to the proper vehicle. Need help? Join discord.comma.ai.",
     "severity": 0
   },
   "Offroad_Recalibration": {
-    "text": "openpilot detected a change in the device's mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.",
+    "text": "Device mount changed. openpilot detected a change in the device's mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.",
     "severity": 0
   },
   "Offroad_DriverMonitoringUncertain": {
-    "text": "Poor visibility detected for driver monitoring. Ensure the device has a clear view of the driver. This can be checked in the device settings. Extreme lighting conditions and/or unconventional mounting positions may also trigger this alert.",
+    "text": "Poor driver visibility. Ensure the device has a clear view of the driver, which can be checked in the device settings. Extreme lighting conditions or unconventional mounting positions may also trigger this alert.",
     "severity": 0
   },
   "Offroad_ExcessiveActuation": {
-    "text": "Excessive %1 actuation detected on your last drive. Please contact support at https://comma.ai/support and share your device's Dongle ID for troubleshooting.",
+    "text": "Excessive %1 actuation. This was detected on your last drive. Please contact comma.ai/support and share your device's Dongle ID for troubleshooting.",
     "severity": 1,
     "_comment": "Set extra field to lateral or longitudinal."
   },

@@ -408,6 +408,8 @@ class Setup(Widget):
       if e.code == 409:
         error_msg = e.read().decode("utf-8")
         self.download_failed(self.download_url, error_msg)
+      else:
+        self.download_failed(self.download_url, f"Server error ({e.code}).")
     except Exception:
       error_msg = "Ensure the entered URL is valid, and the device's internet connection is good."
       self.download_failed(self.download_url, error_msg)

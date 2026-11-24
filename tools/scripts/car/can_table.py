@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import argparse
-import pandas as pd
 
 import openpilot.cereal.messaging as messaging
+from openpilot.common.utils import tabulate
 
 
 def can_table(dat):
@@ -12,9 +12,8 @@ def can_table(dat):
     r += [hex(b)]
     rows.append(r)
 
-  df = pd.DataFrame(data=rows)
-  df.columns = [str(n) for n in range(7, -1, -1)] + [' ']
-  table = df.to_markdown(tablefmt='grid')
+  headers = [''] + [str(n) for n in range(7, -1, -1)] + [' ']
+  table = tabulate([[i] + r for i, r in enumerate(rows)], headers, tablefmt='simple_grid')
   return table
 
 

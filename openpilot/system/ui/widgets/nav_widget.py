@@ -55,8 +55,8 @@ class NavWidget(Widget, abc.ABC):
   """
   BACK_TOUCH_AREA_PERCENTAGE = 0.65
 
-  def __init__(self):
-    super().__init__()
+  def __init__(self, **kwargs):
+    super().__init__(**kwargs)  # kwargs go to the next class in the MRO, e.g. Scroller
     # State
     self._drag_start_pos: MousePos | None = None  # cleared after certain amount of horizontal movement
     self._dragging_down = False  # swiped down enough to trigger dismissing on release
@@ -174,9 +174,11 @@ class NavWidget(Widget, abc.ABC):
     self.set_position(self._rect.x, new_y)
 
   def _layout(self):
-    # Dim whatever is behind this widget, fading with position (runs after _update_state so position is correct)
-    overlay_alpha = int(200 * max(0.0, min(1.0, 1.0 - self._rect.y / self._rect.height))) if self._rect.height > 0 else 0
-    rl.draw_rectangle_rec(rl.Rectangle(0, 0, self._rect.width, self._rect.height), rl.Color(0, 0, 0, overlay_alpha))
+    # Dim whatever is behind this widget, fading with position (runs after _update_state so position is correct).
+    # at the top, its background covers it all
+    if self._rect.y != 0:
+      overlay_alpha = int(200 * max(0.0, min(1.0, 1.0 - self._rect.y / self._rect.height))) if self._rect.height > 0 else 0
+      rl.draw_rectangle_rec(rl.Rectangle(0, 0, self._rect.width, self._rect.height), rl.Color(0, 0, 0, overlay_alpha))
 
     bounce_height = 20
     rl.draw_rectangle_rec(rl.Rectangle(self._rect.x, self._rect.y, self._rect.width, self._rect.height + bounce_height), rl.BLACK)
@@ -200,6 +202,11 @@ class NavWidget(Widget, abc.ABC):
     self._nav_bar.render()
 
     return ret
+
+  @property
+  def covers_screen(self) -> bool:
+    # at the top, its background hides everything under it. a press doesn't move it, so a tap on it still does
+    return self._y_pos_filter.x == 0.0 and not self._playing_dismiss_animation
 
   @property
   def is_dismissing(self) -> bool:
