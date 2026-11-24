@@ -10,7 +10,8 @@ LANE_CHANGE_TIME_MAX = 10.
 LANE_CHANGE_START_TIME = 0.5
 TURN_ARM_SPEED = 20 * CV.MPH_TO_MS  # below lane change speed
 TURN_PRED_THRESHOLD = 0.5  # model's own turn prediction for the blinker side
-TURN_PULSE_SPEED = 2 * CV.MPH_TO_MS
+TURN_MOVING_SPEED = 0.3  # m/s
+TURN_PULL_AWAY_ACCEL = 0.2  # m/s^2
 TURN_PULSE_SPEED_UP = 1 * CV.MPH_TO_MS  # above the lowest speed since armed
 
 class DesireHelper:
@@ -97,7 +98,9 @@ class DesireHelper:
     self.desire = log.Desire.none
     # fire when the model itself predicts the turn on the blinker side, once moving
     pred = turn_pred[0] if self.turn_armed == LaneChangeDirection.left else turn_pred[1]
-    if self.turn_armed != LaneChangeDirection.none and v_ego >= TURN_PULSE_SPEED and pred > TURN_PRED_THRESHOLD:
+    # as soon as the car starts to speed up out of the stop, the turn must start before it is going fast
+    pulling_away = v_ego > TURN_MOVING_SPEED and carstate.aEgo > TURN_PULL_AWAY_ACCEL
+    if self.turn_armed != LaneChangeDirection.none and pulling_away and pred > TURN_PRED_THRESHOLD:
       self.desire = log.Desire.turnLeft if self.turn_armed == LaneChangeDirection.left else log.Desire.turnRight
       self.turn_direction = self.turn_armed
       self.turn_timer = 0.0
