@@ -8,8 +8,9 @@ LaneChangeDirection = log.LaneChangeDirection
 LANE_CHANGE_SPEED_MIN = 20 * CV.MPH_TO_MS
 LANE_CHANGE_TIME_MAX = 10.
 LANE_CHANGE_START_TIME = 0.5
-TURN_ARM_SPEED = 0.3  # m/s, stopped
+TURN_ARM_SPEED = 8 * CV.MPH_TO_MS  # stops and rolling stops at stop signs
 TURN_PULSE_SPEED = 2 * CV.MPH_TO_MS
+TURN_PULSE_SPEED_UP = 1 * CV.MPH_TO_MS  # above the lowest speed since armed
 
 class DesireHelper:
   def __init__(self):
@@ -19,6 +20,7 @@ class DesireHelper:
     self.prev_one_blinker = False
     self.desire = log.Desire.none
     self.turn_armed = LaneChangeDirection.none
+    self.turn_min_speed = 0.0
     self.turn_direction = LaneChangeDirection.none
     self.turn_timer = 0.0
 
@@ -78,8 +80,12 @@ class DesireHelper:
     # experiment: blinker on while stopped arms a turn, pulse the turn desire once when pulling away
     if not one_blinker or not carstate.cruiseState.enabled:
       self.turn_armed = LaneChangeDirection.none
-    elif v_ego < TURN_ARM_SPEED:
+    elif self.turn_armed == LaneChangeDirection.none and v_ego < TURN_ARM_SPEED and self.turn_direction == LaneChangeDirection.none:
       self.turn_armed = self.get_lane_change_direction(carstate)
+      self.turn_min_speed = v_ego
+    elif self.turn_armed != LaneChangeDirection.none:
+      self.turn_armed = self.get_lane_change_direction(carstate)
+      self.turn_min_speed = min(self.turn_min_speed, v_ego)
 
     # the turn lasts until the model's turn desire prob falls, like a lane change
     if self.turn_direction != LaneChangeDirection.none:
@@ -88,7 +94,7 @@ class DesireHelper:
         self.turn_direction = LaneChangeDirection.none
 
     self.desire = log.Desire.none
-    if self.turn_armed != LaneChangeDirection.none and v_ego >= TURN_PULSE_SPEED:
+    if self.turn_armed != LaneChangeDirection.none and v_ego >= max(TURN_PULSE_SPEED, self.turn_min_speed + TURN_PULSE_SPEED_UP):
       self.desire = log.Desire.turnLeft if self.turn_armed == LaneChangeDirection.left else log.Desire.turnRight
       self.turn_direction = self.turn_armed
       self.turn_timer = 0.0
