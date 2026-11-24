@@ -212,35 +212,39 @@ class LocationEstimator:
     filter_time_valid = bool(np.isfinite(self.kf.t))
     filter_valid = filter_initialized and filter_time_valid
 
+    old_mean = np.mean(self.posenet_stds[:POSENET_STD_HIST_HALF])
+    new_mean = np.mean(self.posenet_stds[POSENET_STD_HIST_HALF:])
+    std_spike = (new_mean / old_mean) > 4.0 and new_mean > 7.0
+    posenet_valid = not std_spike or self.car_speed <= 5.0
+
+    overall_valid = (sensors_valid or posenet_valid) and inputs_valid and filter_valid
+
     orientation_ned, orientation_ned_std = state[States.NED_ORIENTATION], std[States.NED_ORIENTATION]
     velocity_device, velocity_device_std = state[States.DEVICE_VELOCITY], std[States.DEVICE_VELOCITY]
     angular_velocity_device, angular_velocity_device_std = state[States.ANGULAR_VELOCITY], std[States.ANGULAR_VELOCITY]
     acceleration_device, acceleration_device_std = state[States.ACCELERATION], std[States.ACCELERATION]
 
     msg = messaging.new_message("deviceMotion")
-    msg.valid = filter_valid
+    msg.valid = overall_valid
 
     deviceMotion = msg.deviceMotion
-    init_xyz_measurement(deviceMotion.orientationNED, orientation_ned, orientation_ned_std, filter_valid)
-    init_xyz_measurement(deviceMotion.velocityDevice, velocity_device, velocity_device_std, filter_valid)
-    init_xyz_measurement(deviceMotion.angularVelocityDevice, angular_velocity_device, angular_velocity_device_std, filter_valid)
-    init_xyz_measurement(deviceMotion.accelerationDevice, acceleration_device, acceleration_device_std, filter_valid)
+    init_xyz_measurement(deviceMotion.orientationNED, orientation_ned, orientation_ned_std, overall_valid)
+    init_xyz_measurement(deviceMotion.velocityDevice, velocity_device, velocity_device_std, overall_valid)
+    init_xyz_measurement(deviceMotion.angularVelocityDevice, angular_velocity_device, angular_velocity_device_std, overall_valid)
+    init_xyz_measurement(deviceMotion.accelerationDevice, acceleration_device, acceleration_device_std, overall_valid)
     if self.debug:
       deviceMotion.debugFilterState.value = state.tolist()
       deviceMotion.debugFilterState.std = std.tolist()
-      deviceMotion.debugFilterState.valid = filter_valid
+      deviceMotion.debugFilterState.valid = overall_valid
       deviceMotion.debugFilterState.observations = [
         {'kind': k, 'value': self.observations[k].tolist(), 'error': self.observation_errors[k].tolist()}
         for k in self.observations.keys()
       ]
 
-    old_mean = np.mean(self.posenet_stds[:POSENET_STD_HIST_HALF])
-    new_mean = np.mean(self.posenet_stds[POSENET_STD_HIST_HALF:])
-    std_spike = (new_mean / old_mean) > 4.0 and new_mean > 7.0
-
     deviceMotion.inputsOK = inputs_valid
-    deviceMotion.posenetOK = not std_spike or self.car_speed <= 5.0
+    deviceMotion.posenetOK = posenet_valid
     deviceMotion.sensorsOK = sensors_valid
+    deviceMotion.filterOK = filter_valid
     deviceMotion.timestamp = int(np.nan_to_num(self.kf.t) * 1e9)
 
     return msg
