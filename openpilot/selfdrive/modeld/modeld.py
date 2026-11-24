@@ -489,10 +489,13 @@ def main(demo=False):
       desire_pred = np.array(modelv2_send.modelV2.meta.desirePrediction).reshape(ModelConstants.DESIRE_PRED_LEN, ModelConstants.DESIRE_PRED_WIDTH)
       turn_pred = (float(desire_pred[:, log.Desire.turnLeft].max()), float(desire_pred[:, log.Desire.turnRight].max()))
       plan_speedup = float(np.interp(2.0, ModelConstants.T_IDXS, model_output['plan'][0][:, Plan.VELOCITY][:, 0])) - v_ego
-      DH.update(sm['carState'], sm['carControl'].latActive, lane_change_prob, turn_prob, turn_pred, plan_speedup)
+      keep_pred = (float(desire_pred[:, log.Desire.keepLeft].max()), float(desire_pred[:, log.Desire.keepRight].max()))
+      DH.update(sm['carState'], sm['carControl'].latActive, lane_change_prob, turn_prob, turn_pred, plan_speedup, keep_pred)
       modelv2_send.modelV2.meta.laneChangeState = DH.lane_change_state
       modelv2_send.modelV2.meta.laneChangeDirection = DH.lane_change_direction
       modelv2_send.modelV2.meta.turnDirection = DH.turn_direction
+      if DH.desire in (log.Desire.turnLeft, log.Desire.turnRight, log.Desire.keepLeft, log.Desire.keepRight):
+        modelv2_send.modelV2.meta.desirePulse = DH.desire
 
       fill_driving_model_data(drivingdata_send, modelv2_send)
       fill_pose_msg(posenet_send, model_output, meta_main.frame_id, vipc_dropped_frames, meta_main.timestamp_eof, extrinsics_calibration_seen)

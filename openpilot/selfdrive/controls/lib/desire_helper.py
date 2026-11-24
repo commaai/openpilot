@@ -17,6 +17,7 @@ TURN_PLAN_SPEEDUP = 0.3  # m/s the plan gains in 2 s: the car is about to speed 
 TURN_POSSIBLE_DECAY = 0.5  # 1/s, holds the prediction peak for 2 s
 TURN_ROLLING_SPEED = 2.0  # m/s, below this the blinker alone is enough
 TURN_REARM_STOP_TIME = 1.0  # s below TURN_ROLLING_SPEED (a stop or a rolling stop) before a new pulse is allowed
+KEEP_PRED_THRESHOLD = 0.5  # model's keep left/right prediction for the blinker side, e.g. a new lane opening
 TURN_RESET_TIME = 1.0  # s without blinker or cruise before a new blinker gets a new pulse (both flicker)
 TURN_BLINKER_HOLD = 3.0  # s the turn stays armed after the blinker goes off, it can cancel right at the pull-away
 
@@ -34,6 +35,7 @@ class DesireHelper:
     self.turn_moved = False
     self.turn_blinker = LaneChangeDirection.none
     self.turn_blinker_timer = 0.0
+    self.keep_fired = False
     self.turn_stop_timer = 0.0
     self.turn_off_timer = 0.0
     self.turn_direction = LaneChangeDirection.none
@@ -43,7 +45,7 @@ class DesireHelper:
   def get_lane_change_direction(CS):
     return LaneChangeDirection.left if CS.leftBlinker else LaneChangeDirection.right
 
-  def update(self, carstate, lateral_active, lane_change_prob, turn_prob=0.0, turn_pred=(0.0, 0.0), plan_speedup=0.0):
+  def update(self, carstate, lateral_active, lane_change_prob, turn_prob=0.0, turn_pred=(0.0, 0.0), plan_speedup=0.0, keep_pred=(0.0, 0.0)):
     v_ego = carstate.vEgo
     one_blinker = carstate.leftBlinker != carstate.rightBlinker
     below_lane_change_speed = v_ego < LANE_CHANGE_SPEED_MIN
@@ -113,6 +115,7 @@ class DesireHelper:
     self.turn_off_timer = 0.0 if turn_allowed else self.turn_off_timer + DT_MDL
     if self.turn_off_timer > TURN_RESET_TIME:
       self.turn_fired = False
+      self.keep_fired = False
     if not turn_allowed:
       self.turn_armed = LaneChangeDirection.none
     else:
@@ -148,6 +151,14 @@ class DesireHelper:
       self.turn_armed = LaneChangeDirection.none
       self.turn_fired = True
       self.turn_moved = False
+      return
+    # keep left/right: one pulse per blinker when the model itself predicts it on that side, e.g. a new lane opening
+    keep_side_pred = keep_pred[0] if self.turn_blinker == LaneChangeDirection.left else keep_pred[1]
+    lane_changing = self.lane_change_state in (LaneChangeState.laneChangeStarting, LaneChangeState.laneChangeFinishing)
+    if turn_allowed and not self.keep_fired and not lane_changing and self.turn_direction == LaneChangeDirection.none and \
+       keep_side_pred > KEEP_PRED_THRESHOLD:
+      self.desire = log.Desire.keepLeft if self.turn_blinker == LaneChangeDirection.left else log.Desire.keepRight
+      self.keep_fired = True
       return
     if self.lane_change_state == LaneChangeState.laneChangeStarting:
       if self.lane_change_direction == LaneChangeDirection.left:

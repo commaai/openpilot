@@ -325,7 +325,7 @@ class SelfdriveD:
     meta = self.sm['modelV2'].meta
     lane_change_started = meta.laneChangeState == LaneChangeState.laneChangeStarting and self.prev_lane_change_state != LaneChangeState.laneChangeStarting
     turn_started = meta.turnDirection != LaneChangeDirection.none and self.prev_turn_direction == LaneChangeDirection.none
-    if lane_change_started or turn_started:
+    if lane_change_started or turn_started or meta.desirePulse != log.Desire.none:
       self.events.add(EventName.desireStarted)
     if meta.turnDirection != LaneChangeDirection.none:
       self.events.add(EventName.turning)

@@ -1132,6 +1132,7 @@ struct ModelDataV2 {
     laneChangeState @8 :LaneChangeState;
     laneChangeDirection @9 :LaneChangeDirection;
     turnDirection @10 :LaneChangeDirection;
+    desirePulse @11 :Desire;  # experiment: the turn or keep desire pulse sent this frame
 
 
     deprecated :group {
