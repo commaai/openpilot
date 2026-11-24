@@ -182,7 +182,7 @@ class HudRenderer(Widget):
 
   def _draw_steering_wheel(self, rect: rl.Rectangle) -> None:
     # Green when engaged, orange for steerRequired alerts while engaged, and no color when disengaged.
-    critical = self._wheel_critical_filter.update(self._show_wheel_critical) * (1 - status_fade.weight(UIStatus.DISENGAGED))
+    critical = self._wheel_critical_filter.update(self._show_wheel_critical and ui_state.status != UIStatus.DISENGAGED)
     status_color = status_fade.color({UIStatus.ENGAGED: WHEEL_GREEN, UIStatus.OVERRIDE: WHEEL_WHITE, UIStatus.DISENGAGED: WHEEL_WHITE})
     wheel_color = lerp_color(status_color, WHEEL_ORANGE, critical)
     engaged = status_fade.weight(UIStatus.ENGAGED)
