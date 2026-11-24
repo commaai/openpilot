@@ -8,11 +8,13 @@ LaneChangeDirection = log.LaneChangeDirection
 LANE_CHANGE_SPEED_MIN = 20 * CV.MPH_TO_MS
 LANE_CHANGE_TIME_MAX = 10.
 LANE_CHANGE_START_TIME = 0.5
-TURN_ARM_SPEED = 20 * CV.MPH_TO_MS  # below lane change speed
-TURN_PRED_THRESHOLD = 0.5  # model's own turn prediction for the blinker side
+TURN_ARM_SPEED = 25 * CV.MPH_TO_MS
+TURN_PRED_THRESHOLD = 0.7  # model's own turn prediction for the blinker side, nearest horizon
 TURN_MOVING_SPEED = 0.3  # m/s
+TURN_ROLLING_SPEED = 2.0  # m/s, below this only pulse once the car speeds up out of a stop
 TURN_PULL_AWAY_ACCEL = 0.2  # m/s^2
-TURN_PULSE_SPEED_UP = 1 * CV.MPH_TO_MS  # above the lowest speed since armed
+TURN_REARM_STOP_TIME = 1.5  # s stopped before a new pulse is allowed
+TURN_RESET_TIME = 1.0  # s without blinker or cruise before a new blinker gets a new pulse (both flicker)
 
 class DesireHelper:
   def __init__(self):
@@ -22,7 +24,10 @@ class DesireHelper:
     self.prev_one_blinker = False
     self.desire = log.Desire.none
     self.turn_armed = LaneChangeDirection.none
-    self.turn_min_speed = 0.0
+    self.turn_fired = False
+    self.turn_confirmed = False
+    self.turn_stop_timer = 0.0
+    self.turn_off_timer = 0.0
     self.turn_direction = LaneChangeDirection.none
     self.turn_timer = 0.0
 
@@ -79,15 +84,29 @@ class DesireHelper:
 
     self.prev_one_blinker = one_blinker and lateral_active
 
-    # experiment: blinker on while stopped arms a turn, pulse the turn desire once when pulling away
-    if not one_blinker or not carstate.cruiseState.enabled:
+    # experiment: with the blinker on below 25 mph, pulse the turn desire once when the model itself predicts that turn.
+    # one pulse per blinker, but a stop allows a new one: the model can see the turn early, then stop for a light first
+    stopped = v_ego < TURN_MOVING_SPEED
+    self.turn_stop_timer = self.turn_stop_timer + DT_MDL if stopped else 0.0
+    side_pred = turn_pred[0] if carstate.leftBlinker else turn_pred[1]
+    turn_allowed = one_blinker and carstate.cruiseState.enabled
+    self.turn_off_timer = 0.0 if turn_allowed else self.turn_off_timer + DT_MDL
+    if self.turn_off_timer > TURN_RESET_TIME:
+      self.turn_fired = False
+      self.turn_confirmed = False
+    if not turn_allowed:
       self.turn_armed = LaneChangeDirection.none
-    elif self.turn_armed == LaneChangeDirection.none and v_ego < TURN_ARM_SPEED and self.turn_direction == LaneChangeDirection.none:
-      self.turn_armed = self.get_lane_change_direction(carstate)
-      self.turn_min_speed = v_ego
-    elif self.turn_armed != LaneChangeDirection.none:
-      self.turn_armed = self.get_lane_change_direction(carstate)
-      self.turn_min_speed = min(self.turn_min_speed, v_ego)
+    else:
+      # the model saw this turn at some point with the blinker on
+      self.turn_confirmed = self.turn_confirmed or side_pred > TURN_PRED_THRESHOLD
+      if self.turn_fired and self.turn_stop_timer > TURN_REARM_STOP_TIME:
+        self.turn_fired = False
+        self.turn_direction = LaneChangeDirection.none
+      lane_changing = self.lane_change_state in (LaneChangeState.laneChangeStarting, LaneChangeState.laneChangeFinishing)
+      if v_ego < TURN_ARM_SPEED and not self.turn_fired and self.turn_direction == LaneChangeDirection.none and not lane_changing:
+        self.turn_armed = self.get_lane_change_direction(carstate)
+      else:
+        self.turn_armed = LaneChangeDirection.none
 
     # the turn lasts until the model's turn desire prob falls, like a lane change
     if self.turn_direction != LaneChangeDirection.none:
@@ -96,15 +115,16 @@ class DesireHelper:
         self.turn_direction = LaneChangeDirection.none
 
     self.desire = log.Desire.none
-    # fire when the model itself predicts the turn on the blinker side, once moving
-    pred = turn_pred[0] if self.turn_armed == LaneChangeDirection.left else turn_pred[1]
-    # as soon as the car starts to speed up out of the stop, the turn must start before it is going fast
-    pulling_away = v_ego > TURN_MOVING_SPEED and carstate.aEgo > TURN_PULL_AWAY_ACCEL
-    if self.turn_armed != LaneChangeDirection.none and pulling_away and pred > TURN_PRED_THRESHOLD:
+    # rolling: pulse when the model predicts the turn. out of a stop: pulse as soon as the car speeds up if the model
+    # predicted the turn at any point, so the turn starts before the car is going fast
+    rolling = v_ego > TURN_ROLLING_SPEED and side_pred > TURN_PRED_THRESHOLD
+    pulling_away = not stopped and v_ego <= TURN_ROLLING_SPEED and carstate.aEgo > TURN_PULL_AWAY_ACCEL and self.turn_confirmed
+    if self.turn_armed != LaneChangeDirection.none and (rolling or pulling_away):
       self.desire = log.Desire.turnLeft if self.turn_armed == LaneChangeDirection.left else log.Desire.turnRight
       self.turn_direction = self.turn_armed
       self.turn_timer = 0.0
       self.turn_armed = LaneChangeDirection.none
+      self.turn_fired = True
       return
     if self.lane_change_state == LaneChangeState.laneChangeStarting:
       if self.lane_change_direction == LaneChangeDirection.left:

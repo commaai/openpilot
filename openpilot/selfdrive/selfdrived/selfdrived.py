@@ -318,7 +318,7 @@ class SelfdriveD:
     # ******************************************************************************************
 
     # experiment: blinker while stopped, the turn desire goes to the model when pulling away (~2 mph)
-    if CS.leftBlinker != CS.rightBlinker and CS.vEgo < 8.9 and self.enabled and self.sm['modelV2'].meta.turnDirection == LaneChangeDirection.none:
+    if CS.leftBlinker != CS.rightBlinker and CS.vEgo < 11.2 and self.enabled and self.sm['modelV2'].meta.turnDirection == LaneChangeDirection.none:
       self.events.add(EventName.turnArmedLeft if CS.leftBlinker else EventName.turnArmedRight)
 
     # ding once when a lane change or turn desire goes to the model
