@@ -12,7 +12,7 @@ Test your vehicle's lateral control tuning with this tool. The tool will test th
 3. Enable "Lateral Maneuver Mode" in Settings > Developer on the device while offroad. Alternatively, set the parameter manually:
 
    ```sh
-   echo -n 1 > /data/params/d/LateralManeuverMode
+   echo -n 1 > /dev/shm/params/d/LateralManeuverMode
    ```
 
 4. Turn your vehicle back on. You will see "Lateral Maneuver Mode".

@@ -180,7 +180,7 @@ class Multilang:
       self._plurals = {}
 
   def change_language(self, language_code: str) -> None:
-    self._params.put("LanguageSetting", language_code, block=True)
+    self._params.put("LanguageSetting", language_code)
     self._language = language_code
     self.setup()
 

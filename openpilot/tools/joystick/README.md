@@ -31,7 +31,7 @@ In order to use a joystick over the network, we need to run joystick_control loc
 2. Connect your laptop to your comma device's hotspot and open a new SSH shell. Since joystick_control is being run on your laptop, we need to write a parameter to let controlsd know to start in joystick debug mode:
    ```shell
    # on your comma device
-   echo -n "1" > /data/params/d/JoystickDebugMode
+   echo -n "1" > /dev/shm/params/d/JoystickDebugMode
    ```
 3. Start webrtcd so your laptop can connect to the device:
    ```shell

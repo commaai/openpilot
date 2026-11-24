@@ -15,11 +15,11 @@ class CabinCameraDialog(CameraView):
     self.driver_state_renderer = DriverStateRenderer()
     # TODO: this can grow unbounded, should be given some thought
     device.add_interactive_timeout_callback(gui_app.pop_widget)
-    ui_state.params.put_bool("IsDriverViewEnabled", True, block=True)
+    ui_state.params.put_bool("IsDriverViewEnabled", True)
 
   def hide_event(self):
     super().hide_event()
-    ui_state.params.put_bool("IsDriverViewEnabled", False, block=True)
+    ui_state.params.put_bool("IsDriverViewEnabled", False)
     self.close()
 
   def _handle_mouse_release(self, _):

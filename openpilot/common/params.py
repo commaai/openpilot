@@ -17,6 +17,7 @@ class ParamKeyFlag(IntFlag):
   CLEAR_ON_OFFROAD_TRANSITION = 0x10
   DEVELOPMENT_ONLY = 0x40
   CLEAR_ON_IGNITION_ON = 0x80
+  WAIT_FOR_DISK = 0x100
   ALL = 0xFFFFFFFF
 
 
@@ -73,6 +74,8 @@ params_get_bool = _bind("params_get_bool", [ParamsHandle, ctypes.c_char_p, ctype
 params_put = _bind("params_put", [ParamsHandle, ctypes.c_char_p, ctypes.c_char_p, ctypes.c_size_t, ctypes.c_bool], ctypes.c_int)
 params_put_bool = _bind("params_put_bool", [ParamsHandle, ctypes.c_char_p, ctypes.c_bool, ctypes.c_bool], ctypes.c_int)
 params_remove = _bind("params_remove", [ParamsHandle, ctypes.c_char_p], ctypes.c_int)
+params_save = _bind("params_save", [ParamsHandle], ctypes.c_int)
+params_wait_for_write = _bind("params_wait_for_write", [ParamsHandle, ctypes.c_int])
 params_get_path = _bind("params_get_path", [ParamsHandle, ctypes.c_char_p, ctypes.c_size_t], ParamsBuffer)
 params_keys_size = _bind("params_keys_size", [ParamsHandle], ctypes.c_size_t)
 params_key_at = _bind("params_key_at", [ParamsHandle, ctypes.c_size_t], ParamsBuffer)
@@ -168,16 +171,24 @@ class Params:
     return ensure_bytes(self.python2cpp(type(dat), self.get_type(key), dat, key))
 
   def put(self, key, dat, block=False):
-    """Write a parameter. block=True waits until it is persisted to disk."""
+    """Write a parameter. block=True waits until it's on the disk."""
     k = self.check_key(key)
     value = self._put_cast(k, dat)
-    params_put(self.p, k, value, len(value), block)
+    return params_put(self.p, k, value, len(value), block)
 
   def put_bool(self, key, val, block=False):
-    params_put_bool(self.p, self.check_key(key), val, block)
+    return params_put_bool(self.p, self.check_key(key), val, block)
 
   def remove(self, key):
-    params_remove(self.p, self.check_key(key))
+    return params_remove(self.p, self.check_key(key))
+
+  def save(self):
+    """Copy what changed in RAM to the disk. Returns 0 if everything is there."""
+    return params_save(self.p)
+
+  def wait_for_write(self, timeout):
+    """For whoever calls save(): returns when a param was written, or after the timeout."""
+    params_wait_for_write(self.p, int(timeout * 1000))
 
   def get_param_path(self, key=""):
     key = ensure_bytes(key)
