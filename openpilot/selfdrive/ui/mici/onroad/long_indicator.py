@@ -1,89 +1,177 @@
+import math
 import raylib_nb as rl
 from openpilot.cereal import log
+from openpilot.common.constants import CV
 from openpilot.common.filter_simple import FirstOrderFilter
-from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.system.ui.lib.application import gui_app
+from openpilot.selfdrive.ui.mici.onroad import DIMMED_ICON_ALPHA, alpha_texture, gaussian_blur
+from openpilot.selfdrive.ui.mici.onroad.status import status_fade
+from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
+from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
 
-HIGHLIGHT_TIME = 2.5  # seconds
+SET_SPEED_NA = 255
+SHOW_TIME = 2.5  # seconds to show the set speed and personality after they change
+SOURCE_HOLD = 1.0  # seconds the planner source must hold before the icon or speed switches
+LongitudinalPlanSource = log.LongitudinalPlan.LongitudinalPlanSource
+LEAD_SOURCES = (LongitudinalPlanSource.lead0, LongitudinalPlanSource.lead1, LongitudinalPlanSource.lead2)
+
+# centers in the 72px column. the dial's needle sticks out on the left, so it sits 2px left of center
+ICON_Y, ICON_Y_NO_SPEED = 103.5, 120
+SPEED_Y = 148.5
+SPEED_FONT_SIZE = 36  # Inter Bold 36 in Figma
+PERSONALITY_FONT_SIZE, PERSONALITY_SUB_FONT_SIZE = 67, 37  # Inter 64 and 36 in Figma
+PERSONALITY_SUBTITLE = "driving personality"
+SHADOW_SIGMA, SHADOW_DY = 8 * 10 / 24, 2  # Figma's 0 2 8 black text shadow. Figma blurs 24 as sigma 10
+PERSONALITY_NAMES = {
+  log.LongitudinalPersonality.aggressive: "aggressive",
+  log.LongitudinalPersonality.standard: "standard",
+  log.LongitudinalPersonality.relaxed: "relaxed",
+}
+
+
+def _text_shadow(font: rl.Font, text: str, font_size: int, spacing: float) -> tuple[rl.Texture, int]:
+  """Blurred black coverage of the text, offset by its padding. Raylib can't draw text off screen,
+  so this draws it on the screen before the first frame clears it, and must run outside a frame"""
+  size = measure_text_cached(font, text, font_size, spacing)
+  rl.clear_background(rl.BLACK)
+  rl.draw_text_ex(font, text, rl.Vector2(0, 0), font_size, spacing, rl.WHITE)
+  alpha = rl.cpu.screen()[::-1][:math.ceil(size.y), :math.ceil(size.x), 0] / 255.0  # the screen's rows are bottom up
+  rl.clear_background(rl.BLACK)
+  return alpha_texture(gaussian_blur(alpha, SHADOW_SIGMA), color=(0, 0, 0)), math.ceil(3 * SHADOW_SIGMA)
+
+
+def _filter(x: float = 0.0, rc: float = 0.1) -> FirstOrderFilter:
+  return FirstOrderFilter(x, rc, 1 / gui_app.target_fps)
 
 
 class LongIndicator(Widget):
+  """Speed dial with the set speed below it. openpilot long is green, shows the car while following with the lead policy,
+  and shows AUTO when not limited by the set speed."""
   def __init__(self):
     super().__init__()
-    self._txt_lead_car = (self._texture('car', 35, 27), self._texture('car_green', 50, 42))
-    self._txt_distance = [(self._texture('distance_1', 32, 7), self._texture('distance_1_green', 60, 35)),
-                          (self._texture('distance_2', 40, 9), self._texture('distance_2_green', 68, 37)),
-                          (self._texture('distance_3', 48, 11), self._texture('distance_3_green', 76, 39))]
-    self._alpha_filter = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps)
-    # crossfade between states, a white and a green filter per icon
-    self._lead_car_filters = (FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps), FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps))
-    self._distance_filters = [(FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps), FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps))
-                              for _ in range(3)]
+    self._txt_dial = (self._texture('speed_dial', 54, 46), self._texture('speed_dial_green', 76, 68))
+    self._txt_car = (self._texture('car', 50, 39), self._texture('car_green', 72, 61))
+    self._txt_auto = self._texture('auto', 58, 20)
+    self._font = gui_app.font(FontWeight.BOLD)
+    self._font_sub = gui_app.font(FontWeight.ROMAN)
+    self._shadows = {name: _text_shadow(self._font, name, PERSONALITY_FONT_SIZE, -2) for name in PERSONALITY_NAMES.values()}
+    self._shadows[PERSONALITY_SUBTITLE] = _text_shadow(self._font_sub, PERSONALITY_SUBTITLE, PERSONALITY_SUB_FONT_SIZE, 0)
+
+    self._alpha_filter = _filter(rc=0.05)
+    self._lead_filter = _filter()
+    self._speed_filter = _filter()
+    self._auto_filter = _filter()
+    self._personality_filter = _filter()
+
+    self._set_speed = SET_SPEED_NA
+    self._shown_set_speed = 0.0  # last valid set speed, held while it fades out
+    self._engaged = False
+    self._set_speed_changed_time = -SHOW_TIME
+    self._source = LongitudinalPlanSource.cruise  # held planner source
+    self._source_change_time = 0.0
+    self._should_draw = True
     self._personality: int | None = None
-    self._personality_changed_time = -HIGHLIGHT_TIME
-    self._should_draw = False
+    self._personality_changed_time = -SHOW_TIME
 
   @staticmethod
   def _texture(name: str, width: int, height: int) -> rl.Texture:
     return gui_app.texture(f'icons_mici/longitudinal/{name}.png', width, height, keep_aspect_ratio=False)
 
+  def _update_state(self) -> None:
+    sm = ui_state.sm
+    now = rl.get_time()
+    if not ui_state.started or not ui_state.received_since_started('carState'):
+      self._set_speed = SET_SPEED_NA
+      self._engaged = False
+      self._source = LongitudinalPlanSource.cruise
+      self._personality = None
+      return
+
+    # show the set speed for a bit when it changes or on engage, even under AUTO
+    set_speed = sm['carState'].vCruiseCluster
+    engaged = sm['selfdriveState'].enabled
+    if engaged and (set_speed != self._set_speed or not self._engaged):
+      self._set_speed_changed_time = now
+    self._set_speed, self._engaged = set_speed, engaged
+    if 0 < set_speed < SET_SPEED_NA:
+      self._shown_set_speed = set_speed
+
+    # the planner picks the lowest accel of cruise, lead, and e2e. hold it so close calls don't flicker
+    source = sm['longitudinalPlan'].longitudinalPlanSource
+    if source == self._source:
+      self._source_change_time = now
+    elif now - self._source_change_time > SOURCE_HOLD:
+      self._source = source
+
+    personality = sm['selfdriveState'].personality.raw
+    if ui_state.has_longitudinal_control and self._personality is not None and personality != self._personality:
+      self._personality_changed_time = now
+    self._personality = personality
+
   def set_should_draw(self, should_draw: bool):
     self._should_draw = should_draw
 
+  def showing_personality(self) -> bool:
+    return self._personality_filter.x > 1e-2 or rl.get_time() - self._personality_changed_time < SHOW_TIME
+
   def _render(self, rect: rl.Rectangle) -> None:
-    sm = ui_state.sm
-    if sm.recv_frame['selfdriveState'] < ui_state.started_frame or not sm['selfdriveState'].enabled or not ui_state.has_longitudinal_control:
-      self._personality = None
-      self._personality_changed_time = -HIGHLIGHT_TIME
+    # offroad shows the disengaged state
+    if ui_state.CP is None or (ui_state.started and not ui_state.received_since_started('selfdriveState')):
       self._alpha_filter.x = 0.0
       return
 
-    # hidden under alerts and set speed
-    visible = self._should_draw and sm['selfdriveState'].alertSize == log.SelfdriveState.AlertSize.none
-    alpha = self._alpha_filter.update(visible)
-    self._draw_lead_car(rect, alpha)
-    self._draw_distance_bars(rect, alpha, visible)
+    disengaged = status_fade.weight(UIStatus.DISENGAGED)
+    op_long = ui_state.has_longitudinal_control
+    alpha = self._alpha_filter.update(float(self._should_draw))
+    # grey while disengaged, white for stock ACC and green for openpilot long while engaged
+    green = (1 - disengaged) * op_long
+    white_alpha = alpha * (1 - (1 - DIMMED_ICON_ALPHA) * disengaged)
 
-  def _draw_lead_car(self, rect: rl.Rectangle, alpha: float) -> None:
-    sm = ui_state.sm
-    plan = sm['longitudinalPlan']
-    has_lead = sm.alive['longitudinalPlan'] and plan.hasLead
+    cruise_set = 0 < self._set_speed < SET_SPEED_NA
+    speed = self._speed_filter.update(float(cruise_set)) * (1 - disengaged)
+    lead = self._lead_filter.update(float(op_long and self._source in LEAD_SOURCES))
+    icon_y = ICON_Y_NO_SPEED + (ICON_Y - ICON_Y_NO_SPEED) * speed
 
-    e2e = has_lead and plan.longitudinalPlanSource == log.LongitudinalPlan.LongitudinalPlanSource.e2e
-    white_f, green_f = self._lead_car_filters
-    white_alpha = white_f.update(0.0 if e2e else 0.9 if has_lead else 0.35)
-    green_alpha = green_f.update(float(e2e))
+    for (white, green_txt), weight, dx in ((self._txt_dial, 1 - lead, -2), (self._txt_car, lead, 0)):
+      self._draw_centered(white, rect, dx, icon_y, white_alpha * weight * (1 - green))
+      self._draw_centered(green_txt, rect, dx, icon_y, alpha * weight * green)
 
-    white, green = self._txt_lead_car
-    self._draw_centered(white, rect, 100, white_alpha * alpha)
-    self._draw_centered(green, rect, 100, green_alpha * alpha)
+    if speed < 1e-2:
+      return
+    show_auto = op_long and self._source != LongitudinalPlanSource.cruise and rl.get_time() - self._set_speed_changed_time > SHOW_TIME
+    auto = self._auto_filter.update(float(show_auto))
+    text_y = SPEED_Y + (ICON_Y_NO_SPEED - ICON_Y) * (1 - speed)
+    self._draw_centered(self._txt_auto, rect, 0, text_y, 0.9 * alpha * speed * auto)
+    self._draw_set_speed(rect, text_y, 0.9 * alpha * speed * (1 - auto))
 
-  def _draw_distance_bars(self, rect: rl.Rectangle, alpha: float, visible: bool) -> None:
-    sm = ui_state.sm
-    now = rl.get_time()
-    personality = sm['selfdriveState'].personality.raw
-    if self._personality is not None and personality != self._personality:
-      self._personality_changed_time = now
-    self._personality = personality
-    # the personality alert covers the bars, hold the highlight until they show
-    if not visible and now - self._personality_changed_time < HIGHLIGHT_TIME:
-      self._personality_changed_time = now
-    highlight = now - self._personality_changed_time < HIGHLIGHT_TIME
+  def _draw_set_speed(self, rect: rl.Rectangle, y: float, alpha: float) -> None:
+    if alpha < 1e-2:
+      return
+    set_speed = self._shown_set_speed if ui_state.is_metric else self._shown_set_speed * CV.KPH_TO_MPH
+    text = str(round(set_speed))
+    size = measure_text_cached(self._font, text, SPEED_FONT_SIZE, -1)
+    pos = rl.Vector2(round(rect.x + (rect.width - size.x) / 2), round(rect.y + y - size.y / 2))
+    rl.draw_text_ex(self._font, text, pos, SPEED_FONT_SIZE, -1, rl.Color(255, 255, 255, round(255 * alpha)))
 
-    # blink at double the turn signal rate (2.67 Hz) while overriding the gas
-    overriding = any(e.name == log.OnroadEvent.EventName.gasPressedOverride for e in sm['onroadEvents'])
-    blink = 0.35 / 0.9 if overriding and now % 0.375 > 0.1875 else 1.0
+  def render_personality(self, rect: rl.Rectangle, can_draw: bool) -> None:
+    """The personality name in the top left of the camera view for a bit after it changes"""
+    visible = can_draw and rl.get_time() - self._personality_changed_time < SHOW_TIME
+    alpha = self._personality_filter.update(float(visible))
+    if alpha < 1e-2 or self._personality is None:
+      return
 
-    count = personality + 1
-    for i, ((white, green), y, (active_f, green_f)) in enumerate(zip(self._txt_distance, (122, 136, 152), self._distance_filters, strict=True)):
-      active = active_f.update(float(i < count))
-      green_alpha = green_f.update(float(highlight and i == count - 1))
-      # only lit bars blink on override
-      self._draw_centered(white, rect, y, (0.35 * (1 - active) + 0.9 * (active - green_alpha) * blink) * alpha)
-      self._draw_centered(green, rect, y, green_alpha * blink * alpha)
+    name = PERSONALITY_NAMES.get(self._personality, "")
+    for font, text, font_size, spacing, y, opacity in ((self._font, name, PERSONALITY_FONT_SIZE, -2, 0, 1.0),
+                                                       (self._font_sub, PERSONALITY_SUBTITLE, PERSONALITY_SUB_FONT_SIZE, 0, 77, 0.65)):
+      pos = rl.Vector2(rect.x + 21, rect.y + y)
+      shadow, pad = self._shadows[text]
+      rl.draw_texture_ex(shadow, rl.Vector2(pos.x - pad, pos.y - pad + SHADOW_DY), 0.0, 1.0, rl.Color(255, 255, 255, round(255 * opacity * alpha)))
+      rl.draw_text_ex(font, text, pos, font_size, spacing, rl.Color(255, 255, 255, round(255 * 0.9 * opacity * alpha)))
 
   @staticmethod
-  def _draw_centered(texture: rl.Texture, rect: rl.Rectangle, y: float, alpha: float) -> None:
-    pos = rl.Vector2(rect.x + 46 - texture.width / 2, rect.y + y - texture.height / 2)
+  def _draw_centered(texture: rl.Texture, rect: rl.Rectangle, dx: float, y: float, alpha: float) -> None:
+    if alpha < 1e-2:
+      return
+    pos = rl.Vector2(rect.x + (rect.width - texture.width) / 2 + dx, rect.y + y - texture.height / 2)
     rl.draw_texture_ex(texture, pos, 0.0, 1.0, rl.Color(255, 255, 255, round(255 * alpha)))

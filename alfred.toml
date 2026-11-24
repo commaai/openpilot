@@ -13,14 +13,13 @@ MKL_NUM_THREADS = "1"
 NUMEXPR_NUM_THREADS = "1"
 OPENBLAS_NUM_THREADS = "1"
 VECLIB_MAXIMUM_THREADS = "1"
-QCOM_PRIORITY = "12"
 
 # with the submodule package symlinks launch_chffrplus.sh makes
 [steps.build]
 name = "Build openpilot"
 run = """
 for p in msgq_repo/msgq opendbc_repo/opendbc rednose_repo/rednose teleoprtc_repo/teleoprtc tinygrad_repo/tinygrad; do ln -sfn "$p" "${p#*/}"; done
-cd openpilot/system/manager && ./build.py
+tools/op.sh build
 """
 
 [steps.flash-chestnut]

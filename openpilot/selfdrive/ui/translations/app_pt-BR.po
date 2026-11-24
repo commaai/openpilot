@@ -147,7 +147,7 @@ msgstr "Alterar esta configuração reiniciará o openpilot se o carro estiver l
 
 #: openpilot/selfdrive/ui/widgets/pairing_dialog.py
 msgid "Click \"add new device\" and scan the QR code on the right"
-msgstr "Toque em \"adicionar novo dispositivo\" e escaneie o QR code à direita"
+msgstr "Toque em \"add new device\" e escaneie o QR code à direita"
 
 #: openpilot/selfdrive/ui/widgets/offroad_alerts.py
 msgid "Close"

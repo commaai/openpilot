@@ -3,6 +3,7 @@
 Tests the state machine in isolation by constructing a WifiManager with mocked
 DBus, then calling _handle_state_change directly with NM state transitions.
 """
+import queue
 import unittest
 from jeepney.low_level import MessageType
 
@@ -894,13 +895,10 @@ class TestWorkerErrorRecovery(OpenpilotTestCase):
 
     mock_init = self._mock_init_restores(wm, mocker, "A", ConnectStatus.CONNECTED)
 
-    # Run worker thread synchronously
-    workers = []
-    mocker.patch('openpilot.system.ui.lib.wifi_manager.threading.Thread',
-                 side_effect=lambda target, **kw: type('T', (), {'start': lambda self: workers.append(target)})())
-
+    # Run the request synchronously
+    wm._requests = queue.Queue()
     wm.connect_to_network("B", "password123")
-    workers[-1]()
+    wm._requests.get_nowait()()
 
     mock_init.assert_called_once()
     assert wm._wifi_state.ssid == "A"

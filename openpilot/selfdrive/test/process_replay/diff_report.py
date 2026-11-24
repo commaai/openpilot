@@ -1,6 +1,6 @@
 import os
 from collections import defaultdict
-from opendbc.car.tests.car_diff import format_diff, format_numeric_diffs
+from opendbc.car.tests.car_diff import format_diff, format_numeric_diffs, format_report
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs
 from openpilot.selfdrive.test.process_replay.process_replay import PROC_REPLAY_DIR
 
@@ -66,28 +66,18 @@ def diff_report(replay_diffs, segments) -> None:
     else:
       with_diffs.append((plat, seg, proc, data))
 
-  icon = "⚠️" if with_diffs else "✅"
-  lines = [
-    "## Process replay diff report",
-    "Replays driving segments through this PR and compares the behavior to master.",
-    "Please review any changes carefully to ensure they are expected.\n",
-    f"{icon}  {len(with_diffs)} changed, {n_passed} passed, {len(errors)} errors",
-  ]
+  changes = []
+  for plat, seg, proc, (diffs, ref, new) in with_diffs:
+    lines = []
+    by_field = defaultdict(list)
+    for d in diffs:
+      by_field[d[0]].append(d)
+    for field, fd in sorted(by_field.items()):
+      lines.append(f"\n  {field} ({len(fd)} diffs)")
+      lines.extend(diff_format(fd, ref, new, field))
+    changes.append((f"{plat} - {seg} [{proc}]", lines))
 
-  for plat, seg, proc, err in errors:
-    lines.append(f"\nERROR {plat} - {seg} [{proc}]: {err}")
-
-  if with_diffs:
-    lines.append("<details><summary><b>Show changes</b></summary>\n\n```")
-    for plat, seg, proc, (diffs, ref, new) in with_diffs:
-      lines.append(f"\n{plat} - {seg} [{proc}]")
-      by_field = defaultdict(list)
-      for d in diffs:
-        by_field[d[0]].append(d)
-      for field, fd in sorted(by_field.items()):
-        lines.append(f"\n  {field} ({len(fd)} diffs)")
-        lines.extend(diff_format(fd, ref, new, field))
-    lines.append("```\n</details>")
-
+  report = format_report("Process replay diff report", "Replays driving segments through this PR and compares the behavior to master.",
+                         changes, n_passed, [f"{plat} - {seg} [{proc}]: {err}" for plat, seg, proc, err in errors])
   with open(os.path.join(PROC_REPLAY_DIR, "diff_report.txt"), "w") as f:
-    f.write("\n".join(lines))
+    f.write(report)
