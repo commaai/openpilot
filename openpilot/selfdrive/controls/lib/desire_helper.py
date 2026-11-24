@@ -8,6 +8,8 @@ LaneChangeDirection = log.LaneChangeDirection
 LANE_CHANGE_SPEED_MIN = 20 * CV.MPH_TO_MS
 LANE_CHANGE_TIME_MAX = 10.
 LANE_CHANGE_START_TIME = 0.5
+TURN_ARM_SPEED = 0.3  # m/s, stopped
+TURN_PULSE_SPEED = 2 * CV.MPH_TO_MS
 
 class DesireHelper:
   def __init__(self):
@@ -16,6 +18,7 @@ class DesireHelper:
     self.lane_change_timer = 0.0
     self.prev_one_blinker = False
     self.desire = log.Desire.none
+    self.turn_armed = LaneChangeDirection.none
 
   @staticmethod
   def get_lane_change_direction(CS):
@@ -70,7 +73,17 @@ class DesireHelper:
 
     self.prev_one_blinker = one_blinker and lateral_active
 
+    # experiment: blinker on while stopped arms a turn, pulse the turn desire once when pulling away
+    if not one_blinker or not carstate.cruiseState.enabled:
+      self.turn_armed = LaneChangeDirection.none
+    elif v_ego < TURN_ARM_SPEED:
+      self.turn_armed = self.get_lane_change_direction(carstate)
+
     self.desire = log.Desire.none
+    if self.turn_armed != LaneChangeDirection.none and v_ego >= TURN_PULSE_SPEED:
+      self.desire = log.Desire.turnLeft if self.turn_armed == LaneChangeDirection.left else log.Desire.turnRight
+      self.turn_armed = LaneChangeDirection.none
+      return
     if self.lane_change_state == LaneChangeState.laneChangeStarting:
       if self.lane_change_direction == LaneChangeDirection.left:
         self.desire = log.Desire.laneChangeLeft

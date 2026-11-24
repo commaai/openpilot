@@ -315,6 +315,10 @@ class SelfdriveD:
       self.events.add(EventName.excessiveActuation)
     # ******************************************************************************************
 
+    # experiment: blinker while stopped, the turn desire goes to the model when pulling away (~2 mph)
+    if CS.leftBlinker != CS.rightBlinker and CS.vEgo < 0.9 and self.enabled:
+      self.events.add(EventName.turnArmedLeft if CS.leftBlinker else EventName.turnArmedRight)
+
     # Handle lane change
     if self.sm['modelV2'].meta.laneChangeState == LaneChangeState.preLaneChange:
       direction = self.sm['modelV2'].meta.laneChangeDirection

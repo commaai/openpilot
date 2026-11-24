@@ -140,6 +140,8 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     locationdPermanentErrorDEPRECATED @86;
     paramsdPermanentErrorDEPRECATED @88;
     actuatorsApiUnavailableDEPRECATED @89;
+    turnArmedLeft @106;
+    turnArmedRight @107;
   }
 }
 

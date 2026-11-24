@@ -591,6 +591,22 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.WARNING: below_steer_speed_alert,
   },
 
+  EventName.turnArmedLeft: {
+    ET.WARNING: Alert(
+      "openpilot will turn left",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
+  },
+
+  EventName.turnArmedRight: {
+    ET.WARNING: Alert(
+      "openpilot will turn right",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
+  },
+
   EventName.preLaneChangeLeft: {
     ET.WARNING: Alert(
       "Steer Left to Start Lane Change Once Safe",
@@ -1041,6 +1057,22 @@ if HARDWARE.get_device_type() == 'mici':
         AlertStatus.userPrompt, AlertSize.small,
         Priority.LOW, VisualAlert.none, AudibleAlert.none, .2),
     },
+    EventName.turnArmedLeft: {
+      ET.WARNING: Alert(
+        "openpilot will turn left",
+        "",
+        AlertStatus.normal, AlertSize.small,
+        Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
+    },
+
+    EventName.turnArmedRight: {
+      ET.WARNING: Alert(
+        "openpilot will turn right",
+        "",
+        AlertStatus.normal, AlertSize.small,
+        Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
+    },
+
     EventName.preLaneChangeLeft: {
       ET.WARNING: Alert(
         "Steer Left",
