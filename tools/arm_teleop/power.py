@@ -46,8 +46,8 @@ def install_gateway_key():
     raise ValueError("Expected an Ed25519 gateway public key")
   target = Path("/tmp/authorized_keys")
   lines = target.read_text().splitlines() if target.exists() else []
-  lines = [line for line in lines if not line.endswith(" mici-game-gateway")]
-  lines.append(f'restrict,port-forwarding,permitopen="127.0.0.1:8022",command="/bin/false" {kind} {key} mici-game-gateway')
+  lines = [line for line in lines if not line.endswith((" mici-game-gateway", " ball-toss-gateway"))]
+  lines.append(f'restrict,port-forwarding,permitopen="127.0.0.1:8022",command="/bin/false" {kind} {key} ball-toss-gateway')
   target.write_text("\n".join(lines) + "\n")
   target.chmod(0o644)
 
