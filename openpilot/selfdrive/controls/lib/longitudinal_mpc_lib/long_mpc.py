@@ -59,12 +59,6 @@ COMFORT_BRAKE = 2.5
 STOP_DISTANCE = 6.0
 MIN_X_LEAD_FACTOR = 0.5
 
-# Worst-case stopping envelope for trusting model lead trajectory
-LEAD_BRAKE_WORST = 3.5
-EGO_BRAKE_SAFE = 3.0
-EGO_BRAKE_DELAY = 0.5
-MIN_STOP_MARGIN = 3.0
-
 def get_jerk_factor(personality=log.LongitudinalPersonality.standard):
   if personality==log.LongitudinalPersonality.relaxed:
     return 1.0
@@ -317,12 +311,9 @@ class LongitudinalMpc:
     a_lead = np.clip(a_lead, -10., 5.)
 
     has_model = model_lead is not None and len(model_lead.v) == len(LEAD_T_IDXS_MODEL)
-    lead_brake = max(LEAD_BRAKE_WORST, -a_lead)
-    margin = (x_lead + v_lead**2 / (2.0 * lead_brake)) - (v_ego * EGO_BRAKE_DELAY + v_ego**2 / (2.0 * EGO_BRAKE_SAFE) + MIN_STOP_MARGIN)
-
-    # TODO latch or smooth blend
-    if has_model and (model_prob > 0.5) and (margin > 0.0):
-      # TODO fuse with aleadk
+    # TODO fallback if danger
+    if has_model and (model_prob > 0.5):
+      # TODO blend with aleadk
       dv_dt = np.diff(np.asarray(model_lead.v, dtype=np.float64)) / LEAD_T_DIFFS_MODEL
       a_lead_traj = np.clip(dv_dt[MODEL_LEAD_T_IDX], -10., 5.)
     else:
