@@ -4,13 +4,14 @@ from openpilot.cereal import log
 from openpilot.common.constants import CV
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.selfdrive.ui.mici.onroad import DIMMED_ICON_ALPHA, alpha_texture, gaussian_blur
-from openpilot.selfdrive.ui.mici.onroad.status import status_fade
+from openpilot.selfdrive.ui.mici.onroad.status import lerp_color, status_fade
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
 
 SET_SPEED_NA = 255
+GREEN = rl.Color(0, 255, 64, 255)
 SHOW_TIME = 2.5  # seconds to show the set speed and personality after they change
 SOURCE_HOLD = 1.0  # seconds the planner source must hold before the icon or speed switches
 LongitudinalPlanSource = log.LongitudinalPlan.LongitudinalPlanSource
@@ -50,8 +51,8 @@ class LongIndicator(Widget):
   and shows AUTO when not limited by the set speed."""
   def __init__(self):
     super().__init__()
-    self._txt_dial = (self._texture('speed_dial', 54, 46), self._texture('speed_dial_green', 76, 68))
-    self._txt_car = (self._texture('car', 50, 39), self._texture('car_green', 72, 61))
+    self._txt_dial = self._texture('speed_dial', 54, 46)
+    self._txt_car = self._texture('car', 50, 39)
     self._txt_auto = self._texture('auto', 58, 20)
     self._font = gui_app.font(FontWeight.BOLD)
     self._font_sub = gui_app.font(FontWeight.ROMAN)
@@ -133,9 +134,10 @@ class LongIndicator(Widget):
     lead = self._lead_filter.update(float(op_long and self._source in LEAD_SOURCES))
     icon_y = ICON_Y_NO_SPEED + (ICON_Y - ICON_Y_NO_SPEED) * speed
 
-    for (white, green_txt), weight, dx in ((self._txt_dial, 1 - lead, -2), (self._txt_car, lead, 0)):
-      self._draw_centered(white, rect, dx, icon_y, white_alpha * weight * (1 - green))
-      self._draw_centered(green_txt, rect, dx, icon_y, alpha * weight * green)
+    icon_color = lerp_color(rl.WHITE, GREEN, green)
+    icon_alpha = white_alpha + (alpha - white_alpha) * green
+    for texture, weight, dx in ((self._txt_dial, 1 - lead, -2), (self._txt_car, lead, 0)):
+      self._draw_centered(texture, rect, dx, icon_y, icon_alpha * weight, icon_color)
 
     if speed < 1e-2:
       return
@@ -170,8 +172,8 @@ class LongIndicator(Widget):
       rl.draw_text_ex(font, text, pos, font_size, spacing, rl.Color(255, 255, 255, round(255 * 0.9 * opacity * alpha)))
 
   @staticmethod
-  def _draw_centered(texture: rl.Texture, rect: rl.Rectangle, dx: float, y: float, alpha: float) -> None:
+  def _draw_centered(texture: rl.Texture, rect: rl.Rectangle, dx: float, y: float, alpha: float, color: rl.Color = rl.WHITE) -> None:
     if alpha < 1e-2:
       return
     pos = rl.Vector2(rect.x + (rect.width - texture.width) / 2 + dx, rect.y + y - texture.height / 2)
-    rl.draw_texture_ex(texture, pos, 0.0, 1.0, rl.Color(255, 255, 255, round(255 * alpha)))
+    rl.draw_texture_ex(texture, pos, 0.0, 1.0, rl.Color(color.r, color.g, color.b, round(255 * alpha)))
