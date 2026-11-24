@@ -177,7 +177,7 @@ class Station:
           async with self.http.get(self.base, timeout=ClientTimeout(total=1)) as response:
             response.raise_for_status()
             slot = await response.json()
-            self.reservation = {key: slot[key] for key in ("start", "end", "phase", "github_username")}
+            self.reservation = {key: slot.get(key) for key in ("start", "end", "phase", "label", "github_username")}
         if self.args.game_url and self.reservation.get("phase") != "active":
           self.device = {}
           self.device_error = "Waiting for an active reservation"
@@ -297,12 +297,9 @@ def main():
   async def status(request):
     return web.json_response(station.status())
 
-  async def play(request):
-    return web.FileResponse(Path(__file__).with_name("play.html"), headers={"Cache-Control": "no-store"})
-
   app.router.add_get("/", index)
   if args.game_url:
-    app.router.add_get("/play", play)
+    app.router.add_get("/play", index)
   app.router.add_get("/status", status)
   app.router.add_get("/ws", station.websocket)
   app.router.add_get("/video", station.video)
