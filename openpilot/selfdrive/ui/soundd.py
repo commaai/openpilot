@@ -1,4 +1,5 @@
 import math
+import os
 import numpy as np
 import time
 import wave
@@ -16,6 +17,7 @@ from openpilot.common.hardware import HARDWARE
 
 SAMPLE_RATE = 48000
 SAMPLE_BUFFER = 4096 # (approx 100ms)
+TTS_PATH = '/data/tts.wav'  # experiment: a clip dropped here plays once, e.g. to say a new build is ready
 MAX_VOLUME = 1.0
 MIN_VOLUME = 0.1
 ALERT_RAMP_TIME = 4 # seconds to ramp critical alerts to max volume
@@ -81,6 +83,7 @@ class Soundd:
     self.current_sound = AudibleAlert.none
     self.current_volume = MIN_VOLUME
     self.current_sound_frame = 0
+    self.tts = np.zeros(0, dtype=np.float32)
 
     self.ramp_start_volume = MIN_VOLUME
     self.ramp_start_time = 0.
@@ -132,10 +135,27 @@ class Soundd:
 
     return ret * self.current_volume
 
+  def load_tts(self):
+    if not os.path.exists(TTS_PATH):
+      return
+    try:
+      with wave.open(TTS_PATH, 'r') as wavefile:
+        audio = np.frombuffer(wavefile.readframes(wavefile.getnframes()), dtype=np.int16).astype(np.float32) / (2**16/2)
+        if wavefile.getframerate() != SAMPLE_RATE or wavefile.getnchannels() != 1:
+          audio = np.zeros(0, dtype=np.float32)
+      self.tts = audio * 0.8
+    except Exception:
+      cloudlog.exception("soundd: bad tts clip")
+    os.remove(TTS_PATH)
+
   def callback(self, data_out: np.ndarray, frames: int, time, status) -> None:
     if status:
       cloudlog.warning(f"soundd stream over/underflow: {status}")
     data_out[:frames, 0] = self.get_sound_data(frames)
+    if len(self.tts):
+      n = min(frames, len(self.tts))
+      data_out[:n, 0] += self.tts[:n]
+      self.tts = self.tts[n:]
 
   def update_alert(self, new_alert):
     current_alert_played_once = self.current_alert == AudibleAlert.none or self.current_sound_frame >= len(self.loaded_sounds[self.current_sound])
@@ -199,6 +219,7 @@ class Soundd:
             self.current_volume = self.calculate_volume(float(self.spl_filter_weighted.x))
 
         self.get_audible_alert(sm)
+        self.load_tts()
 
         if self.current_alert in critical_max_sounds:
           elapsed = time.monotonic() - self.ramp_start_time
