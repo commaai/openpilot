@@ -7,11 +7,6 @@ JOINTS = ("Shoulder pan", "Shoulder lift", "Elbow", "Wrist flex", "Wrist roll", 
 IDS = tuple(range(1, 7))
 
 
-def ports():
-  return [{"serial": p.serial_number, "port": p.device} for p in list_ports.comports()
-          if (p.vid, p.pid) == (0x1A86, 0x55D3)]
-
-
 def signed_position(value):
   return -(value & 0x7FFF) if value & 0x8000 else value
 
@@ -19,7 +14,7 @@ def signed_position(value):
 class Arm:
   def __init__(self, serial):
     self.serial = serial
-    self.path = next(p["port"] for p in ports() if p["serial"] == serial)
+    self.path = next(p.device for p in list_ports.comports() if (p.vid, p.pid, p.serial_number) == (0x1A86, 0x55D3, serial))
     self.port = scs.PortHandler(self.path)
     self.packet = scs.PacketHandler(0)
     self.error_codes = {}

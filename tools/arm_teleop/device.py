@@ -65,7 +65,7 @@ class GripperContact:
 
 
 class Robot:
-  def __init__(self, name="left", managed=False):
+  def __init__(self, name):
     self.name = name
     self.serial = FOLLOWERS[name]
     self.lock = threading.RLock()
@@ -74,7 +74,6 @@ class Robot:
     self.active = False
     self.holding = False
     self.session = None
-    self.managed = managed
     self.lease_deadline = float("inf")
     self.sequence = -1
     self.last_command = 0.
@@ -112,9 +111,9 @@ class Robot:
         if self.active:
           raise ValueError("Control is already active")
         remaining = float(body.get("lease_expires_at", 0)) - time.time()  # noqa: TID251 - Convert UTC once, then enforce with monotonic time.
-        if self.managed and (not math.isfinite(remaining) or not 0 < remaining <= 300):
+        if not 0 < remaining <= 300:
           raise ValueError("A current reservation lease of at most five minutes is required")
-        lease_deadline = time.monotonic() + remaining if self.managed else float("inf")
+        lease_deadline = time.monotonic() + remaining
         if any(m != 777 for m in self.arm.models) or any(self.arm.modes):
           raise ValueError("Expected six STS3215 servos in position mode")
         positions = self.arm.positions()
@@ -150,7 +149,7 @@ class Robot:
         self.last_command = time.monotonic()
         self.lease_deadline = lease_deadline
         self.active = True
-        self.reason = "Following leader"
+        self.reason = "Control active"
         return {"session": self.session, "positions": positions, "limits": self.arm.limits}
       if op == "target":
         if time.monotonic() >= self.lease_deadline:
@@ -245,7 +244,7 @@ class Robot:
   def status(self):
     with self.lock:
       return {**self.state, "active": self.active, "holding": self.holding, "reason": self.reason,
-              "managed": self.managed, "lease_remaining": max(0, self.lease_deadline - time.monotonic()) if self.active and self.managed else None,
+              "managed": True, "lease_remaining": max(0, self.lease_deadline - time.monotonic()) if self.active else None,
               "gripper_limited": self.gripper_contact is not None, "target": self.commanded,
               "command_age": time.monotonic() - self.last_command if self.active else None}
 
@@ -328,7 +327,7 @@ class Handler(HTTPRequestHandler):
       self.json({"error": str(e)}, 400)
 
   def authorized(self):
-    if gateway_key is not None and not secrets.compare_digest(self.headers.get("Authorization", ""), "Bearer " + gateway_key):
+    if not secrets.compare_digest(self.headers.get("Authorization", ""), "Bearer " + gateway_key):
       self.close_connection = True
       self.json({"error": "Use the reservation gateway"}, 401)
       return False
@@ -336,12 +335,11 @@ class Handler(HTTPRequestHandler):
 
 
 if __name__ == "__main__":
-  key_file = Path("/data/arm_teleop_gateway_key")
-  gateway_key = key_file.read_text().strip() if key_file.exists() else None
-  if gateway_key is not None and len(gateway_key) < 32:
+  gateway_key = Path("/data/arm_teleop_gateway_key").read_text().strip()
+  if len(gateway_key) < 32:
     raise ValueError("Invalid reservation gateway key")
   camera = Camera()
-  robots = {name: Robot(name, managed=gateway_key is not None) for name in FOLLOWERS}
+  robots = {name: Robot(name) for name in FOLLOWERS}
   server = ThreadingHTTPServer(("127.0.0.1", 8022), Handler)
   signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
   try:
