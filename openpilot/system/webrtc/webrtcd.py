@@ -54,15 +54,14 @@ class StreamSession:
     self.is_body = "testJoystick" in body.bridge_services_in
     self.continuous_camera = body.continuous_camera
 
-    builder = WebRTCAnswerBuilder(body.sdp, bind_address=_default_route_ip())
+    builder = WebRTCAnswerBuilder(body.sdp, bind_address=body.camera_bind_address if body.continuous_camera else _default_route_ip())
 
     # create video tracks and add to sdp
     from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
     self.video_enabled = body.enabled
     self.video_tracks = []
     for camera in body.cameras:
-      track = LiveStreamVideoStreamTrack(camera, self.video_enabled)
-      track.timing_sei_enabled = body.continuous_camera
+      track = LiveStreamVideoStreamTrack(camera, self.video_enabled, continuous_camera=body.continuous_camera)
       self.video_tracks.append(track)
       builder.add_video_stream(camera, track)
     self.stream = builder.stream()

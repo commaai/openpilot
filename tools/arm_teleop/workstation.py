@@ -258,7 +258,7 @@ class Station:
   async def receive_camera(self):
     from rtc_camera import camera_frames
     url = f"http://127.0.0.1:{self.args.video_tunnel_port}" if self.args.video_tunnel_port else self.base
-    async with contextlib.aclosing(camera_frames(self.http, url)) as frames:
+    async with contextlib.aclosing(camera_frames(self.http, url, device_host=self.args.device)) as frames:
       async for captured, jpeg in frames:
         async with self.camera_condition:
           self.captured_at, self.jpeg = captured, jpeg

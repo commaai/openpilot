@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from dataclasses import dataclass
+from ipaddress import ip_address
 import json
 import math
 import os
@@ -312,9 +313,10 @@ class Handler(HTTPRequestHandler):
         media = [line for line in sdp.splitlines() if line.startswith("m=")] if isinstance(sdp, str) else []
         if len(media) != 1 or not media[0].startswith("m=video "):
           raise ValueError("Expected a single video track")
+        address = str(ip_address(body["device_ip"])) if "device_ip" in body else None
+        request = StreamRequestBody(sdp, ["wideRoad"], enabled=True, continuous_camera=True, camera_bind_address=address)
         try:
-          answer = post_stream_request(StreamRequestBody(sdp, ["wideRoad"], enabled=True, continuous_camera=True))
-          sdp = answer["sdp"]
+          sdp = post_stream_request(request)["sdp"]
         except Exception:
           self.json({"error": "Camera signaling unavailable"}, 503)
           return
