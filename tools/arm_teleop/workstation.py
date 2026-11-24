@@ -9,6 +9,7 @@ import time
 
 from aiohttp import ClientSession, ClientTimeout, WSMsgType, web
 
+from device_tunnel import ssh_tunnel
 from servos import Arm, JOINTS
 
 
@@ -197,29 +198,15 @@ class Station:
           await ws.send_json(state)
       await asyncio.sleep(0.1)
 
-  async def tunnel(self, port):
-    while True:
-      proc = await asyncio.create_subprocess_exec(
-        "ssh", "-N", "-T", "-i", self.args.key, "-o", "IdentitiesOnly=yes", "-o", "BatchMode=yes",
-        "-o", "StrictHostKeyChecking=yes", "-o", "ExitOnForwardFailure=yes", "-o", "ConnectTimeout=5",
-        "-o", "ServerAliveInterval=2", "-o", "ServerAliveCountMax=2",
-        "-o", "ControlMaster=no", "-o", "ControlPath=none", "-o", "IPQoS=lowdelay",
-        "-L", f"127.0.0.1:{port}:127.0.0.1:8022", f"comma@{self.args.device}")
-      try:
-        await proc.wait()
-      finally:
-        if proc.returncode is None:
-          proc.terminate()
-          await proc.wait()
-      await asyncio.sleep(2)
-
   async def lifecycle(self, app):
     self.http = ClientSession(headers=self.headers)
     tasks = [asyncio.create_task(fn()) for fn in (self.controls, self.monitor)]
     if not self.args.game_url:
-      tasks.extend([asyncio.create_task(self.tunnel(self.args.tunnel_port)), asyncio.create_task(self.receive_camera())])
+      ports = [self.args.tunnel_port]
       if self.args.video_tunnel_port and self.args.video_tunnel_port != self.args.tunnel_port:
-        tasks.append(asyncio.create_task(self.tunnel(self.args.video_tunnel_port)))
+        ports.append(self.args.video_tunnel_port)
+      tunnel = ssh_tunnel(f"comma@{self.args.device}", self.args.key, ports)
+      tasks.extend([asyncio.create_task(tunnel), asyncio.create_task(self.receive_camera())])
     yield
     async with self.lock:
       await self.stop("Workstation service stopped")

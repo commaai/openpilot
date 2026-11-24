@@ -9,4 +9,4 @@ requires-python = ">=3.11"
 dependencies = ["aiohttp>=3.11,<4", "aiortc>=1.16,<2", "av>=19,<20", "Pillow>=10,<13"]
 
 [tool.setuptools]
-py-modules = ["rtc_camera"]
+py-modules = ["rtc_camera", "device_tunnel"]
