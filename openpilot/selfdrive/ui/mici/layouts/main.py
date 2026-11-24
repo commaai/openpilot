@@ -19,7 +19,7 @@ GREET_IGNITION_OFF_TIME = 60 * 60  # greet again when the car turns on after bei
 
 class MiciMainLayout(Scroller):
   def __init__(self):
-    super().__init__(snap_items=True, spacing=0, pad=0, scroll_indicator=False, edge_shadows=False)
+    super().__init__(snap_items=True, spacing=0, pad=0, scroll_indicator=False)
 
     self._pm = messaging.PubMaster(['bookmarkButton', 'userBookmark'])
 
