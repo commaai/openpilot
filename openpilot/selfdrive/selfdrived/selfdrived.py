@@ -115,6 +115,8 @@ class SelfdriveD:
 
     self.initialized = False
     self.enabled = False
+    self.prev_lane_change_state = LaneChangeState.off
+    self.prev_turn_direction = LaneChangeDirection.none
     self.active = False
     self.mismatch_counter = 0
     self.cruise_mismatch_counter = 0
@@ -318,6 +320,17 @@ class SelfdriveD:
     # experiment: blinker while stopped, the turn desire goes to the model when pulling away (~2 mph)
     if CS.leftBlinker != CS.rightBlinker and CS.vEgo < 0.9 and self.enabled:
       self.events.add(EventName.turnArmedLeft if CS.leftBlinker else EventName.turnArmedRight)
+
+    # ding once when a lane change or turn desire goes to the model
+    meta = self.sm['modelV2'].meta
+    lane_change_started = meta.laneChangeState == LaneChangeState.laneChangeStarting and self.prev_lane_change_state != LaneChangeState.laneChangeStarting
+    turn_started = meta.turnDirection != LaneChangeDirection.none and self.prev_turn_direction == LaneChangeDirection.none
+    if lane_change_started or turn_started:
+      self.events.add(EventName.desireStarted)
+    if meta.turnDirection != LaneChangeDirection.none:
+      self.events.add(EventName.turning)
+    self.prev_lane_change_state = meta.laneChangeState
+    self.prev_turn_direction = meta.turnDirection
 
     # Handle lane change
     if self.sm['modelV2'].meta.laneChangeState == LaneChangeState.preLaneChange:

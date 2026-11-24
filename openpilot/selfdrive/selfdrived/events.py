@@ -591,6 +591,22 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.WARNING: below_steer_speed_alert,
   },
 
+  EventName.desireStarted: {
+    ET.WARNING: Alert(
+      "",
+      "",
+      AlertStatus.normal, AlertSize.none,
+      Priority.MID, VisualAlert.none, AudibleAlert.prompt, .2),
+  },
+
+  EventName.turning: {
+    ET.WARNING: Alert(
+      "Turning",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
+  },
+
   EventName.turnArmedLeft: {
     ET.WARNING: Alert(
       "openpilot will turn left",
@@ -1057,6 +1073,22 @@ if HARDWARE.get_device_type() == 'mici':
         AlertStatus.userPrompt, AlertSize.small,
         Priority.LOW, VisualAlert.none, AudibleAlert.none, .2),
     },
+    EventName.desireStarted: {
+      ET.WARNING: Alert(
+        "",
+        "",
+        AlertStatus.normal, AlertSize.none,
+        Priority.MID, VisualAlert.none, AudibleAlert.prompt, .2),
+    },
+
+    EventName.turning: {
+      ET.WARNING: Alert(
+        "Turning",
+        "",
+        AlertStatus.normal, AlertSize.small,
+        Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
+    },
+
     EventName.turnArmedLeft: {
       ET.WARNING: Alert(
         "openpilot will turn left",

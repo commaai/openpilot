@@ -142,6 +142,8 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     actuatorsApiUnavailableDEPRECATED @89;
     turnArmedLeft @106;
     turnArmedRight @107;
+    desireStarted @108;
+    turning @109;
   }
 }
 
@@ -1129,6 +1131,7 @@ struct ModelDataV2 {
     hardBrakePredicted @7 :Bool;
     laneChangeState @8 :LaneChangeState;
     laneChangeDirection @9 :LaneChangeDirection;
+    turnDirection @10 :LaneChangeDirection;
 
 
     deprecated :group {

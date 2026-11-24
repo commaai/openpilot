@@ -19,12 +19,14 @@ class DesireHelper:
     self.prev_one_blinker = False
     self.desire = log.Desire.none
     self.turn_armed = LaneChangeDirection.none
+    self.turn_direction = LaneChangeDirection.none
+    self.turn_timer = 0.0
 
   @staticmethod
   def get_lane_change_direction(CS):
     return LaneChangeDirection.left if CS.leftBlinker else LaneChangeDirection.right
 
-  def update(self, carstate, lateral_active, lane_change_prob):
+  def update(self, carstate, lateral_active, lane_change_prob, turn_prob=0.0):
     v_ego = carstate.vEgo
     one_blinker = carstate.leftBlinker != carstate.rightBlinker
     below_lane_change_speed = v_ego < LANE_CHANGE_SPEED_MIN
@@ -79,9 +81,17 @@ class DesireHelper:
     elif v_ego < TURN_ARM_SPEED:
       self.turn_armed = self.get_lane_change_direction(carstate)
 
+    # the turn lasts until the model's turn desire prob falls, like a lane change
+    if self.turn_direction != LaneChangeDirection.none:
+      self.turn_timer += DT_MDL
+      if not lateral_active or self.turn_timer > LANE_CHANGE_TIME_MAX or (turn_prob < 0.02 and self.turn_timer >= LANE_CHANGE_START_TIME):
+        self.turn_direction = LaneChangeDirection.none
+
     self.desire = log.Desire.none
     if self.turn_armed != LaneChangeDirection.none and v_ego >= TURN_PULSE_SPEED:
       self.desire = log.Desire.turnLeft if self.turn_armed == LaneChangeDirection.left else log.Desire.turnRight
+      self.turn_direction = self.turn_armed
+      self.turn_timer = 0.0
       self.turn_armed = LaneChangeDirection.none
       return
     if self.lane_change_state == LaneChangeState.laneChangeStarting:
