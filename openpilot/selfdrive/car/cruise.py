@@ -58,6 +58,10 @@ class VCruiseHelper:
         elif CS.cruiseState.speed == -1:
           self.v_cruise_kph = -1
           self.v_cruise_cluster_kph = -1
+        elif self.CP.openpilotLongitudinalControl:
+          # the planner doesn't go above V_CRUISE_MAX, so don't show more
+          self.v_cruise_kph = min(self.v_cruise_kph, V_CRUISE_MAX)
+          self.v_cruise_cluster_kph = min(self.v_cruise_cluster_kph, V_CRUISE_MAX)
     else:
       self.v_cruise_kph = V_CRUISE_UNSET
       self.v_cruise_cluster_kph = V_CRUISE_UNSET
