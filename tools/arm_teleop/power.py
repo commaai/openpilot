@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 import glob
+import grp
 import os
+from contextlib import suppress
 from pathlib import Path
+import stat
 import subprocess
+import sys
+import time
 
 
 def run(*args):
@@ -14,6 +19,22 @@ def write(path, value):
     Path(path).write_text(value)
   except OSError as e:
     print(f"{path}: {e}", flush=True)
+
+
+def hotplug():
+  dialout = grp.getgrnam("dialout").gr_gid
+  for pattern in ("/sys/bus/usb/devices/*/power/control", "/sys/bus/platform/devices/*.ssusb/power/control"):
+    for path in glob.glob(pattern):
+      with suppress(FileNotFoundError):
+        if Path(path).read_text().strip() != "on":
+          write(path, "on")
+  for port in Path("/dev").glob("ttyACM[0-9]*"):
+    with suppress(FileNotFoundError):
+      info = port.stat()
+      if info.st_gid != dialout:
+        os.chown(port, -1, dialout)
+      if stat.S_IMODE(info.st_mode) != 0o660:
+        port.chmod(0o660)
 
 
 def install_gateway_key():
@@ -39,11 +60,7 @@ def main():
   print(result.stderr, end="")
   run("systemctl", "daemon-reload")
   write("/sys/module/usbcore/parameters/autosuspend", "-1")
-  rules = Path(__file__).with_name("99-arm-teleop.rules")
-  subprocess.run(["install", "-Dm644", rules, "/run/udev/rules.d/" + rules.name], check=True)
-  subprocess.run(["udevadm", "control", "--reload-rules"], check=True)
-  for subsystem, devices in (("usb", "*"), ("platform", "*.ssusb"), ("tty", "ttyACM[0-9]*")):
-    subprocess.run(["udevadm", "trigger", "--action=change", "--settle", "--subsystem-match=" + subsystem, "--sysname-match=" + devices], check=True)
+  hotplug()
 
   for path in glob.glob("/sys/devices/system/cpu/cpu[0-7]/online"):
     write(path, "1")
@@ -72,4 +89,9 @@ def main():
 
 
 if __name__ == "__main__":
-  main()
+  if "--watch" in sys.argv:
+    while True:
+      hotplug()
+      time.sleep(2)
+  else:
+    main()

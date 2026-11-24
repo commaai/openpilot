@@ -1,3 +1,0 @@
-ACTION!="remove", SUBSYSTEM=="usb", TEST=="power/control", ATTR{power/control}="on"
-ACTION!="remove", SUBSYSTEM=="platform", KERNEL=="*.ssusb", TEST=="power/control", ATTR{power/control}="on"
-ACTION!="remove", SUBSYSTEM=="tty", KERNEL=="ttyACM[0-9]*", OWNER="root", GROUP="dialout", MODE="0660"
