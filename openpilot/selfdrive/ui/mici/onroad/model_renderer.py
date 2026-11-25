@@ -6,7 +6,7 @@ from openpilot.selfdrive.controls.radard import RADAR_TO_CAMERA
 from openpilot.selfdrive.locationd.calibrationd import HEIGHT_INIT
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 from openpilot.selfdrive.ui.mici.onroad import blend_colors
-from openpilot.selfdrive.ui.mici.onroad.status import status_fade
+from openpilot.selfdrive.ui.mici.onroad.status import openpilot_available, status_fade
 from openpilot.selfdrive.ui.onroad.model_renderer import ModelRenderer as BaseModelRenderer, CLIP_MARGIN, MAX_DRAW_DISTANCE, STOCK_PATH_GRADIENT
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.polygon import Gradient, draw_polygon
@@ -130,9 +130,8 @@ class ModelRenderer(BaseModelRenderer):
     self._visible = 1 - status_fade.weight(UIStatus.DISENGAGED)
     if abs((path_half_width := 0.45 * (1 + self._visible)) - self._path_half_width) > 1e-3:
       self._path_half_width, self._transform_dirty = path_half_width, True
-    # the black path and lead bars hide while openpilot is unavailable, e.g. calibrating or dashcam mode.
-    # braking disengages without making openpilot unavailable
-    available = sm['selfdriveState'].enabled or sm['selfdriveState'].engageable or sm['carState'].brakePressed
+    # the black path and lead bars hide while openpilot is unavailable, e.g. calibrating or dashcam mode
+    available = openpilot_available()
     self._available_filter.update(available)
 
     model = sm['modelV2']
