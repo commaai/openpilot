@@ -123,7 +123,7 @@ class StatusCard(GreyBigButton):
     text_rect = rl.Rectangle(rect.x + offset, rect.y, rect.width - offset, rect.height)
     text_height = self._sub_label.get_content_height(int(text_rect.width))
     icon_y = rect.y + rect.height - (text_height + self.ICON_SIZE) / 2
-    rl.draw_texture_v(self._check_icon, rl.Vector2(rect.x, icon_y), rl.Color(255, 255, 255, int(255 * 0.9)))
+    rl.draw_texture_v(self._check_icon, rl.Vector2(rect.x, icon_y), rl.WHITE)
     super()._draw_subtitle(text_rect)
 
 

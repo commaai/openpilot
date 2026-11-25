@@ -3,7 +3,7 @@ import raylib_nb as rl
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 from openpilot.selfdrive.ui.mici.onroad.status import status_fade
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.application import gui_app, uncapped_white
 from openpilot.system.ui.lib.polygon import Gradient, draw_polygon
 from openpilot.common.filter_simple import FirstOrderFilter
 
@@ -25,7 +25,8 @@ def draw_circle_gradient(center_x: float, center_y: float, radius: float,
   # gradient y is measured from the bottom of the screen
   gradient = Gradient(start=(0, 1 - (center_y - radius) / gui_app.height), end=(0, 1 - (center_y + radius) / gui_app.height),
                       colors=[bottom, top], stops=[0.0, 1.0])
-  draw_polygon(screen, CIRCLE_PTS * radius + (center_x, center_y), gradient=gradient)
+  with uncapped_white():  # custom gradient
+    draw_polygon(screen, CIRCLE_PTS * radius + (center_x, center_y), gradient=gradient)
 
 
 class ConfidenceBall(Widget):

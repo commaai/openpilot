@@ -43,7 +43,7 @@ class LongIndicator(Widget):
 
     # grayed out while disengaged, with the lit bars at the dimmed icon alpha
     visible = self._should_draw
-    dim = 1 - (1 - DIMMED_ICON_ALPHA / 0.9) * status_fade.weight(UIStatus.DISENGAGED)
+    dim = 1 - (1 - DIMMED_ICON_ALPHA) * status_fade.weight(UIStatus.DISENGAGED)
     alpha = self._alpha_filter.update(visible) * dim
     self._draw_lead_car(rect, alpha)
     self._draw_distance_bars(rect, alpha, visible)
@@ -54,11 +54,11 @@ class LongIndicator(Widget):
     has_lead = sm.alive['longitudinalPlan'] and plan.hasLead
     e2e = has_lead and plan.longitudinalPlanSource == log.LongitudinalPlan.LongitudinalPlanSource.e2e
     white_f, green_f = self._lead_car_filters
-    white_alpha = white_f.update(0.0 if e2e else 0.9 if has_lead else 0.35)
+    white_alpha = white_f.update(0.0 if e2e else 1.0 if has_lead else 0.35)
     green_alpha = green_f.update(float(e2e))
     # static and filled in while disengaged, like the lit distance bars
     disengaged = status_fade.weight(UIStatus.DISENGAGED)
-    white_alpha, green_alpha = white_alpha + (0.9 - white_alpha) * disengaged, green_alpha * (1 - disengaged)
+    white_alpha, green_alpha = white_alpha + (1 - white_alpha) * disengaged, green_alpha * (1 - disengaged)
 
     white, green = self._txt_lead_car
     self._draw_centered(white, rect, 100, white_alpha * alpha)
@@ -80,7 +80,7 @@ class LongIndicator(Widget):
     for i, ((white, green), y, (active_f, green_f)) in enumerate(zip(self._txt_distance, (122, 136, 152), self._distance_filters, strict=True)):
       active = active_f.update(float(i < count))
       green_alpha = green_f.update(float(highlight and i == count - 1))
-      self._draw_centered(white, rect, y, (0.35 * (1 - active) + 0.9 * (active - green_alpha)) * alpha)
+      self._draw_centered(white, rect, y, (0.35 * (1 - active) + (active - green_alpha)) * alpha)
       self._draw_centered(green, rect, y, green_alpha * alpha)
 
   @staticmethod

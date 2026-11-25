@@ -114,7 +114,7 @@ class DriverStateRenderer(Widget):
     rl.draw_texture_ex(self._dm_person,
                        rl.Vector2(self._rect.x + (self._rect.width - self._dm_person.width) / 2,
                                   self._rect.y + (self._rect.height - self._dm_person.height) / 2), 0.0, 1.0,
-                       rl.Color(255, 255, 255, int(255 * 0.9 * self._fade_filter.x)))
+                       rl.Color(255, 255, 255, int(255 * self._fade_filter.x)))
 
     green_amount = self._color_fade_filter.update(0.0 if self._awareness_unfull else 1.0)
     if self.effective_active and self._dimmed < 1:
