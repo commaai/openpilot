@@ -1,3 +1,4 @@
+import numpy as np
 import raylib_nb as rl
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.selfdrive.ui.mici.onroad import DIMMED_ICON_ALPHA
@@ -14,7 +15,8 @@ class LongIndicator(Widget):
     self._icons = [(self._texture('car', 40, 31), 96), (self._texture('distance_1', 33, 8), 123),
                    (self._texture('distance_2', 40, 9), 138), (self._texture('distance_3', 48, 10), 155)]
     self._lit_filters = [FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps) for _ in self._icons]
-    self._alpha_filter = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps)
+    # speed dial and lead/distance icons alphas, crossfading if CarParams changes on ignition
+    self._alpha_filter = FirstOrderFilter(np.zeros(2), 0.05, 1 / gui_app.target_fps)
     self._status = StatusFade(0.1)
     # stock ACC cars show a static speed dial instead
     self._txt_speed_dial = self._texture('speed_dial', 56, 48)
@@ -32,24 +34,21 @@ class LongIndicator(Widget):
 
   def _render(self, rect: rl.Rectangle) -> None:
     # offroad shows the disengaged state
-    if ui_state.started and not ui_state.received_since_started('selfdriveState'):
-      self._alpha_filter.x = 0.0
-      return
-
-    alpha = self._alpha_filter.update(self._should_draw)
+    long = ui_state.has_longitudinal_control
+    dial_alpha, icons_alpha = self._alpha_filter.update(np.array([not long, long]) * self._should_draw).tolist()
     disengaged = self._status.weight(UIStatus.DISENGAGED)
-    if not ui_state.has_longitudinal_control:
-      # the needle's arrowhead overhangs the left, so the dial sits 2px left of center
-      dial_rect = rl.Rectangle(rect.x - 2, rect.y, rect.width, rect.height)
-      self._draw_centered(self._txt_speed_dial, dial_rect, 120, (0.9 - (0.9 - DIMMED_ICON_ALPHA) * disengaged) * alpha)
-      return
+    # the needle's arrowhead overhangs the left, so the dial sits 2px left of center
+    dial_rect = rl.Rectangle(rect.x - 2, rect.y, rect.width, rect.height)
+    self._draw_centered(self._txt_speed_dial, dial_rect, 120, (0.9 - (0.9 - DIMMED_ICON_ALPHA) * disengaged) * dial_alpha)
 
-    # white car while openpilot has a lead, lit bars up to the personality. lit icons dim while disengaged, unlit ones stay grey
-    personality = ui_state.sm['selfdriveState'].personality.raw if ui_state.started else ui_state.personality_param
+    # white car while openpilot has a lead, lit bars up to the personality. lit icons dim while disengaged, unlit ones stay grey.
+    # until selfdriveState arrives after ignition, the param is what selfdrived starts with
+    live = ui_state.started and ui_state.received_since_started('selfdriveState')
+    personality = ui_state.sm['selfdriveState'].personality.raw if live else ui_state.personality_param
     lit_alpha = 0.9 + (0.63 - 0.9) * disengaged
     for i, ((txt, y), f) in enumerate(zip(self._icons, self._lit_filters, strict=True)):
       lit = f.update(self._has_lead if i == 0 else i <= personality + 1)
-      self._draw_centered(txt, rect, y, (0.35 + (lit_alpha - 0.35) * lit) * alpha)
+      self._draw_centered(txt, rect, y, (0.35 + (lit_alpha - 0.35) * lit) * icons_alpha)
 
   @staticmethod
   def _draw_centered(texture: rl.Texture, rect: rl.Rectangle, y: float, alpha: float) -> None:
