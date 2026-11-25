@@ -74,6 +74,13 @@ class Arm:
     for i in IDS:
       self.write(i, 40, int(enabled))
 
+  def torque_limits(self, limits):
+    writer = scs.GroupSyncWrite(self.port, self.packet, 48, 2)
+    for i, value in zip(IDS, limits, strict=True):
+      value = int(value)
+      writer.addParam(i, [value & 255, value >> 8])
+    self.check(writer.txPacket())
+
   def targets(self, positions, *, gripper=True):
     writer = scs.GroupSyncWrite(self.port, self.packet, 42, 2)
     for i, value in zip(IDS, positions, strict=True):

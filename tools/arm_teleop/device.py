@@ -24,7 +24,12 @@ DISPLAY_PATH = Path("/tmp/balltoss_display.json")
 WATCHDOG = 0.4
 TICKS_PER_DEGREE = 4096 / 360
 MAX_SERVO_SPEED = 0x7fff  # STS register 46 uses bit 15 for direction.
-GRIPPER_TORQUE_LIMIT = 333  # STS register 48 (0-1000); 1/3 of default 1000.
+TORQUE_LIMITS = (450, 700, 650, 500, 450, 333)  # STS reg 48 (0-1000) per joint.
+IDLE_TORQUE_LIMITS = (200, 350, 300, 250, 200, 150)
+IDLE_RELEASE_SECONDS = 60.0
+OVERLOAD_TORQUES = (38, 60, 55, 42, 38, 25)  # STS reg 36 (% threshold, matched below TORQUE_LIMITS).
+PROTECTION_TIME = 60  # STS reg 35 (10ms units -> 0.6s).
+PROTECTIVE_TORQUE = 20  # STS reg 34 (% fallback torque).
 
 
 class Camera:
@@ -79,6 +84,7 @@ class Robot:
     self.lease_deadline = float("inf")
     self.sequence = -1
     self.last_command = 0.
+    self.idle_since = time.monotonic()
     self.gripper_contact = None
     self.goal = []
     self.commanded = []
@@ -87,14 +93,38 @@ class Robot:
     self.running = True
     threading.Thread(target=self.run, daemon=True).start()
 
+  def configure_protection(self):
+    assert self.arm is not None
+    for i, overload in zip(IDS, OVERLOAD_TORQUES, strict=True):
+      desired = ((34, PROTECTIVE_TORQUE), (35, PROTECTION_TIME), (36, overload))
+      changes = [(addr, val) for addr, val in desired if self.arm.read(i, addr, 1) != val]
+      if changes:
+        was_on = self.arm.read(i, 40, 1)
+        if was_on:
+          self.arm.write(i, 40, 0)
+        self.arm.write(i, 55, 0)
+        time.sleep(0.02)
+        for addr, val in changes:
+          self.arm.write(i, addr, val)
+          time.sleep(0.02)
+        self.arm.write(i, 55, 1)
+        time.sleep(0.02)
+        if was_on:
+          self.arm.write(i, 40, 1)
+      elif self.arm.read(i, 55, 1) != 1:
+        self.arm.write(i, 55, 1)
+        time.sleep(0.02)
+
   def stop(self, reason):
     self.active = False
     self.session = None
     self.lease_deadline = float("inf")
     self.reason = reason
     self.gripper_contact = None
+    self.idle_since = time.monotonic()
     if self.arm is not None and self.holding:
       self.arm.targets(self.arm.positions())
+      self.arm.torque_limits(IDLE_TORQUE_LIMITS)
 
   def command(self, body):
     with self.lock:
@@ -141,7 +171,7 @@ class Robot:
             self.arm.write(i, 44, 0, 2)
             self.arm.write(i, 46, servo_speed, 2)
           self.arm.torque(True)
-          self.arm.write(IDS[-1], 48, GRIPPER_TORQUE_LIMIT, 2)
+          self.arm.torque_limits(TORQUE_LIMITS)
         except Exception:
           self.stop("Could not enable all servos")
           raise
@@ -186,7 +216,7 @@ class Robot:
       if contact.torque_off:
         self.arm.write(IDS[-1], 42, position, 2)
         self.arm.write(IDS[-1], 40, 1)
-        self.arm.write(IDS[-1], 48, GRIPPER_TORQUE_LIMIT, 2)
+        self.arm.write(IDS[-1], 48, TORQUE_LIMITS[-1], 2)
       self.gripper_contact = None
       self.commanded[-1] = position
       return goal
@@ -204,8 +234,11 @@ class Robot:
           if self.arm is None and now >= retry_at:
             retry_at = now + 2
             self.arm = Arm(self.serial)
+            self.configure_protection()
             self.holding = any(self.arm.read(i, 40, 1) for i in IDS)
-            self.arm.write(IDS[-1], 48, GRIPPER_TORQUE_LIMIT, 2)
+            self.idle_since = now
+            if self.holding:
+              self.arm.torque_limits(IDLE_TORQUE_LIMITS)
             self.state.update(connected=True, port=self.arm.path, limits=self.arm.limits, models=self.arm.models, error="")
           if self.arm is not None:
             positions = self.arm.positions()
@@ -228,6 +261,11 @@ class Robot:
                   goals = [c + max(-step, min(step, g - c)) for c, g in zip(self.commanded, goals, strict=True)]
                 self.commanded = [max(p - 100, min(p + 100, g)) for p, g in zip(positions, goals, strict=True)]
                 self.arm.targets(self.commanded, gripper=not (self.gripper_contact and self.gripper_contact.torque_off))
+            elif self.holding and now - self.idle_since >= IDLE_RELEASE_SECONDS:
+              self.arm.torque(False)
+              self.holding = False
+              if not fault:
+                self.reason = "Idle torque released"
         except Exception as e:
           self.active = False
           self.session = None
