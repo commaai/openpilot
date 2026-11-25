@@ -6,6 +6,8 @@ a steady override. Everything else fades.
 """
 import numpy as np
 import raylib_nb as rl
+from opendbc.car.structs import car
+from openpilot.cereal import log
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 from openpilot.system.ui.lib.application import gui_app
@@ -13,6 +15,7 @@ from openpilot.system.ui.lib.application import gui_app
 STATUS_FADE_RC = 0.25
 OVERRIDE_HOLD = 0.3
 STATUSES = tuple(UIStatus)
+UNDRIVABLE_GEARS = (car.CarState.GearShifter.park, car.CarState.GearShifter.neutral, car.CarState.GearShifter.reverse)
 
 
 def lerp_color(a: rl.Color, b: rl.Color, t: float) -> rl.Color:
@@ -52,3 +55,17 @@ class StatusFade:
 
 
 status_fade = StatusFade()
+
+
+def openpilot_available() -> bool:
+  """Engaged, or a press of set away from it. Unlike selfdriveState.engageable, the driver braking, canceling, or
+  steering doesn't count, only states where openpilot can't drive or what it shows would be wrong"""
+  sm, CP = ui_state.sm, ui_state.CP
+  if sm['selfdriveState'].enabled:
+    return True
+  if not ui_state.started or CP is None or CP.passive:
+    return False
+  cs = sm['carState']
+  return (sm['extrinsicsCalibration'].calStatus == log.ExtrinsicsCalibration.Status.calibrated and
+          cs.cruiseState.available and not cs.cruiseState.nonAdaptive and cs.gearShifter not in UNDRIVABLE_GEARS and
+          not (cs.parkingBrake or cs.accFaulted or cs.steerFaultPermanent or cs.espDisabled or cs.invalidLkasSetting))
