@@ -4,7 +4,9 @@ import raylib_nb as rl
 from openpilot.cereal import messaging
 from opendbc.car.structs import car
 from dataclasses import dataclass, field
+from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
+from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.locationd.calibrationd import HEIGHT_INIT
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.polygon import draw_polygon, Gradient
@@ -13,6 +15,11 @@ from openpilot.system.ui.widgets import Widget
 CLIP_MARGIN = 500
 MIN_DRAW_DISTANCE = 10.0
 MAX_DRAW_DISTANCE = 100.0
+
+# the path is amber while slowing down, red only when the plan stops or brakes hard
+AMBER_HUE = 30
+HARD_BRAKE = (-3.0, -2.0)  # m/s^2
+STRIPE_LENGTH = 4.0  # m
 
 STOCK_PATH_GRADIENT = Gradient(
   start=(0.0, 1.0),
@@ -52,6 +59,8 @@ class ModelRenderer(Widget):
     self._lane_lines = [ModelPoints() for _ in range(4)]
     self._road_edges = [ModelPoints() for _ in range(2)]
     self._acceleration_x = np.empty((0,), dtype=np.float32)
+    self._stop_filter = FirstOrderFilter(0.0, 0.25, DT_MDL)
+    self._odometer = 0.0
 
     # Transform matrix (3x3 for car space to screen space)
     self._car_space_transform = np.zeros((3, 3), dtype=np.float32)
@@ -137,6 +146,18 @@ class ModelRenderer(Widget):
     self._road_edge_stds = np.array(model.roadEdgeStds, dtype=np.float32)
     self._acceleration_x = np.array(model.acceleration.x, dtype=np.float32)
 
+    # the plan stops when it slows down to under 0.5 m/s, fading out by 2 m/s
+    velocity = np.array(model.velocity.x, dtype=np.float32)
+    stopping = 0.0
+    if len(velocity) > 1:
+      v_min = velocity[1:].min()
+      # not while already stopped or creeping
+      slowing = np.interp(velocity[0] - v_min, [0.5, 2.0], [0.0, 1.0])
+      stopping = np.interp(v_min, [0.5, 2.0], [1.0, 0.0]) * slowing
+    self._stop_filter.update(stopping)
+    if len(velocity):
+      self._odometer = (self._odometer + velocity[0] * DT_MDL) % STRIPE_LENGTH
+
   def _update_leads(self, radar_state, path_x_array):
     """Update positions of lead vehicles"""
     self._lead_vehicles = [LeadVehicle(), LeadVehicle()]
@@ -184,45 +205,38 @@ class ModelRenderer(Widget):
     if not self._longitudinal_control:
       return
 
+    # some points (screen space) are out of frame (rect space). 0 is bottom, 1 is top
     path_pts = self._path.projected_points + self._draw_offset()
-    max_len = min(len(path_pts) // 2, len(self._acceleration_x))
+    n = min(len(path_pts) // 2, len(self._acceleration_x))
+    lin = 1 - (path_pts[:n, 1] - self._rect.y) / self._rect.height
+    on_screen = (lin >= 0) & (lin <= 1)
+    order = np.flatnonzero(on_screen)[np.argsort(lin[on_screen], kind='stable')]
+    lin, accel, dist = lin[order], self._acceleration_x[order], self._path.raw_points[order, 0]
+    if len(lin) < 2:
+      self._path_gradient = Gradient(start=(0.0, 1.0), end=(0.0, 0.0), colors=[], stops=[])
+      return
 
-    segment_colors = []
-    gradient_stops = []
+    # speed up: 120, slow down: amber, stop or brake hard: 0, and more opaque and deeper
+    red = np.maximum(self._stop_filter.x, np.interp(accel, HARD_BRAKE, [1.0, 0.0]))
+    hue = np.clip(60 + accel * 35, AMBER_HUE, 120) * (1 - red)
+    saturation = np.maximum(np.minimum(np.abs(accel * 1.5), 1), red)
+    lightness = np.interp(saturation, [0.0, 1.0], [0.95, 0.62]) * (1 - 0.15 * red)
+    alpha = np.minimum(np.interp(lin, [0.75 / 2.0, 0.75], [0.4, 0.0]) * (1 + 0.8 * red), 1.0)
 
-    i = 0
-    while i < max_len:
-      # Some points (screen space) are out of frame (rect space)
-      track_y = path_pts[i][1]
-      if track_y < self._rect.y or track_y > (self._rect.y + self._rect.height):
-        i += 1
-        continue
+    # while stopping, bands every 4 m fixed to the road flow toward the car
+    stripes = red.max()
+    if stripes > 0.05:
+      t = np.linspace(lin[0], lin[-1], 200)
+      hue, saturation, lightness, alpha = (np.interp(t, lin, x) for x in (hue, saturation, lightness, alpha))
+      gap = (np.interp(t, lin, dist) + self._odometer) % STRIPE_LENGTH > STRIPE_LENGTH / 2
+      alpha = np.where(gap, alpha * (1 - 0.65 * stripes), alpha)
+      lin = t
 
-      # Calculate color based on acceleration (0 is bottom, 1 is top)
-      lin_grad_point = 1 - (track_y - self._rect.y) / self._rect.height
-
-      # speed up: 120, slow down: 0
-      path_hue = np.clip(60 + self._acceleration_x[i] * 35, 0, 120)
-
-      saturation = min(abs(self._acceleration_x[i] * 1.5), 1)
-      lightness = np.interp(saturation, [0.0, 1.0], [0.95, 0.62])
-      alpha = np.interp(lin_grad_point, [0.75 / 2.0, 0.75], [0.4, 0.0])
-
-      # Use HSL to RGB conversion
-      color = self._hsla_to_color(path_hue / 360.0, saturation, lightness, alpha)
-
-      gradient_stops.append(lin_grad_point)
-      segment_colors.append(color)
-
-      # Skip a point, unless next is last
-      i += 1 + (1 if (i + 2) < max_len else 0)
-
-    # Store the gradient in the path object
     self._path_gradient = Gradient(
       start=(0.0, 1.0),  # Bottom of path
       end=(0.0, 0.0),  # Top of path
-      colors=segment_colors,
-      stops=gradient_stops,
+      colors=[self._hsla_to_color(h / 360.0, s, l, a) for h, s, l, a in zip(hue, saturation, lightness, alpha, strict=True)],
+      stops=lin.tolist(),
     )
 
   def _update_lead_vehicle(self, d_rel, v_rel, point, rect):
