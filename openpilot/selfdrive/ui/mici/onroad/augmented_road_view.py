@@ -314,6 +314,7 @@ class AugmentedRoadView(CameraView):
     self._driver_state_renderer.set_position(left_rect.x + (left_rect.width - dm_size) / 2, left_rect.y + 36 - dm_size / 2)
     self._driver_state_renderer.render()
     self._long_indicator.set_should_draw(not show_navigation or not self._hud_renderer.drawing_top_icons())
+    self._long_indicator.set_has_lead(ui_state.started and self._model_renderer.has_lead)
     self._long_indicator.render(left_rect)
     self._hud_renderer.render_steering_wheel(left_rect)
 
