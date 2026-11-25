@@ -34,32 +34,19 @@ def _texture(rgba: np.ndarray, px: float) -> rl.Texture:
   return texture
 
 
-def _wheel_effect_textures(asset: str, size: int) -> tuple[rl.Texture, rl.Texture]:
-  """White glow and center highlight for the wheel, matching the design's render. Tint the glow when drawing."""
+def _wheel_highlight_texture(asset: str, size: int) -> rl.Texture:
+  """Center highlight for the wheel, drawn in white over the tinted wheel. Matches the design's Green Glow and Orange Glow styles:
+  a radial gradient from the base color mixed 50% with white at the center to the base color at the rim."""
   image = gui_app._load_image_from_path((ASSETS_DIR / asset).as_posix(), size, size)
   w, h, px = image.width, image.height, image.width / size
   alpha = np.frombuffer(image.to_bytes(w * h * 4), dtype=np.uint8).reshape(h, w, 4)[..., 3] / 255.0
   rl.unload_image(image)
 
-  # glow: Figma's drop shadow (blur 24 at 128px) renders as a gaussian with sigma 10, its spread is ignored on vectors
-  sigma = 10 * size / 128 * px
-  pad = math.ceil(3 * sigma)
-  glow = np.pad(alpha, pad)
-  x = np.arange(-pad, pad + 1)
-  kernel = np.exp(-x ** 2 / (2 * sigma ** 2))
-  kernel /= kernel.sum()
-  for axis in (0, 1):
-    glow = np.apply_along_axis(np.convolve, axis, glow, kernel, mode='same')
-  glow_rgba = np.full((*glow.shape, 4), 255, dtype=np.uint8)
-  glow_rgba[..., 3] = np.clip(glow * 255, 0, 255)
-
-  # highlight: the fill is a radial gradient from 35% lighter at the center to the base color at the rim
   yy, xx = np.mgrid[:h, :w]
   r = np.hypot(xx + 0.5 - w / 2, yy + 0.5 - h / 2) / (w / 2)
   highlight_rgba = np.full((h, w, 4), 255, dtype=np.uint8)
-  highlight_rgba[..., 3] = np.clip(alpha * 89 * (1 - r), 0, 255)
-
-  return _texture(glow_rgba, px), _texture(highlight_rgba, px)
+  highlight_rgba[..., 3] = np.clip(alpha * 128 * (1 - r), 0, 255)
+  return _texture(highlight_rgba, px)
 
 
 @dataclass(frozen=True)
@@ -104,7 +91,7 @@ class HudRenderer(Widget):
     self._torque_bar = TorqueBar()
 
     self._txt_wheel: rl.Texture = gui_app.texture('icons_mici/wheel.png', WHEEL_SIZE, WHEEL_SIZE)
-    self._txt_wheel_glow, self._txt_wheel_highlight = _wheel_effect_textures('icons_mici/wheel.png', WHEEL_SIZE)
+    self._txt_wheel_highlight = _wheel_highlight_texture('icons_mici/wheel.png', WHEEL_SIZE)
     self._txt_chestnut: rl.Texture = gui_app.texture('icons_mici/chestnut.png', 48, 36)
     self._txt_chestnut_green: rl.Texture = gui_app.texture('icons_mici/chestnut_green.png', 48, 36)
     self._txt_chestnut_orange: rl.Texture = gui_app.texture('icons_mici/chestnut_orange.png', 61, 36)
@@ -203,7 +190,7 @@ class HudRenderer(Widget):
     status_color = status_fade.color({UIStatus.ENGAGED: WHEEL_GREEN, UIStatus.OVERRIDE: WHEEL_WHITE, UIStatus.DISENGAGED: WHEEL_WHITE})
     wheel_color = lerp_color(status_color, WHEEL_ORANGE, critical)
     engaged = status_fade.weight(UIStatus.ENGAGED)
-    glow = engaged + (1 - engaged) * critical
+    highlight = engaged + (1 - engaged) * critical
     wheel_txt = self._txt_wheel
 
     # pos
@@ -212,16 +199,12 @@ class HudRenderer(Widget):
     rotation = -ui_state.sm['carState'].steeringAngleDeg if ui_state.started and ui_state.received_since_started('carState') else 0.0
 
     alpha = 255 * (1 - (1 - DIMMED_ICON_ALPHA) * status_fade.weight(UIStatus.DISENGAGED) * (1 - critical))
-    origin = rl.Vector2(self._txt_wheel_glow.width / 2, self._txt_wheel_glow.height / 2)
-    rl.draw_texture_pro(self._txt_wheel_glow, rl.Rectangle(0, 0, self._txt_wheel_glow.width, self._txt_wheel_glow.height),
-                        rl.Rectangle(pos_x, pos_y, self._txt_wheel_glow.width, self._txt_wheel_glow.height), origin, rotation,
-                        rl.Color(wheel_color.r, wheel_color.g, wheel_color.b, int(alpha * glow)))
     rl.draw_texture_pro(wheel_txt, rl.Rectangle(0, 0, wheel_txt.width, wheel_txt.height),
                         rl.Rectangle(pos_x, pos_y, wheel_txt.width, wheel_txt.height),
                         rl.Vector2(wheel_txt.width / 2, wheel_txt.height / 2), rotation, rl.Color(wheel_color.r, wheel_color.g, wheel_color.b, int(alpha)))
     rl.draw_texture_pro(self._txt_wheel_highlight, rl.Rectangle(0, 0, wheel_txt.width, wheel_txt.height),
                         rl.Rectangle(pos_x, pos_y, wheel_txt.width, wheel_txt.height),
-                        rl.Vector2(wheel_txt.width / 2, wheel_txt.height / 2), rotation, rl.Color(255, 255, 255, int(alpha * glow)))
+                        rl.Vector2(wheel_txt.width / 2, wheel_txt.height / 2), rotation, rl.Color(255, 255, 255, int(alpha * highlight)))
 
   def _draw_set_speed(self, rect: rl.Rectangle) -> None:
     """Draw the MAX speed indicator box."""
