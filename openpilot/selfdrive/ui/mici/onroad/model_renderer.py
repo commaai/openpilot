@@ -97,6 +97,7 @@ class ModelRenderer(BaseModelRenderer):
     self._stop_point = StopPoint()
     self._torque_filter = FirstOrderFilter(0, 0.1, 1 / gui_app.target_fps)
     self._visible = 0.0
+    self._available_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
   def _draw_offset(self) -> np.ndarray:
     # car space transform maps to rect-origin space
@@ -123,6 +124,15 @@ class ModelRenderer(BaseModelRenderer):
     if sm.updated['carParams']:
       self._longitudinal_control = sm['carParams'].openpilotLongitudinalControl
 
+    # while disengaged, lane lines fade out and the path narrows to half width and turns black
+    self._visible = 1 - status_fade.weight(UIStatus.DISENGAGED)
+    if abs((path_half_width := 0.45 * (1 + self._visible)) - self._path_half_width) > 1e-3:
+      self._path_half_width, self._transform_dirty = path_half_width, True
+    # the black path and lead bars hide while openpilot is unavailable, e.g. calibrating or dashcam mode.
+    # braking disengages without making openpilot unavailable
+    available = sm['selfdriveState'].enabled or sm['selfdriveState'].engageable or sm['carState'].brakePressed
+    self._available_filter.update(available)
+
     model = sm['modelV2']
     radar_state = sm['radarState'] if sm.valid['radarState'] else None
     lead_one = radar_state.leadOne if radar_state else None
@@ -141,20 +151,18 @@ class ModelRenderer(BaseModelRenderer):
       self._update_model(lead_one, path_x_array)
       self._transform_dirty = False
 
-    # lane lines and path fade out while disengaged
-    self._visible = 1 - status_fade.weight(UIStatus.DISENGAGED)
     if self._visible > 1e-2:
       self._draw_lane_lines()
-      self._draw_path()
+    self._draw_path()
 
     if render_lead_indicator:
-      self._update_lead_bars(sm)
+      self._update_lead_bars(sm, available)
       self._draw_lead_indicator()
     else:
       self._lead_bars = [LeadVehicle(), LeadVehicle()]
       self._stop_point = StopPoint()
 
-  def _update_lead_bars(self, sm):
+  def _update_lead_bars(self, sm, available: bool):
     plan = sm['longitudinalPlan']
     if plan.longitudinalPlanSource == log.LongitudinalPlan.LongitudinalPlanSource.e2e and len(sm['modelV2'].leadsV3) > 1:
       leads = [(lead.prob > 0.5, lead.x[0], -lead.y[0]) for lead in list(sm['modelV2'].leadsV3)[:2]]
@@ -166,9 +174,6 @@ class ModelRenderer(BaseModelRenderer):
     if leads[0][0] and abs(leads[1][1] - leads[0][1]) < 3.0:
       leads[1] = (False, 0.0, 0.0)
 
-    ss, cs = sm['selfdriveState'], sm['carState']
-    # braking disengages without making openpilot unavailable
-    available = ss.enabled or ss.engageable or cs.brakePressed
     lane = self._path.raw_points
     opacity = 0.8 - 0.4 * status_fade.weight(UIStatus.DISENGAGED)
     for lead, (present, d_rel, y_rel) in zip(self._lead_bars, leads, strict=True):
@@ -182,7 +187,7 @@ class ModelRenderer(BaseModelRenderer):
 
     # the radar is at the front of the car, which is what stops at the planned stop
     lead_distances = [d_rel for present, d_rel, _ in leads if present]
-    planning_stop = self._stop_point.update(sm['modelV2'], sm.updated['modelV2'], cs.vEgo, lead_distances)
+    planning_stop = self._stop_point.update(sm['modelV2'], sm.updated['modelV2'], sm['carState'].vEgo, lead_distances)
     d_stop = self._stop_point.d + RADAR_TO_CAMERA
     visible = available and planning_stop and d_stop < MAX_DRAW_DISTANCE and len(lane) > 0
     # brighter than a lead bar to tell them apart
@@ -255,6 +260,11 @@ class ModelRenderer(BaseModelRenderer):
       return
 
     path_pts = self._path.projected_points + self._draw_offset()
+
+    if (black := (1 - self._visible) * self._available_filter.x) > 1e-2:
+      draw_polygon(self._rect, path_pts, rl.Color(0, 0, 0, round(128 * black)))
+    if self._visible < 1e-2:
+      return
 
     if not self._longitudinal_control:
       draw_polygon(self._rect, path_pts, gradient=_faded(STOCK_PATH_GRADIENT, self._visible))
