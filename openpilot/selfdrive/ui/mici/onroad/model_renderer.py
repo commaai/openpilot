@@ -95,6 +95,7 @@ class ModelRenderer(BaseModelRenderer):
     super().__init__()
     self._lead_bars = [LeadVehicle(), LeadVehicle()]
     self._stop_point = StopPoint()
+    self.has_lead = False
     self._torque_filter = FirstOrderFilter(0, 0.1, 1 / gui_app.target_fps)
     self._visible = 0.0
     self._available_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
@@ -105,6 +106,7 @@ class ModelRenderer(BaseModelRenderer):
 
   def _render(self, rect: rl.Rectangle):
     sm = ui_state.sm
+    self.has_lead = False
 
     self._torque_filter.update(-ui_state.sm['carOutput'].actuatorsOutput.torque)
 
@@ -173,6 +175,7 @@ class ModelRenderer(BaseModelRenderer):
     # both leads can be the same vehicle
     if leads[0][0] and abs(leads[1][1] - leads[0][1]) < 3.0:
       leads[1] = (False, 0.0, 0.0)
+    self.has_lead = available and (leads[0][0] or leads[1][0])
 
     lane = self._path.raw_points
     opacity = 0.8 - 0.4 * status_fade.weight(UIStatus.DISENGAGED)
