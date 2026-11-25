@@ -104,7 +104,7 @@ class StartPage(Widget):
   def __init__(self):
     super().__init__()
 
-    self._title = UnifiedLabel("start", 64, text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
+    self._title = UnifiedLabel("start", 64,
                                font_weight=FontWeight.DISPLAY, alignment=TextAlignment.CENTER,
                                alignment_vertical=TextAlignmentVertical.MIDDLE)
 
@@ -194,9 +194,9 @@ class DownloadingPage(NavWidget):
   def __init__(self):
     super().__init__()
 
-    self._title_label = UnifiedLabel("downloading...", 64, text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
+    self._title_label = UnifiedLabel("downloading...", 64,
                                      font_weight=FontWeight.DISPLAY)
-    self._progress_label = UnifiedLabel("", 132, text_color=rl.Color(255, 255, 255, int(255 * 0.9 * 0.65)),
+    self._progress_label = UnifiedLabel("", 132, text_color=rl.Color(255, 255, 255, int(255 * 0.65)),
                                         font_weight=FontWeight.ROMAN, alignment_vertical=TextAlignmentVertical.BOTTOM)
     self._progress = 0
 

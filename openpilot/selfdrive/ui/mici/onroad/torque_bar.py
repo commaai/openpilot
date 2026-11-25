@@ -9,7 +9,7 @@ from opendbc.car import ACCELERATION_DUE_TO_GRAVITY
 from openpilot.selfdrive.ui.mici.onroad import blend_colors
 from openpilot.selfdrive.ui.mici.onroad.status import StatusFade
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
-from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.application import gui_app, uncapped_white
 from openpilot.system.ui.lib.polygon import draw_polygon, Gradient
 from openpilot.system.ui.widgets import Widget
 from openpilot.common.filter_simple import FirstOrderFilter
@@ -211,7 +211,8 @@ class TorqueBar(Widget):
 
     # draw bg torque indicator line
     bg_pts = arc_bar_pts(mid_r, torque_line_height, torque_start_angle, torque_end_angle) + offset
-    draw_polygon(rect, bg_pts, color=torque_line_bg_color)
+    with uncapped_white():  # custom alpha
+      draw_polygon(rect, bg_pts, color=torque_line_bg_color)
 
     # draw torque indicator line
     a0s = top_angle
@@ -226,13 +227,14 @@ class TorqueBar(Widget):
       end_grad_pt = (cx * (1 - 0.65) + (max(bg_pts[:, 0]) * 0.65) - rect.x) / rect.width
 
     # fade to orange as we approach max torque
+    white = rl.Color(255, 255, 255, int(255 * line_alpha))
     start_color = blend_colors(
-      rl.Color(255, 255, 255, int(255 * 0.9 * line_alpha)),
+      white,
       rl.Color(255, 200, 0, int(255 * line_alpha)),  # yellow
       max(0, abs(self._torque_filter.x) - 0.75) * 4,
     )
     end_color = blend_colors(
-      rl.Color(255, 255, 255, int(255 * 0.9 * line_alpha)),
+      white,
       rl.Color(255, 115, 0, int(255 * line_alpha)),  # orange
       max(0, abs(self._torque_filter.x) - 0.75) * 4,
     )

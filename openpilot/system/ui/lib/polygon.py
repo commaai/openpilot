@@ -3,7 +3,7 @@ import raylib_nb as rl
 import numpy as np
 from dataclasses import dataclass
 from typing import Optional
-from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.application import cap_white, gui_app
 
 
 @dataclass
@@ -50,7 +50,7 @@ def _gradient_ramp(gradient: Gradient, origin_rect: rl.Rectangle) -> tuple[np.nd
   t0 = (-end_x * dx + (gui_app.height - end_y) * dy) / length2
 
   stops = tuple(min(max(float(s), 0.0), 1.0) for s in gradient.stops[:len(gradient.colors)])
-  colors = tuple((c.r, c.g, c.b, c.a) for c in gradient.colors[:len(stops)])
+  colors = tuple((c.r, c.g, c.b, c.a) for c in map(cap_white, gradient.colors[:len(stops)]))
   return _ramp(colors, stops), tx, ty, t0
 
 
@@ -66,4 +66,4 @@ def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray,
   if gradient is not None:
     rl.cpu.polygon(pts, *_gradient_ramp(gradient, origin_rect))
   else:
-    rl.cpu.polygon(pts, np.array([_pack(color)], np.uint32))
+    rl.cpu.polygon(pts, np.array([_pack(cap_white(color))], np.uint32))

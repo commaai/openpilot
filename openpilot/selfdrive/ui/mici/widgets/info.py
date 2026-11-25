@@ -11,7 +11,7 @@ class InfoLayoutMici(Widget):
     self.set_rect(rl.Rectangle(0, 0, width, 180))
 
     max_width = int(self._rect.width - 20)
-    self._subheader_color = rl.Color(255, 255, 255, int(255 * 0.9 * 0.65))
+    self._subheader_color = rl.Color(255, 255, 255, int(255 * 0.65))
 
     self.title1 = UnifiedLabel(title1, 48, max_width=max_width, font_weight=FontWeight.DISPLAY, wrap_text=False)
     self.subtext1 = UnifiedLabel(subtext1, 36, max_width=max_width, text_color=self._subheader_color,

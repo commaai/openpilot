@@ -26,9 +26,9 @@ class ProgressPage(NavWidget):
   def __init__(self):
     super().__init__()
 
-    self._progress_title_label = UnifiedLabel("", 64, text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
+    self._progress_title_label = UnifiedLabel("", 64,
                                               font_weight=FontWeight.DISPLAY, line_height=0.8)
-    self._progress_percent_label = UnifiedLabel("", 132, text_color=rl.Color(255, 255, 255, int(255 * 0.9 * 0.65)),
+    self._progress_percent_label = UnifiedLabel("", 132, text_color=rl.Color(255, 255, 255, int(255 * 0.65)),
                                                 font_weight=FontWeight.ROMAN,
                                                 alignment_vertical=TextAlignmentVertical.BOTTOM)
 
