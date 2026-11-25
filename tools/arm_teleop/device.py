@@ -20,9 +20,11 @@ from openpilot.common.realtime import Ratekeeper
 from openpilot.system.webrtc.helpers import StreamRequestBody, post_stream_request
 
 FOLLOWERS = {"left": "5CBC431994", "middle": "5CBC431998", "right": "5CBC453422"}
+DISPLAY_PATH = Path("/tmp/balltoss_display.json")
 WATCHDOG = 0.4
 TICKS_PER_DEGREE = 4096 / 360
 MAX_SERVO_SPEED = 0x7fff  # STS register 46 uses bit 15 for direction.
+GRIPPER_TORQUE_LIMIT = 333  # STS register 48 (0-1000); 1/3 of default 1000.
 
 
 class Camera:
@@ -139,6 +141,7 @@ class Robot:
             self.arm.write(i, 44, 0, 2)
             self.arm.write(i, 46, servo_speed, 2)
           self.arm.torque(True)
+          self.arm.write(IDS[-1], 48, GRIPPER_TORQUE_LIMIT, 2)
         except Exception:
           self.stop("Could not enable all servos")
           raise
@@ -183,6 +186,7 @@ class Robot:
       if contact.torque_off:
         self.arm.write(IDS[-1], 42, position, 2)
         self.arm.write(IDS[-1], 40, 1)
+        self.arm.write(IDS[-1], 48, GRIPPER_TORQUE_LIMIT, 2)
       self.gripper_contact = None
       self.commanded[-1] = position
       return goal
@@ -201,6 +205,7 @@ class Robot:
             retry_at = now + 2
             self.arm = Arm(self.serial)
             self.holding = any(self.arm.read(i, 40, 1) for i in IDS)
+            self.arm.write(IDS[-1], 48, GRIPPER_TORQUE_LIMIT, 2)
             self.state.update(connected=True, port=self.arm.path, limits=self.arm.limits, models=self.arm.models, error="")
           if self.arm is not None:
             positions = self.arm.positions()
@@ -297,7 +302,7 @@ class Handler(HTTPRequestHandler):
   def do_POST(self):
     if not self.authorized():
       return
-    if self.path not in ("/command", "/camera/offer") or self.headers.get("Origin") or self.headers.get_content_type() != "application/json":
+    if self.path not in ("/command", "/camera/offer", "/display") or self.headers.get("Origin") or self.headers.get_content_type() != "application/json":
       self.close_connection = True
       self.json({"error": "Unsupported request"}, 400)
       return
@@ -307,6 +312,12 @@ class Handler(HTTPRequestHandler):
       if not 0 < size < (65536 if offer else 8192):
         raise ValueError("Invalid request length")
       body = json.loads(self.rfile.read(size))
+      if self.path == "/display":
+        tmp = DISPLAY_PATH.with_suffix(".tmp")
+        tmp.write_text(json.dumps({**body, "updated_at": time.time()}))  # noqa: TID251
+        tmp.replace(DISPLAY_PATH)
+        self.json({"ok": True})
+        return
       if offer:
         sdp = body["sdp"]
         media = [line for line in sdp.splitlines() if line.startswith("m=")] if isinstance(sdp, str) else []

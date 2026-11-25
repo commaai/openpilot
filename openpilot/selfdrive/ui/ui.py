@@ -39,6 +39,9 @@ def main():
   gui_app.init_window("UI")
   if BIG_UI:
     MainLayout()
+  elif os.getenv("ARM_TELEOP") == "1":
+    from openpilot.selfdrive.ui.mici.layouts.balltoss import BalltossDisplay
+    BalltossDisplay()
   else:
     MiciMainLayout()
 

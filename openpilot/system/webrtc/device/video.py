@@ -65,6 +65,7 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
       self._seen_keyframe = False
 
   def request_keyframe(self) -> None:
+    self._seen_keyframe = False
     self.params.put("LivestreamRequestKeyframe", True, block=False)
 
   def _build_frame_data(self, msg) -> bytes:
