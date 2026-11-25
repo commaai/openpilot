@@ -117,7 +117,6 @@ class AlertItem(Widget):
   ALERT_PADDING = 28
   ICON_SIZE = 64
   ICON_MARGIN = 12
-  TEXT_COLOR = rl.Color(255, 255, 255, int(255 * 0.9))
   TITLE_BODY_SPACING = 24
 
   def __init__(self, alert_data: AlertData):
@@ -139,11 +138,11 @@ class AlertItem(Widget):
     else:
       self._icon = self._icon_orange
 
-    self._title_label = UnifiedLabel(text="", font_size=32, font_weight=FontWeight.SEMI_BOLD, text_color=self.TEXT_COLOR,
+    self._title_label = UnifiedLabel(text="", font_size=32, font_weight=FontWeight.SEMI_BOLD,
                                      alignment=TextAlignment.LEFT,
                                      alignment_vertical=TextAlignmentVertical.TOP, line_height=0.95)
 
-    self._body_label = UnifiedLabel(text="", font_size=28, font_weight=FontWeight.ROMAN, text_color=self.TEXT_COLOR,
+    self._body_label = UnifiedLabel(text="", font_size=28, font_weight=FontWeight.ROMAN,
                                     alignment=TextAlignment.LEFT,
                                     alignment_vertical=TextAlignmentVertical.BOTTOM, line_height=0.95)
 

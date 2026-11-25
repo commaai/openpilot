@@ -14,7 +14,7 @@ from openpilot.selfdrive.ui.mici.onroad.model_renderer import ModelRenderer
 from openpilot.selfdrive.ui.mici.onroad.navigation import NavigationPanel, PANEL_WIDTH
 from openpilot.selfdrive.ui.mici.onroad.confidence_ball import ConfidenceBall
 from openpilot.selfdrive.ui.mici.onroad.cameraview import CameraView
-from openpilot.system.ui.lib.application import FontWeight, gui_app, MousePos, MouseEvent, TextAlignment, TextAlignmentVertical
+from openpilot.system.ui.lib.application import FontWeight, gui_app, uncapped_white, MousePos, MouseEvent, TextAlignment, TextAlignmentVertical
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets import Widget
 from openpilot.common.filter_simple import BounceFilter, FirstOrderFilter
@@ -180,7 +180,6 @@ class AugmentedRoadView(CameraView):
     self._driver_state_renderer = DriverStateRenderer(background=False)
     self._confidence_ball = ConfidenceBall()
     self._offroad_label = UnifiedLabel("start the car", 46, FontWeight.DISPLAY,
-                                       text_color=rl.Color(255, 255, 255, 255),
                                        alignment=TextAlignment.LEFT,
                                        alignment_vertical=TextAlignmentVertical.TOP)
     self._offroad_sublabel = UnifiedLabel("to use openpilot", 40, FontWeight.ROMAN,
@@ -253,8 +252,9 @@ class AugmentedRoadView(CameraView):
     # Render the base camera view
     super()._render(self._content_rect)
 
-    # Draw all UI overlays
-    self._model_renderer.render(self._content_rect)
+    # Draw all UI overlays. The road scene (path, lane lines, lead) isn't capped to WHITE_MAX_ALPHA, unlike the HUD on top of it
+    with uncapped_white():
+      self._model_renderer.render(self._content_rect)
 
     # Fade out bottom of overlays for looks
     rl.draw_texture_ex(self._fade_texture, rl.Vector2(self._content_rect.x, self._content_rect.y), 0.0, 1.0, rl.WHITE)

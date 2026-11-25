@@ -5,7 +5,7 @@ from collections.abc import Callable
 
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog, BigConfirmationDialog
-from openpilot.selfdrive.ui.mici.widgets.button import BigButton, LABEL_COLOR
+from openpilot.selfdrive.ui.mici.widgets.button import BigButton
 from openpilot.system.ui.lib.application import gui_app, MousePos, FontWeight
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.scroller import NavScroller
@@ -31,7 +31,7 @@ class LoadingAnimation(Widget):
     for i in range(3):
       x = base_x + (i - 1) * self.SPACING
       y = int(base_y + min(math.sin((rl.get_time() - i * 0.2) * 4) * self.Y_MAG, 0))
-      alpha = int(np.interp(base_y - y, [0, self.Y_MAG], [255 * 0.45, 255 * 0.9]))
+      alpha = int(np.interp(base_y - y, [0, self.Y_MAG], [255 * 0.5, 255]))
       rl.draw_circle(x, y, self.RADIUS, rl.Color(255, 255, 255, alpha))
 
 
@@ -152,7 +152,7 @@ class WifiButton(BigButton):
     return 48
 
   def _draw_content(self, btn_y: float):
-    self._label.set_color(LABEL_COLOR)
+    self._label.set_color(rl.WHITE)
     label_rect = rl.Rectangle(self._rect.x + self.LABEL_PADDING, btn_y + self.LABEL_VERTICAL_PADDING,
                               self.LABEL_WIDTH, self._rect.height - self.LABEL_VERTICAL_PADDING * 2)
     self._label.render(label_rect)
@@ -165,7 +165,7 @@ class WifiButton(BigButton):
 
       if self._is_connected and not self._network_forgetting:
         check_y = int(label_y - sub_label_height + (sub_label_height - self._check_txt.height) / 2)
-        rl.draw_texture_ex(self._check_txt, rl.Vector2(sub_label_x, check_y), 0.0, 1.0, rl.Color(255, 255, 255, int(255 * 0.9 * 0.65)))
+        rl.draw_texture_ex(self._check_txt, rl.Vector2(sub_label_x, check_y), 0.0, 1.0, rl.Color(255, 255, 255, int(255 * 0.65)))
         sub_label_x += self._check_txt.width + 14
 
       sub_label_rect = rl.Rectangle(sub_label_x, label_y - sub_label_height, sub_label_w, sub_label_height)
@@ -228,7 +228,7 @@ class WifiButton(BigButton):
     else:  # saved, wrong password, or unknown
       self.set_value("wrong password" if self._wrong_password else "connect")
       self.set_enabled(True)
-      self._sub_label.set_color(rl.Color(255, 255, 255, int(255 * 0.9)))
+      self._sub_label.set_color(rl.WHITE)
       self._sub_label.set_font_weight(FontWeight.SEMI_BOLD)
 
 

@@ -253,7 +253,7 @@ class AlertRenderer(Widget):
             measure_text_cached(font, alert_text1, font_size, font_size * ALERT_TITLE_LETTER_SPACING).x > alert_layout.text_rect.width:
         font_size -= 2
 
-    color = rl.Color(255, 255, 255, int(255 * 0.9 * self._alpha_filter.x))
+    color = rl.Color(255, 255, 255, int(255 * self._alpha_filter.x))
 
     text1_y_offset = 11 if font_size >= 70 else 4
     text_rect1 = rl.Rectangle(

@@ -123,7 +123,7 @@ class NetworkIcon(Widget):
       # Offset by difference in height between slashless and slash icons to make center align match
       draw_y -= (self._wifi_slash_txt.height - self._wifi_none_txt.height) / 2
 
-    rl.draw_texture_ex(draw_net_txt, rl.Vector2(draw_x, draw_y), 0.0, 1.0, rl.Color(255, 255, 255, int(255 * 0.9)))
+    rl.draw_texture_ex(draw_net_txt, rl.Vector2(draw_x, draw_y), 0.0, 1.0, rl.WHITE)
 
 
 class MiciHomeLayout(Widget):
@@ -145,7 +145,7 @@ class MiciHomeLayout(Widget):
     self._alerts_pill = AlertsPill()
 
     self._status_bar_layout = HBoxLayout([
-      IconWidget("icons_mici/settings.png", (48, 48), opacity=0.9),
+      IconWidget("icons_mici/settings.png", (48, 48)),
       NetworkIcon(),
       self._usb_icon,
       self._chestnut_icon,
