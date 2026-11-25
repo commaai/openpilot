@@ -46,6 +46,7 @@ class ModelRenderer(Widget):
     self._road_edge_stds = np.zeros(2, dtype=np.float32)
     self._lead_vehicles = [LeadVehicle(), LeadVehicle()]
     self._path_offset_z = HEIGHT_INIT[0]
+    self._path_half_width = 0.9  # m
 
     # Initialize ModelPoints objects
     self._path = ModelPoints()
@@ -175,7 +176,7 @@ class ModelRenderer(Widget):
 
     max_idx = self._get_path_length_idx(path_x_array, max_distance)
     self._path.projected_points = self._map_line_to_polygon(
-      self._path.raw_points, 0.9, self._path_offset_z, max_idx, max_distance, allow_invert=False
+      self._path.raw_points, self._path_half_width, self._path_offset_z, max_idx, max_distance, allow_invert=False
     )
 
     self._update_path_gradient()
