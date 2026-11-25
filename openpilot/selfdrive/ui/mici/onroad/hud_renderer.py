@@ -4,7 +4,7 @@ import raylib_nb as rl
 from dataclasses import dataclass
 from openpilot.common.constants import CV
 from openpilot.selfdrive.ui.mici.onroad import DIMMED_ICON_ALPHA
-from openpilot.selfdrive.ui.mici.onroad.status import STATUS_FADE_RC, lerp_color, status_fade
+from openpilot.selfdrive.ui.mici.onroad.status import StatusFade, lerp_color
 from openpilot.selfdrive.ui.mici.onroad.torque_bar import TorqueBar
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus, ChestnutState
 from openpilot.system.ui.lib.application import gui_app, FontWeight, ASSETS_DIR
@@ -96,7 +96,8 @@ class HudRenderer(Widget):
     self._txt_chestnut_green: rl.Texture = gui_app.texture('icons_mici/chestnut_green.png', 48, 36)
     self._txt_chestnut_orange: rl.Texture = gui_app.texture('icons_mici/chestnut_orange.png', 61, 36)
     self._chestnut_icon: rl.Texture | None = None
-    self._wheel_critical_filter = FirstOrderFilter(0, STATUS_FADE_RC, 1 / gui_app.target_fps)
+    self._status = StatusFade(0.1)
+    self._wheel_critical_filter = FirstOrderFilter(0, 0.1, 1 / gui_app.target_fps)
     self._wheel_angle_filter = FirstOrderFilter(0, 0.1, 1 / gui_app.target_fps)
 
     self._set_speed_alpha_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
@@ -188,9 +189,9 @@ class HudRenderer(Widget):
   def _draw_steering_wheel(self, rect: rl.Rectangle) -> None:
     # Green when engaged, orange for steerRequired alerts while engaged, and no color when disengaged.
     critical = self._wheel_critical_filter.update(self._show_wheel_critical and ui_state.status != UIStatus.DISENGAGED)
-    status_color = status_fade.color({UIStatus.ENGAGED: WHEEL_GREEN, UIStatus.OVERRIDE: WHEEL_WHITE, UIStatus.DISENGAGED: WHEEL_WHITE})
+    status_color = self._status.color({UIStatus.ENGAGED: WHEEL_GREEN, UIStatus.OVERRIDE: WHEEL_WHITE, UIStatus.DISENGAGED: WHEEL_WHITE})
     wheel_color = lerp_color(status_color, WHEEL_ORANGE, critical)
-    engaged = status_fade.weight(UIStatus.ENGAGED)
+    engaged = self._status.weight(UIStatus.ENGAGED)
     highlight = engaged + (1 - engaged) * critical
     wheel_txt = self._txt_wheel
 
@@ -200,7 +201,7 @@ class HudRenderer(Widget):
     # ease between the live angle and rest on ignition changes; carState keeps its last angle once stopped
     rotation = -ui_state.sm['carState'].steeringAngleDeg * self._wheel_angle_filter.update(ui_state.started and ui_state.received_since_started('carState'))
 
-    alpha = 255 * (1 - (1 - DIMMED_ICON_ALPHA) * status_fade.weight(UIStatus.DISENGAGED) * (1 - critical))
+    alpha = 255 * (1 - (1 - DIMMED_ICON_ALPHA) * self._status.weight(UIStatus.DISENGAGED) * (1 - critical))
     rl.draw_texture_pro(wheel_txt, rl.Rectangle(0, 0, wheel_txt.width, wheel_txt.height),
                         rl.Rectangle(pos_x, pos_y, wheel_txt.width, wheel_txt.height),
                         rl.Vector2(wheel_txt.width / 2, wheel_txt.height / 2), rotation, rl.Color(wheel_color.r, wheel_color.g, wheel_color.b, int(alpha)))
@@ -211,7 +212,7 @@ class HudRenderer(Widget):
   def _draw_set_speed(self, rect: rl.Rectangle) -> None:
     """Draw the MAX speed indicator box."""
     alpha = self._set_speed_alpha_filter.update(0 < rl.get_time() - self._set_speed_changed_time < SET_SPEED_PERSISTENCE and self._can_draw_top_icons)
-    alpha = self._set_speed_alpha = alpha * (1 - status_fade.weight(UIStatus.DISENGAGED))
+    alpha = self._set_speed_alpha = alpha * (1 - self._status.weight(UIStatus.DISENGAGED))
     if alpha < 1e-2:
       return
 

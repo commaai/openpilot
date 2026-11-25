@@ -6,7 +6,7 @@ from openpilot.selfdrive.controls.radard import RADAR_TO_CAMERA
 from openpilot.selfdrive.locationd.calibrationd import HEIGHT_INIT
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 from openpilot.selfdrive.ui.mici.onroad import blend_colors
-from openpilot.selfdrive.ui.mici.onroad.status import openpilot_available, status_fade
+from openpilot.selfdrive.ui.mici.onroad.status import StatusFade, openpilot_available
 from openpilot.selfdrive.ui.onroad.model_renderer import ModelRenderer as BaseModelRenderer, CLIP_MARGIN, MAX_DRAW_DISTANCE, STOCK_PATH_GRADIENT
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.polygon import Gradient, draw_polygon
@@ -97,6 +97,7 @@ class ModelRenderer(BaseModelRenderer):
     self._stop_point = StopPoint()
     self.has_lead = False
     self._torque_filter = FirstOrderFilter(0, 0.1, 1 / gui_app.target_fps)
+    self._status = StatusFade(0.1)
     self._visible = 0.0
     self._available_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
@@ -127,7 +128,7 @@ class ModelRenderer(BaseModelRenderer):
       self._longitudinal_control = sm['carParams'].openpilotLongitudinalControl
 
     # while disengaged, lane lines fade out and the path narrows to half width and turns black
-    self._visible = 1 - status_fade.weight(UIStatus.DISENGAGED)
+    self._visible = 1 - self._status.weight(UIStatus.DISENGAGED)
     if abs((path_half_width := 0.45 * (1 + self._visible)) - self._path_half_width) > 1e-3:
       self._path_half_width, self._transform_dirty = path_half_width, True
     # the black path and lead bars hide while openpilot is unavailable, e.g. calibrating or dashcam mode
@@ -177,7 +178,7 @@ class ModelRenderer(BaseModelRenderer):
     self.has_lead = available and (leads[0][0] or leads[1][0])
 
     lane = self._path.raw_points
-    opacity = 0.8 - 0.4 * status_fade.weight(UIStatus.DISENGAGED)
+    opacity = 0.8 - 0.4 * self._status.weight(UIStatus.DISENGAGED)
     for lead, (present, d_rel, y_rel) in zip(self._lead_bars, leads, strict=True):
       visible = available and present and d_rel < MAX_DRAW_DISTANCE and len(lane) > 0
       # snap to a new vehicle instead of sliding over
@@ -221,7 +222,7 @@ class ModelRenderer(BaseModelRenderer):
   def _get_ll_color(self, prob: float, adjacent: bool, left: bool):
     alpha = np.clip(prob, 0.0, 0.7) * self._visible
     if adjacent:
-      _base_color = status_fade.color(LANE_LINE_COLORS)
+      _base_color = self._status.color(LANE_LINE_COLORS)
       color = rl.Color(_base_color.r, _base_color.g, _base_color.b, int(alpha * 255))
 
       # turn adjacent lls orange if torque is high

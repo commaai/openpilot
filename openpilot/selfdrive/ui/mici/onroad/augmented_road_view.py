@@ -7,7 +7,7 @@ from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 from openpilot.selfdrive.ui.mici.onroad import SIDE_PANEL_WIDTH
 from openpilot.selfdrive.ui.mici.onroad.alert_renderer import AlertRenderer
 from openpilot.selfdrive.ui.mici.onroad.driver_state import DriverStateRenderer
-from openpilot.selfdrive.ui.mici.onroad.status import status_fade
+from openpilot.selfdrive.ui.mici.onroad.status import StatusFade
 from openpilot.selfdrive.ui.mici.onroad.hud_renderer import HudRenderer
 from openpilot.selfdrive.ui.mici.onroad.long_indicator import LongIndicator
 from openpilot.selfdrive.ui.mici.onroad.model_renderer import ModelRenderer
@@ -178,6 +178,7 @@ class AugmentedRoadView(CameraView):
     self._long_indicator = LongIndicator()
     self._alert_renderer = AlertRenderer()
     self._driver_state_renderer = DriverStateRenderer(background=False)
+    self._status = StatusFade(0.1)
     self._confidence_ball = ConfidenceBall()
     self._offroad_label = UnifiedLabel("start the car", 46, FontWeight.DISPLAY,
                                        text_color=rl.Color(255, 255, 255, 255),
@@ -307,7 +308,7 @@ class AugmentedRoadView(CameraView):
 
     # Grey out DMoji when disengaged unless AlwaysOnDM is enabled. In the side panel nothing overlaps it, otherwise it hides under the set speed
     self._driver_state_renderer.set_should_draw(not show_navigation or not self._hud_renderer.drawing_top_icons())
-    self._driver_state_renderer.set_dimmed(1.0 if not ui_state.started else 0.0 if ui_state.always_on_dm else status_fade.weight(UIStatus.DISENGAGED))
+    self._driver_state_renderer.set_dimmed(1.0 if not ui_state.started else 0.0 if ui_state.always_on_dm else self._status.weight(UIStatus.DISENGAGED))
     self._driver_state_renderer.set_show_under_alerts(not show_navigation)
     # the 52px cone is centered 36px from the top left
     dm_size = self._driver_state_renderer.rect.width
