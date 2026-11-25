@@ -1,7 +1,7 @@
 import raylib_nb as rl
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.selfdrive.ui.mici.onroad import DIMMED_ICON_ALPHA
-from openpilot.selfdrive.ui.mici.onroad.status import status_fade
+from openpilot.selfdrive.ui.mici.onroad.status import StatusFade
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets import Widget
@@ -15,6 +15,7 @@ class LongIndicator(Widget):
                    (self._texture('distance_2', 40, 9), 138), (self._texture('distance_3', 48, 10), 155)]
     self._lit_filters = [FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps) for _ in self._icons]
     self._alpha_filter = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps)
+    self._status = StatusFade(0.1)
     # stock ACC cars show a static speed dial instead
     self._txt_speed_dial = self._texture('speed_dial', 56, 48)
     self._should_draw = self._has_lead = False
@@ -36,7 +37,7 @@ class LongIndicator(Widget):
       return
 
     alpha = self._alpha_filter.update(self._should_draw)
-    disengaged = status_fade.weight(UIStatus.DISENGAGED)
+    disengaged = self._status.weight(UIStatus.DISENGAGED)
     if not ui_state.has_longitudinal_control:
       # the needle's arrowhead overhangs the left, so the dial sits 2px left of center
       dial_rect = rl.Rectangle(rect.x - 2, rect.y, rect.width, rect.height)

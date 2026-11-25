@@ -7,7 +7,7 @@ import numpy as np
 import raylib_nb as rl
 from opendbc.car import ACCELERATION_DUE_TO_GRAVITY
 from openpilot.selfdrive.ui.mici.onroad import blend_colors
-from openpilot.selfdrive.ui.mici.onroad.status import status_fade
+from openpilot.selfdrive.ui.mici.onroad.status import StatusFade
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.polygon import draw_polygon, Gradient
@@ -153,6 +153,7 @@ class TorqueBar(Widget):
     super().__init__()
     self._torque_filter = FirstOrderFilter(0, 0.1, 1 / gui_app.target_fps)
     self._torque_line_alpha_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
+    self._status = StatusFade(0.1)
     self._hidden = False
 
   def set_hidden(self, hidden: bool):
@@ -188,8 +189,8 @@ class TorqueBar(Widget):
     torque_line_height = np.interp(abs(self._torque_filter.x), [0.5, 1], [14, 56])
 
     # animate alpha and angle span
-    line_alpha = self._torque_line_alpha_filter.update(not self._hidden) * (1 - status_fade.weight(UIStatus.DISENGAGED))
-    engaged = status_fade.weight(UIStatus.ENGAGED)
+    line_alpha = self._torque_line_alpha_filter.update(not self._hidden) * (1 - self._status.weight(UIStatus.DISENGAGED))
+    engaged = self._status.weight(UIStatus.ENGAGED)
 
     # dimmer while not engaged
     torque_line_bg_alpha = 0.15 + (np.interp(abs(self._torque_filter.x), [0.5, 1.0], [0.25, 0.5]) - 0.15) * engaged
