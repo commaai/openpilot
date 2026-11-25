@@ -5,6 +5,8 @@ from openpilot.cereal import log
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets import Widget
+from openpilot.selfdrive.ui.mici.onroad import glow_highlight_texture
+from openpilot.selfdrive.ui.mici.onroad.status import lerp_color
 from openpilot.selfdrive.ui.ui_state import ui_state
 
 
@@ -18,6 +20,8 @@ LOOKING_CENTER_THRESHOLD_LOWER = math.radians(3)
 
 CONE_COLOR_GREEN = (0, 255, 64)
 CONE_COLOR_ORANGE = (255, 115, 0)
+PERSON_WHITE = rl.Color(255, 255, 255, 255)
+PERSON_ORANGE = rl.Color(*CONE_COLOR_ORANGE, 255)
 
 
 class DriverStateRenderer(Widget):
@@ -47,6 +51,7 @@ class DriverStateRenderer(Widget):
     self._force_active = False
     self._looking_center = False
     self._awareness_unfull = False
+    self._warning = False
 
     self._fade_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._color_fade_filter = FirstOrderFilter(1.0, 0.1, 1 / gui_app.target_fps) # 1.0 = full green, 0.0 = full orange
@@ -54,6 +59,7 @@ class DriverStateRenderer(Widget):
     self._yaw_filter = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps, initialized=False)
     self._rotation_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps, initialized=False)
     self._looking_center_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
+    self._warning_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
     # Load the driver face icons
     self.load_icons()
@@ -71,6 +77,8 @@ class DriverStateRenderer(Widget):
 
     self._dm_person = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_person.png", cone_and_person_size, cone_and_person_size)
     self._dm_cone = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_cone.png", cone_and_person_size, cone_and_person_size)
+    self._dm_person_highlight = glow_highlight_texture("icons_mici/onroad/driver_monitoring/dm_person.png", cone_and_person_size,
+                                                       center=(64.42 / 128, 79 / 128), radius=(40.82 / 128, 49 / 128))
     self._dm_background = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_background.png", int(self._rect.width), int(self._rect.height))
 
   def set_should_draw(self, should_draw: bool):
@@ -79,6 +87,9 @@ class DriverStateRenderer(Widget):
   def set_dimmed(self, dimmed: float):
     """Draw grayed out without the cone, like when monitoring is inactive. 0 to 1 so it can fade with the rest of the UI"""
     self._dimmed = dimmed
+
+  def set_warning(self, warning: bool):
+    self._warning = warning
 
   def set_show_under_alerts(self, show_under_alerts: bool):
     self._show_under_alerts = show_under_alerts
@@ -111,12 +122,15 @@ class DriverStateRenderer(Widget):
                          rl.Vector2(self._rect.x, self._rect.y), 0.0, 1.0,
                          rl.Color(255, 255, 255, int(255 * self._fade_filter.x)))
 
-    rl.draw_texture_ex(self._dm_person,
-                       rl.Vector2(self._rect.x + (self._rect.width - self._dm_person.width) / 2,
-                                  self._rect.y + (self._rect.height - self._dm_person.height) / 2), 0.0, 1.0,
-                       rl.Color(255, 255, 255, int(255 * 0.9 * self._fade_filter.x)))
+    warning = self._warning_filter.update(self._warning)
+    person_pos = rl.Vector2(self._rect.x + (self._rect.width - self._dm_person.width) / 2,
+                            self._rect.y + (self._rect.height - self._dm_person.height) / 2)
+    person_color = lerp_color(PERSON_WHITE, PERSON_ORANGE, warning)
+    person_alpha = 255 * 0.9 * self._fade_filter.x
+    rl.draw_texture_ex(self._dm_person, person_pos, 0.0, 1.0, rl.Color(person_color.r, person_color.g, person_color.b, int(person_alpha)))
+    rl.draw_texture_ex(self._dm_person_highlight, person_pos, 0.0, 1.0, rl.Color(255, 255, 255, int(person_alpha * warning)))
 
-    green_amount = self._color_fade_filter.update(0.0 if self._awareness_unfull else 1.0)
+    green_amount = self._color_fade_filter.update(0.0 if self._awareness_unfull or self._warning else 1.0)
     if self.effective_active and self._dimmed < 1:
       source_rect = rl.Rectangle(0, 0, self._dm_cone.width, self._dm_cone.height)
       dest_rect = rl.Rectangle(
