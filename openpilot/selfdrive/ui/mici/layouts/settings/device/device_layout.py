@@ -11,7 +11,6 @@ from openpilot.system.ui.widgets.scroller import NavRawScrollPanel, NavScroller
 from openpilot.selfdrive.ui.mici.widgets.info import InfoLayoutMici
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton, BigCircleButton, BigToggle, BigParamControl
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigConfirmationDialog
-from openpilot.selfdrive.ui.mici.onroad.cabin_camera_dialog import CabinCameraDialog
 from openpilot.selfdrive.ui.mici.layouts.onboarding import TrainingGuide, TermsPage
 from openpilot.selfdrive.ui.layouts.settings.common import restart_needed_callback
 from openpilot.system.ui.lib.application import gui_app, MousePos
@@ -179,24 +178,15 @@ class DeviceLayoutMici(NavScroller):
     self._power_off_btn.set_visible(lambda: not ui_state.ignition)
 
     self._metric_toggle = BigToggle("use metric units", initial_state=ui_state.params.get_bool("IsMetric"), toggle_callback=self._on_metric_toggle)
-    record_front = BigParamControl("record & upload cabin camera", "RecordFront",
-                                   description_icon=gui_app.texture("icons_mici/settings/device/cameras.png", 64, 64),
-                                   toggle_callback=restart_needed_callback, description="Upload cabin camera data to help improve driver monitoring.")
-    record_front.set_enabled(False if ui_state.params.get_bool("RecordFrontLock") else (lambda: not ui_state.engaged))
     record_mic = BigParamControl("record & upload mic audio", "RecordAudio", description_icon=gui_app.texture("icons_mici/microphone.png", 64, 64),
                                  toggle_callback=restart_needed_callback,
                                  description="Record microphone audio while driving.\n" +
                                              "Audio is included in dashcam videos in comma connect.")
     record_mic.set_enabled(lambda: not ui_state.engaged)
-    self._param_toggles = (("RecordFront", record_front), ("RecordAudio", record_mic))
+    self._record_mic = record_mic
 
     regulatory_btn = BigButton("regulatory info", "", gui_app.texture("icons_mici/settings/device/info.png", 64, 64))
     regulatory_btn.set_click_callback(self._on_regulatory)
-
-    cabin_cam_btn = BigButton("driver\ncamera preview", "", gui_app.texture("icons_mici/settings/device/cameras.png", 64, 64),
-                              description="Preview the cabin camera to check driver monitoring visibility. The vehicle must be off.")
-    cabin_cam_btn.set_click_callback(lambda: gui_app.push_widget(CabinCameraDialog()))
-    cabin_cam_btn.set_enabled(lambda: ui_state.is_offroad())
 
     review_training_guide_btn = BigButton("review\ntraining guide", "", gui_app.texture("icons_mici/settings/device/info.png", 64, 64))
     review_training_guide_btn.set_click_callback(lambda: gui_app.push_widget(
@@ -210,10 +200,8 @@ class DeviceLayoutMici(NavScroller):
       DeviceInfoLayoutMici(),
       self._pairing_button,
       self._metric_toggle,
-      record_front,
       record_mic,
       review_training_guide_btn,
-      cabin_cam_btn,
       terms_btn,
       regulatory_btn,
       reset_calibration_btn,
@@ -230,8 +218,7 @@ class DeviceLayoutMici(NavScroller):
   def _update_toggles(self):
     # mirror external param changes
     self._metric_toggle.set_checked(ui_state.params.get_bool("IsMetric"))
-    for key, item in self._param_toggles:
-      item.set_checked(ui_state.params.get_bool(key))
+    self._record_mic.refresh()
 
   def _update_state(self):
     super()._update_state()
