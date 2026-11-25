@@ -15,7 +15,7 @@ from openpilot.system.ui.lib.application import gui_app
 STATUS_FADE_RC = 0.25
 OVERRIDE_HOLD = 0.3
 STATUSES = tuple(UIStatus)
-UNDRIVABLE_GEARS = (car.CarState.GearShifter.park, car.CarState.GearShifter.neutral, car.CarState.GearShifter.reverse)
+GearShifter = car.CarState.GearShifter
 
 
 def lerp_color(a: rl.Color, b: rl.Color, t: float) -> rl.Color:
@@ -58,14 +58,22 @@ status_fade = StatusFade()
 
 
 def openpilot_available() -> bool:
-  """Engaged, or a press of set away from it. Unlike selfdriveState.engageable, the driver braking, canceling, or
-  steering doesn't count, only states where openpilot can't drive or what it shows would be wrong"""
+  """Whether openpilot could drive right now. The path and lead bars only show while it could.
+  Unlike selfdriveState.engageable, what the driver is doing (braking, steering, cruise buttons) doesn't count."""
   sm, CP = ui_state.sm, ui_state.CP
   if sm['selfdriveState'].enabled:
     return True
-  if not ui_state.started or CP is None or CP.passive:
+  if not ui_state.started or CP is None or CP.passive:  # passive is dashcam mode
     return False
+
   cs = sm['carState']
-  return (sm['extrinsicsCalibration'].calStatus == log.ExtrinsicsCalibration.Status.calibrated and
-          cs.cruiseState.available and not cs.cruiseState.nonAdaptive and cs.gearShifter not in UNDRIVABLE_GEARS and
-          not (cs.parkingBrake or cs.accFaulted or cs.steerFaultPermanent or cs.espDisabled or cs.invalidLkasSetting))
+  unavailable = (
+    sm['extrinsicsCalibration'].calStatus != log.ExtrinsicsCalibration.Status.calibrated,
+    cs.gearShifter in (GearShifter.park, GearShifter.neutral, GearShifter.reverse),
+    cs.parkingBrake,
+    cs.accFaulted,
+    cs.steerFaultPermanent,
+    cs.espDisabled,
+    cs.invalidLkasSetting,
+  )
+  return not any(unavailable)
