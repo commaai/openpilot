@@ -22,6 +22,8 @@ class LongIndicator(Widget):
     self._lead_car_filters = (FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps), FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps))
     self._distance_filters = [(FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps), FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps))
                               for _ in range(3)]
+    # stock ACC cars show a static speed dial instead
+    self._txt_speed_dial = self._texture('speed_dial', 56, 48)
     self._personality: int | None = None
     self._personality_changed_time = -HIGHLIGHT_TIME
     self._should_draw = False
@@ -35,7 +37,7 @@ class LongIndicator(Widget):
 
   def _render(self, rect: rl.Rectangle) -> None:
     # offroad shows the disengaged state
-    if not ui_state.has_longitudinal_control or (ui_state.started and not ui_state.received_since_started('selfdriveState')):
+    if ui_state.started and not ui_state.received_since_started('selfdriveState'):
       self._personality = None
       self._personality_changed_time = -HIGHLIGHT_TIME
       self._alpha_filter.x = 0.0
@@ -45,8 +47,18 @@ class LongIndicator(Widget):
     visible = self._should_draw
     dim = 1 - (1 - DIMMED_ICON_ALPHA / 0.9) * status_fade.weight(UIStatus.DISENGAGED)
     alpha = self._alpha_filter.update(visible) * dim
+    if not ui_state.has_longitudinal_control:
+      self._draw_speed_dial(rect, alpha)
+      return
+
     self._draw_lead_car(rect, alpha)
     self._draw_distance_bars(rect, alpha, visible)
+
+  def _draw_speed_dial(self, rect: rl.Rectangle, alpha: float) -> None:
+    # the needle's arrowhead overhangs the left, so the dial sits 2px left of center
+    txt = self._txt_speed_dial
+    pos = rl.Vector2(rect.x + rect.width / 2 - 2 - txt.width / 2, rect.y + 120 - txt.height / 2)
+    rl.draw_texture_ex(txt, pos, 0.0, 1.0, rl.Color(255, 255, 255, round(255 * 0.9 * alpha)))
 
   def _draw_lead_car(self, rect: rl.Rectangle, alpha: float) -> None:
     sm = ui_state.sm
