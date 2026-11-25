@@ -163,7 +163,6 @@ class HudRenderer(Widget):
     rl.draw_texture_ex(icon, pos, 0.0, 1.0, rl.Color(255, 255, 255, int(255 * opacity * alpha)))
 
   def _draw_steering_wheel(self, rect: rl.Rectangle) -> None:
-    # Green when engaged, orange for warnings while engaged. Override and disengaged always show their own color
     engaged = self._status.weight(UIStatus.ENGAGED)
     critical = self._wheel_critical_filter.update(self._show_wheel_critical) * engaged
     status_color = self._status.color({UIStatus.ENGAGED: WHEEL_GREEN, UIStatus.OVERRIDE: WHEEL_WHITE, UIStatus.DISENGAGED: WHEEL_WHITE})

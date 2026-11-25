@@ -19,9 +19,6 @@ def blend_colors(a: rl.Color, b: rl.Color, f: float) -> rl.Color:
 
 def glow_highlight_texture(asset: str, size: int, center: tuple[float, float] = (0.5, 0.5),
                            radius: tuple[float, float] = (0.5, 0.5)) -> rl.Texture:
-  """White highlight drawn over an icon tinted with a base color. Matches the design's Green Glow and Orange Glow styles:
-  a radial gradient from the base color mixed 50% with white at the center to the base color at the rim.
-  center and radius are the gradient ellipse as fractions of the icon size."""
   image = gui_app._load_image_from_path((ASSETS_DIR / asset).as_posix(), size, size)
   w, h = image.width, image.height
   alpha = np.frombuffer(image.to_bytes(w * h * 4), dtype=np.uint8).reshape(h, w, 4)[..., 3] / 255.0

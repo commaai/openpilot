@@ -27,9 +27,7 @@ CALIBRATED = log.ExtrinsicsCalibration.Status.calibrated
 NARROW_ROAD_CAM = VisionStreamType.VISION_STREAM_NARROW_ROAD
 WIDE_CAM = VisionStreamType.VISION_STREAM_WIDE_ROAD
 VisualAlert = car.CarControl.HUDControl.VisualAlert
-# distracted warnings turn the DMoji orange instead of the wheel
 DM_ALERTS = ('driverDistracted2', 'driverDistracted3')
-# color neither icon: prompts that aren't warnings, and unresponsive (no face) alerts
 UNCOLORED_ALERTS = ('brakeHold', 'resumeRequired', 'laneChangeBlocked', 'driverUnresponsive1', 'driverUnresponsive2', 'driverUnresponsive3')
 DEFAULT_DEVICE_CAMERA = DEVICE_CAMERAS["tici", "ar0231"]
 
@@ -269,13 +267,11 @@ class AugmentedRoadView(CameraView):
     self._hud_renderer.set_can_draw_top_icons(alert_to_render is None)
     # critical alerts show a warning icon where the torque bar is
     self._hud_renderer.set_torque_bar_hidden(alert_to_render is not None and alert_to_render.status == log.SelfdriveState.AlertStatus.critical)
-    # orange, red, and steerRequired alerts are warnings. Distracted ones turn the DMoji orange, the rest turn the wheel orange
     showing = alert_to_render is not None and not not_animating_out
     event = alert_to_render.alert_type.split('/')[0] if showing else ''
     warning = showing and event not in UNCOLORED_ALERTS and (alert_to_render.status != log.SelfdriveState.AlertStatus.normal or
                                                              alert_to_render.visual_alert == VisualAlert.steerRequired)
     self._hud_renderer.set_wheel_critical_icon(warning and event not in DM_ALERTS)
-    # like the wheel, no orange DMoji while disengaged, unless it stays active with AlwaysOnDM
     self._driver_state_renderer.set_warning(warning and event in DM_ALERTS and (ui_state.status != UIStatus.DISENGAGED or ui_state.always_on_dm))
     self._alert_renderer.render(self._content_rect)
     self._hud_renderer.render(self._content_rect)

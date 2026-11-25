@@ -77,7 +77,6 @@ class DriverStateRenderer(Widget):
 
     self._dm_person = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_person.png", cone_and_person_size, cone_and_person_size)
     self._dm_cone = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_cone.png", cone_and_person_size, cone_and_person_size)
-    # Orange Glow gradient on the person, centered on its body
     self._dm_person_highlight = glow_highlight_texture("icons_mici/onroad/driver_monitoring/dm_person.png", cone_and_person_size,
                                                        center=(64.42 / 128, 79 / 128), radius=(40.82 / 128, 49 / 128))
     self._dm_background = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_background.png", int(self._rect.width), int(self._rect.height))
@@ -90,7 +89,6 @@ class DriverStateRenderer(Widget):
     self._dimmed = dimmed
 
   def set_warning(self, warning: bool):
-    """Distracted warning, turns the person and cone orange"""
     self._warning = warning
 
   def set_show_under_alerts(self, show_under_alerts: bool):
