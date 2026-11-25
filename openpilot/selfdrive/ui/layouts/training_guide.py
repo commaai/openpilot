@@ -10,7 +10,12 @@ from openpilot.system.ui.lib.multilang import tr, tr_noop
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import Button
-from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.selfdrive.ui import UI_BORDER_SIZE
+from openpilot.selfdrive.ui.onroad.alert_renderer import (ALERT_BORDER_RADIUS, ALERT_COLORS, ALERT_FONT_BIG, ALERT_FONT_SMALL, ALERT_HEIGHTS,
+                                                          ALERT_LINE_SPACING, ALERT_MARGIN, ALERT_PADDING, AlertSize, AlertStatus)
+from openpilot.selfdrive.ui.onroad.augmented_road_view import BORDER_COLORS
+from openpilot.selfdrive.ui.onroad.hud_renderer import COLORS, FONT_SIZES, UI_CONFIG
+from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 
 ASSETS = "training"
 MARGIN = 112
@@ -121,15 +126,44 @@ def draw_paragraphs(paragraphs: tuple[Paragraph, ...], x: float, y: float, max_w
   return y - paragraph_gap
 
 
-def draw_distracted_alert(origin: rl.Vector2):
-  """Current distracted alert on the device screen in the photo"""
-  band = rl.Rectangle(origin.x + 1542, origin.y + 543, 465, 80)
-  rl.draw_rectangle_rec(band, rl.Color(255, 122, 0, 255))
-  y = band.y + 8
-  for text, bold, size in ((tr("Pay Attention"), True, 26), (tr("Driver Distracted"), False, 18)):
-    w = measure_text_cached(_font(bold), text, size).x
-    rl.draw_text_ex(_font(bold), text, rl.Vector2(band.x + (band.width - w) / 2, y), size, 0, rl.WHITE)
-    y += 36
+def draw_distracted_screen(origin: rl.Vector2, photo: rl.Texture):
+  """Redraw the device screen in the photo as the current onroad UI showing the distracted alert"""
+  screen = rl.Rectangle(origin.x + 1542, origin.y + 388, 465, 235)
+  w, h = gui_app.width, gui_app.height
+  rl.rl_push_matrix()
+  rl.rl_translatef(screen.x, screen.y, 0)
+  rl.rl_scalef(screen.width / w, screen.height / h, 1)
+
+  # engaged border, road camera (the road in front of the car in the photo)
+  rl.draw_rectangle(0, 0, w, h, BORDER_COLORS[UIStatus.ENGAGED])
+  content = rl.Rectangle(UI_BORDER_SIZE, UI_BORDER_SIZE, w - 2 * UI_BORDER_SIZE, h - 2 * UI_BORDER_SIZE)
+  rl.draw_texture_pro(photo, rl.Rectangle(80, 720, 650, 325), content, rl.Vector2(0, 0), 0, rl.WHITE)
+
+  # max and current speed
+  bold, semi_bold, medium = gui_app.font(FontWeight.BOLD), gui_app.font(FontWeight.SEMI_BOLD), gui_app.font(FontWeight.MEDIUM)
+  box = rl.Rectangle(content.x + 60, content.y + 45, UI_CONFIG.set_speed_width_imperial, UI_CONFIG.set_speed_height)
+  rl.draw_rectangle_rounded(box, 0.35, 10, COLORS.BLACK_TRANSLUCENT)
+  rl.draw_rectangle_rounded_lines_ex(box, 0.35, 10, 6, COLORS.BORDER_TRANSLUCENT)
+  for text, font, size, y, color in ((tr("MAX"), semi_bold, FONT_SIZES.max_speed, box.y + 27, COLORS.ENGAGED),
+                                     ("70", bold, FONT_SIZES.set_speed, box.y + 77, COLORS.WHITE)):
+    tw = measure_text_cached(font, text, size).x
+    rl.draw_text_ex(font, text, rl.Vector2(box.x + (box.width - tw) / 2, y), size, 0, color)
+  for text, font, size, y, color in (("70", bold, FONT_SIZES.current_speed, 180, COLORS.WHITE),
+                                     (tr("mph"), medium, FONT_SIZES.speed_unit, 290, COLORS.WHITE_TRANSLUCENT)):
+    ts = measure_text_cached(font, text, size)
+    rl.draw_text_ex(font, text, rl.Vector2(content.x + (content.width - ts.x) / 2, y - ts.y / 2), size, 0, color)
+
+  # alert, same layout as AlertRenderer for a mid size alert
+  alert_h = ALERT_HEIGHTS[AlertSize.mid]
+  alert = rl.Rectangle(content.x + ALERT_MARGIN, content.y + content.height - alert_h + ALERT_MARGIN,
+                       content.width - 2 * ALERT_MARGIN, alert_h - 2 * ALERT_MARGIN)
+  rl.draw_rectangle_rounded(alert, ALERT_BORDER_RADIUS / (alert.height / 2), 10, ALERT_COLORS[AlertStatus.userPrompt])
+  y = alert.y + ALERT_PADDING
+  for text, font, size in ((tr("Pay Attention"), bold, ALERT_FONT_BIG), (tr("Driver Distracted"), _font(False), ALERT_FONT_SMALL)):
+    tw = measure_text_cached(font, text, size).x
+    rl.draw_text_ex(font, text, rl.Vector2(alert.x + (alert.width - tw) / 2, y), size, 0, rl.WHITE)
+    y += ALERT_FONT_BIG + ALERT_LINE_SPACING
+  rl.rl_pop_matrix()
 
 
 class TextureLoader:
@@ -264,7 +298,7 @@ class PhotoStep(Step):
 
   def __init__(self, icon: str, title: str, body: tuple[Paragraph, ...], prompt: str | None, photo: str, colors,
                loader: TextureLoader, tap_rect: rl.Rectangle | None = None, on_next: Callable[[], None] | None = None,
-               overlay: Callable[[rl.Vector2], None] | None = None):
+               overlay: Callable[[rl.Vector2, rl.Texture], None] | None = None):
     super().__init__(colors[0])
     self._overlay = overlay
     self._icon = f"{ASSETS}/icon_{icon}.png"
@@ -280,9 +314,10 @@ class PhotoStep(Step):
     return [self._photo]
 
   def _draw(self, rect: rl.Rectangle):
-    rl.draw_texture_v(self._loader.get(self._photo), rl.Vector2(rect.x + PHOTO_X, rect.y), rl.WHITE)
+    photo = self._loader.get(self._photo)
+    rl.draw_texture_v(photo, rl.Vector2(rect.x + PHOTO_X, rect.y), rl.WHITE)
     if self._overlay:
-      self._overlay(rl.Vector2(rect.x, rect.y))
+      self._overlay(rl.Vector2(rect.x, rect.y), photo)
 
     # icon is centered on the title
     title = Span(self._title, bold=True)
@@ -401,7 +436,7 @@ class TrainingGuide(Widget):
           tr_noop("If you are distracted, openpilot will show alerts of increasing severity, and you will be locked out from engaging."),
           tr_noop("If the problem persists, the system will begin decelerating the vehicle."),
         ),
-      ), tr_noop("Tap the alert to continue"), "alert", TEAL, loader, ALERT_RECT, nxt, draw_distracted_alert),
+      ), tr_noop("Tap the alert to continue"), "alert", TEAL, loader, ALERT_RECT, nxt, draw_distracted_screen),
       dm_record,
       PhotoStep("max_speed", tr_noop("Adjust the Max Speed"), (
         (
