@@ -5,6 +5,7 @@ from openpilot.common.constants import CV
 from openpilot.selfdrive.ui.mici.onroad import DIMMED_ICON_ALPHA, glow_highlight_texture
 from openpilot.selfdrive.ui.mici.onroad.status import StatusFade, lerp_color
 from openpilot.selfdrive.ui.mici.onroad.torque_bar import TorqueBar
+from openpilot.selfdrive.ui.onroad.smart_speed import SmartSpeed
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus, ChestnutState
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.multilang import tr
@@ -65,6 +66,7 @@ class HudRenderer(Widget):
     self._font_display: rl.Font = gui_app.font(FontWeight.DISPLAY)
 
     self._torque_bar = TorqueBar()
+    self._smart_speed = self._child(SmartSpeed())
 
     self._txt_wheel: rl.Texture = gui_app.texture('icons_mici/wheel.png', WHEEL_SIZE, WHEEL_SIZE)
     self._txt_wheel_highlight = glow_highlight_texture('icons_mici/wheel.png', WHEEL_SIZE)
@@ -136,6 +138,8 @@ class HudRenderer(Widget):
   def render_steering_wheel(self, rect: rl.Rectangle) -> None:
     """Draw the steering wheel centered at the bottom of rect, after render() has updated state."""
     self._draw_steering_wheel(rect)
+    self._smart_speed.set_visible(self._can_draw_top_icons)
+    self._smart_speed.render(rl.Rectangle(rect.x + rect.width - 96, rect.y + 12, 84, 96))
 
   def _draw_model_source(self, rect: rl.Rectangle) -> None:
     loading = ui_state.chestnut_state == ChestnutState.LOADING
