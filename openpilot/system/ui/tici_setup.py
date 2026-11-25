@@ -367,21 +367,37 @@ class Setup(Widget):
                  "X-openpilot-device-type": HARDWARE.get_device_type()}
       req = urllib.request.Request(self.download_url, headers=headers)
 
-      with open(tmpfile, 'wb') as f, urllib.request.urlopen(req, timeout=30) as response:
-        total_size = int(response.headers.get('content-length', 0))
-        downloaded = 0
-        block_size = 8192
+      # retry network errors, the installer is small enough to restart from scratch
+      for attempt in range(5):
+        try:
+          with open(tmpfile, 'wb') as f, urllib.request.urlopen(req, timeout=30) as response:
+            total_size = int(response.headers.get('content-length', 0))
+            downloaded = 0
+            block_size = 8192
 
-        while True:
-          buffer = response.read(block_size)
-          if not buffer:
-            break
+            while True:
+              buffer = response.read(block_size)
+              if not buffer:
+                break
 
-          downloaded += len(buffer)
-          f.write(buffer)
+              downloaded += len(buffer)
+              f.write(buffer)
 
-          if total_size:
-            self.download_progress = int(downloaded * 100 / total_size)
+              if total_size:
+                self.download_progress = int(downloaded * 100 / total_size)
+
+          # read() returns b'' instead of raising when the connection drops early
+          if total_size and downloaded != total_size:
+            raise ConnectionError(f"incomplete download: {downloaded}/{total_size} bytes")
+          break
+        except urllib.error.HTTPError as e:
+          if 400 <= e.code < 500 or attempt == 4:
+            raise
+          time.sleep(2 ** attempt)
+        except OSError:
+          if attempt == 4:
+            raise
+          time.sleep(2 ** attempt)
 
       is_elf = False
       with open(tmpfile, 'rb') as f:
