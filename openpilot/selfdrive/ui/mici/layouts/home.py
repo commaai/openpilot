@@ -188,10 +188,8 @@ class MiciHomeLayout(Widget):
     self._alerts_pill.set_alert_count_callback(alert_count_callback, alert_icon_callback)
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
-    relative_x = mouse_pos.x - self.rect.x
-    has_alerts = self._alert_count_callback and self._alert_count_callback() > 0
-    if has_alerts and relative_x > self.rect.width - ALERTS_ZONE_WIDTH:
-      if self._on_alerts_click:
+    if mouse_pos.x - self.rect.x > self.rect.width - ALERTS_ZONE_WIDTH:
+      if self._on_alerts_click and self._alert_count_callback and self._alert_count_callback() > 0:
         self._on_alerts_click()
     elif self._on_settings_click:
       self._on_settings_click()
