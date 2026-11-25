@@ -29,8 +29,7 @@ WIDE_CAM = VisionStreamType.VISION_STREAM_WIDE_ROAD
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 # distracted warnings turn the DMoji orange instead of the wheel
 DM_ALERTS = ('driverDistracted2', 'driverDistracted3')
-# color neither icon: prompts that aren't warnings, and unresponsive (no face) alerts, where an orange wheel
-# would wrongly suggest a car or openpilot fault and the DMoji stays greyed out since it can't see a face
+# color neither icon: prompts that aren't warnings, and unresponsive (no face) alerts
 UNCOLORED_ALERTS = ('brakeHold', 'resumeRequired', 'laneChangeBlocked', 'driverUnresponsive1', 'driverUnresponsive2', 'driverUnresponsive3')
 DEFAULT_DEVICE_CAMERA = DEVICE_CAMERAS["tici", "ar0231"]
 
