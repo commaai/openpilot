@@ -1,5 +1,3 @@
-import pytest
-
 from openpilot.common.test import OpenpilotTestCase
 from openpilot.selfdrive.test.safety_modes.route import ENGAGED, LEAD, TAIL, bin_frames, car_mode_samples, disengages, find_edge, window_end
 from openpilot.selfdrive.test.safety_modes.tests.helpers import can, msg, panda
@@ -44,8 +42,8 @@ class TestWindow(OpenpilotTestCase):
   def test_disengages(self):
     # only the falls after the edge
     s = samples((0., True), (5., False), (20., True), (30., False), (35., True), (40., False))
-    assert disengages(s, 20.) == pytest.approx([30., 40.])
-    assert disengages(s, 35.) == pytest.approx([40.])
+    assert [round(t, 6) for t in disengages(s, 20.)] == [30., 40.]
+    assert [round(t, 6) for t in disengages(s, 35.)] == [40.]
 
   def test_end(self):
     # TAIL s after the route's last disengagement or carState event, at least ENGAGED s after the edge, at most the CAN's end
@@ -57,7 +55,7 @@ class TestWindow(OpenpilotTestCase):
     assert window_end(gas, s, 20., 31.) == 31.
 
 
-class TestFrames:
+class TestFrames(OpenpilotTestCase):
   def test_binning(self):
     msgs = [can(10.0, [(1, 0)]), can(10.015, [(2, 1), (3, 128), (4, 2)]), can(10.035, [(5, 0)]), can(10.05, [(6, 0)]), msg('carState', 10.)]
     frames = bin_frames(msgs, 10., 0.05)
