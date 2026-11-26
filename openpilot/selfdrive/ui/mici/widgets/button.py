@@ -384,6 +384,12 @@ class GreyBigButton(BigButton):
   def _get_label_font_size(self):
     return 36
 
+  def _subtitle_width_hint(self) -> int:
+    # without a title, keep the text clear of the corner icon
+    if self._txt_icon and not self._label.text:
+      return int(super()._subtitle_width_hint() - self._txt_icon.width - 10)
+    return super()._subtitle_width_hint()
+
   def _render(self, _):
     rl.draw_rectangle_rounded(self._rect, 0.4, 10, rl.Color(255, 255, 255, int(255 * 0.15)))
     self._draw_content(self._rect.y)

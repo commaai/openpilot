@@ -15,7 +15,7 @@ TESTED_BRANCHES = RELEASE_BRANCHES + ['devel-staging', 'nightly-dev', 'nightly-c
 
 BUILD_METADATA_FILENAME = "build.json"
 
-training_version: str = "0.2.0"
+training_version: str = "0.3.0"
 terms_version: str = "2"
 
 
