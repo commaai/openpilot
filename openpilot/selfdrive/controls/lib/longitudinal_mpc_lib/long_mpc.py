@@ -55,6 +55,8 @@ T_DIFFS = np.diff(T_IDXS, prepend=[0.])
 LEAD_T_IDXS_MODEL = np.array(ModelConstants.LEAD_T_IDXS)
 LEAD_T_DIFFS_MODEL = np.diff(LEAD_T_IDXS_MODEL)
 MODEL_LEAD_T_IDX = np.clip(np.searchsorted(LEAD_T_IDXS_MODEL[1:], T_IDXS - 0.5 * T_DIFFS, side='right'), 0, len(LEAD_T_DIFFS_MODEL) - 1)
+LEAD_ACCEL_RESIDUAL_TAU = 3.25
+LEAD_ACCEL_RESIDUAL_W = np.exp(-T_IDXS / LEAD_ACCEL_RESIDUAL_TAU)
 COMFORT_BRAKE = 2.5
 STOP_DISTANCE = 6.0
 MIN_X_LEAD_FACTOR = 0.5
@@ -313,9 +315,8 @@ class LongitudinalMpc:
     has_model = model_lead is not None and len(model_lead.v) == len(LEAD_T_IDXS_MODEL)
     # TODO fallback if danger
     if has_model and (model_prob > 0.5):
-      # TODO blend with aleadk
       dv_dt = np.diff(np.asarray(model_lead.v, dtype=np.float64)) / LEAD_T_DIFFS_MODEL
-      a_lead_traj = np.clip(dv_dt[MODEL_LEAD_T_IDX], -10., 5.)
+      a_lead_traj = np.clip(dv_dt[MODEL_LEAD_T_IDX] + (a_lead - model_lead.a[0]) * LEAD_ACCEL_RESIDUAL_W, -10., 5.)
     else:
       a_lead_traj = a_lead * np.exp(-a_lead_tau * (T_IDXS**2) / 2.)
 

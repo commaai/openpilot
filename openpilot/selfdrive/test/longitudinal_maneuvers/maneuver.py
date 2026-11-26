@@ -56,9 +56,11 @@ class Maneuver:
     self.x_lead = np.cumsum(np.r_[initial_x_lead, self.v_lead[:-1] * DT_MDL])
     if model_v_lead_values is not None:
       self.model_v_lead = np.interp(lead_t, model_breakpoints, model_v_lead_values)
+      self.model_a_lead = np.diff(self.model_v_lead, prepend=self.model_v_lead[0]) / DT_MDL
       self.model_x_lead = np.cumsum(np.r_[initial_x_lead, self.model_v_lead[:-1] * DT_MDL])
     else:
       self.model_v_lead = self.v_lead
+      self.model_a_lead = self.a_lead
       self.model_x_lead = self.x_lead
     self.prob_lead = np.zeros_like(self.t) if only_radar else np.interp(self.t, breakpoints, prob_lead_values)
     self.lead_present = np.logical_and(self.lead_relevancy, np.logical_or(only_radar, self.prob_lead > 0.5))
@@ -83,12 +85,14 @@ class Maneuver:
     camera_x = self.x_ego[i] - RADAR_TO_CAMERA
     future_x = (self.x_lead[i] + (self.model_x_lead[future] - self.model_x_lead[i]) - camera_x).tolist()
     future_v = self.model_v_lead[future].tolist()
+    future_a = self.model_a_lead[future].tolist()
     for j, model_lead in enumerate(model.init('leadsV3', len(ModelConstants.LEAD_T_OFFSETS))):
       model_lead.prob = 0.0 if self.only_lead2 and j != 1 else prob
       model_lead.probTime = ModelConstants.LEAD_T_OFFSETS[j]
       model_lead.t = ModelConstants.LEAD_T_IDXS
       model_lead.x = future_x
       model_lead.v = future_v
+      model_lead.a = future_a
 
     # Model requests more acceleration so the lead policy must handle slowdowns.
     model.action.desiredAcceleration = float(self.a_ego[i] + 0.5)
