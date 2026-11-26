@@ -454,10 +454,8 @@ class TrainingGuide(Widget):
       ), tr_noop("Tap the alert to continue"), "alert", TEAL, loader, ALERT_RECT, nxt, draw_distracted_screen),
       dm_record,
       PhotoStep("max_speed", tr_noop("Adjust the Max Speed"), (
-        (
-          tr_noop("You can adjust your maximum speed by pressing + or - on your vehicle's cruise control inputs."),
-          tr_noop("The max speed is shown in the upper left corner of the display."),
-        ),
+        tr_noop("Press + or - on your cruise control inputs to adjust the max speed shown in the upper left corner."),
+        tr_noop("This is only a maximum, not a set speed. openpilot may drive slower for curves, the road scene, red lights, and stop signs."),
       ), tr_noop("Tap the max speed to continue"), "max_speed", TEAL, loader, MAX_SPEED_RECT, nxt),
       SectionStep(3, tr_noop("How to change lanes with openpilot"), (
         (
