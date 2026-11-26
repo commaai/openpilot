@@ -40,7 +40,7 @@ RED = (rl.Color(154, 35, 35, 255), rl.Color(220, 56, 56, 255))
 
 # tap targets
 NEXT_RECT = rl.Rectangle(1840, 0, 320, 1080)
-BACK_RECT = rl.Rectangle(0, 0, 200, MARGIN)
+BACK_RECT = rl.Rectangle(0, 980, 220, 80)
 BEGIN_RECT = rl.Rectangle(MARGIN, 804, 618, 163)
 DM_NO_RECT = rl.Rectangle(MARGIN, 804, 530, 163)
 DM_YES_RECT = rl.Rectangle(706, 804, 530, 163)
@@ -205,7 +205,7 @@ class TapArea(Widget):
 
 
 class BackButton(Widget):
-  """Small "< Back" in the top left margin."""
+  """Small "< Back" in the bottom left corner."""
 
   def __init__(self, click_callback: Callable[[], None]):
     super().__init__()
@@ -213,9 +213,12 @@ class BackButton(Widget):
 
   def _render(self, rect: rl.Rectangle):
     color = rl.Color(255, 255, 255, 140 if self.is_pressed else 200)
+    font = gui_app.font(FontWeight.MEDIUM)
+    text_size = measure_text_cached(font, tr("Back"), 30)
     chevron = gui_app.texture(f"{ASSETS}/chevron.png", 22, 26, flip_x=True)
-    rl.draw_texture_v(chevron, rl.Vector2(rect.x + 40, rect.y + 43), color)
-    rl.draw_text_ex(gui_app.font(FontWeight.MEDIUM), tr("Back"), rl.Vector2(rect.x + 72, rect.y + 38), 30, 0, color)
+    y = rect.y + rect.height / 2
+    rl.draw_texture_v(chevron, rl.Vector2(rect.x + 40, y - chevron.height / 2), color)
+    rl.draw_text_ex(font, tr("Back"), rl.Vector2(rect.x + 72, y - text_size.y / 2), 30, 0, color)
 
 
 class NextButton(Widget):
