@@ -41,7 +41,8 @@ def dmonitoringd_thread():
       DM.run_step(sm)
 
     # publish
-    dat = (demo_DM or DM).get_state_packet(valid=valid)
+    # the driver camera preview only needs the driver monitoring model
+    dat = demo_DM.get_state_packet(valid=sm.valid['driverStateV2']) if demo_DM is not None else DM.get_state_packet(valid=valid)
     pm.send('driverMonitoringState', dat)
 
     # load live always-on toggle

@@ -39,6 +39,8 @@ DM_ALERTS = {
 
 EYE_THRESHOLD = 0.65
 PHONE_THRESHOLD = 0.5
+RING_COLOR_RANGE = (0.15, 0.65)
+STATUS_HIDE_TIME = 2.5
 
 RING_RADIUS = 26 * 1.2
 RING_FADE_RADIUS = RING_RADIUS * 0.55
@@ -60,6 +62,11 @@ def dm_alert() -> Alert | None:
 
 def _pack(rgb: tuple[int, int, int], alpha: np.ndarray) -> np.ndarray:
   return (rgb[0] | rgb[1] << 8 | rgb[2] << 16 | (np.clip(alpha, 0, 1) * 255).astype(np.uint32) << 24).astype(np.uint32)
+
+
+def ring_color(fraction: float, low: tuple[int, int, int], high: tuple[int, int, int]) -> tuple[int, int, int]:
+  t = float(np.interp(fraction, RING_COLOR_RANGE, [0.0, 1.0]))
+  return tuple(round(a + (b - a) * t) for a, b in zip(low, high, strict=True))
 
 
 def draw_ring(center: rl.Vector2, fraction: float, rgb: tuple[int, int, int], alpha: float):
@@ -110,6 +117,7 @@ class BaseCabinCameraDialog(Widget):
     self._eye_open_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._phone_detected_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._status_alpha_filter = FirstOrderFilter(1.0, 0.1, 1 / gui_app.target_fps)
+    self._status_changed_time = 0.0
 
     self._cancel_button = SmallCircleIconButton(gui_app.texture("icons_mici/setup/cancel.png", 42, 42))
     self._cancel_button.set_click_callback(lambda: ui_state.params.put_bool("DriverViewReset", True))
@@ -147,7 +155,6 @@ class BaseCabinCameraDialog(Widget):
       self._camera_view._update_state()
     super()._update_state()
     self.driver_state_renderer.set_should_draw(True)
-    self.driver_state_renderer.set_force_active(True)
 
     driver_data = self.driver_state_renderer.get_driver_data()
     eye = (driver_data.leftEyeProb + driver_data.rightEyeProb) / 2
@@ -158,7 +165,10 @@ class BaseCabinCameraDialog(Widget):
 
     dm_state = ui_state.sm["driverMonitoringState"]
     face_detected = dm_state.visionPolicyState.faceDetected
-    self._status_label.set_text(tr("driver detected") if face_detected else tr("looking for driver"))
+    status = tr("driver detected") if face_detected else tr("looking for driver")
+    if status != self._status_label.text:
+      self._status_label.set_text(status)
+      self._status_changed_time = rl.get_time()
 
   def _render(self, rect):
     content_rect = rl.Rectangle(rect.x + SIDE_PANEL_WIDTH, rect.y, rect.width - SIDE_PANEL_WIDTH, rect.height)
@@ -177,7 +187,9 @@ class BaseCabinCameraDialog(Widget):
     self._draw_face_detection(content_rect)
     alert = dm_alert()
     self._publish_alert_sound(ui_state.sm["driverMonitoringState"])
-    status_alpha = self._status_alpha_filter.update(alert is None)
+    face_detected = ui_state.sm["driverMonitoringState"].visionPolicyState.faceDetected
+    status_settled = face_detected and rl.get_time() - self._status_changed_time > STATUS_HIDE_TIME
+    status_alpha = self._status_alpha_filter.update(alert is None and not status_settled)
     status_rect = rl.Rectangle(content_rect.x + 20, content_rect.y + content_rect.height - 51, content_rect.width - 40, 36)
     self._status_label.set_text_color(rl.Color(0, 0, 0, round(255 * STATUS_SHADOW_ALPHA_PER_LAYER * status_alpha)))
     for zx in STATUS_SHADOW_QUANTILES:
@@ -210,13 +222,13 @@ class BaseCabinCameraDialog(Widget):
     self.driver_state_renderer.render()
 
     eye_center = rl.Vector2(center_x, rect.y + 120)
-    draw_ring(eye_center, self._eye_filter.x, CONE_COLOR_GREEN, 1.0)
+    draw_ring(eye_center, self._eye_filter.x, ring_color(self._eye_filter.x, CONE_COLOR_ORANGE, CONE_COLOR_GREEN), 1.0)
     eye_alpha = DIMMED_ICON_ALPHA + (0.9 - DIMMED_ICON_ALPHA) * self._eye_open_filter.x
     rl.draw_texture_v(self._eye_icon, rl.Vector2(eye_center.x - self._eye_icon.width / 2, eye_center.y - self._eye_icon.height / 2),
                       rl.Color(255, 255, 255, int(255 * eye_alpha)))
 
     phone_center = rl.Vector2(center_x, rect.y + 204)
-    draw_ring(phone_center, self._phone_filter.x, CONE_COLOR_ORANGE, 1.0)
+    draw_ring(phone_center, self._phone_filter.x, ring_color(self._phone_filter.x, CONE_COLOR_GREEN, CONE_COLOR_ORANGE), 1.0)
     phone_alpha = DIMMED_ICON_ALPHA + (0.9 - DIMMED_ICON_ALPHA) * self._phone_detected_filter.x
     rl.draw_texture_v(self._phone_icon, rl.Vector2(phone_center.x - self._phone_icon.width / 2, phone_center.y - self._phone_icon.height / 2),
                       rl.Color(255, 255, 255, int(255 * phone_alpha)))
