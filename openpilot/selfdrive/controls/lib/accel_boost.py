@@ -18,6 +18,11 @@ def get_accel_boost(personality=log.LongitudinalPersonality.standard):
     raise NotImplementedError("Longitudinal personality not supported")
 
 
+def get_plan_ahead(position, v_ego):
+  # m/s the plan's average speed over the next 10 s (distance / time) runs ahead of the current speed
+  return position.x[-1] / position.t[-1] - max(v_ego, 1.0) if len(position.x) else PLAN_GATE[0]
+
+
 class AccelBoost:
   def __init__(self, dt=DT_MDL):
     self.plan_ahead_filter = FirstOrderFilter(0.0, 0.3, dt, initialized=False)  # smooths 1-3 frame blips in the plan
@@ -28,14 +33,15 @@ class AccelBoost:
     self.bias_filter.x = 0.0
 
   def update(self, sm, output_a_target_e2e, curve_offset):
-    bias, gain = get_accel_boost(sm['selfdriveState'].personality)
-    pos = sm['modelV2'].position
-    # m/s the plan's average speed over the next 10 s (distance / time) runs ahead of the current speed
-    plan_ahead = pos.x[-1] / pos.t[-1] - max(sm['carState'].vEgo, 1.0) if len(pos.x) else PLAN_GATE[0]
+    plan_ahead = get_plan_ahead(sm['modelV2'].position, sm['carState'].vEgo)
+    return output_a_target_e2e + self.boost(sm['selfdriveState'].personality, output_a_target_e2e, plan_ahead, curve_offset)
+
+  def boost(self, personality, output_a_target_e2e, plan_ahead, curve_offset):
+    bias, gain = get_accel_boost(personality)
     self.plan_ahead_filter.update(plan_ahead)
     gate = np.interp(self.plan_ahead_filter.x, PLAN_GATE, [0.0, 1.0]) if curve_offset == 0.0 else 0.0  # clear road ahead, none while slowing for a curve
     self.bias_filter.x = min(self.bias_filter.x, bias * gate)  # drop at once when a slowdown shows up in the plan
     self.bias_filter.update(bias * gate)  # come back slowly once it clears
 
     gas_boost = gate * gain * max(output_a_target_e2e, 0.0)  # boost gas only while the road ahead is clear, braking is left to the model
-    return output_a_target_e2e + gas_boost + self.bias_filter.x
+    return gas_boost + self.bias_filter.x

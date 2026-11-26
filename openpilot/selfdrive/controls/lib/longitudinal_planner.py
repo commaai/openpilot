@@ -3,11 +3,13 @@ import numpy as np
 
 import openpilot.cereal.messaging as messaging
 from opendbc.car.interfaces import ACCEL_MIN, ACCEL_MAX
+from opendbc.car.structs import car
 from openpilot.common.constants import CV
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.modeld.constants import ModelConstants
-from openpilot.selfdrive.controls.lib.accel_boost import AccelBoost
+from openpilot.selfdrive.controls.lib.accel_boost import AccelBoost, get_plan_ahead
+from openpilot.selfdrive.controls.lib.personality_shadow import LEAD_CAP_TIME, PersonalityShadow
 from openpilot.selfdrive.controls.lib.curve_speed import CurveSpeed
 from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc, LongitudinalPlanSource
@@ -37,7 +39,9 @@ class LongitudinalPlanner:
     self.mpc = LongitudinalMpc(dt=dt)
     self.fcw = False
     self.dt = dt
-    self.accel_boost = AccelBoost()
+    self.accel_boost = AccelBoost(dt)
+    self.shadow = PersonalityShadow(dt)
+    self.plan_source = LongitudinalPlanSource.cruise
     self.curve_speed = CurveSpeed(dt)
 
     self.v_desired_filter = FirstOrderFilter(init_v, 2.0, self.dt)
@@ -108,13 +112,25 @@ class LongitudinalPlanner:
     self.a_cruise = get_cruise_accel(v_cruise, v_ego, self.a_cruise, self.output_a_target, self.dt)
     cruise_should_stop = should_stop(v_ego, self.a_cruise)
 
+    # what each personality would be doing, capped at the speed of a lead openpilot follows or one close enough to follow
+    lead = sm['radarState'].leadOne
+    following = lead.present and (self.plan_source in (LongitudinalPlanSource.lead0, LongitudinalPlanSource.lead1) or
+                                  lead.dRel < LEAD_CAP_TIME * max(v_ego, 1.0))
+    self.shadow.update(personality, v_ego, sm['carState'].aEgo, output_a_target_e2e, get_plan_ahead(sm['modelV2'].position, v_ego),
+                       curve_offset, engaged=not reset_state, enabled=sm['selfdriveState'].enabled, gas_pressed=sm['carState'].gasPressed,
+                       standstill=sm['carState'].standstill, reverse=sm['carState'].gearShifter == car.CarState.GearShifter.reverse,
+                       v_lead=lead.vLeadK if following else None, v_cruise=None if reset_state else v_cruise,
+                       v_plan_end=sm['modelV2'].velocity.x[-1] if len(sm['modelV2'].velocity.x) else None)
+
     output_a_target_e2e = self.accel_boost.update(sm, output_a_target_e2e, curve_offset)
+    output_a_target_e2e = self.shadow.apply(output_a_target_e2e)
 
     candidates = [(output_a_target_mpc, self.mpc.source, output_should_stop_mpc),
                   (self.a_cruise, LongitudinalPlanSource.cruise, cruise_should_stop),
                   (output_a_target_e2e, LongitudinalPlanSource.e2e, output_should_stop_e2e)]
 
     output_a_target, self.mpc.source, _ = min(candidates, key=lambda c: c[0])
+    self.plan_source = self.mpc.source
     self.output_should_stop = any(should_stop for _, _, should_stop in candidates)
     self.output_a_target = np.clip(output_a_target, ACCEL_MIN, ACCEL_MAX)
 
@@ -141,5 +157,7 @@ class LongitudinalPlanner:
     longitudinalPlan.aTarget = float(self.output_a_target)
     longitudinalPlan.shouldStop = bool(self.output_should_stop)
     longitudinalPlan.allowBrake = True
+    longitudinalPlan.shadowSpeeds = self.shadow.shadow_speeds()
+    longitudinalPlan.personalitySwitchAccel = float(self.shadow.switch_accel)
 
     pm.send('longitudinalPlan', plan_send)

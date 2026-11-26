@@ -1250,6 +1250,11 @@ struct LongitudinalPlan @0xe00b5b3eba12876c {
 
   solverExecutionTime @35 :Float32;
 
+  # m/s each personality would be going had it been driving the whole time, in personality order
+  shadowSpeeds @41 :List(Float32);
+  # m/s^2 taken off while slowing toward a less aggressive personality after switching to it or engaging
+  personalitySwitchAccel @42 :Float32;
+
   enum LongitudinalPlanSource {
     cruise @0;
     lead0 @1;

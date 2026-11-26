@@ -55,6 +55,7 @@ class FontSizes:
   speed_unit: int = 66
   max_speed: int = 36
   set_speed: int = 112
+  shadow_speed: int = 38
 
 
 @dataclass(frozen=True)
@@ -102,6 +103,10 @@ class HudRenderer(Widget):
     self._set_speed_alpha_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._set_speed_alpha = 0.0
     self._chestnut_alpha_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
+    # each personality's distance bar from the long indicator, at its size there, to label its shadow speed
+    self._txt_shadow_bars = [gui_app.texture(f'icons_mici/longitudinal/distance_{i}.png', w, h, keep_aspect_ratio=False)
+                             for i, (w, h) in enumerate([(33, 8), (40, 9), (48, 10)], start=1)]
+    self._shadow_alpha_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
   def set_wheel_critical_icon(self, critical: bool):
     """Set the wheel icon to critical or normal state."""
@@ -155,6 +160,7 @@ class HudRenderer(Widget):
       self._draw_set_speed(rect)
 
     self._draw_model_source(rect)
+    self._draw_shadow_speeds(rect)
 
   def render_steering_wheel(self, rect: rl.Rectangle) -> None:
     """Draw the steering wheel centered at the bottom of rect, after render() has updated state."""
@@ -207,6 +213,33 @@ class HudRenderer(Widget):
     rl.draw_texture_pro(self._txt_wheel_highlight, rl.Rectangle(0, 0, wheel_txt.width, wheel_txt.height),
                         rl.Rectangle(pos_x, pos_y, wheel_txt.width, wheel_txt.height),
                         rl.Vector2(wheel_txt.width / 2, wheel_txt.height / 2), rotation, rl.Color(255, 255, 255, int(alpha * highlight)))
+
+  def _draw_shadow_speeds(self, rect: rl.Rectangle) -> None:
+    """The speed each personality would be going had it been driving, top to bottom aggressive to relaxed like the
+    distance bars, in the top right clear of the confidence ball. Hidden under alerts."""
+    plan = ui_state.sm['longitudinalPlan']
+    shown = ui_state.started and ui_state.has_longitudinal_control and len(plan.shadowSpeeds) == 3 and self._can_draw_top_icons
+    alpha = self._shadow_alpha_filter.update(shown)
+    if alpha < 1e-2 or len(plan.shadowSpeeds) != 3:
+      return
+
+    conversion = CV.MS_TO_KPH if ui_state.is_metric else CV.MS_TO_MPH
+    personality = ui_state.sm['selfdriveState'].personality.raw
+    alpha *= 1 - (1 - DIMMED_ICON_ALPHA) * status_fade.weight(UIStatus.DISENGAGED)
+    right = rect.x + rect.width - 52  # the confidence ball's column is the last 42 px
+    row_h, top = 36, rect.y + 10
+    bar_center = right - 98  # the bars share a center line, like the long indicator
+    rl.draw_rectangle_rounded(rl.Rectangle(bar_center - 34, top - 4, right - bar_center + 42, 3 * row_h + 8), 0.3, 8,
+                              rl.Color(0, 0, 0, int(90 * alpha)))
+    for i, (speed, bar) in enumerate(zip(plan.shadowSpeeds, self._txt_shadow_bars, strict=True)):
+      row_alpha = alpha * (0.95 if i == personality else 0.55)
+      text = str(round(max(speed, 0.0) * conversion))
+      size = measure_text_cached(self._font_semi_bold, text, FONT_SIZES.shadow_speed)
+      y = top + i * row_h
+      rl.draw_text_ex(self._font_semi_bold, text, rl.Vector2(right - size.x, y + (row_h - size.y) / 2), FONT_SIZES.shadow_speed, 0,
+                      rl.Color(255, 255, 255, int(255 * row_alpha)))
+      rl.draw_texture_ex(bar, rl.Vector2(bar_center - bar.width / 2, y + (row_h - bar.height) / 2), 0.0, 1.0,
+                         rl.Color(255, 255, 255, int(255 * row_alpha)))
 
   def _draw_set_speed(self, rect: rl.Rectangle) -> None:
     """Draw the MAX speed indicator box."""
