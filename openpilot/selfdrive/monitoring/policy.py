@@ -24,7 +24,7 @@ def to_percent(v):
 # ******************************************************************************************
 
 class DRIVER_MONITOR_SETTINGS:
-  def __init__(self):
+  def __init__(self, demo=False):
     # https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=OJ:L_202501899
     self._ALERT_MIN_SPEED = 2.8  # 10 km/h
 
@@ -34,6 +34,11 @@ class DRIVER_MONITOR_SETTINGS:
     self._VISION_POLICY_ALERT_1_TIMEOUT = 5.
     self._VISION_POLICY_ALERT_2_TIMEOUT = 8.
     self._VISION_POLICY_ALERT_3_TIMEOUT = 13.
+    if demo:
+      # driver camera preview: first alert after 1 s, same gaps after it
+      self._VISION_POLICY_ALERT_1_TIMEOUT = 1.
+      self._VISION_POLICY_ALERT_2_TIMEOUT = 4.
+      self._VISION_POLICY_ALERT_3_TIMEOUT = 9.
 
     # no response = alert_3 sustained for certain amount of time
     self._NO_RESPONSE_TIMEOUT = 5.
@@ -431,7 +436,7 @@ class DriverMonitoring:
   def run_step(self, sm, demo=False):
     if demo:
       car_speed = 30
-      enabled = True
+      enabled = sm['selfdriveState'].enabled  # the preview disengages to reset its alerts
       wrong_gear = False
       lowspeed = False
       driver_engaged = False

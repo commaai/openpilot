@@ -2,7 +2,7 @@
 import openpilot.cereal.messaging as messaging
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process
-from openpilot.selfdrive.monitoring.policy import DriverMonitoring
+from openpilot.selfdrive.monitoring.policy import DriverMonitoring, DRIVER_MONITOR_SETTINGS, MonitoringPolicy
 
 
 def dmonitoringd_thread():
@@ -35,7 +35,11 @@ def dmonitoringd_thread():
     # load live always-on toggle
     if sm['driverStateV2'].frameId % 40 == 1:
       DM.always_on = params.get_bool("AlwaysOnDM")
-      demo_mode = params.get_bool("IsDriverViewEnabled")
+      if params.get_bool("IsDriverViewEnabled") != demo_mode:
+        demo_mode = not demo_mode
+        DM.settings = DRIVER_MONITOR_SETTINGS(demo=demo_mode)
+        DM._reset_awareness()
+        DM._set_policy(MonitoringPolicy.vision)
 
     # save rhd virtual toggle every 5 mins
     if (sm['driverStateV2'].frameId % 6000 == 0 and not demo_mode and

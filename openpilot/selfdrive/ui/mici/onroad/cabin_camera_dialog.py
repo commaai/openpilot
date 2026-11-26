@@ -14,6 +14,7 @@ from openpilot.selfdrive.ui.ui_state import ui_state, device
 from openpilot.system.ui.lib.application import gui_app, FontWeight, TextAlignment
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.button import SmallCircleIconButton
 from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.widgets.label import gui_label, UnifiedLabel
 
@@ -37,11 +38,9 @@ DM_ALERTS = {
 }
 
 EYE_THRESHOLD = 0.65
-BLINK_OPEN = 0.5
-BLINK_THRESHOLD = 0.865
 PHONE_THRESHOLD = 0.5
 
-RING_RADIUS = 26
+RING_RADIUS = 31
 RING_FADE_RADIUS = RING_RADIUS * 0.55
 RING_CORNER_RADIUS = 2
 CROP_SHIFT = 0.1
@@ -102,15 +101,20 @@ class BaseCabinCameraDialog(Widget):
     super().__init__()
     self._camera_view = CabinCameraView("camerad", VisionStreamType.VISION_STREAM_CABIN)
     self.driver_state_renderer = DriverStateRenderer(background=False)
+    self.driver_state_renderer.set_force_active(True)
     self._alert_renderer = AlertRenderer(dm_alert)
     self._pm: messaging.PubMaster | None = None
+    self._resetting = False
+
+    self._cancel_button = SmallCircleIconButton(gui_app.texture("icons_mici/setup/cancel.png", 42, 42))
+    self._cancel_button.set_click_callback(self._reset_alert)
 
     self._eye_icon = gui_app.texture("icons_mici/onroad/driver_monitoring/eye.png", 36, 25)
     self._phone_icon = gui_app.texture("icons_mici/onroad/driver_monitoring/phone.png", 26, 36)
 
     self._eye_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._phone_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
-    self._eye_open_filter = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps)
+    self._eye_detected_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._phone_detected_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._status_alpha_filter = FirstOrderFilter(1.0, 0.1, 1 / gui_app.target_fps)
 
@@ -148,12 +152,13 @@ class BaseCabinCameraDialog(Widget):
     driver_data = self.driver_state_renderer.get_driver_data()
     eye = (driver_data.leftEyeProb + driver_data.rightEyeProb) / 2
     self._eye_filter.update(eye)
-    blink = (driver_data.leftBlinkProb + driver_data.rightBlinkProb) / 2
-    self._eye_open_filter.update(np.interp(blink, [BLINK_OPEN, BLINK_THRESHOLD], [1.0, 0.0]) if eye > EYE_THRESHOLD else 0.0)
+    self._eye_detected_filter.update(eye > EYE_THRESHOLD)
     self._phone_filter.update(driver_data.phoneProb)
     self._phone_detected_filter.update(driver_data.phoneProb > PHONE_THRESHOLD)
 
     dm_state = ui_state.sm["driverMonitoringState"]
+    if dm_state.alertLevel == AlertLevel.none:
+      self._resetting = False
     face_detected = dm_state.visionPolicyState.faceDetected
     self._status_label.set_text(tr("driver detected") if face_detected else tr("looking for driver"))
 
@@ -186,6 +191,11 @@ class BaseCabinCameraDialog(Widget):
 
     self._alert_renderer.render(content_rect)
 
+    if ui_state.sm["driverMonitoringState"].alertLevel == AlertLevel.three and not self._resetting:
+      self._cancel_button.set_position(content_rect.x + content_rect.width - self._cancel_button.rect.width - 10,
+                                       content_rect.y + content_rect.height - self._cancel_button.rect.height - 10)
+      self._cancel_button.render()
+
     rl.draw_rectangle_rounded_lines_ex(content_rect, 0.2 * 1.02, 10, 50, rl.BLACK)
     rl.end_scissor_mode()
 
@@ -203,7 +213,7 @@ class BaseCabinCameraDialog(Widget):
 
     eye_center = rl.Vector2(center_x, rect.y + 120)
     draw_ring(eye_center, self._eye_filter.x, CONE_COLOR_GREEN, 1.0)
-    eye_alpha = DIMMED_ICON_ALPHA + (0.9 - DIMMED_ICON_ALPHA) * self._eye_open_filter.x
+    eye_alpha = DIMMED_ICON_ALPHA + (0.9 - DIMMED_ICON_ALPHA) * self._eye_detected_filter.x
     rl.draw_texture_v(self._eye_icon, rl.Vector2(eye_center.x - self._eye_icon.width / 2, eye_center.y - self._eye_icon.height / 2),
                       rl.Color(255, 255, 255, int(255 * eye_alpha)))
 
@@ -213,8 +223,11 @@ class BaseCabinCameraDialog(Widget):
     rl.draw_texture_v(self._phone_icon, rl.Vector2(phone_center.x - self._phone_icon.width / 2, phone_center.y - self._phone_icon.height / 2),
                       rl.Color(255, 255, 255, int(255 * phone_alpha)))
 
+  def _reset_alert(self):
+    self._resetting = True
+
   def _publish_alert_sound(self, dm_state):
-    """Publish selfdriveState with only alertSound field set"""
+    """Publish selfdriveState with alertSound, and enabled for dmonitoringd's demo mode. A disengage resets its alerts"""
     if self._pm is None:
       return
 
@@ -225,7 +238,8 @@ class BaseCabinCameraDialog(Widget):
       'three': AudibleAlert.warningImmediateUser,
     }
     msg = messaging.new_message('selfdriveState')
-    if dm_state is not None:
+    msg.selfdriveState.enabled = dm_state is not None and not self._resetting
+    if dm_state is not None and not self._resetting:
       msg.selfdriveState.alertSound = ALERT_SOUNDS.get(str(dm_state.alertLevel), AudibleAlert.none)
     self._pm.send('selfdriveState', msg)
 
@@ -242,20 +256,16 @@ class BaseCabinCameraDialog(Widget):
     if face_std > 0.15:
       alpha = max(1.0 - (face_std - 0.15) * 5, 0.0)
 
-    # use approx instead of distort_points
-    # TODO: replace with distort_points
-    tici_x = 1080.0 - 1714.0 * face_x
-    tici_y = -135.0 + (504.0 + abs(face_x) * 112.0) + (1205.0 - abs(face_x) * 724.0) * face_y
+    # face center in cabin camera pixels, fit to a comma four's face positions
+    frame = self._camera_view.frame
+    cam_x = (690.0 + 1276.0 * face_x - 104.0 * face_y) * frame.width / 1344
+    cam_y = (258.0 + 807.0 * face_y) * frame.height / 760
 
-    # Tici coords are relative to center, scale offset
-    offset_x = (tici_x - 1080.0) * 1.25
-    offset_y = (tici_y - 540.0) * 1.25
-
-    # Map to mici screen (scale from 2160x1080 to rect dimensions)
-    scale_x = rect.width / 2160.0
-    scale_y = rect.height / 1080.0
-    fbox_x = rect.x + rect.width / 2 + offset_x * scale_x
-    fbox_y = rect.y + rect.height / 2 + offset_y * scale_y + self._camera_view._calc_frame_matrix(rect)[1, 2] * rect.height / 2
+    # the view draws the frame mirrored, scaled and shifted by its frame matrix
+    m = self._camera_view._calc_frame_matrix(rect)
+    frame_w, frame_h = rect.width * m[0, 0], rect.height * m[1, 1]
+    fbox_x = rect.x + (rect.width - frame_w) / 2 + m[0, 2] * rect.width / 2 + (1 - cam_x / frame.width) * frame_w
+    fbox_y = rect.y + (rect.height - frame_h) / 2 + m[1, 2] * rect.height / 2 + cam_y / frame.height * frame_h
 
     inner = FACE_FRAME_SIZE - 2 * FACE_FRAME_BORDER
     rl.draw_rectangle_rounded_lines_ex(rl.Rectangle(fbox_x - inner / 2, fbox_y - inner / 2, inner, inner),
