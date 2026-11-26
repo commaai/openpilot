@@ -5,6 +5,7 @@ from opendbc.car.structs import car
 from openpilot.cereal import log, messaging
 from openpilot.cereal.visionipc import VisionStreamType
 from openpilot.common.filter_simple import FirstOrderFilter
+from openpilot.selfdrive.monitoring.policy import DRIVER_MONITOR_SETTINGS
 from openpilot.selfdrive.ui.mici.onroad import SIDE_PANEL_WIDTH, DIMMED_ICON_ALPHA
 from openpilot.selfdrive.ui.mici.onroad.alert_renderer import AlertRenderer
 from openpilot.selfdrive.ui.mici.onroad.cameraview import CameraView
@@ -37,8 +38,8 @@ DM_ALERTS = {
                                    "driverUnresponsive3/permanent"),
 }
 
-EYE_THRESHOLD = 0.65
-PHONE_THRESHOLD = 0.5
+DM_SETTINGS = DRIVER_MONITOR_SETTINGS()
+BLINK_OPEN = 0.5
 RING_COLOR_RANGE = (0.15, 0.65)
 STATUS_HIDE_TIME = 2.5
 
@@ -157,14 +158,18 @@ class BaseCabinCameraDialog(Widget):
     self.driver_state_renderer.set_should_draw(True)
 
     driver_data = self.driver_state_renderer.get_driver_data()
-    eye = (driver_data.leftEyeProb + driver_data.rightEyeProb) / 2
-    self._eye_filter.update(eye)
-    self._eye_open_filter.update(eye > EYE_THRESHOLD)
-    self._phone_filter.update(driver_data.phoneProb)
-    self._phone_detected_filter.update(driver_data.phoneProb > PHONE_THRESHOLD)
-
     dm_state = ui_state.sm["driverMonitoringState"]
     face_detected = dm_state.visionPolicyState.faceDetected
+
+    # blinks count like driver monitoring counts them, only for visible eyes without sunglasses
+    sunglasses = driver_data.sunglassesProb >= DM_SETTINGS._SG_THRESHOLD
+    blink = sum(b * (e > DM_SETTINGS._EYE_THRESHOLD and not sunglasses) for b, e in ((driver_data.leftBlinkProb, driver_data.leftEyeProb),
+                                                                                    (driver_data.rightBlinkProb, driver_data.rightEyeProb))) / 2
+    self._eye_filter.update(np.interp(blink, [BLINK_OPEN, DM_SETTINGS._BLINK_THRESHOLD], [1.0, 0.0]) if face_detected else 0.0)
+    self._eye_open_filter.update(face_detected and not dm_state.visionPolicyState.distractedTypes.eye)
+    self._phone_filter.update(driver_data.phoneProb)
+    self._phone_detected_filter.update(driver_data.phoneProb > DM_SETTINGS._PHONE_THRESH)
+
     status = tr("driver detected") if face_detected else tr("looking for driver")
     if status != self._status_label.text:
       self._status_label.set_text(status)
