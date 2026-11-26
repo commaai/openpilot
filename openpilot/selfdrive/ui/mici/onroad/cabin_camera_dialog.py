@@ -40,7 +40,7 @@ DM_ALERTS = {
 
 DM_SETTINGS = DRIVER_MONITOR_SETTINGS()
 BLINK_OPEN = 0.5
-RING_COLOR_RANGE = (0.15, 0.65)
+RING_COLOR_RANGE = (0.0, 0.35)
 STATUS_HIDE_TIME = 2.5
 
 RING_RADIUS = 26 * 1.2
@@ -115,7 +115,7 @@ class BaseCabinCameraDialog(Widget):
 
     self._eye_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._phone_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
-    self._eye_open_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
+    self._eye_open_filter = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps)
     self._phone_detected_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._status_alpha_filter = FirstOrderFilter(1.0, 0.1, 1 / gui_app.target_fps)
     self._status_changed_time = 0.0
@@ -165,8 +165,8 @@ class BaseCabinCameraDialog(Widget):
     sunglasses = driver_data.sunglassesProb >= DM_SETTINGS._SG_THRESHOLD
     blink = sum(b * (e > DM_SETTINGS._EYE_THRESHOLD and not sunglasses) for b, e in ((driver_data.leftBlinkProb, driver_data.leftEyeProb),
                                                                                     (driver_data.rightBlinkProb, driver_data.rightEyeProb))) / 2
-    self._eye_filter.update(np.interp(blink, [BLINK_OPEN, DM_SETTINGS._BLINK_THRESHOLD], [1.0, 0.0]) if face_detected else 0.0)
-    self._eye_open_filter.update(face_detected and not dm_state.visionPolicyState.distractedTypes.eye)
+    self._eye_filter.update((driver_data.leftEyeProb + driver_data.rightEyeProb) / 2)
+    self._eye_open_filter.update(np.interp(blink, [BLINK_OPEN, DM_SETTINGS._BLINK_THRESHOLD], [1.0, 0.0]) if face_detected else 0.0)
     self._phone_filter.update(driver_data.phoneProb)
     self._phone_detected_filter.update(driver_data.phoneProb > DM_SETTINGS._PHONE_THRESH)
 
