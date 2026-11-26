@@ -363,8 +363,8 @@ class TrainingGuide(Widget):
     nxt = self._next
     loader = TextureLoader()
 
-    welcome = HeroStep("bg_welcome", tr_noop("Welcome to openpilot alpha"),
-                       tr_noop("It is important to understand the functionality and limitations of the openpilot alpha software before testing."),
+    welcome = HeroStep("bg_welcome", tr_noop("Welcome to openpilot"),
+                       tr_noop("Let's review the functionality and limitations of openpilot before getting started."),
                        loader)
     welcome.add_control(GuideButton(tr_noop("Begin Training"), nxt, rl.WHITE), BEGIN_RECT)
 
@@ -389,7 +389,7 @@ class TrainingGuide(Widget):
     self._steps: list[Step] = [
       welcome,
       SectionStep(1, tr_noop("What is openpilot?"), (
-        tr_noop("openpilot is an advanced driver assistance program."),
+        tr_noop("openpilot is an advanced driver assistance system."),
         Span(tr_noop("A driver assistance system is not a self-driving car."), underline=True),
         (
           tr_noop("This means openpilot is designed to work with you, not without you."),
@@ -462,7 +462,7 @@ class TrainingGuide(Widget):
         tr_noop("When you encounter a potentially unsafe situation or need to exit a highway, disengage openpilot by pressing the brake pedal."),
       ), BLUE, nxt),
       PhotoStep("limited", tr_noop("Limited Features"), (
-        tr_noop("Keep in mind that openpilot will not recognize certain scenarios including stop lights, close cut-ins, or pedestrians."),
+        tr_noop("Keep in mind that openpilot will not recognize certain scenarios including construction zones, close cut-ins, or pedestrians."),
         tr_noop("You must stay alert and always be ready to retake control of the vehicle."),
       ), tr_noop("Tap the light to continue"), "light", BLUE, loader, LIGHT_RECT, nxt),
       PhotoStep("disengage", tr_noop("Disengage openpilot"), (
@@ -480,7 +480,7 @@ class TrainingGuide(Widget):
       ChecklistStep(tr_noop("openpilot cannot:"), (
         tr_noop("Stay engaged while the driver is distracted."),
         tr_noop("See other cars during a lane change."),
-        tr_noop("Stop for red lights, stop signs or pedestrians."),
+        tr_noop("Navigate construction zones or stop for pedestrians."),
         tr_noop("React to unsafe situations like close vehicle cut-ins or road hazards."),
       ), "cross", RED, nxt),
       finish,
