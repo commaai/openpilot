@@ -3,7 +3,7 @@ from enum import IntEnum
 
 import raylib_nb as rl
 
-from openpilot.system.ui.lib.application import gui_app, uncapped_white, FontWeight, MousePos, TextAlignment
+from openpilot.system.ui.lib.application import gui_app, white, FontWeight, MousePos, TextAlignment
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import Label
 from openpilot.common.filter_simple import FirstOrderFilter
@@ -133,8 +133,7 @@ class Button(Widget):
     roundness = self._border_radius / (min(self._rect.width, self._rect.height) / 2)
     if self._button_style == ButtonStyle.TRANSPARENT_WHITE_BORDER:
       rl.draw_rectangle_rounded(self._rect, roundness, 10, rl.BLACK)
-      with uncapped_white():  # border, not content
-        rl.draw_rectangle_rounded_lines_ex(self._rect, roundness, 10, 2, rl.WHITE)
+      rl.draw_rectangle_rounded_lines_ex(self._rect, roundness, 10, 2, rl.WHITE)
     else:
       rl.draw_rectangle_rounded(self._rect, roundness, 10, self._background_color)
     self._label.render(self._rect)
@@ -195,7 +194,7 @@ class IconButton(Widget):
   def _render(self, rect: rl.Rectangle):
     color = rl.Color(180, 180, 180, int(150 * self._opacity_filter.x)) if self.is_pressed else rl.WHITE
     if not self.enabled:
-      color = rl.Color(255, 255, 255, int(255 * 0.35 * self._opacity_filter.x))
+      color = white(0.35 * self._opacity_filter.x)
     draw_x = rect.x + (rect.width - self._texture.width) / 2
     draw_y = rect.y + (rect.height - self._texture.height) / 2
     rl.draw_texture_ex(self._texture, rl.Vector2(draw_x, draw_y), 0.0, 1.0, color)
@@ -218,15 +217,14 @@ class SmallCircleIconButton(Widget):
       self._opacity_filter.x = opacity
 
   def _render(self, _):
-    white = rl.Color(255, 255, 255, int(255 * self._opacity_filter.x))
     if not self.enabled:
       bg_txt = self._icon_bg_disabled_txt
-      icon_white = rl.Color(255, 255, 255, int(white.a * 0.35))
+      icon_white = white(0.35 * self._opacity_filter.x)
     else:
       bg_txt = self._icon_bg_pressed_txt if self.is_pressed else self._icon_bg_txt
-      icon_white = white
+      icon_white = white(self._opacity_filter.x)
 
-    rl.draw_texture_ex(bg_txt, rl.Vector2(self.rect.x, self.rect.y), 0.0, 1.0, white)
+    rl.draw_texture_ex(bg_txt, rl.Vector2(self.rect.x, self.rect.y), 0.0, 1.0, rl.Color(255, 255, 255, int(255 * self._opacity_filter.x)))
     icon_x = self.rect.x + (self.rect.width - self._icon_txt.width) / 2
     icon_y = self.rect.y + (self.rect.height - self._icon_txt.height) / 2
     rl.draw_texture_ex(self._icon_txt, rl.Vector2(icon_x, icon_y), 0.0, 1.0, icon_white)

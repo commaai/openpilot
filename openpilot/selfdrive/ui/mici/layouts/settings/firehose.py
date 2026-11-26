@@ -11,7 +11,7 @@ from openpilot.selfdrive.ui.lib.api_helpers import get_token
 from openpilot.selfdrive.ui.ui_state import ui_state, device
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
 from openpilot.selfdrive.ui.mici.widgets.button import GreyBigButton
-from openpilot.system.ui.lib.application import gui_app, FontWeight, TextAlignmentVertical
+from openpilot.system.ui.lib.application import gui_app, white, FontWeight, TextAlignmentVertical
 from openpilot.system.ui.lib.multilang import tr, tr_noop
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.scroller import NavScroller
@@ -101,7 +101,7 @@ class SegmentCountCard(GreyBigButton):
     self._sub_label.set_font_weight(FontWeight.BOLD)
     self._sub_label.set_font_size(64)
     self._sub_label.set_alignment_vertical(TextAlignmentVertical.BOTTOM)
-    self._sub_label.set_text_color(rl.WHITE)
+    self._sub_label.set_text_color(white())
 
 
 class StatusCard(GreyBigButton):
@@ -123,7 +123,7 @@ class StatusCard(GreyBigButton):
     text_rect = rl.Rectangle(rect.x + offset, rect.y, rect.width - offset, rect.height)
     text_height = self._sub_label.get_content_height(int(text_rect.width))
     icon_y = rect.y + rect.height - (text_height + self.ICON_SIZE) / 2
-    rl.draw_texture_v(self._check_icon, rl.Vector2(rect.x, icon_y), rl.WHITE)
+    rl.draw_texture_v(self._check_icon, rl.Vector2(rect.x, icon_y), white())
     super()._draw_subtitle(text_rect)
 
 

@@ -5,7 +5,7 @@ import raylib_nb as rl
 from collections.abc import Callable
 from openpilot.system.ui.widgets import Widget
 from openpilot.common.filter_simple import BounceFilter, FirstOrderFilter
-from openpilot.system.ui.lib.application import gui_app, MousePos, MouseEvent
+from openpilot.system.ui.lib.application import gui_app, white, MousePos, MouseEvent
 
 SWIPE_AWAY_THRESHOLD = 80  # px to dismiss after releasing
 START_DISMISSING_THRESHOLD = 40  # px to start dismissing while dragging
@@ -45,7 +45,7 @@ class NavBar(Widget):
     alpha = self._alpha_filter.update(self._alpha)
 
     # white bar with black border
-    rl.draw_rectangle_rounded(self._rect, 1.0, 6, rl.Color(255, 255, 255, int(255 * alpha)))
+    rl.draw_rectangle_rounded(self._rect, 1.0, 6, white(alpha))
     rl.draw_rectangle_rounded_lines_ex(self._rect, 1.0, 6, 2, rl.Color(0, 0, 0, int(255 * 0.3 * alpha)))
 
 

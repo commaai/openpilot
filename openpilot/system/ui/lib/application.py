@@ -1,5 +1,4 @@
 import atexit
-import functools
 import math
 import os
 import queue
@@ -61,11 +60,16 @@ def _burn_in_colors() -> np.ndarray:
 BURN_IN_COLORS = _burn_in_colors()
 
 
+# UI white is slightly dimmed. use white() by default, rl.WHITE only when you really want full white
+WHITE_ALPHA = 0.9
+
+
+def white(alpha: float = 1.0) -> rl.Color:
+  return rl.Color(255, 255, 255, int(255 * WHITE_ALPHA * alpha))
+
+
 DEFAULT_TEXT_SIZE = 60
-# mici: every white draw (text, white textures, shapes, polygons) is capped to this alpha, so draw with rl.WHITE or a relative alpha.
-# White mixed with a color is capped less the more colored it is (see cap_white).
-# Opt out by drawing inside `with uncapped_white():`.
-WHITE_MAX_ALPHA = 0.9
+DEFAULT_TEXT_COLOR = white()
 
 # Qt draws fonts accounting for ascent/descent differently, so compensate to match old styles
 # The real scales for the fonts below range from 1.212 to 1.266
@@ -220,7 +224,6 @@ class GuiApplication:
     self._ffmpeg_thread: threading.Thread | None = None
     self._ffmpeg_stop_event: threading.Event | None = None
     self._textures: dict[str, rl.Texture] = {}
-    self._capped_texture_ids: set[int] = set()
     self._target_fps: int = _DEFAULT_FPS
     self._last_fps_log_time: float = time.monotonic()
     self._frame = 0
@@ -327,7 +330,6 @@ class GuiApplication:
       self._target_fps = fps
       self._load_fonts()
       self._patch_text_functions()
-      self._patch_draw_functions()
       self._patch_scissor_mode()
 
       if not PC:
@@ -473,8 +475,6 @@ class GuiApplication:
       texture_obj.width = width
       texture_obj.height = height
 
-    if CAP_WHITE and _is_white_asset(asset_path):
-      self._capped_texture_ids.add(texture_obj.id)
     self._textures[cache_key] = texture_obj
     return texture_obj
 
@@ -716,31 +716,9 @@ class GuiApplication:
 
     def _draw_text_ex_scaled(font, text, position, font_size, spacing, tint):
       font = font_fallback(font)
-      tint = cap_white(tint)
       return rl._orig_draw_text_ex(font, text, position, font_size * FONT_SCALE, spacing, tint)
 
     rl.draw_text_ex = _draw_text_ex_scaled
-
-  def _patch_draw_functions(self):
-    # Cap white in every other raylib draw call (text is capped in _draw_text_ex_scaled)
-    if not CAP_WHITE:
-      return
-
-    for name in [n for n in dir(rl) if n.startswith("draw_") and n != "draw_text_ex"]:
-      orig = getattr(rl, f"_orig_{name}", getattr(rl, name))
-      setattr(rl, f"_orig_{name}", orig)
-
-      if name.startswith("draw_texture"):
-        # only white textures are capped, so colored images and icons keep their colors
-        def _draw_capped(texture, *args, _orig=orig):
-          if texture.id in self._capped_texture_ids:
-            args = (*args[:-1], cap_white(args[-1]))  # tint is always last
-          return _orig(texture, *args)
-      else:
-        def _draw_capped(*args, _orig=orig):
-          return _orig(*(cap_white(a) if type(a) is _Color else a for a in args))
-
-      setattr(rl, name, _draw_capped)
 
   def _patch_scissor_mode(self):
     if self._scale == 1.0:
@@ -868,53 +846,6 @@ class GuiApplication:
   @staticmethod
   def big_ui() -> bool:
     return HARDWARE.get_device_type() in ('tici', 'tizi') or BIG_UI
-
-
-CAP_WHITE = not GuiApplication.big_ui()  # big UI doesn't cap white, so it bakes the cap into its default text color
-DEFAULT_TEXT_COLOR = rl.WHITE if CAP_WHITE else rl.Color(255, 255, 255, int(255 * WHITE_MAX_ALPHA))
-
-
-@functools.cache
-def _is_white_asset(asset_path: str) -> bool:
-  # colored images and icons (e.g. green/orange status icons) aren't white, so they're never capped
-  with as_file(ASSETS_DIR.joinpath(asset_path)) as fspath:
-    image = rl.load_image(fspath.as_posix())
-  try:
-    if image.format != rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8:
-      return False
-    pixels = np.frombuffer(image.to_bytes(image.width * image.height * 4), dtype=np.uint8).reshape(-1, 4)
-    visible = pixels[pixels[:, 3] > 0]
-    return len(visible) > 0 and bool((visible[:, :3] == 255).all())
-  finally:
-    rl.unload_image(image)
-
-
-_Color = type(rl.WHITE)
-_uncapped_depth = 0
-
-
-@contextmanager
-def uncapped_white():
-  """Draw white at full alpha inside this block, e.g. for the road scene's lane lines and path"""
-  global _uncapped_depth
-  _uncapped_depth += 1
-  try:
-    yield
-  finally:
-    _uncapped_depth -= 1
-
-
-def cap_white(color: rl.Color) -> rl.Color:
-  """Cap white's brightness to WHITE_MAX_ALPHA. The cap fades out as white is mixed with a color (e.g. a white to green wheel),
-  and greys already at or below WHITE_MAX_ALPHA's brightness are untouched."""
-  hi = max(color.r, color.g, color.b)
-  if not CAP_WHITE or _uncapped_depth or hi == 0:
-    return color
-  whiteness = min(color.r, color.g, color.b) / hi  # 1 - HSV saturation
-  factor = 1 - whiteness * (1 - min(1.0, WHITE_MAX_ALPHA * 255 / hi))
-  if factor >= 1:
-    return color
-  return rl.Color(color.r, color.g, color.b, int(color.a * factor))
 
 
 gui_app = GuiApplication()

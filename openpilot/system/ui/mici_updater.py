@@ -7,7 +7,7 @@ import raylib_nb as rl
 from openpilot.common.realtime import config_realtime_process, set_core_affinity
 from openpilot.common.hardware import HARDWARE, COMMA_HARDWARE
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.ui.lib.application import gui_app, FontWeight, TextAlignmentVertical
+from openpilot.system.ui.lib.application import gui_app, white, FontWeight, TextAlignmentVertical
 from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.widgets.label import UnifiedLabel
@@ -28,7 +28,7 @@ class ProgressPage(NavWidget):
 
     self._progress_title_label = UnifiedLabel("", 64,
                                               font_weight=FontWeight.DISPLAY, line_height=0.8)
-    self._progress_percent_label = UnifiedLabel("", 132, text_color=rl.Color(255, 255, 255, int(255 * 0.65)),
+    self._progress_percent_label = UnifiedLabel("", 132, text_color=white(0.65),
                                                 font_weight=FontWeight.ROMAN,
                                                 alignment_vertical=TextAlignmentVertical.BOTTOM)
 

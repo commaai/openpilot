@@ -4,7 +4,7 @@ from collections.abc import Callable, Sequence
 
 from openpilot.common.filter_simple import FirstOrderFilter, BounceFilter
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.ui.lib.application import gui_app, uncapped_white
+from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.scroll_panel2 import GuiScrollPanel2, ScrollState
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.nav_widget import NavWidget
@@ -63,9 +63,8 @@ class ScrollIndicator(Widget):
 
     src_rec = rl.Rectangle(0, 0, self._txt_scroll_indicator.width, self._txt_scroll_indicator.height)
     dest_rec = rl.Rectangle(dest_left, y, dest_w, self._txt_scroll_indicator.height)
-    with uncapped_white():
-      rl.draw_texture_pro(self._txt_scroll_indicator, src_rec, dest_rec, rl.Vector2(0, 0), 0.0,
-                          rl.Color(255, 255, 255, int(255 * 0.45)))
+    rl.draw_texture_pro(self._txt_scroll_indicator, src_rec, dest_rec, rl.Vector2(0, 0), 0.0,
+                        rl.Color(255, 255, 255, int(255 * 0.45)))
 
 
 class _Scroller(Widget):

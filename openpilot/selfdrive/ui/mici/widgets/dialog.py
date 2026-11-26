@@ -9,7 +9,7 @@ from openpilot.system.ui.widgets.scroller import NavScroller
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.mici_keyboard import MiciKeyboard
 from openpilot.system.ui.lib.text_measure import measure_text_cached
-from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
+from openpilot.system.ui.lib.application import gui_app, white, FontWeight, MousePos
 from openpilot.system.ui.widgets.slider import RedBigSlider, BigSlider
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.selfdrive.ui.mici.widgets.button import BigCircleButton, GreyBigButton
@@ -170,7 +170,7 @@ class BigInputDialog(BigDialogBase):
       text_x -= text_size.x - text_field_rect.width
 
     rl.begin_scissor_mode(int(text_field_rect.x), int(text_field_rect.y), int(text_field_rect.width), int(text_field_rect.height))
-    rl.draw_text_ex(gui_app.font(FontWeight.ROMAN), text, rl.Vector2(text_x, text_field_rect.y), self.TEXT_INPUT_SIZE, 0, rl.WHITE)
+    rl.draw_text_ex(gui_app.font(FontWeight.ROMAN), text, rl.Vector2(text_x, text_field_rect.y), self.TEXT_INPUT_SIZE, 0, white())
 
     # draw grayed out character user is hovering over
     if candidate_char:
@@ -198,7 +198,7 @@ class BigInputDialog(BigDialogBase):
     # draw backspace icon with nice fade
     self._backspace_img_alpha.update(255 * bool(text))
     if self._backspace_img_alpha.x > 1:
-      color = rl.Color(255, 255, 255, int(self._backspace_img_alpha.x))
+      color = white(self._backspace_img_alpha.x / 255)
       rl.draw_texture_ex(self._backspace_img, rl.Vector2(self._rect.width - self._backspace_img.width - 27, self._rect.y + 14), 0.0, 1.0, color)
 
     if not text and self._hint_label.text and not candidate_char:

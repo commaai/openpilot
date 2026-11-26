@@ -6,7 +6,7 @@ from collections.abc import Callable
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog, BigConfirmationDialog
 from openpilot.selfdrive.ui.mici.widgets.button import BigButton
-from openpilot.system.ui.lib.application import gui_app, MousePos, FontWeight
+from openpilot.system.ui.lib.application import gui_app, white, MousePos, FontWeight
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.scroller import NavScroller
 from openpilot.system.ui.lib.wifi_manager import WifiManager, Network, SecurityType, normalize_ssid
@@ -31,8 +31,8 @@ class LoadingAnimation(Widget):
     for i in range(3):
       x = base_x + (i - 1) * self.SPACING
       y = int(base_y + min(math.sin((rl.get_time() - i * 0.2) * 4) * self.Y_MAG, 0))
-      alpha = int(np.interp(base_y - y, [0, self.Y_MAG], [255 * 0.5, 255]))
-      rl.draw_circle(x, y, self.RADIUS, rl.Color(255, 255, 255, alpha))
+      alpha = float(np.interp(base_y - y, [0, self.Y_MAG], [0.5, 1.0]))
+      rl.draw_circle(x, y, self.RADIUS, white(alpha))
 
 
 class WifiIcon(Widget):
@@ -71,7 +71,7 @@ class WifiIcon(Widget):
     else:
       strength_icon = self._wifi_low_txt
 
-    rl.draw_texture_ex(strength_icon, rl.Vector2(self._rect.x, self._rect.y + self._rect.height - strength_icon.height), 0.0, 1.0, rl.WHITE)
+    rl.draw_texture_ex(strength_icon, rl.Vector2(self._rect.x, self._rect.y + self._rect.height - strength_icon.height), 0.0, 1.0, white())
 
     # Render lock icon at lower right of wifi icon if secured
     if self._network.security_type not in (SecurityType.OPEN, SecurityType.UNSUPPORTED):
@@ -152,7 +152,7 @@ class WifiButton(BigButton):
     return 48
 
   def _draw_content(self, btn_y: float):
-    self._label.set_color(rl.WHITE)
+    self._label.set_color(white())
     label_rect = rl.Rectangle(self._rect.x + self.LABEL_PADDING, btn_y + self.LABEL_VERTICAL_PADDING,
                               self.LABEL_WIDTH, self._rect.height - self.LABEL_VERTICAL_PADDING * 2)
     self._label.render(label_rect)
@@ -165,7 +165,7 @@ class WifiButton(BigButton):
 
       if self._is_connected and not self._network_forgetting:
         check_y = int(label_y - sub_label_height + (sub_label_height - self._check_txt.height) / 2)
-        rl.draw_texture_ex(self._check_txt, rl.Vector2(sub_label_x, check_y), 0.0, 1.0, rl.Color(255, 255, 255, int(255 * 0.65)))
+        rl.draw_texture_ex(self._check_txt, rl.Vector2(sub_label_x, check_y), 0.0, 1.0, white(0.65))
         sub_label_x += self._check_txt.width + 14
 
       sub_label_rect = rl.Rectangle(sub_label_x, label_y - sub_label_height, sub_label_w, sub_label_height)
@@ -210,7 +210,7 @@ class WifiButton(BigButton):
     if any((self._network_missing, self._is_connecting, self._is_connected, self._network_forgetting,
             self._network.security_type == SecurityType.UNSUPPORTED)):
       self.set_enabled(False)
-      self._sub_label.set_color(rl.Color(255, 255, 255, int(255 * 0.585)))
+      self._sub_label.set_color(white(0.65))
       self._sub_label.set_font_weight(FontWeight.ROMAN)
 
       if self._network_forgetting:
@@ -228,7 +228,7 @@ class WifiButton(BigButton):
     else:  # saved, wrong password, or unknown
       self.set_value("wrong password" if self._wrong_password else "connect")
       self.set_enabled(True)
-      self._sub_label.set_color(rl.WHITE)
+      self._sub_label.set_color(white())
       self._sub_label.set_font_weight(FontWeight.SEMI_BOLD)
 
 
@@ -256,7 +256,7 @@ class ForgetButton(Widget):
 
     trash_x = self._rect.x + (self._rect.width - self._trash_txt.width) / 2
     trash_y = self._rect.y + (self._rect.height - self._trash_txt.height) / 2
-    rl.draw_texture_ex(self._trash_txt, rl.Vector2(trash_x, trash_y), 0, 1.0, rl.WHITE)
+    rl.draw_texture_ex(self._trash_txt, rl.Vector2(trash_x, trash_y), 0, 1.0, white())
 
 
 class ScanningButton(BigButton):
