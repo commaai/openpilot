@@ -70,8 +70,7 @@ class BookmarkIcon(Widget):
 
   def is_swiping_left(self) -> bool:
     """Check if currently swiping left (for scroller to disable)."""
-    # HACK: the scroller handles this frame's touches before we do, so a fast swipe moves it for a frame.
-    # Look for a leftward drag in this frame's touches too.
+    # the scroller handles this frame's touches before we do, so look at them too
     return self._is_swiping_left or (self._is_swiping and any(ev.left_down and ev.pos.x < self._swipe_start_x for ev in gui_app.mouse_events))
 
   def interacting(self):
