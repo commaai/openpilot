@@ -9,6 +9,7 @@ from openpilot.system.ui.widgets.label import gui_label
 
 DISPLAY_PATH = Path("/tmp/balltoss_display.json")
 GREEN = rl.Color(81, 255, 0, 255)
+RED = rl.Color(255, 48, 48, 255)
 DIM = rl.Color(150, 150, 150, 255)
 DARK = rl.Color(30, 30, 30, 255)
 IDLE_TEXT = rl.Color(210, 210, 210, 255)
@@ -50,7 +51,13 @@ class BalltossDisplay(Widget):
     player = state.get("player")
     ends_at = state.get("ends_at") or 0
 
-    if player and now < ends_at:
+    down = state.get("down")
+    if down:
+      rl.draw_rectangle(0, 0, int(rect.width), 8, RED)
+      gui_label(rl.Rectangle(pad, 20, w, 36), "BALLTOSS", 28, RED, FontWeight.BOLD, TextAlignment.LEFT, TextAlignmentVertical.MIDDLE)
+      gui_label(rl.Rectangle(pad, 74, w, 80), "DOWN", 64, RED, FontWeight.BOLD, TextAlignment.LEFT, TextAlignmentVertical.MIDDLE)
+      gui_label(rl.Rectangle(pad, 174, w, 44), str(down)[:34], 24, rl.WHITE, FontWeight.NORMAL, TextAlignment.LEFT, TextAlignmentVertical.MIDDLE)
+    elif player and now < ends_at:
       rl.draw_rectangle(0, 0, int(rect.width), 6, GREEN)
       rem = max(0, int(ends_at - now))
       gui_label(rl.Rectangle(pad, 20, w * 0.6, 36), "PLAYING", 28, GREEN, FontWeight.BOLD, TextAlignment.LEFT, TextAlignmentVertical.MIDDLE)
