@@ -55,7 +55,7 @@ T_DIFFS = np.diff(T_IDXS, prepend=[0.])
 LEAD_T_IDXS_MODEL = np.array(ModelConstants.LEAD_T_IDXS)
 LEAD_T_DIFFS_MODEL = np.diff(LEAD_T_IDXS_MODEL)
 MODEL_LEAD_T_IDX = np.clip(np.searchsorted(LEAD_T_IDXS_MODEL[1:], T_IDXS - 0.5 * T_DIFFS, side='right'), 0, len(LEAD_T_DIFFS_MODEL) - 1)
-LEAD_ACCEL_RESIDUAL_TAU = 3.25
+LEAD_ACCEL_RESIDUAL_TAU = 2.0
 LEAD_ACCEL_RESIDUAL_W = np.exp(-T_IDXS / LEAD_ACCEL_RESIDUAL_TAU)
 COMFORT_BRAKE = 2.5
 STOP_DISTANCE = 6.0
@@ -312,15 +312,27 @@ class LongitudinalMpc:
     v_lead = np.clip(v_lead, 0.0, 1e8)
     a_lead = np.clip(a_lead, -10., 5.)
 
+    a_radar = a_lead * np.exp(-a_lead_tau * (T_IDXS**2) / 2.)
+    radar_xv = self.integrate_lead(x_start, v_lead, a_radar)
+
     has_model = model_lead is not None and len(model_lead.v) == len(LEAD_T_IDXS_MODEL)
-    # TODO fallback if danger
     if has_model and (model_prob > 0.5):
       dv_dt = np.diff(np.asarray(model_lead.v, dtype=np.float64)) / LEAD_T_DIFFS_MODEL
       a_lead_traj = np.clip(dv_dt[MODEL_LEAD_T_IDX] + (a_lead - model_lead.a[0]) * LEAD_ACCEL_RESIDUAL_W, -10., 5.)
-    else:
-      a_lead_traj = a_lead * np.exp(-a_lead_tau * (T_IDXS**2) / 2.)
+      lead_xv = self.integrate_lead(x_start, v_lead, a_lead_traj)
 
-    return self.integrate_lead(x_start, v_lead, a_lead_traj)
+      # Smoothly fall back to the more pessimistic radar trajectory when radar requires hard braking
+      x_obs_radar = radar_xv[:, 0] + radar_xv[:, 1]**2 / (2. * (-ACCEL_MIN))
+      a_req = float(np.max(v_ego**2 / (2. * np.maximum(x_obs_radar - STOP_DISTANCE, 0.5))))
+      w = float(np.clip((a_req - 2.5) / 1.0, 0.0, 1.0))
+      if w > 0.0:
+        x_obs_l = lead_xv[:, 0] + get_stopped_equivalence_factor(lead_xv[:, 1])
+        x_obs_r = radar_xv[:, 0] + get_stopped_equivalence_factor(radar_xv[:, 1])
+        pess = np.where((x_obs_r < x_obs_l)[:, None], radar_xv, lead_xv)
+        lead_xv = (1.0 - w) * lead_xv + w * pess
+      return lead_xv
+
+    return radar_xv
 
   def update(self, modelV2, radarstate, personality=log.LongitudinalPersonality.standard):
     t_follow = get_T_FOLLOW(personality)
