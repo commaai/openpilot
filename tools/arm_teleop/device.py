@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from ipaddress import ip_address
 import json
 import math
-import os
 from pathlib import Path
 import secrets
 import signal
@@ -331,9 +330,7 @@ class Handler(HTTPRequestHandler):
       return
     if self.path == "/status":
       arms = {name: robot.status() for name, robot in robots.items()}
-      self.json({"arm": arms["left"], "arms": arms, "joints": JOINTS, "camera": camera.status(),
-                 "device_time": time.time(),  # noqa: TID251
-                 "os": Path("/VERSION").read_text().strip(), "performance": os.getenv("ARM_TELEOP") == "1"})
+      self.json({"arms": arms, "joints": JOINTS, "camera": camera.status()})
     else:
       self.json({"error": "Not found"}, 404)
 

@@ -22,7 +22,7 @@ Switch the device to this branch with `tools/op.sh switch robot-arm-teleop`, the
 
 ## Device API
 
-The device listens on `127.0.0.1:8022`. Every request requires `Authorization: Bearer <service-key>`. `GET /status` returns camera status and the connection, positions, limits, faults, and control state for each follower under `arms`. The `arm` field aliases the left follower.
+The device listens on `127.0.0.1:8022`. Every request requires `Authorization: Bearer <service-key>`. `GET /status` returns camera status and the connection, positions, limits, faults, and control state for each follower under `arms`.
 
 Send JSON to `POST /command` with an `arm` of `left`, `middle`, or `right`:
 
