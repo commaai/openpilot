@@ -164,6 +164,18 @@ def create_maneuvers(kwargs):
         **kwargs,
       ),
       Maneuver(
+        "adversarial: hard lead decel (3.5m/s^2), extremely optimistic model (+5m/s^2)",
+        duration=35.,
+        initial_speed=20.,
+        lead_relevancy=True,
+        initial_distance_lead=35.,
+        speed_lead_values=[20., 20., 0.],
+        breakpoints=[0., 15., 20.71],
+        model_speed_lead_values=[20., 20., 170.],
+        model_breakpoints=[0., 15., 45.],
+        **kwargs,
+      ),
+      Maneuver(
         "adversarial: hard lead decel (3m/s^2), model predicts constant speed",
         duration=35.,
         initial_speed=20.,
