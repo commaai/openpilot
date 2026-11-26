@@ -187,8 +187,11 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
     LOGE("%s: encoderd packet has a older segment!!! idx.getSegmentNum():%d s->logger.segment():%d re.encoderd_segment_offset:%d",
       name.c_str(), idx.getSegmentNum(), s->logger.segment(), re.encoderd_segment_offset);
     // free the message, it's useless. this should never happen
-    // actually, this can happen if you restart encoderd
-    re.encoderd_segment_offset = -s->logger.segment();
+    // actually, this can happen if you restart encoderd, or if loggerd auto rotated
+    // past encoderd after a stall. Map encoderd's current segment onto loggerd's so
+    // the next packets match again (a restarted encoderd is on segment 0, which gives
+    // the same offset as before).
+    re.encoderd_segment_offset = idx.getSegmentNum() - s->logger.segment();
     delete msg;
   }
 

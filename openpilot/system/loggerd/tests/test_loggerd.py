@@ -214,6 +214,55 @@ class TestLoggerd(OpenpilotTestCase):
       diff = logged ^ expected_files
       assert len(diff) == 0, f"didn't get all expected files. seg={n} {route_path=}, {diff=}\n{logged=} {expected_files=}"
 
+  def test_resync_when_encoder_is_behind(self):
+    # loggerd can auto rotate past encoderd after a stall, so the next packets
+    # carry an older segment number than the one loggerd is on. loggerd must
+    # map them onto its current segment and rotate normally on the next rollover.
+    os.environ["LOGGERD_TEST"] = "1"
+    os.environ["LOGGERD_SEGMENT_LENGTH"] = "60"  # loggerd reads it under LOGGERD_TEST; no timed rotation in this test
+    service = "narrowRoadEncodeData"
+    pm = messaging.PubMaster([service])
+    managed_processes["loggerd"].start()
+    assert pm.wait_for_readers_to_update(service, timeout=5)
+
+    frame_id = 0
+    def send(segment_num, fill, count):
+      nonlocal frame_id
+      for i in range(count):
+        msg = messaging.new_message(service)
+        dat = getattr(msg, service)
+        dat.idx.frameId = frame_id
+        dat.idx.encodeId = frame_id
+        dat.idx.type = log.EncodeIndex.Type.fullHEVC
+        dat.idx.segmentNum = segment_num
+        dat.idx.segmentId = i
+        dat.idx.timestampEof = (frame_id + 1) * 50_000_000
+        dat.idx.flags = 0x8 if i == 0 else 0  # V4L2_BUF_FLAG_KEYFRAME on the first packet
+        dat.header = b"HDR"
+        dat.data = bytes([fill]) * 512
+        dat.width, dat.height = 320, 240
+        pm.send(service, msg)
+        assert pm.wait_for_readers_to_update(service, timeout=5, dt=0.001)
+        frame_id += 1
+
+    n = 20
+    send(5, 0xAA, n)  # sets the offset, logged in loggerd segment 0
+    send(4, 0xBB, n)  # encoder now one segment behind loggerd
+    send(5, 0xCC, n)  # encoder rolls over, loggerd should rotate to segment 1
+    time.sleep(0.5)
+    managed_processes["loggerd"].stop()
+
+    route_path = str(self._get_latest_log_dir()).rsplit("--", 1)[0]
+    seg0 = Path(f"{route_path}--0") / "fcamera.hevc"
+    seg1 = Path(f"{route_path}--1") / "fcamera.hevc"
+    assert seg0.is_file()
+    seg0_data = seg0.read_bytes()
+    assert seg0_data.count(b"\xaa" * 512) == n
+    # the first behind packet is dropped while the offset is re mapped
+    assert seg0_data.count(b"\xbb" * 512) == n - 1
+    assert seg1.is_file(), "loggerd did not record in the next segment after the encoder fell behind"
+    assert seg1.read_bytes().count(b"\xcc" * 512) == n
+
   def test_bootlog(self):
     # generate bootlog with fake launch log
     launch_log = ''.join(str(random.choice(string.printable)) for _ in range(100))
