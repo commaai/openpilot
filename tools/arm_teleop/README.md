@@ -1,6 +1,6 @@
 # Arm control
 
-The comma four serves the wide camera and controls three six-servo LeRobot SO followers for [Sisyphus Toss](https://github.com/commaai/xx/pull/7492). Left, middle, and right in the camera view correspond to USB serials `5CBC431994`, `58FD017112`, and `5CBC453422`. Players send commands through the reservation gateway.
+The comma four serves the wide camera and controls three six-servo LeRobot SO followers for [Sisyphus Toss](https://github.com/commaai/xx/pull/7492). Left, middle, and right in the camera view correspond to USB serials `5CBC431994`, `5CBC431998`, and `5CBC453422`. Players send commands through the reservation gateway.
 
 ## Device installation
 

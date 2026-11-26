@@ -19,7 +19,7 @@ from openpilot.common.http_server import HTTPRequestHandler
 from openpilot.common.realtime import Ratekeeper
 from openpilot.system.webrtc.helpers import StreamRequestBody, post_stream_request
 
-FOLLOWERS = {"left": "5CBC431994", "middle": "58FD017112", "right": "5CBC453422"}
+FOLLOWERS = {"left": "5CBC431994", "middle": "5CBC431998", "right": "5CBC453422"}
 DISPLAY_PATH = Path("/tmp/balltoss_display.json")
 WATCHDOG = 0.4
 TICKS_PER_DEGREE = 4096 / 360
