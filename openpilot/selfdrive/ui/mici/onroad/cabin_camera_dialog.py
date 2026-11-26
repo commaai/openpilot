@@ -15,6 +15,7 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight, TextAlignme
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.nav_widget import NavWidget
+from openpilot.system.ui.widgets.button import SmallCircleIconButton
 from openpilot.system.ui.widgets.label import gui_label, UnifiedLabel
 
 AlertLevel = log.DriverMonitoringState.AlertLevel
@@ -37,14 +38,11 @@ DM_ALERTS = {
 }
 
 EYE_THRESHOLD = 0.65
-BLINK_OPEN = 0.5
-BLINK_THRESHOLD = 0.865
 PHONE_THRESHOLD = 0.5
 
-RING_RADIUS = 26
+RING_RADIUS = 26 * 1.2
 RING_FADE_RADIUS = RING_RADIUS * 0.55
-RING_CORNER_RADIUS = 2
-CROP_SHIFT = 0.1
+RING_CORNER_RADIUS = 2 * 1.2
 
 STATUS_SHADOW_OFFSET, STATUS_SHADOW_SIGMA, STATUS_SHADOW_ALPHA = 2, 2, 0.5
 STATUS_SHADOW_QUANTILES = (-1.0, 0.0, 1.0)
@@ -92,7 +90,6 @@ class CabinCameraView(CameraView):
     driver_view_ratio = 1.5
     base[0, 0] *= driver_view_ratio
     base[1, 1] *= driver_view_ratio
-    base[1, 2] = -2 * CROP_SHIFT * base[1, 1]
     return base
 
 
@@ -110,9 +107,14 @@ class BaseCabinCameraDialog(Widget):
 
     self._eye_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._phone_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
-    self._eye_open_filter = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps)
+    self._eye_open_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._phone_detected_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._status_alpha_filter = FirstOrderFilter(1.0, 0.1, 1 / gui_app.target_fps)
+
+    self._cancel_button = SmallCircleIconButton(gui_app.texture("icons_mici/setup/cancel.png", 42, 42))
+    self._cancel_button.set_click_callback(lambda: ui_state.params.put_bool("DriverViewReset", True))
+    self._cancel_button.set_touch_valid_callback(lambda: dm_alert() is not None and dm_alert().status == AlertStatus.critical)
+    self._cancel_alpha_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
     self._status_label = UnifiedLabel("", 36, FontWeight.SEMI_BOLD, text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
                                       letter_spacing=-0.02, wrap_text=False)
@@ -144,12 +146,13 @@ class BaseCabinCameraDialog(Widget):
     if self._camera_view:
       self._camera_view._update_state()
     super()._update_state()
+    self.driver_state_renderer.set_should_draw(True)
+    self.driver_state_renderer.set_force_active(True)
 
     driver_data = self.driver_state_renderer.get_driver_data()
     eye = (driver_data.leftEyeProb + driver_data.rightEyeProb) / 2
     self._eye_filter.update(eye)
-    blink = (driver_data.leftBlinkProb + driver_data.rightBlinkProb) / 2
-    self._eye_open_filter.update(np.interp(blink, [BLINK_OPEN, BLINK_THRESHOLD], [1.0, 0.0]) if eye > EYE_THRESHOLD else 0.0)
+    self._eye_open_filter.update(eye > EYE_THRESHOLD)
     self._phone_filter.update(driver_data.phoneProb)
     self._phone_detected_filter.update(driver_data.phoneProb > PHONE_THRESHOLD)
 
@@ -186,6 +189,12 @@ class BaseCabinCameraDialog(Widget):
 
     self._alert_renderer.render(content_rect)
 
+    cancel_alpha = self._cancel_alpha_filter.update(alert is not None and alert.status == AlertStatus.critical)
+    if cancel_alpha > 0.01:
+      self._cancel_button.set_opacity(cancel_alpha)
+      size = self._cancel_button.rect.width
+      self._cancel_button.render(rl.Rectangle(content_rect.x + content_rect.width - size - 8, content_rect.y + content_rect.height - size - 8, size, size))
+
     rl.draw_rectangle_rounded_lines_ex(content_rect, 0.2 * 1.02, 10, 50, rl.BLACK)
     rl.end_scissor_mode()
 
@@ -195,7 +204,6 @@ class BaseCabinCameraDialog(Widget):
     center_x = rect.x + rect.width / 2
 
     dm_size = self.driver_state_renderer.rect.width
-    self.driver_state_renderer.set_should_draw(True)
     self.driver_state_renderer.set_show_under_alerts(True)
     self.driver_state_renderer.set_warning(alert is not None and alert.status != AlertStatus.normal and alert.alert_type.startswith("driverDistracted"))
     self.driver_state_renderer.set_position(center_x - dm_size / 2, rect.y + 36 - dm_size / 2)
@@ -251,11 +259,10 @@ class BaseCabinCameraDialog(Widget):
     offset_x = (tici_x - 1080.0) * 1.25
     offset_y = (tici_y - 540.0) * 1.25
 
-    # Map to mici screen (scale from 2160x1080 to rect dimensions)
-    scale_x = rect.width / 2160.0
-    scale_y = rect.height / 1080.0
-    fbox_x = rect.x + rect.width / 2 + offset_x * scale_x
-    fbox_y = rect.y + rect.height / 2 + offset_y * scale_y + self._camera_view._calc_frame_matrix(rect)[1, 2] * rect.height / 2
+    # Map to mici screen, relative to the frame as it was tuned when drawn 1.5x zoomed into a 536x240 rect
+    frame_scale = rect.height * self._camera_view._calc_frame_matrix(rect)[1, 1] / 360.0
+    fbox_x = rect.x + rect.width / 2 + offset_x * 536.0 / 2160.0 * frame_scale
+    fbox_y = rect.y + rect.height / 2 + offset_y * 240.0 / 1080.0 * frame_scale
 
     inner = FACE_FRAME_SIZE - 2 * FACE_FRAME_BORDER
     rl.draw_rectangle_rounded_lines_ex(rl.Rectangle(fbox_x - inner / 2, fbox_y - inner / 2, inner, inner),

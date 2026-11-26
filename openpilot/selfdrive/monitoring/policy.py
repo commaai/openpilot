@@ -24,7 +24,7 @@ def to_percent(v):
 # ******************************************************************************************
 
 class DRIVER_MONITOR_SETTINGS:
-  def __init__(self):
+  def __init__(self, demo=False):
     # https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=OJ:L_202501899
     self._ALERT_MIN_SPEED = 2.8  # 10 km/h
 
@@ -34,6 +34,15 @@ class DRIVER_MONITOR_SETTINGS:
     self._VISION_POLICY_ALERT_1_TIMEOUT = 5.
     self._VISION_POLICY_ALERT_2_TIMEOUT = 8.
     self._VISION_POLICY_ALERT_3_TIMEOUT = 13.
+
+    # the driver camera preview shows its first alert after 1s, keeping the time between alerts
+    if demo:
+      self._WHEELTOUCH_POLICY_ALERT_1_TIMEOUT -= 4.
+      self._WHEELTOUCH_POLICY_ALERT_2_TIMEOUT -= 4.
+      self._WHEELTOUCH_POLICY_ALERT_3_TIMEOUT -= 4.
+      self._VISION_POLICY_ALERT_1_TIMEOUT -= 4.
+      self._VISION_POLICY_ALERT_2_TIMEOUT -= 4.
+      self._VISION_POLICY_ALERT_3_TIMEOUT -= 4.
 
     # no response = alert_3 sustained for certain amount of time
     self._NO_RESPONSE_TIMEOUT = 5.
@@ -129,9 +138,10 @@ def face_orientation_from_model(orient_model, pos_model, rpy_calib):
 
 
 class DriverMonitoring:
-  def __init__(self, rhd_saved=False, settings=None, always_on=False):
+  def __init__(self, rhd_saved=False, settings=None, always_on=False, demo=False):
     # init policy settings
-    self.settings = settings if settings is not None else DRIVER_MONITOR_SETTINGS()
+    self.settings = settings if settings is not None else DRIVER_MONITOR_SETTINGS(demo=demo)
+    self.demo = demo
 
     # init driver status
     wheelpos_filter_raw_priors = (self.settings._WHEELPOS_DATA_AVG, self.settings._WHEELPOS_DATA_VAR, 2)
@@ -154,7 +164,7 @@ class DriverMonitoring:
     self.cnt_since_alert_3 = 0
     self.no_response_timeout = int(self.settings._NO_RESPONSE_TIMEOUT / DT_DMON)
     self.no_response_cnt = 0
-    self.lockout_active = Params().get_bool("DriverTooDistracted")
+    self.lockout_active = not demo and Params().get_bool("DriverTooDistracted")
     self.lockout_count = Params().get("DriverLockoutCount") or 0
     self.lockout_duration = self.settings._LOCKOUT_TIMES[min(max(self.lockout_count - 1, 0), len(self.settings._LOCKOUT_TIMES) - 1)]
     self.lockout_time_elapsed = 0
@@ -315,7 +325,8 @@ class DriverMonitoring:
     self.alert_level = AlertLevel.none
     self.driver_interacting = driver_engaged
 
-    if self.alert_3_cnt >= self.settings._MAX_ALERT_3 or self.no_response_cnt >= self.settings._MAX_NO_RESPONSE:
+    # alerts in the driver camera preview don't count toward lockout
+    if not self.demo and (self.alert_3_cnt >= self.settings._MAX_ALERT_3 or self.no_response_cnt >= self.settings._MAX_NO_RESPONSE):
       if not self.lockout_active:
         self.lockout_count += 1
         self.lockout_duration = self.settings._LOCKOUT_TIMES[min(self.lockout_count - 1, len(self.settings._LOCKOUT_TIMES) - 1)]
