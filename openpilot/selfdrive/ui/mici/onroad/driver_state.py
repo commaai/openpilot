@@ -1,5 +1,4 @@
 import raylib_nb as rl
-import numpy as np
 import math
 from openpilot.cereal import log
 from openpilot.common.filter_simple import FirstOrderFilter
@@ -14,10 +13,6 @@ AlertSize = log.SelfdriveState.AlertSize
 
 DEBUG = False
 
-# TODO: Only left for DM preview, remove
-LOOKING_CENTER_THRESHOLD_UPPER = math.radians(6)
-LOOKING_CENTER_THRESHOLD_LOWER = math.radians(3)
-
 CONE_COLOR_GREEN = (0, 255, 64)
 CONE_COLOR_ORANGE = (255, 115, 0)
 PERSON_WHITE = rl.Color(255, 255, 255, 255)
@@ -26,19 +21,13 @@ PERSON_ORANGE = rl.Color(*CONE_COLOR_ORANGE, 255)
 
 class DriverStateRenderer(Widget):
   BASE_SIZE = 60
-  LINES_ANGLE_INCREMENT = 5
   AWARENESS_UNFULL_PERCENT = 95  # ~0.5s
 
-  def __init__(self, lines: bool = False, inset: bool = False, background: bool = True):
+  def __init__(self, inset: bool = False, background: bool = True):
     super().__init__()
     self._background = background
     self.set_rect(rl.Rectangle(0, 0, self.BASE_SIZE, self.BASE_SIZE))
-    self._lines = lines
     self._inset = inset
-
-    # In line mode, track smoothed angles
-    assert 360 % self.LINES_ANGLE_INCREMENT == 0
-    self._head_angles = {i * self.LINES_ANGLE_INCREMENT: FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps) for i in range(360 // self.LINES_ANGLE_INCREMENT)}
 
     self._is_active = False
     self._is_rhd = False
@@ -49,7 +38,6 @@ class DriverStateRenderer(Widget):
     self._dimmed = 0.0
     self._show_under_alerts = False
     self._force_active = False
-    self._looking_center = False
     self._awareness_unfull = False
     self._warning = False
 
@@ -58,7 +46,6 @@ class DriverStateRenderer(Widget):
     self._pitch_filter = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps, initialized=False)
     self._yaw_filter = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps, initialized=False)
     self._rotation_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps, initialized=False)
-    self._looking_center_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
     self._warning_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps)
 
     # Load the driver face icons
@@ -140,51 +127,17 @@ class DriverStateRenderer(Widget):
         self._dm_cone.height,
       )
 
-      if not self._lines:
-        r = int(round(CONE_COLOR_GREEN[0] * green_amount + CONE_COLOR_ORANGE[0] * (1 - green_amount)))
-        g = int(round(CONE_COLOR_GREEN[1] * green_amount + CONE_COLOR_ORANGE[1] * (1 - green_amount)))
-        b = int(round(CONE_COLOR_GREEN[2] * green_amount + CONE_COLOR_ORANGE[2] * (1 - green_amount)))
-        rl.draw_texture_pro(
-          self._dm_cone,
-          source_rect,
-          dest_rect,
-          rl.Vector2(dest_rect.width / 2, dest_rect.height / 2),
-          self._rotation_filter.x - 90,
-          rl.Color(r, g, b, int(255 * self._fade_filter.x * (1 - self._dimmed))),
-        )
-
-      else:
-        # remove old angles
-        for angle, f in self._head_angles.items():
-          dst_from_current = ((angle - self._rotation_filter.x) % 360) - 180
-          target = 1.0 if abs(dst_from_current) <= self.LINES_ANGLE_INCREMENT * 5 else 0.0
-          if not self._face_detected:
-            target = 0.0
-
-          # Reduce all line lengths when looking center
-          if self._looking_center:
-            target = np.interp(self._looking_center_filter.x, [0.0, 1.0], [target, 0.45])
-
-          f.update(target)
-          self._draw_line(angle, f, self._looking_center)
-
-  def _draw_line(self, angle: int, f: FirstOrderFilter, grey: bool):
-    line_length = self._rect.width / 6
-    line_length = round(np.interp(f.x, [0.0, 1.0], [0, line_length]))
-    line_offset = self._rect.width / 2 - line_length * 2  # ensure line ends within rect
-    center_x = self._rect.x + self._rect.width / 2
-    center_y = self._rect.y + self._rect.height / 2
-    start_x = center_x + (line_offset + line_length) * math.cos(math.radians(angle))
-    start_y = center_y + (line_offset + line_length) * math.sin(math.radians(angle))
-    end_x = start_x + line_length * math.cos(math.radians(angle))
-    end_y = start_y + line_length * math.sin(math.radians(angle))
-    color = rl.Color(0, 255, 64, 255)
-
-    if grey:
-      color = rl.Color(166, 166, 166, 255)
-
-    if f.x > 0.01:
-      rl.draw_line_ex(rl.Vector2(start_x, start_y), rl.Vector2(end_x, end_y), 12, color)
+      r = int(round(CONE_COLOR_GREEN[0] * green_amount + CONE_COLOR_ORANGE[0] * (1 - green_amount)))
+      g = int(round(CONE_COLOR_GREEN[1] * green_amount + CONE_COLOR_ORANGE[1] * (1 - green_amount)))
+      b = int(round(CONE_COLOR_GREEN[2] * green_amount + CONE_COLOR_ORANGE[2] * (1 - green_amount)))
+      rl.draw_texture_pro(
+        self._dm_cone,
+        source_rect,
+        dest_rect,
+        rl.Vector2(dest_rect.width / 2, dest_rect.height / 2),
+        self._rotation_filter.x - 90,
+        rl.Color(r, g, b, int(255 * self._fade_filter.x * (1 - self._dimmed))),
+      )
 
   def get_driver_data(self):
     sm = ui_state.sm
@@ -206,13 +159,6 @@ class DriverStateRenderer(Widget):
     _ = self.get_driver_data()
     pitch = self._pitch_filter.update(self._face_pitch)
     yaw = self._yaw_filter.update(self._face_yaw)
-
-    # hysteresis on looking center
-    if abs(pitch) < LOOKING_CENTER_THRESHOLD_LOWER and abs(yaw) < LOOKING_CENTER_THRESHOLD_LOWER:
-      self._looking_center = True
-    elif abs(pitch) > LOOKING_CENTER_THRESHOLD_UPPER or abs(yaw) > LOOKING_CENTER_THRESHOLD_UPPER:
-      self._looking_center = False
-    self._looking_center_filter.update(1 if self._looking_center else 0)
 
     if DEBUG:
       pitchd = math.degrees(pitch)

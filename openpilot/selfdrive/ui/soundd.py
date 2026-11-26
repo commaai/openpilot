@@ -192,11 +192,12 @@ class Soundd:
       while True:
         sm.update(0)
 
-        # freeze volume during alerts to avoid mic feedback increasing volume
         if sm.updated['soundPressure']:
           self.spl_filter_weighted.update(sm["soundPressure"].soundPressureWeightedDb)
-          if self.current_alert == AudibleAlert.none:
-            self.current_volume = self.calculate_volume(float(self.spl_filter_weighted.x))
+        # freeze volume during alerts to avoid mic feedback increasing volume
+        # recompute after, since micd doesn't run offroad for the driver camera preview
+        if self.current_alert == AudibleAlert.none:
+          self.current_volume = self.calculate_volume(float(self.spl_filter_weighted.x)) if self.spl_filter_weighted.initialized else MIN_VOLUME
 
         self.get_audible_alert(sm)
 

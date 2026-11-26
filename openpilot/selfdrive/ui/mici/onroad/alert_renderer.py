@@ -1,4 +1,5 @@
 import time
+from collections.abc import Callable
 from enum import StrEnum
 from typing import NamedTuple
 import raylib_nb as rl
@@ -52,8 +53,9 @@ class AlertLayout(NamedTuple):
 
 
 class AlertRenderer(Widget):
-  def __init__(self):
+  def __init__(self, alert_source: Callable[[], Alert | None] = lambda: get_alert(ui_state.sm)):
     super().__init__()
+    self._alert_source = alert_source
 
     self._alert_text1_label = UnifiedLabel(text="", font_size=ALERT_FONT_BIG, font_weight=FontWeight.DISPLAY, line_height=0.86,
                                            letter_spacing=ALERT_TITLE_LETTER_SPACING)
@@ -87,7 +89,7 @@ class AlertRenderer(Widget):
     self._txt_blind_spot_right = gui_app.texture('icons_mici/onroad/blind_spot_left.png', 134, 150, flip_x=True)
 
   def will_render(self) -> tuple[Alert | None, bool]:
-    alert = get_alert(ui_state.sm)
+    alert = self._alert_source()
     return alert or self._prev_alert, alert is None
 
   def _icon_helper(self, alert: Alert) -> AlertLayout:
@@ -154,7 +156,7 @@ class AlertRenderer(Widget):
     return AlertLayout(text_rect, icon_layout)
 
   def _render(self, rect: rl.Rectangle) -> bool:
-    alert = get_alert(ui_state.sm)
+    alert = self._alert_source()
 
     # Animate fade and slide in/out
     self._alert_y_filter.update(self._rect.y - 50 if alert is None else self._rect.y)

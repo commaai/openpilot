@@ -1,8 +1,16 @@
 #!/usr/bin/env python3
+import copy
 import openpilot.cereal.messaging as messaging
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process
 from openpilot.selfdrive.monitoring.policy import DriverMonitoring
+
+
+def new_demo_dm(DM: DriverMonitoring) -> DriverMonitoring:
+  # the driver camera preview starts fresh each time, keeping the learned wheel side
+  demo_DM = DriverMonitoring(rhd_saved=DM.wheel_on_right, demo=True)
+  demo_DM.wheelpos_offsetter = copy.deepcopy(DM.wheelpos_offsetter)
+  return demo_DM
 
 
 def dmonitoringd_thread():
@@ -14,6 +22,7 @@ def dmonitoringd_thread():
 
   DM = DriverMonitoring(rhd_saved=params.get_bool("IsRhdDetected"), always_on=params.get_bool("AlwaysOnDM"))
   demo_mode=False
+  demo_DM = None
 
   # 20Hz <- dmonitoringmodeld
   while True:
@@ -23,19 +32,25 @@ def dmonitoringd_thread():
       continue
 
     valid = sm.all_checks()
-    if demo_mode and sm.valid['driverStateV2']:
-      DM.run_step(sm, demo=True)
+    if demo_DM is not None and sm.valid['driverStateV2']:
+      if params.get_bool("DriverViewReset"):
+        params.remove("DriverViewReset")
+        demo_DM = new_demo_dm(DM)
+      demo_DM.run_step(sm, demo=True)
     elif valid:
-      DM.run_step(sm, demo=demo_mode)
+      DM.run_step(sm)
 
     # publish
-    dat = DM.get_state_packet(valid=valid)
+    # the driver camera preview only needs the driver monitoring model
+    dat = demo_DM.get_state_packet(valid=sm.valid['driverStateV2']) if demo_DM is not None else DM.get_state_packet(valid=valid)
     pm.send('driverMonitoringState', dat)
 
     # load live always-on toggle
     if sm['driverStateV2'].frameId % 40 == 1:
       DM.always_on = params.get_bool("AlwaysOnDM")
       demo_mode = params.get_bool("IsDriverViewEnabled")
+      if demo_mode != (demo_DM is not None):
+        demo_DM = new_demo_dm(DM) if demo_mode else None
 
     # save rhd virtual toggle every 5 mins
     if (sm['driverStateV2'].frameId % 6000 == 0 and not demo_mode and
