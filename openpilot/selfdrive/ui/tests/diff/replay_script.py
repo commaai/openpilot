@@ -402,14 +402,9 @@ def build_tizi_script(pm: PubMaster, main_layout, script: Script) -> None:
 
   def do_onboarding() -> None:
     """Click through the training guide and close."""
-    from openpilot.selfdrive.ui.layouts.onboarding import STEP_RECTS
-    step = 0
-    for step_rect in STEP_RECTS:
-      if step < len(STEP_RECTS) - 1:
-        script.click(int(step_rect.x), int(step_rect.y), wait_after=FAST_CLICK)
-      else:
-        script.click(950, 900)  # On the last step, click Finish instead of restart
-      step += 1
+    from openpilot.selfdrive.ui.layouts.training_guide import STEP_RECTS
+    for r in STEP_RECTS:
+      script.click(int(r.x + r.width / 2), int(r.y + r.height / 2), wait_after=FAST_CLICK)
 
   def type_keyboard() -> None:
     """Types 8 characters using the big keyboard to test different layouts and interactions."""

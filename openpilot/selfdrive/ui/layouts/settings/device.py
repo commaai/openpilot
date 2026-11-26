@@ -7,7 +7,7 @@ from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.ui.onroad.cabin_camera_dialog import CabinCameraDialog
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.selfdrive.ui.layouts.onboarding import TrainingGuide
+from openpilot.selfdrive.ui.layouts.training_guide import TrainingGuide
 from openpilot.selfdrive.ui.widgets.pairing_dialog import PairingDialog
 from openpilot.system.ui.lib.application import FontWeight, gui_app
 from openpilot.system.ui.lib.multilang import multilang, tr, tr_noop
