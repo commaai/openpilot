@@ -1,4 +1,3 @@
-# pyrefly: ignore[missing-import]
 from opendbc.car.structs import car
 from openpilot.common.test import OpenpilotTestCase
 from openpilot.selfdrive.locationd.torqued import TorqueEstimator
