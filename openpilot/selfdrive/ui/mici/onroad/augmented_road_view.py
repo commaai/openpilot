@@ -14,6 +14,7 @@ from openpilot.selfdrive.ui.mici.onroad.model_renderer import ModelRenderer
 from openpilot.selfdrive.ui.mici.onroad.navigation import NavigationPanel, PANEL_WIDTH
 from openpilot.selfdrive.ui.mici.onroad.confidence_ball import ConfidenceBall
 from openpilot.selfdrive.ui.mici.onroad.cameraview import CameraView
+from openpilot.system.ui.lib.scroll_panel2 import MIN_DRAG_PIXELS
 from openpilot.system.ui.lib.application import FontWeight, gui_app, MousePos, MouseEvent, TextAlignment, TextAlignmentVertical
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets import Widget
@@ -71,7 +72,7 @@ class BookmarkIcon(Widget):
   def is_swiping_left(self) -> bool:
     """Check if currently swiping left (for scroller to disable)."""
     # the scroller handles this frame's touches before we do, so look at them too
-    return self._is_swiping_left or (self._is_swiping and any(ev.left_down and ev.pos.x < self._swipe_start_x for ev in gui_app.mouse_events))
+    return self._is_swiping_left or (self._is_swiping and not self._swipe_expired and any(ev.left_down and ev.pos.x < self._swipe_start_x for ev in gui_app.mouse_events))
 
   def interacting(self):
     interacting, self._interacting = self._interacting, False
@@ -125,7 +126,10 @@ class BookmarkIcon(Widget):
     elif mouse_event.left_down and self._is_swiping:
       self._swipe_current_x = mouse_event.pos.x
       swipe_offset = self._swipe_start_x - self._swipe_current_x
-      self._is_swiping_left = swipe_offset > 0
+      # a touch the scroller has started dragging right can't become a bookmark
+      if swipe_offset < -MIN_DRAG_PIXELS:
+        self._swipe_expired = True
+      self._is_swiping_left = swipe_offset > 0 and not self._swipe_expired
       if self._is_swiping_left:
         self._interacting = True
         if self._state == BookmarkState.HIDDEN and not self._swipe_expired:
