@@ -495,7 +495,7 @@ class TrainingGuide(Widget):
       ChecklistStep(tr_noop("openpilot cannot:"), (
         tr_noop("Stay engaged while the driver is distracted."),
         tr_noop("See other cars during a lane change."),
-        tr_noop("Avoid construction barriers, cones or pedestrians."),
+        tr_noop("Avoid construction barriers, cones, or pedestrians."),
         tr_noop("React to unsafe situations like close vehicle cut-ins or road hazards."),
       ), "cross", RED, nxt),
       finish,
