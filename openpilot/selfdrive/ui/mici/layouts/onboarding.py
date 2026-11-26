@@ -61,9 +61,9 @@ class TrainingGuidePreDMTutorial(NavScroller):
     self._scroller.add_widgets([
       GreyBigButton("driver monitoring\ncheck", "scroll to continue",
                     gui_app.texture("icons_mici/setup/green_dm.png", 64, 64)),
-      GreyBigButton("", "openpilot checks that you're paying attention. Ignoring alerts locks you out.",
-                    gui_app.texture("icons_mici/onroad/eye_orange.png", 64, 64)),
-      GreyBigButton("", "Next, make sure comma four can see you. If it can't, unplug and remount it."),
+      GreyBigButton("", "Next, we'll check if comma four can detect the driver properly."),
+      GreyBigButton("", "openpilot uses the cabin camera to check if the driver is distracted."),
+      GreyBigButton("", "If it does not have a clear view of the driver, unplug and remount before continuing."),
       continue_button,
     ])
 
@@ -247,7 +247,7 @@ class TrainingGuideAttentionNotice(Scroller):
     continue_button.set_click_callback(continue_callback)
 
     self._scroller.add_widgets([
-      GreyBigButton("what is openpilot?", "scroll to continue",
+      GreyBigButton("welcome to openpilot", "scroll to continue",
                     gui_app.texture("icons_mici/setup/green_info.png", 64, 64)),
       GreyBigButton("", "openpilot is a driver assistance system. You are fully responsible for driving."),
       GreyBigButton("", "Pay attention and be ready to take over at all times."),
@@ -267,7 +267,8 @@ class TrainingGuideEngage(NavScroller):
                     gui_app.texture("icons_mici/wheel.png", 64, 64)),
       GreyBigButton("", "Engage with your car's cruise control buttons. The wheel icon turns green.",
                     gui_app.texture("icons_mici/offroad_alerts/green_wheel.png", 64, 64)),
-      GreyBigButton("", "Steer anytime to override. Press the brake to disengage."),
+      GreyBigButton("", "Steer anytime to override."),
+      GreyBigButton("", "Press the brake or your car's cancel button to disengage."),
       continue_button,
     ])
 
