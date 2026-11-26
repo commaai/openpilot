@@ -27,6 +27,8 @@ FPS_DROP_THRESHOLD = 0.9  # FPS drop threshold for triggering a warning
 FPS_CRITICAL_THRESHOLD = 0.5  # Critical threshold for triggering strict actions
 MOUSE_THREAD_RATE = 140  # touch controller runs at 140Hz
 MAX_TOUCH_SLOTS = 2
+# newer raylib queues every touch event with its kernel time, so no poll thread is needed
+TOUCH_EVENTS = not PC and hasattr(rl, "get_touch_event")
 TOUCH_HISTORY_TIMEOUT = 3.0  # Seconds before touch points fade out
 
 BIG_UI = os.getenv("BIG", "0") == "1"
@@ -189,6 +191,14 @@ class MouseState:
           self._events.append(ev)
         self._prev_mouse_event[slot] = ev
 
+  def _handle_touch_events(self):
+    rl.poll_input_events()
+    for i in range(rl.get_touch_event_count()):
+      event = rl.get_touch_event(i)
+      if event.slot < MAX_TOUCH_SLOTS:
+        pos = MousePos(event.position.x / self._scale, event.position.y / self._scale)
+        self._events.append(MouseEvent(pos, event.slot, event.pressed, event.released, not event.released, event.time))
+
 
 class GuiApplication:
   def __init__(self, width: int | None = None, height: int | None = None):
@@ -324,7 +334,7 @@ class GuiApplication:
       self._patch_text_functions()
       self._patch_scissor_mode()
 
-      if not PC:
+      if not PC and not TOUCH_EVENTS:
         self._mouse.start()
 
   @contextmanager
@@ -582,6 +592,8 @@ class GuiApplication:
         if PC:
           # Thread is not used on PC, need to manually add mouse events
           self._mouse._handle_mouse_event()
+        elif TOUCH_EVENTS:
+          self._mouse._handle_touch_events()
 
         # Store all mouse events for the current frame
         self._mouse_events = self._mouse.get_events()
