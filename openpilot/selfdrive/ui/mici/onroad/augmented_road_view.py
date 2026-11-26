@@ -122,7 +122,8 @@ class BookmarkIcon(Widget):
       self._swipe_current_x = mouse_event.pos.x
       self._is_swiping = True
       self._is_swiping_left = False
-      self._swipe_expired = False
+      # no bookmark while the onroad view is still scrolling in
+      self._swipe_expired = abs(self.rect.x) > 1
 
     elif mouse_event.left_down and self._is_swiping:
       self._swipe_current_x = mouse_event.pos.x
