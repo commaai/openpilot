@@ -53,12 +53,11 @@ DRIVER_RECT = rl.Rectangle(1353, 0, 804, 1080)
 ALERT_RECT = rl.Rectangle(1458, 485, 633, 211)
 MAX_SPEED_RECT = rl.Rectangle(1560, 170, 392, 397)
 WHEEL_RECT = rl.Rectangle(1351, 0, 807, 1080)
-LIGHT_RECT = rl.Rectangle(1531, 82, 441, 920)
 PEDAL_RECT = rl.Rectangle(1336, 438, 490, 393)
 
 # what goes to the next step, for tests
 STEP_RECTS = [BEGIN_RECT, NEXT_RECT, NEXT_RECT, PATH_RECT, LEAD_RECT, NEXT_RECT, SET_RECT, DRIVER_RECT, ALERT_RECT, DM_NO_RECT,
-              MAX_SPEED_RECT, NEXT_RECT, WHEEL_RECT, NEXT_RECT, LIGHT_RECT, PEDAL_RECT, NEXT_RECT, NEXT_RECT, FINISH_RECT]
+              MAX_SPEED_RECT, NEXT_RECT, WHEEL_RECT, NEXT_RECT, NEXT_RECT, PEDAL_RECT, NEXT_RECT, NEXT_RECT, FINISH_RECT]
 
 
 def _shade(color: rl.Color, factor: float) -> rl.Color:
@@ -272,22 +271,29 @@ class Step(Widget):
 
 
 class SectionStep(Step):
-  """Numbered section intro."""
+  """Text only step with a section number or an icon."""
 
-  def __init__(self, number: int, title: str, body: tuple[Paragraph, ...], colors, on_next):
+  def __init__(self, badge: int | str, title: str, body: tuple[Paragraph, ...], colors, on_next, paragraph_gap: int = 0):
     super().__init__(colors[0])
-    self._number = str(number)
+    self._badge = badge
     self._title = title
     self._body = body
+    self._paragraph_gap = paragraph_gap
     self.add_control(NextButton(colors[1], on_next), NEXT_RECT)
 
   def _draw(self, rect: rl.Rectangle):
-    center = rl.Vector2(rect.x + MARGIN + 64, rect.y + 176)
-    rl.draw_circle_v(center, 64, rl.Color(255, 255, 255, 64))
-    size = measure_text_cached(_font(True), self._number, TITLE_SIZE)
-    rl.draw_text_ex(_font(True), self._number, rl.Vector2(center.x - size.x / 2, center.y - size.y / 2), TITLE_SIZE, 0, rl.WHITE)
-    draw_paragraphs((Span(self._title, bold=True),), rect.x + 288, rect.y + 127, NEXT_RECT.x - 288 - MARGIN, TITLE_SIZE, TITLE_LINE)
-    draw_paragraphs(self._body, rect.x + MARGIN, rect.y + 294, 1640, INTRO_SIZE, INTRO_LINE)
+    if isinstance(self._badge, int):
+      center = rl.Vector2(rect.x + MARGIN + 64, rect.y + 176)
+      rl.draw_circle_v(center, 64, rl.Color(255, 255, 255, 64))
+      number = str(self._badge)
+      size = measure_text_cached(_font(True), number, TITLE_SIZE)
+      rl.draw_text_ex(_font(True), number, rl.Vector2(center.x - size.x / 2, center.y - size.y / 2), TITLE_SIZE, 0, rl.WHITE)
+      title_x = 288
+    else:
+      rl.draw_texture_v(gui_app.texture(f"{ASSETS}/icon_{self._badge}.png"), rl.Vector2(rect.x + MARGIN, rect.y + 112), rl.WHITE)
+      title_x = MARGIN + 196
+    draw_paragraphs((Span(self._title, bold=True),), rect.x + title_x, rect.y + 127, NEXT_RECT.x - title_x - MARGIN, TITLE_SIZE, TITLE_LINE)
+    draw_paragraphs(self._body, rect.x + MARGIN, rect.y + 294, 1640, INTRO_SIZE, INTRO_LINE, self._paragraph_gap)
 
 
 class ChecklistStep(Step):
@@ -477,10 +483,10 @@ class TrainingGuide(Widget):
       SectionStep(4, tr_noop("How to disengage openpilot"), (
         tr_noop("When you encounter a potentially unsafe situation or need to exit a highway, disengage openpilot by pressing the brake pedal."),
       ), BLUE, nxt),
-      PhotoStep("limited", tr_noop("Limited Features"), (
+      SectionStep("limited", tr_noop("Limited Features"), (
         tr_noop("Keep in mind that openpilot will not recognize certain scenarios including construction zones, close cut-ins, or pedestrians."),
         tr_noop("You must stay alert and always be ready to retake control of the vehicle."),
-      ), tr_noop("Tap the light to continue"), "light", BLUE, loader, LIGHT_RECT, nxt),
+      ), BLUE, nxt, BODY_GAP),
       PhotoStep("disengage", tr_noop("Disengage openpilot"), (
         (
           tr_noop("While openpilot is engaged, you may keep your hands on the wheel to override steering controls."),
