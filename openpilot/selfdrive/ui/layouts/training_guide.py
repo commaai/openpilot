@@ -485,7 +485,7 @@ class TrainingGuide(Widget):
       ), BLUE, nxt),
       SectionStep("limited", tr_noop("Limited Features"), (
         tr_noop("Keep in mind that openpilot will not recognize certain scenarios including construction zones, close cut-ins, or pedestrians."),
-        tr_noop("You must stay alert and always be ready to retake control of the vehicle."),
+        tr_noop("You must stay alert and be ready to retake control of the vehicle at all times."),
       ), BLUE, nxt, BODY_GAP),
       PhotoStep("disengage", tr_noop("Disengage openpilot"), (
         (
