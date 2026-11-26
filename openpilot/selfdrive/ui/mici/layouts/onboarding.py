@@ -249,8 +249,10 @@ class TrainingGuideAttentionNotice(Scroller):
     self._scroller.add_widgets([
       GreyBigButton("welcome to openpilot", "scroll to continue",
                     gui_app.texture("icons_mici/setup/green_info.png", 64, 64)),
-      GreyBigButton("", "openpilot is a driver assistance system. You are fully responsible for driving."),
-      GreyBigButton("", "Pay attention and be ready to take over at all times."),
+      GreyBigButton("", "1. openpilot is a driver assistance system."),
+      GreyBigButton("", "2. You must pay attention at all times."),
+      GreyBigButton("", "3. You must be ready to take over at any time."),
+      GreyBigButton("", "4. You are fully responsible for driving the car."),
       continue_button,
     ])
 
@@ -267,7 +269,7 @@ class TrainingGuideEngage(NavScroller):
                     gui_app.texture("icons_mici/wheel.png", 64, 64)),
       GreyBigButton("", "Engage with your car's cruise control buttons. The wheel icon turns green.",
                     gui_app.texture("icons_mici/offroad_alerts/green_wheel.png", 64, 64)),
-      GreyBigButton("", "Steer anytime to override."),
+      GreyBigButton("", "Steering overrides only steering. Pressing the gas overrides only speed."),
       GreyBigButton("", "Press the brake or your car's cancel button to disengage."),
       continue_button,
     ])
