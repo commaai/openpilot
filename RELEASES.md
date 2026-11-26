@@ -6,11 +6,10 @@ Version 0.11.3 (2026-XX-XX)
     * slowing down for curves
     * adjusting speed based on surrounding traffic
   * This behavior was previously available with openpilot's "Experimental mode", but is now out of beta and always enabled
-  * With openpilot deciding which speed to drive, the car's cruise speed is treated as a maximum speed openpilot will not exceed
-* New driver monitoring model
-  * Always-on sleep detection
-  * Improved sleep detection
-* comma four UI updates
+  * With openpilot deciding the speed to drive, the set speed is treated as a maximum speed openpilot will not exceed
+* Driving personalities retuned to be more distinct
+* Always-on sleep detection
+* Improved comma four UI
 * Romanian translation thanks to adriantabirta!
 
 Version 0.11.2 (2026-10-14)
