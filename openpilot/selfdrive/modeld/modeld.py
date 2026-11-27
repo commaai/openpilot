@@ -10,7 +10,7 @@ os.environ.setdefault('AM_POWER_LIMIT', '100')
 from tinygrad.device import Buffer, Device
 from tinygrad.dtype import DType, dtypes
 from tinygrad.engine.jit import CapturedJit
-from tinygrad.engine.realize import compile_linear, lower_and_compile
+from tinygrad.codegen.compile import compile_linear, lower_and_compile
 from tinygrad.tensor import Tensor
 from tinygrad.helpers import round_up
 from tinygrad.uop.ops import UOp
