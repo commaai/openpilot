@@ -24,7 +24,6 @@ class DrivingLayoutMici(NavScroller):
     ldw_toggle = BigParamControl("lane departure warnings", "IsLdwEnabled",
                                  description="Warn when you drift across a detected lane line.\n" +
                                              "Only above 31 mph (50 km/h), with no turn signal.")
-    always_on_dm_toggle = BigParamControl("always-on driver monitor", "AlwaysOnDM", description="Monitor the driver even when openpilot is not engaged.")
     enable_openpilot = BigParamControl("enable openpilot", "OpenpilotEnabledToggle", toggle_callback=restart_needed_callback,
                                        description="Enable to use openpilot driver assistance.\n" +
                                                    "Disable to use your car's stock driver assistance.")
@@ -32,7 +31,6 @@ class DrivingLayoutMici(NavScroller):
     self._scroller.add_widgets([
       self._personality_toggle,
       self._initial_cruise_speed,
-      always_on_dm_toggle,
       ldw_toggle,
       enable_openpilot,
     ])
@@ -40,12 +38,10 @@ class DrivingLayoutMici(NavScroller):
     # Toggle lists
     self._refresh_toggles = (
       ("IsLdwEnabled", ldw_toggle),
-      ("AlwaysOnDM", always_on_dm_toggle),
       ("OpenpilotEnabledToggle", enable_openpilot),
     )
 
     enable_openpilot.set_enabled(lambda: not ui_state.engaged)
-    always_on_dm_toggle.set_enabled(not ui_state.params.get_bool("AlwaysOnDMLock"))
 
     if ui_state.params.get_bool("ShowDebugInfo"):
       gui_app.set_show_touches(True)
