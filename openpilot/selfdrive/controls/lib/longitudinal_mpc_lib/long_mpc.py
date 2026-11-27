@@ -53,8 +53,6 @@ T_IDXS = np.array(T_IDXS_LST)
 FCW_IDXS = T_IDXS < 5.0
 T_DIFFS = np.diff(T_IDXS, prepend=[0.])
 LEAD_T_IDXS_MODEL = np.array(ModelConstants.LEAD_T_IDXS)
-LEAD_T_DIFFS_MODEL = np.diff(LEAD_T_IDXS_MODEL)
-MODEL_LEAD_T_IDX = np.clip(np.searchsorted(LEAD_T_IDXS_MODEL[1:], T_IDXS - 0.5 * T_DIFFS, side='right'), 0, len(LEAD_T_DIFFS_MODEL) - 1)
 LEAD_ACCEL_RESIDUAL_TAU = 2.0
 LEAD_ACCEL_RESIDUAL_W = np.exp(-T_IDXS / LEAD_ACCEL_RESIDUAL_TAU)
 LEAD_ACCEL_MODEL_MAX = 1.2
@@ -316,10 +314,10 @@ class LongitudinalMpc:
     a_radar = a_lead * np.exp(-a_lead_tau * (T_IDXS**2) / 2.)
     radar_xv = self.integrate_lead(x_start, v_lead, a_radar)
 
-    has_model = model_lead is not None and len(model_lead.v) == len(LEAD_T_IDXS_MODEL)
+    has_model = model_lead is not None and len(model_lead.a) == len(LEAD_T_IDXS_MODEL)
     if has_model and (model_prob > 0.5):
-      dv_dt = np.diff(np.asarray(model_lead.v, dtype=np.float64)) / LEAD_T_DIFFS_MODEL
-      a_lead_traj = np.clip(dv_dt[MODEL_LEAD_T_IDX] + (a_lead - model_lead.a[0]) * LEAD_ACCEL_RESIDUAL_W, -10., np.maximum(a_radar, LEAD_ACCEL_MODEL_MAX))
+      a_model = np.interp(T_IDXS, LEAD_T_IDXS_MODEL, model_lead.a)
+      a_lead_traj = np.clip(a_model + (a_lead - a_model[0]) * LEAD_ACCEL_RESIDUAL_W, -10., np.maximum(a_radar, LEAD_ACCEL_MODEL_MAX))
       lead_xv = self.integrate_lead(x_start, v_lead, a_lead_traj)
 
       # Smoothly fall back to the more pessimistic radar trajectory when radar requires hard braking
