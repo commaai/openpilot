@@ -18,7 +18,7 @@ from openpilot.common.realtime import config_realtime_process, set_core_affinity
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.common.utils import run_cmd
-from openpilot.system.ui.lib.application import gui_app, FontWeight, TextAlignment, TextAlignmentVertical
+from openpilot.system.ui.lib.application import gui_app, white, FontWeight, TextAlignment, TextAlignmentVertical
 from openpilot.system.ui.lib.wifi_manager import WifiManager, ConnectStatus
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.nav_widget import NavWidget
@@ -104,7 +104,7 @@ class StartPage(Widget):
   def __init__(self):
     super().__init__()
 
-    self._title = UnifiedLabel("start", 64, text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
+    self._title = UnifiedLabel("start", 64,
                                font_weight=FontWeight.DISPLAY, alignment=TextAlignment.CENTER,
                                alignment_vertical=TextAlignmentVertical.MIDDLE)
 
@@ -194,9 +194,9 @@ class DownloadingPage(NavWidget):
   def __init__(self):
     super().__init__()
 
-    self._title_label = UnifiedLabel("downloading...", 64, text_color=rl.Color(255, 255, 255, int(255 * 0.9)),
+    self._title_label = UnifiedLabel("downloading...", 64,
                                      font_weight=FontWeight.DISPLAY)
-    self._progress_label = UnifiedLabel("", 132, text_color=rl.Color(255, 255, 255, int(255 * 0.9 * 0.65)),
+    self._progress_label = UnifiedLabel("", 132, text_color=white(0.65),
                                         font_weight=FontWeight.ROMAN, alignment_vertical=TextAlignmentVertical.BOTTOM)
     self._progress = 0
 

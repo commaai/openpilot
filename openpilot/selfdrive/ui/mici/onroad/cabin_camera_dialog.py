@@ -4,7 +4,7 @@ from openpilot.cereal.visionipc import VisionStreamType
 from openpilot.selfdrive.ui.mici.onroad.cameraview import CameraView
 from openpilot.selfdrive.ui.mici.onroad.driver_state import DriverStateRenderer
 from openpilot.selfdrive.ui.ui_state import ui_state, device
-from openpilot.system.ui.lib.application import gui_app, FontWeight, TextAlignment, TextAlignmentVertical
+from openpilot.system.ui.lib.application import gui_app, white, FontWeight, TextAlignment, TextAlignmentVertical
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.nav_widget import NavWidget
@@ -129,8 +129,7 @@ class BaseCabinCameraDialog(Widget):
               color=rl.Color(0, 0, 0, 180))
     gui_label(rect, f"awareness: {awareness_pct:.0f}%", font_size=44, font_weight=FontWeight.MEDIUM,
               alignment=TextAlignment.RIGHT,
-              alignment_vertical=TextAlignmentVertical.TOP,
-              color=rl.Color(255, 255, 255, int(255 * 0.9)))
+              alignment_vertical=TextAlignmentVertical.TOP)
 
     if dm_state.alertLevel == log.DriverMonitoringState.AlertLevel.none:
       return
@@ -146,8 +145,7 @@ class BaseCabinCameraDialog(Widget):
               color=rl.Color(0, 0, 0, 180))
     gui_label(rect, alert_level_str, font_size=40, font_weight=FontWeight.BOLD,
               alignment=alignment,
-              alignment_vertical=TextAlignmentVertical.BOTTOM,
-              color=rl.Color(255, 255, 255, int(255 * 0.9)))
+              alignment_vertical=TextAlignmentVertical.BOTTOM)
 
   def _load_eye_textures(self):
     """Lazy load eye textures"""
@@ -188,7 +186,7 @@ class BaseCabinCameraDialog(Widget):
     box_size = 75
     line_thickness = 3
 
-    line_color = rl.Color(255, 255, 255, int(alpha * 255))
+    line_color = white(alpha)
     rl.draw_rectangle_rounded_lines_ex(
       rl.Rectangle(fbox_x - box_size / 2, fbox_y - box_size / 2, box_size, box_size),
       35.0 / box_size / 2,
@@ -218,7 +216,7 @@ class BaseCabinCameraDialog(Widget):
       orange_opacity = 1.0 - eye_prob
 
       rl.draw_texture_v(self._eye_orange_texture, rl.Vector2(eye_x, eye_y), rl.Color(255, 255, 255, int(255 * orange_opacity)))
-      rl.draw_texture_v(self._eye_fill_texture, rl.Vector2(eye_x, eye_y), rl.Color(255, 255, 255, int(255 * fill_opacity)))
+      rl.draw_texture_v(self._eye_fill_texture, rl.Vector2(eye_x, eye_y), white(fill_opacity))
 
     # Draw sunglasses indicator based on sunglasses probability
     # Position glasses centered between the two eyes at top left

@@ -3,7 +3,7 @@ import numpy as np
 import math
 from openpilot.cereal import log
 from openpilot.common.filter_simple import FirstOrderFilter
-from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.application import gui_app, WHITE_ALPHA
 from openpilot.system.ui.widgets import Widget
 from openpilot.selfdrive.ui.mici.onroad import glow_highlight_texture
 from openpilot.selfdrive.ui.mici.onroad.status import lerp_color
@@ -126,7 +126,7 @@ class DriverStateRenderer(Widget):
     person_pos = rl.Vector2(self._rect.x + (self._rect.width - self._dm_person.width) / 2,
                             self._rect.y + (self._rect.height - self._dm_person.height) / 2)
     person_color = lerp_color(PERSON_WHITE, PERSON_ORANGE, warning)
-    person_alpha = 255 * 0.9 * self._fade_filter.x
+    person_alpha = 255 * WHITE_ALPHA * self._fade_filter.x
     rl.draw_texture_ex(self._dm_person, person_pos, 0.0, 1.0, rl.Color(person_color.r, person_color.g, person_color.b, int(person_alpha)))
     rl.draw_texture_ex(self._dm_person_highlight, person_pos, 0.0, 1.0, rl.Color(255, 255, 255, int(person_alpha * warning)))
 

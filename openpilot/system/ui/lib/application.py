@@ -60,8 +60,16 @@ def _burn_in_colors() -> np.ndarray:
 BURN_IN_COLORS = _burn_in_colors()
 
 
+# UI white is slightly dimmed. use white() by default, rl.WHITE only when you really want full white
+WHITE_ALPHA = 0.9
+
+
+def white(alpha: float = 1.0) -> rl.Color:
+  return rl.Color(255, 255, 255, int(255 * WHITE_ALPHA * alpha))
+
+
 DEFAULT_TEXT_SIZE = 60
-DEFAULT_TEXT_COLOR = rl.Color(255, 255, 255, int(255 * 0.9))
+DEFAULT_TEXT_COLOR = white()
 
 # Qt draws fonts accounting for ascent/descent differently, so compensate to match old styles
 # The real scales for the fonts below range from 1.212 to 1.266

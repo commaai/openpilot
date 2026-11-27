@@ -3,7 +3,7 @@ from collections.abc import Callable
 
 import raylib_nb as rl
 
-from openpilot.system.ui.lib.application import gui_app, FontWeight, TextAlignment, TextAlignmentVertical
+from openpilot.system.ui.lib.application import gui_app, white, FontWeight, TextAlignment, TextAlignmentVertical
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.common.filter_simple import FirstOrderFilter, BounceFilter
@@ -40,7 +40,7 @@ class SliderBase(Widget, abc.ABC):
 
     self._is_dragging_circle = False
 
-    self._label = self._child(UnifiedLabel(title, font_size=36, font_weight=FontWeight.SEMI_BOLD, text_color=rl.WHITE,
+    self._label = self._child(UnifiedLabel(title, font_size=36, font_weight=FontWeight.SEMI_BOLD, text_color=white(),
                                            alignment=TextAlignment.RIGHT,
                                            alignment_vertical=TextAlignmentVertical.MIDDLE, line_height=0.9, shimmer=True))
 
@@ -129,18 +129,18 @@ class SliderBase(Widget, abc.ABC):
       self._scroll_x_circle_filter.x = self._scroll_x_circle
 
   def _render(self, _):
-    white = rl.Color(255, 255, 255, int(255 * self._opacity_filter.x))
+    tint = rl.Color(255, 255, 255, int(255 * self._opacity_filter.x))
 
     bg_txt_x = self._rect.x + (self._rect.width - self._bg_txt.width) / 2
     bg_txt_y = self._rect.y + (self._rect.height - self._bg_txt.height) / 2
-    rl.draw_texture_ex(self._bg_txt, rl.Vector2(bg_txt_x, bg_txt_y), 0.0, 1.0, white)
+    rl.draw_texture_ex(self._bg_txt, rl.Vector2(bg_txt_x, bg_txt_y), 0.0, 1.0, tint)
 
     btn_x = bg_txt_x + self._bg_txt.width - self._circle_bg_txt.width + self._scroll_x_circle_filter.x
     btn_y = self._rect.y + (self._rect.height - self._circle_bg_txt.height) / 2
 
-    label_alpha = int(255 * (1.0 - self.slider_percentage) * self._opacity_filter.x)
+    label_alpha = (1.0 - self.slider_percentage) * self._opacity_filter.x
     if label_alpha > 0:
-      self._label.set_text_color(rl.Color(255, 255, 255, label_alpha))
+      self._label.set_text_color(white(label_alpha))
       label_rect = rl.Rectangle(
         self._rect.x + 20,
         self._rect.y,
@@ -155,11 +155,11 @@ class SliderBase(Widget, abc.ABC):
     scale = self._circle_scale_filter.update(self.PRESSED_SCALE if circle_pressed else 1.0)
     scaled_btn_x = btn_x + (self._circle_bg_txt.width * (1 - scale)) / 2
     scaled_btn_y = btn_y + (self._circle_bg_txt.height * (1 - scale)) / 2
-    rl.draw_texture_ex(circle_bg_txt, rl.Vector2(scaled_btn_x, scaled_btn_y), 0.0, scale, white)
+    rl.draw_texture_ex(circle_bg_txt, rl.Vector2(scaled_btn_x, scaled_btn_y), 0.0, scale, tint)
 
     arrow_x = btn_x + (self._circle_bg_txt.width - self._circle_arrow_txt.width) / 2
     arrow_y = scaled_btn_y + (self._circle_bg_txt.height - self._circle_arrow_txt.height) / 2
-    rl.draw_texture_ex(self._circle_arrow_txt, rl.Vector2(arrow_x, arrow_y), 0.0, 1.0, white)
+    rl.draw_texture_ex(self._circle_arrow_txt, rl.Vector2(arrow_x, arrow_y), 0.0, 1.0, white(self._opacity_filter.x))
 
 
 class LargerSlider(SliderBase):

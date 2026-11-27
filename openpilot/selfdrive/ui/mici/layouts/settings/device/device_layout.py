@@ -14,7 +14,7 @@ from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialog, BigConfirmatio
 from openpilot.selfdrive.ui.mici.onroad.cabin_camera_dialog import CabinCameraDialog
 from openpilot.selfdrive.ui.mici.layouts.onboarding import TrainingGuide, TermsPage
 from openpilot.selfdrive.ui.layouts.settings.common import restart_needed_callback
-from openpilot.system.ui.lib.application import gui_app, MousePos
+from openpilot.system.ui.lib.application import gui_app, white, MousePos
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.selfdrive.ui.ui_state import device, ui_state
 from openpilot.system.ui.widgets.html_render import HtmlRenderer
@@ -60,7 +60,7 @@ class MiciFccModal(NavRawScrollPanel):
     scroll_content_rect.y += scroll_offset + self._fcc_logo.height + 20
     self._content.render(scroll_content_rect)
 
-    rl.draw_texture_ex(self._fcc_logo, fcc_pos, 0.0, 1.0, rl.WHITE)
+    rl.draw_texture_ex(self._fcc_logo, fcc_pos, 0.0, 1.0, white())
 
 
 def _engaged_confirmation_click(callback: Callable, action_text: str, icon: rl.Texture, exit_on_confirm: bool = True, red: bool = False):

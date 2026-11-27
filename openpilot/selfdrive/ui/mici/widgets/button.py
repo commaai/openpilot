@@ -6,7 +6,7 @@ from collections.abc import Callable
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets.scroller import DO_ZOOM
-from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, TextAlignment, TextAlignmentVertical
+from openpilot.system.ui.lib.application import gui_app, white, FontWeight, MousePos, TextAlignment, TextAlignmentVertical
 from openpilot.common.filter_simple import BounceFilter
 
 if TYPE_CHECKING:
@@ -18,7 +18,6 @@ else:
     Params = None
 
 COMPLICATION_SIZE    = 36
-LABEL_COLOR          = rl.Color(255, 255, 255, int(255 * 0.9))
 COMPLICATION_GREY    = rl.Color(0xAA, 0xAA, 0xAA, 255)
 PRESSED_SCALE = 1.15 if DO_ZOOM else 1.07
 
@@ -84,7 +83,7 @@ class BigCircleButton(BaseButton):
 
   def _draw_content(self, btn_y: float):
     # draw icon
-    icon_color = rl.Color(255, 255, 255, int(255 * 0.9)) if self.enabled else rl.Color(255, 255, 255, int(255 * 0.35))
+    icon_color = white() if self.enabled else rl.Color(255, 255, 255, int(255 * 0.35))
     rl.draw_texture_ex(self._txt_icon, rl.Vector2(self._rect.x + (self._rect.width - self._txt_icon.width) / 2 + self._icon_offset[0],
                                         btn_y + (self._rect.height - self._txt_icon.height) / 2 + self._icon_offset[1]), 0, 1.0, icon_color)
 
@@ -159,7 +158,7 @@ class BigButton(BaseButton):
     self._rotate_icon_t: float | None = None
 
     self._label = UnifiedLabel(text, font_size=self._get_label_font_size(), font_weight=FontWeight.BOLD,
-                               text_color=LABEL_COLOR, alignment_vertical=TextAlignmentVertical.BOTTOM, scroll=scroll,
+                               alignment_vertical=TextAlignmentVertical.BOTTOM, scroll=scroll,
                                line_height=0.9)
     self._sub_label = UnifiedLabel(value, font_size=COMPLICATION_SIZE, font_weight=FontWeight.ROMAN,
                                    text_color=COMPLICATION_GREY, alignment_vertical=TextAlignmentVertical.BOTTOM)
@@ -245,7 +244,7 @@ class BigButton(BaseButton):
     # LABEL ------------------------------------------------------------------
     label_x = self._rect.x + self.LABEL_HORIZONTAL_PADDING
 
-    label_color = LABEL_COLOR if self.enabled else rl.Color(255, 255, 255, int(255 * 0.35))
+    label_color = white() if self.enabled else rl.Color(255, 255, 255, int(255 * 0.35))
     self._label.set_color(label_color)
     label_rect = rl.Rectangle(label_x, btn_y + self.LABEL_VERTICAL_PADDING, self._title_width_hint(),
                               self._rect.height - self.LABEL_VERTICAL_PADDING * 2)
@@ -269,7 +268,7 @@ class BigButton(BaseButton):
       source_rec = rl.Rectangle(0, 0, self._txt_icon.width, self._txt_icon.height)
       dest_rec = rl.Rectangle(x, y, self._txt_icon.width, self._txt_icon.height)
       origin = rl.Vector2(self._txt_icon.width / 2, self._txt_icon.height / 2)
-      rl.draw_texture_pro(self._txt_icon, source_rec, dest_rec, origin, rotation, rl.Color(255, 255, 255, int(255 * 0.9)))
+      rl.draw_texture_pro(self._txt_icon, source_rec, dest_rec, origin, rotation, white())
 
   def _render(self, _):
     txt_bg, btn_x, btn_y, scale = self._handle_background()
@@ -371,7 +370,7 @@ class GreyBigButton(BigButton):
     self._label.set_line_height(1.0)
 
     self._sub_label.set_font_size(36)
-    self._sub_label.set_text_color(rl.Color(255, 255, 255, int(255 * 0.9)))
+    self._sub_label.set_text_color(white())
     self._sub_label.set_font_weight(FontWeight.DISPLAY_REGULAR)
     self._sub_label.set_alignment_vertical(TextAlignmentVertical.MIDDLE if not self._label.text else
                                            TextAlignmentVertical.BOTTOM)

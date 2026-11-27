@@ -3,10 +3,10 @@ import raylib_nb as rl
 from collections.abc import Callable
 
 from openpilot.selfdrive.ui.layouts.settings.initial_cruise_speed import get_speed_options, set_initial_cruise_speed
-from openpilot.selfdrive.ui.mici.widgets.button import BigButton, LABEL_COLOR
+from openpilot.selfdrive.ui.mici.widgets.button import BigButton
 from openpilot.selfdrive.ui.mici.widgets.dialog import BigDialogBase
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.system.ui.lib.application import gui_app, FontWeight, TextAlignment, FONT_SCALE
+from openpilot.system.ui.lib.application import gui_app, white, FontWeight, TextAlignment, FONT_SCALE
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.lib.scroll_panel2 import AUTO_SCROLL_TC, GuiScrollPanel2, ScrollState
 from openpilot.system.ui.lib.text_measure import measure_text_cached
@@ -113,7 +113,7 @@ class SpeedScroller(Widget):
       t = blends[idx]
       font_size = lerp(CENTER_FONT_SIZE, SIDE_FONT_SIZE, t)
       spacing = lerp(CENTER_LETTER_SPACING, SIDE_LETTER_SPACING, t) * font_size * FONT_SCALE
-      color = rl.Color(255, 255, 255, int(255 * lerp(0.9, 0.45, t)))
+      color = white(lerp(1.0, 0.5, t))
       # use the width of the font that draws the value. this keeps the value at its center when the font changes
       if idx == closest_idx:
         font, width = self._center_font, self._center_widths[idx] * font_size / CENTER_FONT_SIZE
@@ -130,7 +130,7 @@ class SpeedScroller(Widget):
 class InitialCruiseSpeedPicker(BigDialogBase):
   def __init__(self, change_callback: Callable[[], None]):
     super().__init__()
-    self._unit_label = self._child(UnifiedLabel("", 36, FontWeight.BOLD, LABEL_COLOR, alignment=TextAlignment.CENTER, letter_spacing=-0.03))
+    self._unit_label = self._child(UnifiedLabel("", 36, FontWeight.BOLD, alignment=TextAlignment.CENTER, letter_spacing=-0.03))
     self._speed_scroller = self._child(SpeedScroller(change_callback))
     self._speed_scroller.set_enabled(lambda: self.enabled and not self.is_dismissing)
 

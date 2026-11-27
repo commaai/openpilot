@@ -8,7 +8,7 @@ from openpilot.cereal import log
 from openpilot.selfdrive.ui.onroad.alert_renderer import Alert, get_alert
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.common.filter_simple import BounceFilter, FirstOrderFilter
-from openpilot.system.ui.lib.application import gui_app, FontWeight, TextAlignment
+from openpilot.system.ui.lib.application import gui_app, white, FontWeight, TextAlignment
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import UnifiedLabel
@@ -253,7 +253,7 @@ class AlertRenderer(Widget):
             measure_text_cached(font, alert_text1, font_size, font_size * ALERT_TITLE_LETTER_SPACING).x > alert_layout.text_rect.width:
         font_size -= 2
 
-    color = rl.Color(255, 255, 255, int(255 * 0.9 * self._alpha_filter.x))
+    color = white(self._alpha_filter.x)
 
     text1_y_offset = 11 if font_size >= 70 else 4
     text_rect1 = rl.Rectangle(
@@ -292,7 +292,7 @@ class AlertRenderer(Widget):
         alert_layout.text_rect.width,
         alert_layout.text_rect.height - last_line_h
       )
-      color = rl.Color(255, 255, 255, int(255 * 0.65 * self._alpha_filter.x))
+      color = white(0.65 * self._alpha_filter.x)
 
       self._alert_text2_label.set_text(alert_text2)
       self._alert_text2_label.set_text_color(color)

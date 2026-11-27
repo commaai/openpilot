@@ -1,7 +1,7 @@
 from enum import IntEnum
 import raylib_nb as rl
 import numpy as np
-from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, MouseEvent
+from openpilot.system.ui.lib.application import gui_app, white, FontWeight, MousePos, MouseEvent
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
 from openpilot.common.filter_simple import BounceFilter, FirstOrderFilter
@@ -47,7 +47,7 @@ class Key(Widget):
     self._size_filter = BounceFilter(CHAR_FONT_SIZE, 0.1 * ANIMATION_SCALE, 1 / gui_app.target_fps)
     self._alpha_filter = BounceFilter(1.0, 0.075 * ANIMATION_SCALE, 1 / gui_app.target_fps)
 
-    self._color = rl.Color(255, 255, 255, 255)
+    self._color = white()
 
     self._position_initialized = False
     self.original_position = rl.Vector2(0, 0)
@@ -78,7 +78,7 @@ class Key(Widget):
     return self._rect.x, self._rect.y
 
   def _update_state(self):
-    self._color.a = min(int(255 * self._alpha_filter.x), 255)
+    self._color = white(min(self._alpha_filter.x, 1.0))
 
   def _render(self, _):
     # center char at rect position

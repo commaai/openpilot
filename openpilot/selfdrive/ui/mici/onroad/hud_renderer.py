@@ -6,7 +6,7 @@ from openpilot.selfdrive.ui.mici.onroad import DIMMED_ICON_ALPHA, glow_highlight
 from openpilot.selfdrive.ui.mici.onroad.status import StatusFade, lerp_color
 from openpilot.selfdrive.ui.mici.onroad.torque_bar import TorqueBar
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus, ChestnutState
-from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.application import gui_app, white, WHITE_ALPHA, FontWeight
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
@@ -20,7 +20,7 @@ CRUISE_DISABLED_CHAR = '–'
 
 SET_SPEED_PERSISTENCE = 2.5  # seconds
 WHEEL_SIZE = 52
-WHEEL_WHITE = rl.Color(255, 255, 255, 255)
+WHEEL_WHITE = white()
 WHEEL_GREEN = rl.Color(0, 255, 64, 255)
 WHEEL_ORANGE = rl.Color(255, 115, 0, 255)
 
@@ -141,7 +141,7 @@ class HudRenderer(Widget):
     loading = ui_state.chestnut_state == ChestnutState.LOADING
     if loading:
       icon = self._txt_chestnut
-      opacity = 0.35 + 0.65 * (0.5 - 0.5 * math.cos(rl.get_time() * 6.0))
+      opacity = WHITE_ALPHA * (0.35 + 0.65 * (0.5 - 0.5 * math.cos(rl.get_time() * 6.0)))
     elif ui_state.chestnut_state in (ChestnutState.UNCOMPILED, ChestnutState.FAILED):
       icon = self._txt_chestnut_orange
       opacity = 1.0
@@ -176,9 +176,10 @@ class HudRenderer(Widget):
     rotation = -ui_state.sm['carState'].steeringAngleDeg * self._wheel_angle_filter.update(ui_state.started and ui_state.received_since_started('carState'))
 
     alpha = 255 * (1 - (1 - DIMMED_ICON_ALPHA) * self._status.weight(UIStatus.DISENGAGED))
+    wheel_color.a = int(alpha * wheel_color.a / 255)
     rl.draw_texture_pro(wheel_txt, rl.Rectangle(0, 0, wheel_txt.width, wheel_txt.height),
                         rl.Rectangle(pos_x, pos_y, wheel_txt.width, wheel_txt.height),
-                        rl.Vector2(wheel_txt.width / 2, wheel_txt.height / 2), rotation, rl.Color(wheel_color.r, wheel_color.g, wheel_color.b, int(alpha)))
+                        rl.Vector2(wheel_txt.width / 2, wheel_txt.height / 2), rotation, wheel_color)
     rl.draw_texture_pro(self._txt_wheel_highlight, rl.Rectangle(0, 0, wheel_txt.width, wheel_txt.height),
                         rl.Rectangle(pos_x, pos_y, wheel_txt.width, wheel_txt.height),
                         rl.Vector2(wheel_txt.width / 2, wheel_txt.height / 2), rotation, rl.Color(255, 255, 255, int(alpha * engaged)))
@@ -198,8 +199,7 @@ class HudRenderer(Widget):
     rl.draw_circle_gradient(rl.Vector2(x + circle_radius, y + circle_radius), circle_radius,
                             rl.Color(0, 0, 0, int(255 / 2 * alpha)), rl.BLANK)
 
-    set_speed_color = rl.Color(255, 255, 255, int(255 * 0.9 * alpha))
-    max_color = rl.Color(255, 255, 255, int(255 * 0.9 * alpha))
+    set_speed_color = max_color = white(alpha)
 
     set_speed = self.set_speed
     if self.is_cruise_set and not ui_state.is_metric:

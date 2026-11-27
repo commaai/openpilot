@@ -14,7 +14,7 @@ from openpilot.selfdrive.ui.mici.onroad.model_renderer import ModelRenderer
 from openpilot.selfdrive.ui.mici.onroad.navigation import NavigationPanel, PANEL_WIDTH
 from openpilot.selfdrive.ui.mici.onroad.confidence_ball import ConfidenceBall
 from openpilot.selfdrive.ui.mici.onroad.cameraview import CameraView
-from openpilot.system.ui.lib.application import FontWeight, gui_app, MousePos, MouseEvent, TextAlignment, TextAlignmentVertical
+from openpilot.system.ui.lib.application import FontWeight, gui_app, white, MousePos, MouseEvent, TextAlignment, TextAlignmentVertical
 from openpilot.system.ui.widgets.label import UnifiedLabel
 from openpilot.system.ui.widgets import Widget
 from openpilot.common.filter_simple import BounceFilter, FirstOrderFilter
@@ -184,11 +184,10 @@ class AugmentedRoadView(CameraView):
     self._status = StatusFade(0.1)
     self._confidence_ball = ConfidenceBall()
     self._offroad_label = UnifiedLabel("start the car", 46, FontWeight.DISPLAY,
-                                       text_color=rl.Color(255, 255, 255, 255),
                                        alignment=TextAlignment.LEFT,
                                        alignment_vertical=TextAlignmentVertical.TOP)
     self._offroad_sublabel = UnifiedLabel("to use openpilot", 40, FontWeight.ROMAN,
-                                          text_color=rl.Color(255, 255, 255, int(255 * 0.65)),
+                                          text_color=white(0.65),
                                           alignment=TextAlignment.LEFT)
 
     self._fade_texture = gui_app.texture("icons_mici/onroad/onroad_fade.png")

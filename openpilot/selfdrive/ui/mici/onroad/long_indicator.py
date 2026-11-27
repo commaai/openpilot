@@ -4,7 +4,7 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.selfdrive.ui.mici.onroad import DIMMED_ICON_ALPHA
 from openpilot.selfdrive.ui.mici.onroad.status import StatusFade
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
-from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.application import gui_app, WHITE_ALPHA
 from openpilot.system.ui.widgets import Widget
 
 
@@ -34,11 +34,11 @@ class LongIndicator(Widget):
     dial_alpha, icons_alpha = self._alpha_filter.update(np.array([not long, long]) * self._should_draw).tolist()
     disengaged = self._status.weight(UIStatus.DISENGAGED)
     dial_rect = rl.Rectangle(rect.x - 2, rect.y, rect.width, rect.height)
-    self._draw_centered(self._txt_speed_dial, dial_rect, 120, (0.9 - (0.9 - DIMMED_ICON_ALPHA) * disengaged) * dial_alpha)
+    self._draw_centered(self._txt_speed_dial, dial_rect, 120, (WHITE_ALPHA - (WHITE_ALPHA - DIMMED_ICON_ALPHA) * disengaged) * dial_alpha)
 
     live = ui_state.started and ui_state.received_since_started('selfdriveState')
     personality = ui_state.sm['selfdriveState'].personality.raw if live else ui_state.personality_param
-    lit_alpha = 0.9 + (0.63 - 0.9) * disengaged
+    lit_alpha = WHITE_ALPHA + (0.63 - WHITE_ALPHA) * disengaged
     for i, ((txt, y), f) in enumerate(zip(self._icons, self._lit_filters, strict=True)):
       lit = f.update(self._has_lead if i == 0 else i <= personality + 1)
       self._draw_centered(txt, rect, y, (0.35 + (lit_alpha - 0.35) * lit) * icons_alpha)

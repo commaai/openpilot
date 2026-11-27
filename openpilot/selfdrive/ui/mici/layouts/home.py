@@ -10,7 +10,7 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.layouts import HBoxLayout
 from openpilot.system.ui.widgets.icon_widget import IconWidget
 from openpilot.system.ui.widgets.label import UnifiedLabel, gui_label
-from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos, TextAlignment, TextAlignmentVertical
+from openpilot.system.ui.lib.application import gui_app, white, WHITE_ALPHA, FontWeight, MousePos, TextAlignment, TextAlignmentVertical
 from openpilot.selfdrive.ui.ui_state import ui_state, ChestnutState
 from openpilot.common.version import RELEASE_BRANCHES
 
@@ -123,7 +123,7 @@ class NetworkIcon(Widget):
       # Offset by difference in height between slashless and slash icons to make center align match
       draw_y -= (self._wifi_slash_txt.height - self._wifi_none_txt.height) / 2
 
-    rl.draw_texture_ex(draw_net_txt, rl.Vector2(draw_x, draw_y), 0.0, 1.0, rl.Color(255, 255, 255, int(255 * 0.9)))
+    rl.draw_texture_ex(draw_net_txt, rl.Vector2(draw_x, draw_y), 0.0, 1.0, white())
 
 
 class MiciHomeLayout(Widget):
@@ -135,9 +135,9 @@ class MiciHomeLayout(Widget):
 
     self._version_text = self._get_version_text()
 
-    self._usb_icon = IconWidget("icons_mici/usb.png", (62, 40))
+    self._usb_icon = IconWidget("icons_mici/usb.png", (62, 40), opacity=WHITE_ALPHA)
     self._chestnut_icon = IconWidget("icons_mici/chestnut_green.png", (54, 40))
-    self._chestnut_loading_icon = IconWidget("icons_mici/chestnut.png", (68, 40))
+    self._chestnut_loading_icon = IconWidget("icons_mici/chestnut.png", (68, 40), opacity=WHITE_ALPHA)
     self._chestnut_failed_icon = IconWidget("icons_mici/chestnut_orange.png", (68, 40))
     self._mic_icon = IconWidget("icons_mici/microphone.png", (32, 46))
     self._body_icon = IconWidget("icons_mici/body.png", (54, 37))
@@ -145,7 +145,7 @@ class MiciHomeLayout(Widget):
     self._alerts_pill = AlertsPill()
 
     self._status_bar_layout = HBoxLayout([
-      IconWidget("icons_mici/settings.png", (48, 48), opacity=0.9),
+      IconWidget("icons_mici/settings.png", (48, 48), opacity=WHITE_ALPHA),
       NetworkIcon(),
       self._usb_icon,
       self._chestnut_icon,
