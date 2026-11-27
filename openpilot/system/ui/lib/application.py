@@ -14,12 +14,15 @@ from collections.abc import Callable
 from collections import deque
 from enum import IntEnum, StrEnum
 from pathlib import Path
-from typing import NamedTuple
+from typing import IO, TYPE_CHECKING, NamedTuple
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.hardware import HARDWARE, PC
 from openpilot.system.ui.lib.multilang import FONT_FALLBACK_LANGUAGES, TRANSLATIONS_DIR, multilang
 from openpilot.common.realtime import Ratekeeper
+
+if TYPE_CHECKING:
+  from openpilot.system.ui.widgets import Widget
 
 _DEFAULT_FPS = int(os.getenv("FPS", {'tizi': 20}.get(HARDWARE.get_device_type(), 60)))
 FPS_LOG_INTERVAL = 5  # Seconds between logging FPS drops
@@ -102,6 +105,11 @@ class TextAlignmentVertical(IntEnum):
   TOP = 0
   MIDDLE = 1
   BOTTOM = 2
+
+
+# unpatched raylib functions, see GuiApplication._patch_text_functions and _patch_scissor_mode
+_rl_draw_text_ex = rl.draw_text_ex
+_rl_begin_scissor_mode = rl.begin_scissor_mode
 
 
 def font_fallback(font: rl.Font) -> rl.Font:
@@ -212,15 +220,15 @@ class GuiApplication:
     self._scaled_height += self._scaled_height % 2
 
     self._ffmpeg_proc: subprocess.Popen | None = None
-    self._ffmpeg_queue: queue.Queue | None = None
+    self._ffmpeg_queue: queue.Queue[bytes | None] = queue.Queue(maxsize=60)  # Buffer up to 60 frames
     self._ffmpeg_thread: threading.Thread | None = None
-    self._ffmpeg_stop_event: threading.Event | None = None
+    self._ffmpeg_stop_event = threading.Event()
     self._textures: dict[str, rl.Texture] = {}
     self._target_fps: int = _DEFAULT_FPS
     self._last_fps_log_time: float = time.monotonic()
     self._frame = 0
     self._window_close_requested = False
-    self._nav_stack: list[object] = []
+    self._nav_stack: list[Widget] = []
     self._nav_stack_ticks: list[Callable[[], None]] = []
     self._nav_stack_widgets_to_render = 1 if self.big_ui() else 2
 
@@ -310,9 +318,7 @@ class GuiApplication:
           RECORD_OUTPUT,            # Output file path
         ]
         self._ffmpeg_proc = subprocess.Popen(ffmpeg_args, stdin=subprocess.PIPE)
-        self._ffmpeg_queue = queue.Queue(maxsize=60)  # Buffer up to 60 frames
-        self._ffmpeg_stop_event = threading.Event()
-        self._ffmpeg_thread = threading.Thread(target=self._ffmpeg_writer_thread, daemon=True)
+        self._ffmpeg_thread = threading.Thread(target=self._ffmpeg_writer_thread, args=(self._ffmpeg_proc.stdin,), daemon=True)
         self._ffmpeg_thread.start()
 
       # four display runs slightly faster than 60 FPS, let it dictate rate so we don't drift and drop frames
@@ -357,14 +363,14 @@ class GuiApplication:
     print(f"{green}UI window ready in {elapsed_ms:.1f} ms{reset}")
     sys.exit(0)
 
-  def _ffmpeg_writer_thread(self):
+  def _ffmpeg_writer_thread(self, stdin: IO[bytes]):
     """Background thread that writes frames to ffmpeg."""
     while True:
       try:
         data = self._ffmpeg_queue.get(timeout=1.0)
         if data is None:  # Sentinel to stop
           break
-        self._ffmpeg_proc.stdin.write(data)
+        stdin.write(data)
       except queue.Empty:
         if self._ffmpeg_stop_event.is_set():
           break
@@ -372,7 +378,7 @@ class GuiApplication:
       except Exception:
         break
 
-  def push_widget(self, widget: object):
+  def push_widget(self, widget: "Widget"):
     if widget in self._nav_stack:
       cloudlog.warning("Widget already in stack, cannot push again!")
       return
@@ -406,7 +412,7 @@ class GuiApplication:
     widget = self._nav_stack.pop(idx_to_pop)
     widget.hide_event()
 
-  def pop_widgets_to(self, widget: object, callback: Callable[[], None] | None = None, instant: bool = False):
+  def pop_widgets_to(self, widget: "Widget", callback: Callable[[], None] | None = None, instant: bool = False):
     # Pops middle widgets instantly without animation then dismisses top, animated out if NavWidget
     if widget not in self._nav_stack:
       cloudlog.warning("Widget not in stack, cannot pop to it!")
@@ -433,7 +439,7 @@ class GuiApplication:
       return self._nav_stack[-1]
     return None
 
-  def widget_in_stack(self, widget: object) -> bool:
+  def widget_in_stack(self, widget: "Widget") -> bool:
     return widget in self._nav_stack
 
   def add_nav_stack_tick(self, tick_function: Callable[[], None]):
@@ -447,12 +453,10 @@ class GuiApplication:
   def set_should_render(self, should_render: bool):
     self._should_render = should_render
 
-  def texture(self, asset_path: str, width: int | None = None, height: int | None = None,
+  def texture(self, asset_path: str, width: float | None = None, height: float | None = None,
               alpha_premultiply=False, keep_aspect_ratio=True, flip_x: bool = False) -> rl.Texture:
-    if width is not None:
-      width = round(width)
-    if height is not None:
-      height = round(height)
+    width = round(width) if width is not None else None
+    height = round(height) if height is not None else None
 
     cache_key = f"{asset_path}_{width}_{height}_{alpha_premultiply}_{keep_aspect_ratio}_{flip_x}"
     if cache_key in self._textures:
@@ -530,10 +534,8 @@ class GuiApplication:
       self._ffmpeg_thread.join(timeout=30)
 
     if self._ffmpeg_proc is not None:
-      self._ffmpeg_proc.stdin.flush()
-      self._ffmpeg_proc.stdin.close()
       try:
-        self._ffmpeg_proc.wait(timeout=30)
+        self._ffmpeg_proc.communicate(timeout=30)  # closes stdin, then waits
       except subprocess.TimeoutExpired:
         self._ffmpeg_proc.terminate()
         self._ffmpeg_proc.wait()
@@ -703,28 +705,20 @@ class GuiApplication:
 
   def _patch_text_functions(self):
     # Wrap raylib text APIs to apply a global text size scale so our px sizes match Qt
-    if not hasattr(rl, "_orig_draw_text_ex"):
-      rl._orig_draw_text_ex = rl.draw_text_ex
+    def _draw_text_ex_scaled(font: rl.Font, text: str, position: rl.Vector2, font_size: float, spacing: float, tint: rl.Color) -> None:
+      _rl_draw_text_ex(font_fallback(font), text, position, font_size * FONT_SCALE, spacing, tint)
 
-    def _draw_text_ex_scaled(font, text, position, font_size, spacing, tint):
-      font = font_fallback(font)
-      return rl._orig_draw_text_ex(font, text, position, font_size * FONT_SCALE, spacing, tint)
-
-    rl.draw_text_ex = _draw_text_ex_scaled
+    vars(rl).update(draw_text_ex=_draw_text_ex_scaled)
 
   def _patch_scissor_mode(self):
     if self._scale == 1.0:
       return
 
-    if not hasattr(rl, "_orig_begin_scissor_mode"):
-      rl._orig_begin_scissor_mode = rl.begin_scissor_mode
+    def _begin_scissor_mode_scaled(x: int, y: int, width: int, height: int) -> None:
+      _rl_begin_scissor_mode(int(x * self._scale), int(y * self._scale),
+                             int(math.ceil(width * self._scale)), int(math.ceil(height * self._scale)))
 
-    def _begin_scissor_mode_scaled(x, y, width, height):
-      return rl._orig_begin_scissor_mode(
-        int(x * self._scale), int(y * self._scale),
-        int(math.ceil(width * self._scale)), int(math.ceil(height * self._scale)))
-
-    rl.begin_scissor_mode = _begin_scissor_mode_scaled
+    vars(rl).update(begin_scissor_mode=_begin_scissor_mode_scaled)
 
   def _set_log_callback(self):
     def trace_log_callback(log_level, text_str):
@@ -799,8 +793,8 @@ class GuiApplication:
     import io
     import pstats
 
+    assert self._render_profiler is not None and self._render_profile_start_time is not None
     self._render_profiler.disable()
-    assert self._render_profile_start_time is not None
     elapsed_ms = (time.monotonic() - self._render_profile_start_time) * 1e3
     avg_frame_time = elapsed_ms / self._frame if self._frame > 0 else 0
 

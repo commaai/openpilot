@@ -149,10 +149,6 @@ lint.flake8-implicit-str-concat.allow-multiline = false
 [tool.ruff.format]
 quote-style = "preserve"
 
-[tool.ty.rules]
-unresolved-import = "ignore"  # Cython-compiled modules (.pyx)
-unresolved-attribute = "ignore"  # many from capnp and Cython modules
-
 [tool.uv]
 python-preference = "only-managed"
 default-groups = ["standalone"]
@@ -168,3 +164,6 @@ pandacan = { path = "panda", editable = true }
 rednose = { path = "rednose_repo", editable = true }
 teleoprtc = { path = "teleoprtc_repo", editable = true }
 tinygrad = { path = "tinygrad_repo", editable = true }
+
+[tool.ty.environment]
+extra-paths = ["typings", "opendbc_repo", "rednose_repo", "teleoprtc_repo", "tinygrad_repo", "msgq_repo"]

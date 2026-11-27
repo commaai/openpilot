@@ -50,7 +50,7 @@ def patch_submaster(message_chunks):
         sm.recv_frame[service] = sm.frame
         sm.valid[service] = True
     sm.frame += 1
-  ui_state.sm.update = mock_update  # ty: ignore[invalid-assignment]  # profiling hook
+  ui_state.sm.update = mock_update
 
 
 if __name__ == "__main__":

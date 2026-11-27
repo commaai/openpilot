@@ -81,7 +81,7 @@ class BigConfirmationDialog(BigDialogBase):
   def _on_confirm(self):
     if self._exit_on_confirm:
       self.dismiss(self._confirm_callback)
-    elif self._confirm_callback:
+    else:
       self._confirm_callback()
 
   def _update_state(self):

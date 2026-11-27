@@ -1,6 +1,7 @@
 import os
 import random
 from pathlib import Path
+from unittest import mock
 
 
 from openpilot.common.test import OpenpilotTestCase
@@ -63,11 +64,19 @@ class UploaderTestCase(OpenpilotTestCase):
   seg_format2: str
   seg_dir: str
 
+  def patch(self, target, attribute: str, new) -> None:
+    patcher = mock.patch.object(target, attribute, new)
+    patcher.start()
+    self.addCleanup(patcher.stop)
+
   def set_ignore(self):
-    uploader.Api = MockApiIgnore  # ty: ignore[invalid-assignment]  # test double
+    self.patch(uploader, "Api", MockApiIgnore)
 
   def setup_method(self):
-    uploader.Api = MockApi  # ty: ignore[invalid-assignment]  # test double
+    self.setup_uploader()
+
+  def setup_uploader(self):
+    self.patch(uploader, "Api", MockApi)
     uploader.fake_upload = True
     uploader.force_wifi = True
     uploader.allow_sleep = False

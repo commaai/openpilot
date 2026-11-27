@@ -83,12 +83,16 @@ def processes_context(processes, init_time=0, ignore_stopped=None):
     if n < len(processes) - 1:
       time.sleep(init_time)
 
-  assert all(managed_processes[name].proc.exitcode is None for name in processes)
+  def running(name):
+    proc = managed_processes[name].proc
+    return proc is not None and proc.exitcode is None
+
+  assert all(running(name) for name in processes)
 
   try:
     yield [managed_processes[name] for name in processes]
     # assert processes are still started
-    assert all(managed_processes[name].proc.exitcode is None for name in processes if name not in ignore_stopped)
+    assert all(running(name) for name in processes if name not in ignore_stopped)
   finally:
     for p in processes:
       managed_processes[p].stop()

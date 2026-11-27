@@ -57,7 +57,7 @@ class ModelRenderer(Widget):
     # Transform matrix (3x3 for car space to screen space)
     self._car_space_transform = np.zeros((3, 3), dtype=np.float32)
     self._transform_dirty = True
-    self._clip_region = None
+    self._clip_region = rl.Rectangle(0, 0, 0, 0)
 
     self._path_gradient = Gradient(
       start=(0.0, 1.0),  # Bottom of path

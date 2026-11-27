@@ -22,11 +22,6 @@ from openpilot.tools.lib.file_sources import comma_api_source, internal_source, 
 from openpilot.tools.lib.route import SegmentRange, FileName
 from openpilot.tools.lib.log_time_series import msgs_to_time_series
 
-LogMessage = type[capnp._DynamicStructReader]
-LogIterable = Iterable[LogMessage]
-RawLogIterable = Iterable[bytes]
-
-
 def save_log(dest, log_msgs, compress=True):
   dat = b"".join(msg.as_builder().to_bytes() for msg in log_msgs)
 
@@ -86,6 +81,11 @@ class CachedEventReader:
     return getattr(self._evt, name)
 
 
+LogMessage = capnp._DynamicStructReader | CachedEventReader
+LogIterable = Iterable[LogMessage]
+RawLogIterable = Iterable[bytes]
+
+
 class _LogFileReader:
   def __init__(self, fn, only_union_types=False, sort_by_time=False, dat=None):
     self.data_version = None
@@ -119,13 +119,13 @@ class _LogFileReader:
     if sort_by_time:
       self._ents.sort(key=lambda x: x.logMonoTime)
 
-  def __iter__(self) -> Iterator[capnp._DynamicStructReader]:
+  def __iter__(self) -> Iterator[LogMessage]:
     for ent in self._ents:
       if self._only_union_types:
         try:
           ent.which()
           yield ent
-        except capnp.lib.capnp.KjException:
+        except capnp.KjException:
           pass
       else:
         yield ent
@@ -184,7 +184,7 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
           raise FileNotFoundError(f"Did not find {fn} for seg idxs {needed_seg_idxs} of {sr.route_name}")
 
       except Exception as e:
-        exceptions[source.__name__] = e
+        exceptions[getattr(source, '__name__', repr(source))] = e
 
     if fn == try_fns[0]:
       missing_logs = len(needed_seg_idxs)

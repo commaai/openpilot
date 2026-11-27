@@ -98,22 +98,33 @@ def route_engine(sm, pm, values):
     return RouteEngine(sm, pm, params=params)
 
 
+class RangeServer(ThreadingHTTPServer):
+  archive: bytes
+  etag: str
+  ignore_range: bool
+  requests: list[dict[str, str]]
+
+
 class RangeHandler(BaseHTTPRequestHandler):
   def do_GET(self):
-    self.server.requests.append(dict(self.headers))
-    if self.headers.get('If-Match', self.server.etag) != self.server.etag:
+    server = self.server
+    assert isinstance(server, RangeServer)
+    server.requests.append(dict(self.headers))
+    if self.headers.get('If-Match', server.etag) != server.etag:
       self.send_error(412)
       return
-    if self.server.ignore_range:
+    if server.ignore_range:
       self.send_response(200)
       self.end_headers()
       return
-    offset, end = map(int, re.fullmatch(r'bytes=(\d+)-(\d+)', self.headers['Range']).groups())
-    data = self.server.archive[offset:end + 1]
+    m = re.fullmatch(r'bytes=(\d+)-(\d+)', self.headers['Range'])
+    assert m is not None
+    offset, end = map(int, m.groups())
+    data = server.archive[offset:end + 1]
     self.send_response(206)
-    self.send_header('Content-Range', f'bytes {offset}-{end}/{len(self.server.archive)}')
+    self.send_header('Content-Range', f'bytes {offset}-{end}/{len(server.archive)}')
     self.send_header('Content-Length', str(len(data)))
-    self.send_header('ETag', self.server.etag)
+    self.send_header('ETag', server.etag)
     self.end_headers()
     self.wfile.write(data)
 
@@ -128,7 +139,7 @@ class TileServerCase(unittest.TestCase):
     self.directory = tempfile.TemporaryDirectory()
     self.addCleanup(self.directory.cleanup)
     self.cache = Path(self.directory.name) / 'navigation' / 'tiles'
-    self.server = ThreadingHTTPServer(('127.0.0.1', 0), RangeHandler)
+    self.server = RangeServer(('127.0.0.1', 0), RangeHandler)
     self.server.archive = make_archive(leaf=True)
     self.server.etag = '"test-version"'
     self.server.ignore_range = False

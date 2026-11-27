@@ -738,6 +738,7 @@ def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local
                            enable_multithread=True)
 
     # Set TOS to keep connection responsive while under load.
+    assert ws.sock is not None
     ws.sock.setsockopt(socket.IPPROTO_IP, socket.IP_TOS, SSH_TOS)
 
     ssock, csock = socket.socketpair()

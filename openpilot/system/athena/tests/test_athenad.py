@@ -9,6 +9,7 @@ import threading
 import queue
 from dataclasses import asdict, replace
 from datetime import datetime, timedelta
+from unittest import mock
 
 from websocket import ABNF
 from websocket._exceptions import WebSocketConnectionClosedException
@@ -60,7 +61,9 @@ def host():
 
 class TestAthenadMethods(OpenpilotTestCase):
   def setup_method(self):
-    athenad.Api = MockApi  # ty: ignore[invalid-assignment]  # test double
+    patcher = mock.patch.object(athenad, "Api", MockApi)
+    patcher.start()
+    self.addCleanup(patcher.stop)
     self.default_params = {
       "DongleId": "0000000000000000",
       "GithubSshKeys": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC307aE+nuHzTAgaJhzSf5v7ZZQW9gaperjhCmyPyl4PzY7T1mDGenTlVTN7yoVFZ9UfO9oMQqo0n1OwDIiqbIFxqnhrHU0cYfj88rI85m5BEKlNu5RdaVTj1tcbaPpQc5kZEolaI1nDDjzV0lwS7jo5VYDHseiJHlik3HH1SgtdtsuamGR2T80q1SyW+5rHoMOJG73IH2553NnWuikKiuikGHUYBd00K1ilVAK2xSiMWJp55tQfZ0ecr9QjEsJ+J/efL4HqGNXhffxvypCXvbUYAFSddOwXUPo5BTKevpxMtH+2YrkpSjocWA04VnTYFiPG6U4ItKmbLOTFZtPzoez private", # noqa: E501

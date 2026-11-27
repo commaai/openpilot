@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from collections import defaultdict, deque
+import importlib
 import time
 import unittest
 import numpy as np
@@ -49,8 +50,8 @@ class TestPowerDraw(OpenpilotTestCase):
 
   def setup_method(self):
     Params().put("CarParams", get_demo_car_params().to_bytes(), block=True)
-    from ultimate_provisioning import UP  # only on a DUT, from its UP's up run or up ssh
-    self.up = UP.remote()
+    # ultimate_provisioning isn't a dependency, `up run` and `up ssh` put it on the DUT's PYTHONPATH
+    self.up = importlib.import_module("ultimate_provisioning").UP.remote()
 
   def teardown_method(self):
     manager_cleanup()

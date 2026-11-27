@@ -1,5 +1,5 @@
+import wave
 import numpy as np
-from scipy.io import wavfile
 
 
 sr = 48000
@@ -13,7 +13,12 @@ def harmonic_beep(freq, duration_seconds):
   exp_scale = np.exp(-x/5.5e3)
   return max_int16 * signal * exp_scale
 
-engage_beep = harmonic_beep(1661.219, 0.5)
-wavfile.write("engage.wav", sr, engage_beep.astype(np.int16))
-disengage_beep = harmonic_beep(1318.51, 0.5)
-wavfile.write("disengage.wav", sr, disengage_beep.astype(np.int16))
+def write_wav(fn, samples):
+  with wave.open(fn, "wb") as f:
+    f.setnchannels(1)
+    f.setsampwidth(2)
+    f.setframerate(sr)
+    f.writeframes(samples.astype(np.int16).tobytes())
+
+write_wav("engage.wav", harmonic_beep(1661.219, 0.5))
+write_wav("disengage.wav", harmonic_beep(1318.51, 0.5))

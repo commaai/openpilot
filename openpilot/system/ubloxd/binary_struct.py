@@ -8,7 +8,7 @@ and type annotations.
 import struct
 from enum import Enum
 from dataclasses import dataclass, is_dataclass
-from typing import Annotated, Any, TypeVar, get_args, get_origin
+from typing import Annotated, Any, ClassVar, TypeVar, get_args, get_origin
 
 
 class FieldType:
@@ -167,6 +167,8 @@ T = TypeVar('T', bound='BinaryStruct')
 class BinaryStruct:
   """Base class for binary struct definitions."""
 
+  __binary_fields__: ClassVar[list[tuple[str, Any]]] = []
+
   def __init_subclass__(cls, **kwargs) -> None:
     super().__init_subclass__(**kwargs)
     if cls is BinaryStruct:
@@ -176,16 +178,6 @@ class BinaryStruct:
     fields = list(getattr(cls, '__annotations__', {}).items())
     cls.__binary_fields__ = fields
 
-    @classmethod
-    def _read(inner_cls, reader: BinaryReader):
-      obj = inner_cls.__new__(inner_cls)
-      for name, spec in inner_cls.__binary_fields__:
-        value = _parse_field(spec, reader, obj)
-        setattr(obj, name, value)
-      return obj
-
-    cls._read = _read  # ty: ignore[invalid-assignment]  # installed dynamically for each subclass
-
   @classmethod
   def from_bytes(cls: type[T], data: bytes) -> T:
     """Parse struct from bytes."""
@@ -194,8 +186,10 @@ class BinaryStruct:
 
   @classmethod
   def _read(cls: type[T], reader: BinaryReader) -> T:
-    """Override in subclasses to implement parsing."""
-    raise NotImplementedError
+    obj = cls.__new__(cls)
+    for name, spec in cls.__binary_fields__:
+      setattr(obj, name, _parse_field(spec, reader, obj))
+    return obj
 
 
 def _resolve_path(obj: Any, path: str) -> Any:

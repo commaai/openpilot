@@ -80,7 +80,7 @@ class CerealIncomingMessageProxy:
   def __init__(self, pm: messaging.PubMaster):
     self.pm = pm
 
-  def send(self, message: bytes):
+  def send(self, message: bytes | str):
     msg_json = json.loads(message)
     msg_type, msg_data = msg_json["type"], msg_json["data"]
     size = None

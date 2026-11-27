@@ -4,14 +4,14 @@ import math
 import capnp
 import numbers
 from collections import Counter
+from capnp.lib.capnp import _DynamicEnum
 
 from openpilot.tools.lib.logreader import LogReader
 
 EPSILON = sys.float_info.epsilon
 
-_DynamicStructReader = capnp.lib.capnp._DynamicStructReader
-_DynamicListReader = capnp.lib.capnp._DynamicListReader
-_DynamicEnum = capnp.lib.capnp._DynamicEnum
+_DynamicStructReader = capnp._DynamicStructReader
+_DynamicListReader = capnp._DynamicListReader
 
 
 def remove_ignored_fields(msg, ignore):
@@ -34,7 +34,7 @@ def remove_ignored_fields(msg, ignore):
       val = False
     elif isinstance(v, numbers.Number):
       val = 0
-    elif isinstance(v, (list, capnp.lib.capnp._DynamicListBuilder)):
+    elif isinstance(v, (list, capnp._DynamicListBuilder)):
       val = []
     else:
       raise NotImplementedError(f"Unknown type: {type(v)}")

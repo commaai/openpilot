@@ -45,7 +45,7 @@ cloudlog.addHandler(log_handler)
 
 class TestUploader(UploaderTestCase):
   def setup_method(self):
-    super().openpilot_setup_method()
+    self.setup_uploader()
     log_handler.reset()
 
   def start_thread(self):

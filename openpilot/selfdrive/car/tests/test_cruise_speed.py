@@ -34,6 +34,9 @@ def run_cruise_simulation(cruise, personality, t_end=20.):
                       log.LongitudinalPersonality.schema.enumerants, # personality
                       [5,35])) # speed
 class TestCruiseSpeed(OpenpilotTestCase):
+  personality: str
+  speed: int
+
   def test_cruise_speed(self):
     print(f'Testing {self.speed} m/s')
     cruise_speed = float(self.speed)
@@ -45,6 +48,8 @@ class TestCruiseSpeed(OpenpilotTestCase):
 # TODO: test pcmCruise
 @parameterized_class(('pcm_cruise',), [(False,)])
 class TestVCruiseHelper(OpenpilotTestCase):
+  pcm_cruise: bool
+
   def setup_method(self):
     self.CP = car.CarParams(pcmCruise=self.pcm_cruise)
     self.v_cruise_helper = VCruiseHelper(self.CP)

@@ -8,7 +8,7 @@ from multiprocessing import Queue
 from openpilot.common.test import OpenpilotTestCase
 from openpilot.cereal import messaging
 from openpilot.common.basedir import BASEDIR
-from openpilot.tools.sim.bridge.common import QueueMessageType
+from openpilot.tools.sim.bridge.common import QueueMessageType, SimulatorBridge
 
 SIM_DIR = os.path.join(BASEDIR, "openpilot/tools/sim")
 
@@ -19,7 +19,13 @@ class TestSimBridgeBase(OpenpilotTestCase):
       raise unittest.SkipTest("Don't run this base class, run test_metadrive_bridge.py instead")
 
   def setup_method(self):
+    self.setup_bridge()
+
+  def setup_bridge(self):
     self.processes = []
+
+  def create_bridge(self) -> SimulatorBridge:
+    raise NotImplementedError
 
   @unittest.skip("TODO: re-enable simulator bridge test")
   def test_driving(self):

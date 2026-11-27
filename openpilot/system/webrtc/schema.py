@@ -1,5 +1,5 @@
-import capnp
 from typing import Any
+from capnp.lib.capnp import _StructSchema, _StructSchemaField
 
 
 def generate_type(type_walker, schema_walker) -> str | list[Any] | dict[str, Any]:
@@ -15,11 +15,11 @@ def generate_type(type_walker, schema_walker) -> str | list[Any] | dict[str, Any
     return str(data_type.which())
 
 
-def generate_struct(schema: capnp.lib.capnp._StructSchema) -> dict[str, Any]:
+def generate_struct(schema: _StructSchema) -> dict[str, Any]:
   return {field: generate_field(schema.fields[field]) for field in schema.fields if not field.endswith("DEPRECATED") and field != "deprecated"}
 
 
-def generate_field(field: capnp.lib.capnp._StructSchemaField) -> str | list[Any] | dict[str, Any]:
+def generate_field(field: _StructSchemaField) -> str | list[Any] | dict[str, Any]:
   def schema_walker(field):
     yield field.schema
 

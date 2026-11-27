@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
-import os
-import re
 import subprocess
 import sys
-from collections.abc import Iterable
 
 from tqdm import tqdm
 from opendbc.car.tests.routes import routes as test_car_models_routes
@@ -18,32 +15,19 @@ SOURCES: list[AzureContainer] = [
 
 DEST = OpenpilotCIContainer
 
-def upload_route(path: str, exclude_patterns: Iterable[str] | None = None) -> None:
-  if exclude_patterns is None:
-    exclude_patterns = [r'dcamera\.hevc']
-
-  r, n = path.rsplit("--", 1)
-  r = '/'.join(r.split('/')[-2:])  # strip out anything extra in the path
-  destpath = f"{r}/{n}"
-  for file in os.listdir(path):
-    if any(re.search(pattern, file) for pattern in exclude_patterns):
-      continue
-    DEST.upload_file(os.path.join(path, file), f"{destpath}/{file}")
-
-
 def sync_to_ci_public(route: str) -> bool:
-  dest_container, dest_key = DEST.get_client_and_key()
   key_prefix = route.replace('|', '/')
   dongle_id = key_prefix.split('/')[0]
 
-  if next(dest_container.list_blob_names(name_starts_with=key_prefix), None) is not None:
+  if DEST.has_prefix(key_prefix):
     return True
+  dest_key = DEST.sas()
 
   print(f"Uploading {route}")
   for source_container in SOURCES:
     # assumes az login has been run
     print(f"Trying {source_container.ACCOUNT}/{source_container.CONTAINER}")
-    _, source_key = source_container.get_client_and_key()
+    source_key = source_container.sas()
     cmd = [
       "azcopy",
       "copy",

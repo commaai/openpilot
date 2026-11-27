@@ -290,7 +290,7 @@ class BigToggle(BigButton):
   def __init__(self, text: str, value: str = "", initial_state: bool = False, toggle_callback: Callable | None = None,
                *, description: str = "",
                description_icon: Union[rl.Texture, None] = None):
-    super().__init__(text, value, "", description=description, description_icon=description_icon)
+    super().__init__(text, value, None, description=description, description_icon=description_icon)
     self._checked = initial_state
     self._toggle_callback = toggle_callback
 

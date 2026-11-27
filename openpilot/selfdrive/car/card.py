@@ -63,7 +63,7 @@ class Car:
   RI: RadarInterfaceBase
   CP: car.CarParams
 
-  def __init__(self, CI=None, RI=None) -> None:
+  def __init__(self, CI: CarInterfaceBase | None = None, RI: RadarInterfaceBase | None = None) -> None:
     self.can_sock = messaging.sub_sock('can', timeout=20)
     self.sm = messaging.SubMaster(['pandaStates', 'carControl', 'onroadEvents'])
     self.pm = messaging.PubMaster(['sendcan', 'carState', 'carParams', 'carOutput', 'radarTracks'])
@@ -82,7 +82,7 @@ class Car:
 
     is_release = self.params.get_bool("IsReleaseBranch")
 
-    if CI is None:
+    if CI is None or RI is None:
       # wait for one pandaState and one CAN packet
       print("Waiting for CAN messages...")
       while True:

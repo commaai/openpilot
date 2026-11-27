@@ -1,7 +1,7 @@
 import numpy as np
 
-from metadrive.component.sensors.rgb_camera import RGBCamera
-from panda3d.core import Texture, GraphicsOutput
+from metadrive.component.sensors.rgb_camera import RGBCamera  # ty: ignore[import-not-found]  # optional sim dependency
+from panda3d.core import Texture, GraphicsOutput  # ty: ignore[import-not-found]  # optional sim dependency
 
 
 class CopyRamRGBCamera(RGBCamera):

@@ -262,7 +262,7 @@ class UnifiedLabel(Widget):
     self._cached_wrapped_lines: list[str] = []
     self._cached_line_sizes: list[rl.Vector2] = []
     self._cached_total_height: float | None = None
-    self._cached_width: int = -1
+    self._cached_width: float = -1
 
     # If max_width is set, initialize rect size for Scroller support
     if max_width is not None:
@@ -349,7 +349,7 @@ class UnifiedLabel(Widget):
         self._rect.width = max_width
         self._rect.height = self.get_content_height(max_width)
 
-  def _update_text_cache(self, available_width: int):
+  def _update_text_cache(self, available_width: float):
     """Update cached text processing data."""
     text = self.text
 
@@ -412,7 +412,7 @@ class UnifiedLabel(Widget):
     else:
       self._cached_total_height = 0.0
 
-  def _elide_line(self, line: str, max_width: int, force: bool = False) -> str:
+  def _elide_line(self, line: str, max_width: float, force: bool = False) -> str:
     """Elide a single line if it exceeds max_width. If force is True, always elide even if it fits."""
     if not self._elide and not force:
       return line
@@ -441,7 +441,7 @@ class UnifiedLabel(Widget):
         right = mid
     return line[:left - 1] + ellipsis if left > 0 else ellipsis
 
-  def get_content_height(self, max_width: int) -> float:
+  def get_content_height(self, max_width: float) -> float:
     """
     Returns the height needed for text at given max_width.
     Similar to HtmlRenderer.get_total_height().

@@ -154,5 +154,5 @@ class SshKeyAction(ItemAction):
       gui_app.push_widget(alert_dialog(error))
 
 
-def ssh_key_item(title: str | Callable[[], str], description: str | Callable[[], str]) -> ListItem:
+def ssh_key_item(title: str | Callable[[], str], description: str | Callable[[], str]) -> ListItem[SshKeyAction]:
   return ListItem(title=title, description=description, action_item=SshKeyAction())

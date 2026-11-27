@@ -36,7 +36,7 @@ def wrap_text(text, font_size, max_width):
       if lines:
         lines.append("")
       continue
-    indent = re.match(r"^\s*", paragraph).group()
+    indent = paragraph[:len(paragraph) - len(paragraph.lstrip())]
     current_line = indent
     words = re.split(r"(\s+|-)", paragraph[len(indent):])
     while len(words):

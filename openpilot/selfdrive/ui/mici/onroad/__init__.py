@@ -19,7 +19,7 @@ def blend_colors(a: rl.Color, b: rl.Color, f: float) -> rl.Color:
 
 def glow_highlight_texture(asset: str, size: int, center: tuple[float, float] = (0.5, 0.5),
                            radius: tuple[float, float] = (0.5, 0.5)) -> rl.Texture:
-  image = gui_app._load_image_from_path((ASSETS_DIR / asset).as_posix(), size, size)
+  image = gui_app._load_image_from_path(str(ASSETS_DIR / asset), size, size)
   w, h = image.width, image.height
   alpha = np.frombuffer(image.to_bytes(w * h * 4), dtype=np.uint8).reshape(h, w, 4)[..., 3] / 255.0
   rl.unload_image(image)

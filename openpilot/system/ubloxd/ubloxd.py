@@ -128,7 +128,7 @@ class UbloxMsgParser:
     )
 
   # Message generation entry point
-  def parse_frame(self, frame: bytes) -> tuple[str, capnp.lib.capnp._DynamicStructBuilder] | None:
+  def parse_frame(self, frame: bytes) -> tuple[str, capnp._DynamicStructBuilder] | None:
     # Quick header parse
     msg_type = int.from_bytes(frame[2:4], 'big')
     payload = frame[6:-2]
@@ -176,7 +176,7 @@ class UbloxMsgParser:
     return None
 
   # NAV-PVT -> gpsLocationExternal
-  def _gen_nav_pvt(self, msg: Ubx.NavPvt) -> tuple[str, capnp.lib.capnp._DynamicStructBuilder]:
+  def _gen_nav_pvt(self, msg: Ubx.NavPvt) -> tuple[str, capnp._DynamicStructBuilder]:
     dat = messaging.new_message('gpsLocationExternal', valid=True)
     gps = dat.gpsLocationExternal
     gps.source = log.GpsLocationData.SensorSource.ublox
@@ -210,14 +210,14 @@ class UbloxMsgParser:
     return ('gpsLocationExternal', dat)
 
   # RXM-SFRBX dispatch to GPS or GLONASS ephemeris
-  def _gen_rxm_sfrbx(self, msg) -> tuple[str, capnp.lib.capnp._DynamicStructBuilder] | None:
+  def _gen_rxm_sfrbx(self, msg) -> tuple[str, capnp._DynamicStructBuilder] | None:
     if msg.gnss_id == Ubx.GnssType.gps:
       return self._parse_gps_ephemeris(msg)
     if msg.gnss_id == Ubx.GnssType.glonass:
       return self._parse_glonass_ephemeris(msg)
     return None
 
-  def _parse_gps_ephemeris(self, msg: Ubx.RxmSfrbx) -> tuple[str, capnp.lib.capnp._DynamicStructBuilder] | None:
+  def _parse_gps_ephemeris(self, msg: Ubx.RxmSfrbx) -> tuple[str, capnp._DynamicStructBuilder] | None:
     # body is list of 10 words; convert to 30-byte subframe (strip parity/padding)
     body = msg.body
     if len(body) != 10:
@@ -304,7 +304,7 @@ class UbloxMsgParser:
       return None
     return ('ubloxGnss', dat)
 
-  def _parse_glonass_ephemeris(self, msg: Ubx.RxmSfrbx) -> tuple[str, capnp.lib.capnp._DynamicStructBuilder] | None:
+  def _parse_glonass_ephemeris(self, msg: Ubx.RxmSfrbx) -> tuple[str, capnp._DynamicStructBuilder] | None:
     # words are 4 bytes each; Glonass parser expects 16 bytes (string)
     body = msg.body
     if len(body) != 4:
@@ -428,7 +428,7 @@ class UbloxMsgParser:
     self.caches.glonass_strings[freq_id].clear()
     return ('ubloxGnss', dat)
 
-  def _gen_rxm_rawx(self, msg: Ubx.RxmRawx) -> tuple[str, capnp.lib.capnp._DynamicStructBuilder]:
+  def _gen_rxm_rawx(self, msg: Ubx.RxmRawx) -> tuple[str, capnp._DynamicStructBuilder]:
     dat = messaging.new_message('ubloxGnss', valid=True)
     mr = dat.ubloxGnss.init('measurementReport')
     mr.rcvTow = msg.rcv_tow
@@ -441,7 +441,7 @@ class UbloxMsgParser:
       mb[i].pseudorange = m.pr_mes
       mb[i].carrierCycles = m.cp_mes
       mb[i].doppler = m.do_mes
-      mb[i].gnssId = int(m.gnss_id.value)
+      mb[i].gnssId = int(m.gnss_id)
       mb[i].glonassFrequencyIndex = m.freq_id
       mb[i].locktime = m.lock_time
       mb[i].cno = m.cno
@@ -462,14 +462,14 @@ class UbloxMsgParser:
     rs.clkReset = _bit(msg.rec_stat, 2)
     return ('ubloxGnss', dat)
 
-  def _gen_nav_sat(self, msg: Ubx.NavSat) -> tuple[str, capnp.lib.capnp._DynamicStructBuilder]:
+  def _gen_nav_sat(self, msg: Ubx.NavSat) -> tuple[str, capnp._DynamicStructBuilder]:
     dat = messaging.new_message('ubloxGnss', valid=True)
     sr = dat.ubloxGnss.init('satReport')
     sr.iTow = msg.itow
     svs = sr.init('svs', msg.num_svs)
     for i, s in enumerate(msg.svs):
       svs[i].svId = s.sv_id
-      svs[i].gnssId = int(s.gnss_id.value)
+      svs[i].gnssId = int(s.gnss_id)
       svs[i].flagsBitfield = s.flags
       svs[i].cno = s.cno
       svs[i].elevationDeg = s.elev
@@ -477,18 +477,18 @@ class UbloxMsgParser:
       svs[i].pseudorangeResidual = s.pr_res * 0.1
     return ('ubloxGnss', dat)
 
-  def _gen_mon_hw(self, msg: Ubx.MonHw) -> tuple[str, capnp.lib.capnp._DynamicStructBuilder]:
+  def _gen_mon_hw(self, msg: Ubx.MonHw) -> tuple[str, capnp._DynamicStructBuilder]:
     dat = messaging.new_message('ubloxGnss', valid=True)
     hw = dat.ubloxGnss.init('hwStatus')
     hw.noisePerMS = msg.noise_per_ms
     hw.flags = msg.flags
     hw.agcCnt = msg.agc_cnt
-    hw.aStatus = int(msg.a_status.value)
-    hw.aPower = int(msg.a_power.value)
+    hw.aStatus = int(msg.a_status)
+    hw.aPower = int(msg.a_power)
     hw.jamInd = msg.jam_ind
     return ('ubloxGnss', dat)
 
-  def _gen_mon_hw2(self, msg: Ubx.MonHw2) -> tuple[str, capnp.lib.capnp._DynamicStructBuilder]:
+  def _gen_mon_hw2(self, msg: Ubx.MonHw2) -> tuple[str, capnp._DynamicStructBuilder]:
     dat = messaging.new_message('ubloxGnss', valid=True)
     hw = dat.ubloxGnss.init('hwStatus2')
     hw.ofsI = msg.ofs_i

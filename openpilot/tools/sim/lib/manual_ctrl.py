@@ -137,8 +137,8 @@ def wheel_poll_thread(q: 'Queue[str]') -> NoReturn:
   print(f'{num_buttons} buttons found: {", ".join(button_name_list)}')
 
   # Enable FF
-  import evdev
-  from evdev import ecodes, InputDevice
+  import evdev  # ty: ignore[import-not-found]  # optional sim dependency
+  from evdev import ecodes, InputDevice  # ty: ignore[import-not-found]  # optional sim dependency
   device = evdev.list_devices()[0]
   evtdev = InputDevice(device)
   val = 24000
