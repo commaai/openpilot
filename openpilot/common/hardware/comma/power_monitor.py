@@ -7,10 +7,11 @@ from collections import deque
 
 from openpilot.common.realtime import Ratekeeper
 from openpilot.common.filter_simple import FirstOrderFilter
+from openpilot.common.hardware.comma.hardware import hwmon
 
 
 def read_power():
-  with open("/sys/bus/i2c/devices/0-0040/hwmon/hwmon1/power1_input") as f:
+  with open(f"{hwmon('ina231')}/power1_input") as f:
     return int(f.read()) / 1e6
 
 def sample_power(seconds=5) -> list[float]:

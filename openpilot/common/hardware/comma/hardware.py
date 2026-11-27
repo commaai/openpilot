@@ -1,4 +1,5 @@
 import configparser
+import glob
 import json
 import os
 import socket
@@ -28,8 +29,24 @@ def affine_irq(val, action):
     print(f"No IRQs found for '{action}'")
     return
 
+  # power save takes the big cores offline; their IRQs stay where the kernel moved them until the cores come back
+  # and the IRQs are affined again
+  online = Path(f"/sys/devices/system/cpu/cpu{val}/online")
+  if online.exists() and online.read_text().strip() == "0":
+    return
+
   for i in irqs:
     sudo_write(str(val), f"/proc/irq/{i}/smp_affinity_list")
+
+_hwmon: dict[str, tuple[Path | None, float]] = {}
+def hwmon(name: str) -> Path | None:
+  """the hwmon device with this name, hwmon numbering depends on probe order. None until its driver has probed, or on
+  devices without it (the comma four has no INA231): the scan costs ~3 ms, so a miss is only scanned again after 10 s"""
+  path, scanned = _hwmon.get(name, (None, -10.))
+  if path is None and time.monotonic() - scanned >= 10.:
+    path = next((Path(p).parent for p in sorted(glob.glob("/sys/class/hwmon/hwmon*/name")) if Path(p).read_text().strip() == name), None)
+    _hwmon[name] = (path, time.monotonic())
+  return path
 
 @lru_cache
 def get_device_type():
@@ -101,11 +118,11 @@ class HardwareComma(HardwareBase):
     return self.get_cmdline()['androidboot.serialno']
 
   def get_voltage(self):
-    with open("/sys/class/hwmon/hwmon1/in1_input") as f:
+    with open(f"{hwmon('ina231')}/in1_input") as f:
       return int(f.read())
 
   def get_current(self):
-    with open("/sys/class/hwmon/hwmon1/curr1_input") as f:
+    with open(f"{hwmon('ina231')}/curr1_input") as f:
       return int(f.read())
 
   def set_ir_power(self, percent: int):
@@ -248,7 +265,7 @@ class HardwareComma(HardwareBase):
     return self.get_modem_state().get('temperatures', [])
 
   def get_current_power_draw(self):
-    return (self.read_param_file("/sys/class/hwmon/hwmon1/power1_input", int) / 1e6)
+    return (self.read_param_file(f"{hwmon('ina231')}/power1_input", int) / 1e6)
 
   def get_som_power_draw(self):
     return (self.read_param_file("/sys/class/power_supply/bms/voltage_now", int) * self.read_param_file("/sys/class/power_supply/bms/current_now", int) / 1e12)
