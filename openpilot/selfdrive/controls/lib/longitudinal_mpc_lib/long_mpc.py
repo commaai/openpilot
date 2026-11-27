@@ -286,11 +286,6 @@ class LongitudinalMpc:
     x_lead_traj = x_lead + np.cumsum(T_DIFFS * v_lead_traj)
     return np.column_stack((x_lead_traj, v_lead_traj))
 
-  @staticmethod
-  def extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau):
-    a_lead_traj = a_lead * np.exp(-a_lead_tau * (T_IDXS**2)/2.)
-    return LongitudinalMpc.integrate_lead(x_lead, v_lead, a_lead_traj)
-
   def process_lead(self, model_lead, radar_lead):
     v_ego = self.x0[1]
     if radar_lead is not None and radar_lead.present:
@@ -314,6 +309,7 @@ class LongitudinalMpc:
     v_lead = np.clip(v_lead, 0.0, 1e8)
     a_lead = np.clip(a_lead, -10., 5.)
 
+    # radar only lead traj estimate
     a_radar = a_lead * np.exp(-a_lead_tau * (T_IDXS**2) / 2.)
     radar_xv = self.integrate_lead(x_start, v_lead, a_radar)
 
