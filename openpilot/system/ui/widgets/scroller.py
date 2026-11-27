@@ -348,16 +348,15 @@ class _Scroller(Widget):
 
     rl.end_scissor_mode()
 
-    # Draw edge shadows on top of scroller content
+    # Draw edge shadows on top of scroller content, snapping scrollers fade them in over 60 px from an item
     if self._edge_shadows:
-      rl.draw_rectangle_gradient_h(int(self._rect.x), int(self._rect.y),
-                                   EDGE_SHADOW_WIDTH, int(self._rect.height),
-                                   rl.Color(0, 0, 0, 204), rl.BLANK)
-
+      alpha = 1.0
+      if self._snap_items and self._visible_items:
+        alpha = min(1.0, min(abs(item.rect.x + (item.rect.width - self._rect.width) / 2 - self._rect.x) for item in self._visible_items) / 60)
+      color = rl.Color(0, 0, 0, int(204 * alpha))
+      rl.draw_rectangle_gradient_h(int(self._rect.x), int(self._rect.y), EDGE_SHADOW_WIDTH, int(self._rect.height), color, rl.BLANK)
       right_x = int(self._rect.x + self._rect.width - EDGE_SHADOW_WIDTH)
-      rl.draw_rectangle_gradient_h(right_x, int(self._rect.y),
-                                   EDGE_SHADOW_WIDTH, int(self._rect.height),
-                                   rl.BLANK, rl.Color(0, 0, 0, 204))
+      rl.draw_rectangle_gradient_h(right_x, int(self._rect.y), EDGE_SHADOW_WIDTH, int(self._rect.height), rl.BLANK, color)
 
     # Draw scroll indicator on top of edge shadows
     if self._show_scroll_indicator and len(self._visible_items) > 0:
