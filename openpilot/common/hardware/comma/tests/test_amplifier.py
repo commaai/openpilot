@@ -26,7 +26,7 @@ class TestAmplifier(OpenpilotTestCase):
 
   def _check_for_i2c_errors(self, expected):
     dmesg = subprocess.check_output("dmesg", shell=True, encoding='utf8')
-    i2c_lines = [l for l in dmesg.strip().splitlines() if 'i2c_geni a88000.i2c' in l]
+    i2c_lines = [l for l in dmesg.strip().splitlines() if 'a88000.i2c' in l]
     i2c_str = '\n'.join(i2c_lines)
 
     if not expected:
