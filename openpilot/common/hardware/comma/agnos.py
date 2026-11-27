@@ -16,23 +16,48 @@ AGNOS_MANIFEST_FILE = "openpilot/system/hardware/comma/agnos.json"
 
 
 class StreamingDecompressor:
-  def __init__(self, url: str) -> None:
-    self.buf = b""
+  # give up after this long without receiving any data
+  STALL_TIMEOUT = 5 * 60
 
-    self.req = requests.get(url, stream=True, headers={'Accept-Encoding': 'identity'}, timeout=60)
-    self.it = self.req.iter_content(chunk_size=1024 * 1024)
+  def __init__(self, url: str) -> None:
+    self.url = url
+    self.buf = b""
+    self.pos = 0  # compressed bytes received, to resume from after a dropped connection
+    self.it = None
     self.decompressor = lzma.LZMADecompressor(format=lzma.FORMAT_AUTO)
     self.eof = False
     self.sha256 = hashlib.sha256()
 
+  def _next_compressed(self) -> bytes:
+    t = time.monotonic()
+    backoff = 1
+    while True:
+      try:
+        if self.it is None:
+          headers = {'Accept-Encoding': 'identity'}
+          if self.pos:
+            headers['Range'] = f'bytes={self.pos}-'
+          req = requests.get(self.url, stream=True, headers=headers, timeout=60)
+          req.raise_for_status()
+          if self.pos and req.status_code != 206:
+            raise Exception(f"Range request not supported ({req.status_code})")
+          self.it = req.iter_content(chunk_size=1024 * 1024)
+        chunk = next(self.it, b'')
+        self.pos += len(chunk)
+        return chunk
+      except requests.exceptions.RequestException as e:
+        self.it = None
+        client_error = e.response is not None and e.response.status_code < 500
+        if client_error or time.monotonic() - t > self.STALL_TIMEOUT:
+          raise
+        time.sleep(backoff)
+        backoff = min(backoff * 2, 10)
+
   def read(self, length: int) -> bytes:
     while len(self.buf) < length and not self.eof:
       if self.decompressor.needs_input:
-        self.req.raise_for_status()
-
-        try:
-          compressed = next(self.it)
-        except StopIteration:
+        compressed = self._next_compressed()
+        if not compressed:
           self.eof = True
           break
       else:
