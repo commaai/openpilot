@@ -58,11 +58,10 @@ MIN_X_LEAD_FACTOR = 0.5
 
 # model/radar fusion
 LEAD_T_IDXS_MODEL = np.array(ModelConstants.LEAD_T_IDXS)
-LEAD_ACCEL_RESIDUAL_TAU = 2.0
-LEAD_ACCEL_RESIDUAL_W = np.exp(-T_IDXS / LEAD_ACCEL_RESIDUAL_TAU)
-LEAD_ACCEL_MODEL_MAX = 2.0
-LEAD_FALLBACK_A_REQ_MIN = 2.5
-LEAD_FALLBACK_A_REQ_RANGE = 1.0
+RADAR_RESIDUAL_DECAY_T = 2.0
+RADAR_RESIDUAL_W = np.exp(-T_IDXS / RADAR_RESIDUAL_DECAY_T)
+CLIP_MODEL_LEAD_ACCEL = 2.0
+LEAD_FALLBACK_RANGE = [2.5, 3.5]
 
 def get_jerk_factor(personality=log.LongitudinalPersonality.standard):
   if personality==log.LongitudinalPersonality.relaxed:
@@ -320,14 +319,14 @@ class LongitudinalMpc:
 
     has_model = model_lead is not None and len(model_lead.a) == len(LEAD_T_IDXS_MODEL)
     if has_model and (model_prob > 0.5):
-      a_model = np.interp(T_IDXS, LEAD_T_IDXS_MODEL, np.minimum(model_lead.a, LEAD_ACCEL_MODEL_MAX))
-      a_lead_traj = np.minimum(a_model + (a_lead - a_model[0]) * LEAD_ACCEL_RESIDUAL_W, np.maximum(a_radar, LEAD_ACCEL_MODEL_MAX))
+      a_model = np.interp(T_IDXS, LEAD_T_IDXS_MODEL, np.minimum(model_lead.a, CLIP_MODEL_LEAD_ACCEL))
+      a_lead_traj = np.minimum(a_model + (a_lead - a_model[0]) * RADAR_RESIDUAL_W, np.maximum(a_radar, CLIP_MODEL_LEAD_ACCEL))
       lead_xv = self.integrate_lead(x_start, v_lead, a_lead_traj)
 
       # Smoothly fall back to the more pessimistic radar trajectory when radar requires hard braking
       x_obs_radar = radar_xv[:, 0] + radar_xv[:, 1]**2 / (2. * (-ACCEL_MIN))
       a_req = float(np.max(v_ego**2 / (2. * np.maximum(x_obs_radar - STOP_DISTANCE, 0.5))))
-      w = float(np.clip((a_req - LEAD_FALLBACK_A_REQ_MIN) / LEAD_FALLBACK_A_REQ_RANGE, 0.0, 1.0))
+      w = float(np.interp(a_req, LEAD_FALLBACK_RANGE, [0.0, 1.0]))
       if w > 0.0:
         x_obs_l = lead_xv[:, 0] + get_stopped_equivalence_factor(lead_xv[:, 1])
         x_obs_r = radar_xv[:, 0] + get_stopped_equivalence_factor(radar_xv[:, 1])
