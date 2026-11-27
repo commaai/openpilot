@@ -1,8 +1,15 @@
+from openpilot.cereal import log
 from openpilot.common.test import OpenpilotTestCase
 from openpilot.common.parameterized import parameterized
 
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import STOP_DISTANCE
 from openpilot.selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
+
+PERSONALITIES = (
+  log.LongitudinalPersonality.aggressive,
+  log.LongitudinalPersonality.standard,
+  log.LongitudinalPersonality.relaxed,
+)
 
 
 # TODO: make new FCW tests
@@ -127,84 +134,82 @@ def create_maneuvers(kwargs):
   ]
   if not kwargs['force_decel']:
     # controls relies on planner commanding to move for stock-ACC resume spamming
-    maneuvers.extend([
+    maneuvers.append(Maneuver(
+      "resume from a stop",
+      duration=20.,
+      initial_speed=0.,
+      lead_relevancy=True,
+      initial_distance_lead=STOP_DISTANCE,
+      speed_lead_values=[0., 0., 7.],
+      breakpoints=[1., 10., 15.],
+      ensure_start=True,
+      **kwargs,
+    ))
+  return maneuvers
+
+
+def create_adv_maneuvers(kwargs):
+  return [
+    *(
       Maneuver(
-        "resume from a stop",
+        f"approaching stopped lead that doesn't go ({v0:g}m/s from {d0:g}m), model thinks +{model_a:g}m/s^2",
+        duration=dur,
+        initial_speed=v0,
+        lead_relevancy=True,
+        initial_distance_lead=d0,
+        speed_lead_values=[0., 0.],
+        breakpoints=[0., dur],
+        model_speed_lead_values=[0., model_a * (dur + 15.)],
+        model_breakpoints=[0., dur + 15.],
+        **kwargs,
+      )
+      for v0, d0, dur in ((30., 200., 25.), (15., 70., 20.), (8., 25., 18.))
+      for model_a in (1., 2., 4.)
+    ),
+    *(
+      Maneuver(
+        f"stopped behind a lead that doesn't go ({d0:g}m), model thinks +{model_a:g}m/s^2",
         duration=20.,
         initial_speed=0.,
         lead_relevancy=True,
-        initial_distance_lead=STOP_DISTANCE,
-        speed_lead_values=[0., 0., 7.],
-        breakpoints=[1., 10., 15.],
-        ensure_start=True,
-        **kwargs,
-      ),
-      Maneuver(
-        "adversarial: approach stopped car at 20m/s, optimistic model (+2m/s^2)",
-        duration=20.,
-        initial_speed=20.,
-        lead_relevancy=True,
-        initial_distance_lead=90.,
+        initial_distance_lead=d0,
         speed_lead_values=[0., 0.],
         breakpoints=[0., 20.],
-        model_speed_lead_values=[0., 60.],
-        model_breakpoints=[0., 30.],
+        model_speed_lead_values=[0., model_a * 35.],
+        model_breakpoints=[0., 35.],
         **kwargs,
-      ),
+      )
+      for d0 in (STOP_DISTANCE, 4.)
+      for model_a in (1., 2., 4.)
+    ),
+    *(
       Maneuver(
-        "adversarial: stay stopped behind lead, model predicts acceleration (+2m/s^2)",
-        duration=15.,
-        initial_speed=0.,
+        f"steady following ({v0:g}m/s) then lead brakes hard, lead -{decel:g}m/s^2 & model thinks 0m/s^2",
+        duration=15. + v0 / decel + 10.,
+        initial_speed=v0,
         lead_relevancy=True,
-        initial_distance_lead=STOP_DISTANCE,
-        speed_lead_values=[0., 0.],
-        breakpoints=[0., 15.],
-        model_speed_lead_values=[0., 50.],
-        model_breakpoints=[0., 25.],
+        initial_distance_lead=d0,
+        speed_lead_values=[v0, v0, 0.],
+        breakpoints=[0., 15., 15. + v0 / decel],
+        model_speed_lead_values=[v0, v0, v0],
+        model_breakpoints=[0., 15., 15. + v0 / decel + 25.],
         **kwargs,
-      ),
-      Maneuver(
-        "adversarial: hard lead decel (3.5m/s^2), extremely optimistic model (+5m/s^2)",
-        duration=35.,
-        initial_speed=20.,
-        lead_relevancy=True,
-        initial_distance_lead=35.,
-        speed_lead_values=[20., 20., 0.],
-        breakpoints=[0., 15., 20.71],
-        model_speed_lead_values=[20., 20., 170.],
-        model_breakpoints=[0., 15., 45.],
-        **kwargs,
-      ),
-      Maneuver(
-        "adversarial: hard lead decel (3m/s^2), model predicts constant speed",
-        duration=35.,
-        initial_speed=20.,
-        lead_relevancy=True,
-        initial_distance_lead=35.,
-        speed_lead_values=[20., 20., 0.],
-        breakpoints=[0., 15., 21.66],
-        model_speed_lead_values=[20., 20., 20.],
-        **kwargs,
-      ),
-      Maneuver(
-        "adversarial: hard lead decel (3m/s^2), optimistic model (+2m/s^2)",
-        duration=35.,
-        initial_speed=20.,
-        lead_relevancy=True,
-        initial_distance_lead=35.,
-        speed_lead_values=[20., 20., 0.],
-        breakpoints=[0., 15., 21.66],
-        model_speed_lead_values=[20., 20., 80.],
-        model_breakpoints=[0., 15., 45.],
-        **kwargs,
-      ),
-    ])
-  return maneuvers
+      )
+      for v0, d0 in ((10., 20.), (20., 35.), (30., 50.))
+      for decel in (2., 3., 3.5)
+    ),
+  ]
 
 
 class TestLongitudinalControl(OpenpilotTestCase):
   @parameterized.expand([m for force_decel in (True, False) for m in create_maneuvers({"force_decel": force_decel})],
                         ids=lambda m: f"{m.title}_force_decel_{m.force_decel}")
   def test_maneuver(self, maneuver):
+    valid, _ = maneuver.evaluate()
+    assert valid
+
+  @parameterized.expand([m for p in PERSONALITIES for m in create_adv_maneuvers({"personality": p})],
+                        ids=lambda m: f"{m.title}_personality_{m.personality}")
+  def test_adv_maneuver(self, maneuver):
     valid, _ = maneuver.evaluate()
     assert valid
