@@ -9,7 +9,8 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import SmallCircleIconButton
 from openpilot.system.ui.widgets.scroller import NavScroller, Scroller
 from openpilot.system.ui.widgets.nav_widget import NavWidget
-from openpilot.selfdrive.ui.mici.widgets.button import GreyBigButton, BigPillButton
+from openpilot.selfdrive.ui.mici.widgets.button import BigButton, GreyBigButton, BigPillButton
+from openpilot.selfdrive.ui.mici.layouts.settings.driving import DrivingLayoutMici
 from openpilot.system.ui.widgets.label import gui_label
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.common.version import terms_version, training_version
@@ -246,7 +247,7 @@ class TrainingGuideAttentionNotice(Scroller):
     continue_button.set_click_callback(continue_callback)
 
     self._scroller.add_widgets([
-      GreyBigButton("what is openpilot?", "scroll to continue",
+      GreyBigButton("welcome to openpilot", "scroll to continue",
                     gui_app.texture("icons_mici/setup/green_info.png", 64, 64)),
       GreyBigButton("", "1. openpilot is a driver assistance system."),
       GreyBigButton("", "2. You must pay attention at all times."),
@@ -256,19 +257,91 @@ class TrainingGuideAttentionNotice(Scroller):
     ])
 
 
+class TrainingGuideEngage(NavScroller):
+  def __init__(self, continue_callback: Callable[[], None]):
+    super().__init__()
+
+    continue_button = BigPillButton("next")
+    continue_button.set_click_callback(continue_callback)
+
+    self._scroller.add_widgets([
+      GreyBigButton("engaging\nopenpilot", "scroll to continue",
+                    gui_app.texture("icons_mici/wheel.png", 64, 64)),
+      GreyBigButton("", "Engage with your car's cruise control buttons. The wheel icon turns green.",
+                    gui_app.texture("icons_mici/offroad_alerts/green_wheel.png", 64, 64)),
+      GreyBigButton("", "Steering overrides only steering. Pressing the gas overrides only speed."),
+      GreyBigButton("", "Press the brake or your car's cancel button to disengage."),
+      continue_button,
+    ])
+
+
+class TrainingGuideLaneChange(NavScroller):
+  def __init__(self, continue_callback: Callable[[], None]):
+    super().__init__()
+
+    continue_button = BigPillButton("next")
+    continue_button.set_click_callback(continue_callback)
+
+    self._scroller.add_widgets([
+      GreyBigButton("changing\nlanes", "scroll to continue",
+                    gui_app.texture("icons_mici/onroad/turn_signal_left.png", 69, 64, flip_x=True)),
+      GreyBigButton("", "Above 20 mph (32 km/h), signal and nudge the wheel to change lanes."),
+      GreyBigButton("", "Check the lane is clear. Once started, openpilot won't stop for other cars.",
+                    gui_app.texture("icons_mici/onroad/blind_spot_left.png", 64, 64)),
+      continue_button,
+    ])
+
+
+class TrainingGuideMaxSpeed(NavScroller):
+  def __init__(self, continue_callback: Callable[[], None]):
+    super().__init__()
+
+    self._driving_panel: DrivingLayoutMici | None = None
+
+    # driving settings depend on the car, so only link to them once the car is known
+    has_car = lambda: ui_state.CP is not None and ui_state.has_longitudinal_control  # noqa: E731
+    driving_button = BigButton("driving settings", "", gui_app.texture("icons_mici/wheel.png", 64, 64))
+    driving_button.set_click_callback(self._show_driving_settings)
+    driving_button.set_visible(has_car)
+
+    continue_button = BigPillButton("next")
+    continue_button.set_click_callback(continue_callback)
+
+    self._scroller.add_widgets([
+      GreyBigButton("openpilot sets\nyour speed", "scroll to continue",
+                    gui_app.texture("icons_mici/longitudinal/speed_dial.png", 75, 64)),
+      GreyBigButton("", "On supported cars, openpilot picks your speed. It can stop for red lights and stop signs."),
+      GreyBigButton("", "Your cruise speed is the max. Change it with your cruise control buttons."),
+      driving_button,
+      continue_button,
+    ])
+
+  def _show_driving_settings(self):
+    if self._driving_panel is None:
+      self._driving_panel = DrivingLayoutMici()
+    gui_app.push_widget(self._driving_panel)
+
+
 class TrainingGuide(NavWidget):
   def __init__(self, completed_callback: Callable[[], None]):
     super().__init__()
 
     self._steps = [
       TrainingGuideAttentionNotice(continue_callback=lambda: gui_app.push_widget(self._steps[1])),
-      TrainingGuidePreDMTutorial(continue_callback=lambda: gui_app.push_widget(self._steps[2])),
-      TrainingGuideDMTutorial(continue_callback=lambda: gui_app.push_widget(self._steps[3])),
+      TrainingGuideEngage(continue_callback=lambda: gui_app.push_widget(self._steps[2])),
+      TrainingGuideMaxSpeed(continue_callback=lambda: gui_app.push_widget(self._steps[3])),
+      TrainingGuideLaneChange(continue_callback=lambda: gui_app.push_widget(self._steps[4])),
+      TrainingGuidePreDMTutorial(continue_callback=lambda: gui_app.push_widget(self._steps[5])),
+      TrainingGuideDMTutorial(continue_callback=lambda: gui_app.push_widget(self._steps[6])),
       TrainingGuideRecordFront(continue_callback=completed_callback),
     ]
 
     self._child(self._steps[0])
     self._steps[0].set_enabled(lambda: self.enabled and not self.is_dismissing)  # for nav stack
+
+  @property
+  def first_step(self) -> Widget:
+    return self._steps[0]
 
   def _render(self, _):
     self._steps[0].render(self._rect)
@@ -316,6 +389,9 @@ class OnboardingWindow(Widget):
     self._training_guide = TrainingGuide(completed_callback=self._on_completed_training)
     self._training_guide.set_enabled(lambda: self.enabled)  # for nav stack
 
+    # skip terms if they're already accepted, e.g. when only the training guide was updated
+    self._first_page = self._training_guide.first_step if self._accepted_terms else self._terms
+
   def _on_uninstall(self):
     ui_state.params.put_bool("DoUninstall", True, block=True)
 
@@ -348,4 +424,4 @@ class OnboardingWindow(Widget):
 
   def _render(self, _):
     rl.draw_rectangle_rec(self._rect, rl.BLACK)
-    self._terms.render(self._rect)
+    self._first_page.render(self._rect)
