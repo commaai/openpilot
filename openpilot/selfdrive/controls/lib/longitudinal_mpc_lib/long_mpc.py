@@ -314,7 +314,7 @@ class LongitudinalMpc:
     radar_xv = self.integrate_lead(x_start, v_lead, a_radar)
 
     if model_prob > 0.5:
-      a_model = np.interp(T_IDXS, LEAD_T_IDXS_MODEL, np.minimum(model_lead.a, CLIP_MODEL_LEAD_ACCEL))
+      a_model = np.interp(T_IDXS, LEAD_T_IDXS_MODEL, np.clip(model_lead.a, -10., CLIP_MODEL_LEAD_ACCEL))
       a_lead_traj = np.minimum(a_model + (a_lead - a_model[0]) * RADAR_RESIDUAL_W, np.maximum(a_radar, CLIP_MODEL_LEAD_ACCEL))
       lead_xv = self.integrate_lead(x_start, v_lead, a_lead_traj)
 
