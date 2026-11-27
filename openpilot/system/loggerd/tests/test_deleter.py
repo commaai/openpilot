@@ -78,3 +78,78 @@ class TestDeleter(UploaderTestCase):
 
     assert deleter.deleter_step() == (True, None)
     assert f_path.exists(), "File deleted when locked"
+    assert self.params.get(deleter.CLEANUP_ALERT) is None
+
+  def test_cleanup_alert_on_failed_deletion(self, monkeypatch, mocker):
+    failed = self.make_file_with_data(self.seg_format.format(0), self.f_type)
+    deletable = self.make_file_with_data(self.seg_format.format(1), self.f_type)
+    original = deleter.shutil.rmtree
+    alerts = mocker.patch.object(deleter, "set_offroad_alert")
+    monkeypatch.setattr(deleter, "_cleanup_alert_shown", False)
+
+    def rmtree(path):
+      if path == str(failed.parent):
+        raise PermissionError("cannot delete directory")
+      return original(path)
+
+    monkeypatch.setattr(deleter.shutil, "rmtree", rmtree)
+    assert deleter.deleter_step() == (True, str(deletable.parent))
+    assert failed.exists()
+    assert not deletable.exists()
+    alerts.assert_called_once_with(deleter.CLEANUP_ALERT, True)
+
+  def test_preservation_inspected_only_once(self, monkeypatch, mocker):
+    f_path = self.make_file_with_data(self.seg_dir, self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE)
+    original = deleter.getxattr
+    getxattr = mocker.Mock(side_effect=[original(str(f_path.parent), deleter.PRESERVE_ATTR_NAME), PermissionError("second read failed")])
+    monkeypatch.setattr(deleter, "getxattr", getxattr)
+    assert deleter.deleter_step() == (True, str(f_path.parent))
+    assert getxattr.call_count == 1
+
+  def test_unreadable_preservation_is_skipped(self, monkeypatch, mocker):
+    unreadable = self.make_file_with_data(self.seg_format.format(0), self.f_type, preserve_xattr=deleter.PRESERVE_ATTR_VALUE)
+    deletable = self.make_file_with_data(self.seg_format.format(1), self.f_type)
+    original = deleter.getxattr
+    monkeypatch.setattr(deleter, "_cleanup_alert_shown", False)
+
+    def getxattr(path, attr):
+      if path == str(unreadable.parent):
+        raise PermissionError("cannot inspect xattr")
+      return original(path, attr)
+
+    monkeypatch.setattr(deleter, "getxattr", getxattr)
+    assert deleter.deleter_step() == (True, str(deletable.parent))
+    assert unreadable.exists()
+    assert not deletable.exists()
+    assert self.params.get(deleter.CLEANUP_ALERT)["severity"] == 1
+
+    # An unknown preservation status must not become a fallback deletion candidate.
+    assert deleter.deleter_step() == (True, None)
+    assert unreadable.exists()
+    monkeypatch.setattr(deleter, "getxattr", original)
+    assert deleter.deleter_step() == (True, str(unreadable.parent))
+    assert self.params.get(deleter.CLEANUP_ALERT) is not None  # Low storage persists.
+
+    self.fake_stats = Stats(f_bavail=10 * 1024 * 1024 * 1024 / 4096, f_blocks=10 * 1024 * 1024, f_frsize=4096)
+    assert deleter.deleter_step() == (False, None)
+    assert self.params.get(deleter.CLEANUP_ALERT) is None
+
+  def test_unreadable_directory_is_skipped(self, monkeypatch, mocker):
+    unreadable = self.make_file_with_data(self.seg_format.format(0), self.f_type)
+    deletable = self.make_file_with_data(self.seg_format.format(1), self.f_type)
+    original = deleter.os.listdir
+    log_exception = mocker.patch.object(deleter.cloudlog, "exception")
+
+    def listdir(path):
+      if path == str(unreadable.parent):
+        raise PermissionError("cannot inspect directory")
+      return original(path)
+
+    monkeypatch.setattr(deleter.os, "listdir", listdir)
+    assert deleter.deleter_step() == (True, str(deletable.parent))
+    assert unreadable.exists()
+    assert not deletable.exists()
+    log_exception.assert_called_once_with(f"issue deleting {unreadable.parent}")
+
+    assert deleter.deleter_step() == (True, None)
+    assert unreadable.exists()
