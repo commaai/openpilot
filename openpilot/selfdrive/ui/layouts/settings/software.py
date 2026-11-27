@@ -52,7 +52,7 @@ class SoftwareLayout(Widget):
   def __init__(self):
     super().__init__()
 
-    self._onroad_label = ListItem(lambda: tr("Updates are only downloaded while the car is off."))
+    self._onroad_label = ListItem(lambda: tr("Updates are only downloaded while the car is off."), action_item=None)
     self._version_item = text_item(lambda: tr("Current Version"), ui_state.params.get("UpdaterCurrentDescription") or "")
     self._download_btn = button_item(lambda: tr("Download"), lambda: tr("CHECK"), callback=self._on_download_update)
 

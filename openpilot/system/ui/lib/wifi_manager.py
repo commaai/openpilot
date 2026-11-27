@@ -156,6 +156,10 @@ class WifiState:
 
 
 class WifiManager:
+  # unset if the system D-Bus is unavailable, in which case _exit is set and nothing runs
+  _router_main: DBusRouter  # used by scanner / general method calls
+  _conn_monitor: DBusConnection  # used by state monitor thread
+
   def __init__(self):
     self._networks: list[Network] = []  # an unsorted list of available Networks. a Network can be comprised of multiple APs
     self._active = True  # used to not run when not in settings
@@ -163,15 +167,13 @@ class WifiManager:
 
     # DBus connections
     try:
-      self._router_main = DBusRouter(open_dbus_connection_threading(bus="SYSTEM"))  # used by scanner / general method calls
+      self._router_main = DBusRouter(open_dbus_connection_threading(bus="SYSTEM"))
       _wrap_router(self._router_main)
-      self._conn_monitor = open_dbus_connection_blocking(bus="SYSTEM")  # used by state monitor thread
+      self._conn_monitor = open_dbus_connection_blocking(bus="SYSTEM")
       self._nm = DBusAddress(NM_PATH, bus_name=NM, interface=NM_IFACE)
     except Exception:
       # missing, or too slow to answer: AGNOS runs D-Bus in the background, which can be starved or out of memory
       cloudlog.exception("Failed to connect to system D-Bus")
-      self._router_main = None
-      self._conn_monitor = None
       self._exit = True
 
     # Store wifi device path
@@ -961,8 +963,6 @@ class WifiManager:
       if self._state_thread.is_alive():
         self._state_thread.join()
 
-      if self._router_main is not None:
-        self._router_main.close()
-        self._router_main.conn.close()
-      if self._conn_monitor is not None:
-        self._conn_monitor.close()
+      self._router_main.close()
+      self._router_main.conn.close()
+      self._conn_monitor.close()

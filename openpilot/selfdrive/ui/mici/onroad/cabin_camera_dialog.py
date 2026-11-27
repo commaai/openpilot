@@ -31,13 +31,11 @@ class BaseCabinCameraDialog(Widget):
     self._pm: messaging.PubMaster | None = None
 
     # Load eye icons
-    self._eye_fill_texture = None
-    self._eye_orange_texture = None
     self._eye_size = 74
-    self._glasses_texture = None
     self._glasses_size = 171
-
-    self._load_eye_textures()
+    self._eye_fill_texture = gui_app.texture("icons_mici/onroad/eye_fill.png", self._eye_size, self._eye_size)
+    self._eye_orange_texture = gui_app.texture("icons_mici/onroad/eye_orange.png", self._eye_size, self._eye_size)
+    self._glasses_texture = gui_app.texture("icons_mici/onroad/glasses.png", self._glasses_size, self._glasses_size)
 
   def show_event(self):
     super().show_event()
@@ -148,15 +146,6 @@ class BaseCabinCameraDialog(Widget):
               alignment=alignment,
               alignment_vertical=TextAlignmentVertical.BOTTOM,
               color=rl.Color(255, 255, 255, int(255 * 0.9)))
-
-  def _load_eye_textures(self):
-    """Lazy load eye textures"""
-    if self._eye_fill_texture is None:
-      self._eye_fill_texture = gui_app.texture("icons_mici/onroad/eye_fill.png", self._eye_size, self._eye_size)
-    if self._eye_orange_texture is None:
-      self._eye_orange_texture = gui_app.texture("icons_mici/onroad/eye_orange.png", self._eye_size, self._eye_size)
-    if self._glasses_texture is None:
-      self._glasses_texture = gui_app.texture("icons_mici/onroad/glasses.png", self._glasses_size, self._glasses_size)
 
   def _draw_face_detection(self, rect: rl.Rectangle):
     dm_state = ui_state.sm["driverMonitoringState"]

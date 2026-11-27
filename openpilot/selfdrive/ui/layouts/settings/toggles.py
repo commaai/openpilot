@@ -1,7 +1,7 @@
 from openpilot.cereal import log
 from openpilot.common.params import Params, UnknownKeyName
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.list_view import ListItem, multiple_button_item, toggle_item
+from openpilot.system.ui.widgets.list_view import ListItem, ToggleAction, multiple_button_item, toggle_item
 from openpilot.system.ui.widgets.scroller_tici import Scroller
 from openpilot.system.ui.lib.multilang import tr, tr_noop
 from openpilot.selfdrive.ui.ui_state import ui_state
@@ -93,7 +93,8 @@ class TogglesLayout(Widget):
       icon="speed_limit.png"
     )
 
-    self._toggles = {}
+    self._toggles: dict[str, ListItem[ToggleAction]] = {}
+    items: list[Widget] = []
     self._initial_cruise_speed = ListItem(
       title=lambda: tr("Initial Max Speed"),
       description=lambda: tr("Max speed when engaging openpilot. If you are already driving faster, your current speed is used. " +
@@ -129,13 +130,13 @@ class TogglesLayout(Widget):
         self._locked_toggles.add(param)
 
       self._toggles[param] = toggle
+      items.append(toggle)
 
       # insert longitudinal personality after NDOG toggle
       if param == "DisengageOnAccelerator":
-        self._toggles["LongitudinalPersonality"] = self._long_personality_setting
-        self._toggles["InitialCruiseSpeedKph"] = self._initial_cruise_speed
+        items += [self._long_personality_setting, self._initial_cruise_speed]
 
-    self._scroller = Scroller(list(self._toggles.values()), line_separator=True, spacing=0)
+    self._scroller = Scroller(items, line_separator=True, spacing=0)
 
     ui_state.add_engaged_transition_callback(self._update_toggles)
 

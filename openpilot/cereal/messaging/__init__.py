@@ -7,7 +7,7 @@ import os
 import capnp
 import time
 
-from typing import Union
+from typing import Any, Union
 
 from openpilot.cereal import log
 from openpilot.cereal.services import SERVICE_LIST
@@ -59,12 +59,12 @@ def sub_sock(endpoint: str, poller: Poller | None = None,
                        timeout=timeout, segment_size=segment_size)
 
 
-def log_from_bytes(dat: bytes, struct: capnp.lib.capnp._StructModule = log.Event) -> capnp.lib.capnp._DynamicStructReader:
+def log_from_bytes(dat: bytes, struct: capnp._StructModule = log.Event) -> capnp._DynamicStructReader:
   with struct.from_bytes(dat, traversal_limit_in_words=NO_TRAVERSAL_LIMIT) as msg:
     return msg
 
 
-def new_message(service: str | None, size: int | None = None, **kwargs) -> capnp.lib.capnp._DynamicStructBuilder:
+def new_message(service: str | None, size: int | None = None, **kwargs) -> capnp._DynamicStructBuilder:
   args = {
     'valid': False,
     'logMonoTime': int(time.monotonic() * 1e9),
@@ -79,14 +79,14 @@ def new_message(service: str | None, size: int | None = None, **kwargs) -> capnp
   return dat
 
 
-def drain_sock(sock: SubSocket, wait_for_one: bool = False) -> list[capnp.lib.capnp._DynamicStructReader]:
+def drain_sock(sock: SubSocket, wait_for_one: bool = False) -> list[capnp._DynamicStructReader]:
   """Receive all message currently available on the queue"""
   msgs = drain_sock_raw(sock, wait_for_one=wait_for_one)
   return [log_from_bytes(m) for m in msgs]
 
 
 # TODO: print when we drop packets?
-def recv_sock(sock: SubSocket, wait: bool = False) -> capnp.lib.capnp._DynamicStructReader | None:
+def recv_sock(sock: SubSocket, wait: bool = False) -> capnp._DynamicStructReader | None:
   """Same as drain sock, but only returns latest message. Consider using conflate instead."""
   dat = None
 
@@ -107,21 +107,21 @@ def recv_sock(sock: SubSocket, wait: bool = False) -> capnp.lib.capnp._DynamicSt
   return dat
 
 
-def recv_one(sock: SubSocket) -> capnp.lib.capnp._DynamicStructReader | None:
+def recv_one(sock: SubSocket) -> capnp._DynamicStructReader | None:
   dat = sock.receive()
   if dat is not None:
     dat = log_from_bytes(dat)
   return dat
 
 
-def recv_one_or_none(sock: SubSocket) -> capnp.lib.capnp._DynamicStructReader | None:
+def recv_one_or_none(sock: SubSocket) -> capnp._DynamicStructReader | None:
   dat = sock.receive(non_blocking=True)
   if dat is not None:
     dat = log_from_bytes(dat)
   return dat
 
 
-def recv_one_retry(sock: SubSocket) -> capnp.lib.capnp._DynamicStructReader:
+def recv_one_retry(sock: SubSocket) -> capnp._DynamicStructReader:
   """Keep receiving until we get a message"""
   while True:
     dat = sock.receive()
@@ -183,7 +183,7 @@ class SubMaster:
     self.recv_time = dict.fromkeys(services, 0.0)
     self.recv_frame = dict.fromkeys(services, 0)
     self.sock = {}
-    self.data = {}
+    self.data: dict[str, Any] = {}  # a service is a struct or a list
     self.logMonoTime = dict.fromkeys(services, 0)
 
     # zero-frequency / on-demand services are always alive and presumed valid; all others must pass checks
@@ -214,13 +214,13 @@ class SubMaster:
 
       try:
         data = new_message(s)
-      except capnp.lib.capnp.KjException:
+      except capnp.KjException:
         data = new_message(s, 0) # lists
 
       self.data[s] = getattr(data.as_reader(), s)
       self.freq_tracker[s] = FrequencyTracker(SERVICE_LIST[s].frequency, self.update_freq, s == poll)
 
-  def __getitem__(self, s: str) -> capnp.lib.capnp._DynamicStructReader:
+  def __getitem__(self, s: str) -> Any:
     return self.data[s]
 
   def _check_avg_freq(self, s: str) -> bool:
@@ -236,7 +236,7 @@ class SubMaster:
       msgs.append(recv_one_or_none(self.sock[s]))
     self.update_msgs(time.monotonic(), msgs)
 
-  def update_msgs(self, cur_time: float, msgs: list[capnp.lib.capnp._DynamicStructReader]) -> None:
+  def update_msgs(self, cur_time: float, msgs: list[capnp._DynamicStructReader | None]) -> None:
     self.frame += 1
     self.updated = dict.fromkeys(self.services, False)
     for msg in msgs:
@@ -278,7 +278,7 @@ class PubMaster:
     for s in services:
       self.sock[s] = pub_sock(s)
 
-  def send(self, s: str, dat: Union[bytes, capnp.lib.capnp._DynamicStructBuilder]) -> None:
+  def send(self, s: str, dat: Union[bytes, capnp._DynamicStructBuilder]) -> None:
     if not isinstance(dat, bytes):
       dat = dat.to_bytes()
     self.sock[s].send(dat)

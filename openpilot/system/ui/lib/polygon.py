@@ -65,5 +65,5 @@ def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray,
   rl.cpu.target_raylib()
   if gradient is not None:
     rl.cpu.polygon(pts, *_gradient_ramp(gradient, origin_rect))
-  else:
+  elif color is not None:
     rl.cpu.polygon(pts, np.array([_pack(color)], np.uint32))

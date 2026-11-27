@@ -251,6 +251,7 @@ class TestLoggerd(OpenpilotTestCase):
     # next one should increment by one
     bl1 = re.match(RE.LOG_ID_V2, bootlog_path.name)
     bl2 = re.match(RE.LOG_ID_V2, self._gen_bootlog().name)
+    assert bl1 is not None and bl2 is not None
     assert bl1.group('uid') != bl2.group('uid')
     assert int(bl1.group('count')) == 0 and int(bl2.group('count')) == 1
 

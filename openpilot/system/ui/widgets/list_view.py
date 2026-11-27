@@ -270,10 +270,9 @@ class MultipleButtonAction(ItemAction):
           self.callback(i)
 
 
-class ListItem(Widget):
+class ListItem[A: ItemAction | None](Widget):
   def __init__(self, title: str | Callable[[], str] = "", icon: str | None = None, description: str | Callable[[], str] | None = None,
-               description_visible: bool = False, callback: Callable | None = None,
-               action_item: ItemAction | None = None):
+               description_visible: bool = False, callback: Callable | None = None, *, action_item: A):
     super().__init__()
     self._title = title
     self.set_icon(icon)
@@ -345,8 +344,8 @@ class ListItem(Widget):
       return
 
     # Don't draw items that are not in parent's viewport
-    if ((self._rect.y + self.rect.height) <= self._parent_rect.y or
-      self._rect.y >= (self._parent_rect.y + self._parent_rect.height)):
+    parent = self._parent_rect
+    if parent is not None and ((self._rect.y + self.rect.height) <= parent.y or self._rect.y >= (parent.y + parent.height)):
       return
 
     content_x = self._rect.x + ITEM_PADDING
@@ -355,7 +354,7 @@ class ListItem(Widget):
     # Only draw title and icon for items that have them
     if self.title:
       # Draw icon if present
-      if self.icon:
+      if self._icon_texture is not None:
         rl.draw_texture_ex(self._icon_texture, rl.Vector2(content_x, self._rect.y + (ITEM_BASE_HEIGHT - self._icon_texture.height) / 2), 0.0, 1.0, rl.WHITE)
         text_x += ICON_SIZE + ITEM_PADDING
 
@@ -435,31 +434,31 @@ class ListItem(Widget):
 
 # Factory functions
 def toggle_item(title: str | Callable[[], str], description: str | Callable[[], str] | None = None, initial_state: bool = False,
-                callback: Callable | None = None, icon: str = "", enabled: bool | Callable[[], bool] = True) -> ListItem:
+                callback: Callable | None = None, icon: str = "", enabled: bool | Callable[[], bool] = True) -> ListItem[ToggleAction]:
   action = ToggleAction(initial_state=initial_state, enabled=enabled, callback=callback)
   return ListItem(title=title, description=description, action_item=action, icon=icon)
 
 
 def button_item(title: str | Callable[[], str], button_text: str | Callable[[], str], description: str | Callable[[], str] | None = None,
-                callback: Callable | None = None, enabled: bool | Callable[[], bool] = True) -> ListItem:
+                callback: Callable | None = None, enabled: bool | Callable[[], bool] = True) -> ListItem[ButtonAction]:
   action = ButtonAction(text=button_text, enabled=enabled)
   return ListItem(title=title, description=description, action_item=action, callback=callback)
 
 
 def text_item(title: str | Callable[[], str], value: str | Callable[[], str], description: str | Callable[[], str] | None = None,
-              callback: Callable | None = None, enabled: bool | Callable[[], bool] = True) -> ListItem:
+              callback: Callable | None = None, enabled: bool | Callable[[], bool] = True) -> ListItem[TextAction]:
   action = TextAction(text=value, color=ITEM_TEXT_VALUE_COLOR, enabled=enabled)
   return ListItem(title=title, description=description, action_item=action, callback=callback)
 
 
 def dual_button_item(left_text: str | Callable[[], str], right_text: str | Callable[[], str],
                      left_callback: Callable | None = None, right_callback: Callable | None = None,
-                     description: str | Callable[[], str] | None = None, enabled: bool | Callable[[], bool] = True) -> ListItem:
+                     description: str | Callable[[], str] | None = None, enabled: bool | Callable[[], bool] = True) -> ListItem[DualButtonAction]:
   action = DualButtonAction(left_text, right_text, left_callback, right_callback, enabled)
   return ListItem(title="", description=description, action_item=action)
 
 
 def multiple_button_item(title: str | Callable[[], str], description: str | Callable[[], str], buttons: list[str | Callable[[], str]], selected_index: int,
-                         button_width: int = BUTTON_WIDTH, callback: Callable | None = None, icon: str = ""):
+                         button_width: int = BUTTON_WIDTH, callback: Callable | None = None, icon: str = "") -> ListItem[MultipleButtonAction]:
   action = MultipleButtonAction(buttons, button_width, selected_index, callback=callback)
   return ListItem(title=title, description=description, icon=icon, action_item=action)

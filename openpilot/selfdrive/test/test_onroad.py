@@ -21,7 +21,7 @@ from openpilot.cereal.services import SERVICE_LIST
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.timeout import Timeout
 from openpilot.common.params import Params
-from openpilot.selfdrive.selfdrived.events import EVENTS, ET
+from openpilot.selfdrive.selfdrived.events import EVENTS, ET, Alert
 from openpilot.selfdrive.test.helpers import set_params_enabled, release_only, processes_context, log_collector
 from openpilot.common.hardware import HARDWARE
 from openpilot.common.hardware.hw import Paths
@@ -453,8 +453,9 @@ class TestOnroad(OpenpilotTestCase):
   @unittest.skipIf(HARDWARE.get_device_type() == "mici", "mici has no startup alert")
   def test_startup(self):
     startup_alert = self.ts['selfdriveState']['alertText1'][0]
-    expected = EVENTS[log.OnroadEvent.EventName.startup][ET.PERMANENT].alert_text_1
-    assert startup_alert == expected, "wrong startup alert"
+    expected = EVENTS[log.OnroadEvent.EventName.startup][ET.PERMANENT]
+    assert isinstance(expected, Alert)
+    assert startup_alert == expected.alert_text_1, "wrong startup alert"
 
   def test_engagable(self):
     no_entries = Counter()

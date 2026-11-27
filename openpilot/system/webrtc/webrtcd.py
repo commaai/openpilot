@@ -88,8 +88,9 @@ class StreamSession:
       self.identifier, [t.id for t in self.video_tracks], body.enabled, body.bridge_services_in, body.bridge_services_out, body.raw,
     )
 
-  def start(self):
-    self.run_task = asyncio.create_task(self.run())
+  def start(self) -> asyncio.Task:
+    self.run_task = run_task = asyncio.create_task(self.run())
+    return run_task
 
   async def stop(self):
     if self.run_task is not None and not self.run_task.done() and self.run_task is not asyncio.current_task():
@@ -102,7 +103,7 @@ class StreamSession:
   async def get_answer(self):
     return await self.stream.start()
 
-  def message_handler(self, message: bytes):
+  def message_handler(self, message: bytes | str):
     try:
       if self.raw and isinstance(message, bytes):
         service = messaging.log_from_bytes(message).which()
@@ -286,13 +287,13 @@ async def handle_get_stream(state: ServerState, raw_body: bytes, content_type: s
       with cloudlog.ctx(session_id=session.identifier):
         cloudlog.exception("webrtcd.session.answer_exception")
       raise
-    session.start()
+    run_task = session.start()
 
     def remove_finished_session(_: asyncio.Task) -> None:
       stream_dict.pop(session.identifier, None)
       schedule_teardown(state)
 
-    session.run_task.add_done_callback(remove_finished_session)
+    run_task.add_done_callback(remove_finished_session)
 
   return _json_response({"sdp": answer.sdp, "type": answer.type})
 
@@ -349,8 +350,13 @@ class WebrtcdHandler(BaseHTTPRequestHandler):
     length = int(self.headers.get("Content-Length", 0))
     return self.rfile.read(length) if length else b""
 
+  @property
+  def _server(self) -> "WebrtcdHTTPServer":
+    assert isinstance(self.server, WebrtcdHTTPServer)
+    return self.server
+
   def _run(self, coro) -> tuple[int, bytes, str]:
-    return asyncio.run_coroutine_threadsafe(coro, self.server.loop).result()
+    return asyncio.run_coroutine_threadsafe(coro, self._server.loop).result()
 
   def _dispatch_request(self) -> None:
     parsed = urlparse(self.path)
@@ -363,16 +369,16 @@ class WebrtcdHandler(BaseHTTPRequestHandler):
         result = _json_response({"error": "method not allowed"}, status=405)
       elif parsed.path == "/schema":
         services = parse_qs(parsed.query).get("services", [""])[0]
-        result = self._run(handle_get_schema(self.server.state, services))
+        result = self._run(handle_get_schema(self._server.state, services))
       elif parsed.path == "/stream":
-        result = self._run(handle_get_stream(self.server.state, self._read_body(), self.headers.get_content_type()))
+        result = self._run(handle_get_stream(self._server.state, self._read_body(), self.headers.get_content_type()))
       else:  # /notify
         try:
           payload = json.loads(self._read_body())
         except Exception:
           result = _json_response({"error": "bad request"}, status=400)
         else:
-          result = self._run(handle_post_notify(self.server.state, payload))
+          result = self._run(handle_post_notify(self._server.state, payload))
     except Exception as e:
       logging.getLogger("webrtcd").exception("Unhandled error handling %s", self.path)
       result = _json_response({"error": "exception", "message": f"{type(e).__name__}: {e}"}, status=500)

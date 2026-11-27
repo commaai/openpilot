@@ -228,7 +228,7 @@ def capnp_random_dict(fuzzy: Fuzzy, schema: Any, event: str | None = None, *, re
         slot_type = field.proto.slot.type
         return rec(slot_type, slot_type.which())
       return capnp_random_dict(fuzzy, field.schema, real_floats=real_floats)
-    except capnp.lib.capnp.KjException:
+    except capnp.KjException:
       return capnp_random_dict(fuzzy, field.schema, real_floats=real_floats)
 
   union_field = event or (fuzzy.choice(tuple(schema.union_fields)) if schema.union_fields else None)

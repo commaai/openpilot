@@ -31,10 +31,12 @@ class MainLayout(Widget):
     # Initialize layouts
     self._home_layout = HomeLayout()
     self._home_body_layout = BodyLayout()
+    self._settings_layout = SettingsLayout()
+    self._onroad_layout = AugmentedRoadView()
     self._layouts: dict[MainState, Widget] = {
       MainState.HOME: self._home_layout,
-      MainState.SETTINGS: SettingsLayout(),
-      MainState.ONROAD: AugmentedRoadView(),
+      MainState.SETTINGS: self._settings_layout,
+      MainState.ONROAD: self._onroad_layout,
     }
 
     self._sidebar_rect = rl.Rectangle(0, 0, 0, 0)
@@ -58,10 +60,10 @@ class MainLayout(Widget):
     self._sidebar.set_callbacks(on_settings=self._on_settings_clicked,
                                 on_flag=self._on_bookmark_clicked,
                                 open_settings=lambda: self.open_settings(PanelType.TOGGLES))
-    self._layouts[MainState.HOME]._setup_widget.set_open_settings_callback(lambda: self.open_settings(PanelType.FIREHOSE))
-    self._layouts[MainState.SETTINGS].set_callbacks(on_close=self._set_mode_for_state)
+    self._home_layout._setup_widget.set_open_settings_callback(lambda: self.open_settings(PanelType.FIREHOSE))
+    self._settings_layout.set_callbacks(on_close=self._set_mode_for_state)
 
-    for layout in (self._layouts[MainState.ONROAD], self._home_body_layout):
+    for layout in (self._onroad_layout, self._home_body_layout):
       layout.set_click_callback(self._on_onroad_clicked)
 
     device.add_interactive_timeout_callback(self._set_mode_for_state)
@@ -102,7 +104,7 @@ class MainLayout(Widget):
       self._layouts[self._current_mode].show_event()
 
   def open_settings(self, panel_type: PanelType):
-    self._layouts[MainState.SETTINGS].set_current_panel(panel_type)
+    self._settings_layout.set_current_panel(panel_type)
     self._set_current_layout(MainState.SETTINGS)
     self._sidebar.set_visible(False)
 

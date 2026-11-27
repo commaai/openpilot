@@ -19,9 +19,9 @@ class TestDeleter(UploaderTestCase):
 
   def setup_method(self):
     self.f_type = "fcamera.hevc"
-    super().openpilot_setup_method()
+    self.setup_uploader()
     self.fake_stats = Stats(f_bavail=0, f_blocks=10, f_frsize=4096)
-    deleter.os.statvfs = self.fake_statvfs  # ty: ignore[invalid-assignment]  # test double
+    self.patch(deleter.os, "statvfs", self.fake_statvfs)
 
   def test_delete(self):
     f_path = self.make_file_with_data(self.seg_dir, self.f_type)

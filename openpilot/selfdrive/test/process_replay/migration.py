@@ -1,8 +1,7 @@
 from collections import defaultdict
 from collections.abc import Callable
-from typing import cast
+from dataclasses import dataclass
 import capnp
-import functools
 import traceback
 import sys
 import argparse
@@ -10,7 +9,7 @@ import argparse
 from openpilot.cereal import messaging, log
 from opendbc.car.structs import car
 from opendbc.car.fingerprints import MIGRATION
-from opendbc.car.toyota.values import EPS_SCALE, ToyotaSafetyFlags
+from opendbc.car.toyota.values import CAR as TOYOTA, EPS_SCALE, ToyotaSafetyFlags
 from opendbc.car.ford.values import CAR as FORD, FordFlags, FordSafetyFlags
 from opendbc.car.hyundai.values import HyundaiSafetyFlags
 from opendbc.car.gm.values import GMSafetyFlags
@@ -21,9 +20,19 @@ from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N, get_accel_
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.tools.lib.logreader import LogIterable, LogReader, save_log
 
-MessageWithIndex = tuple[int, capnp.lib.capnp._DynamicStructReader]
-MigrationOps = tuple[list[tuple[int, capnp.lib.capnp._DynamicStructReader]], list[capnp.lib.capnp._DynamicStructReader], list[int]]
+MessageWithIndex = tuple[int, capnp._DynamicStructReader]
+MigrationOps = tuple[list[tuple[int, capnp._DynamicStructReader]], list[capnp._DynamicStructReader], list[int]]
 MigrationFunc = Callable[[list[MessageWithIndex]], MigrationOps]
+
+
+@dataclass(frozen=True)
+class Migration:
+  func: MigrationFunc
+  inputs: list[str]
+  product: str | None
+
+  def __call__(self, msgs: list[MessageWithIndex]) -> MigrationOps:
+    return self.func(msgs)
 
 
 # rules for migration functions
@@ -60,7 +69,7 @@ def migrate_all(lr: LogIterable, manager_states: bool = False, panda_states: boo
   return migrate(lr, migrations)
 
 
-def migrate(lr: LogIterable, migration_funcs: list[MigrationFunc]):
+def migrate(lr: LogIterable, migration_funcs: list[Migration]):
   lr = list(lr)
   grouped = defaultdict(list)
   for i, msg in enumerate(lr):
@@ -68,11 +77,10 @@ def migrate(lr: LogIterable, migration_funcs: list[MigrationFunc]):
 
   replace_ops, add_ops, del_ops = [], [], []
   for migration in migration_funcs:
-    assert hasattr(migration, "inputs") and hasattr(migration, "product"), "Migration functions must use @migration decorator"
     if migration.product in grouped: # skip if product already exists
       continue
 
-    sorted_indices = sorted(ii for i in cast(list[str], migration.inputs) for ii in grouped.get(i, []))
+    sorted_indices = sorted(ii for i in migration.inputs for ii in grouped.get(i, []))
     msg_gen = [(i, lr[i]) for i in sorted_indices]
     r_ops, a_ops, d_ops = migration(msg_gen)
     replace_ops.extend(r_ops)
@@ -90,26 +98,21 @@ def migrate(lr: LogIterable, migration_funcs: list[MigrationFunc]):
   return lr
 
 
-def as_reader(builder) -> capnp.lib.capnp._DynamicStructReader:
+def as_reader(builder) -> capnp._DynamicStructReader:
   return log.Event.from_bytes(builder.to_bytes()).__enter__()  # round-trip through bytes, 2x faster and 30x less memory than builder.as_reader()
 
 
-def migration(inputs: list[str], product: str|None=None):
-  def decorator(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-      return func(*args, **kwargs)
-    wrapper.inputs = inputs
-    wrapper.product = product
-    return wrapper
+def migration(inputs: list[str], product: str|None=None) -> Callable[[MigrationFunc], Migration]:
+  def decorator(func: MigrationFunc) -> Migration:
+    return Migration(func, inputs, product)
   return decorator
 
 
-def migrate_onroad_event(event: capnp.lib.capnp._DynamicStructReader):
+def migrate_onroad_event(event: capnp._DynamicStructReader):
   event_dict = event.to_dict()
   try:
     return log.OnroadEvent(**event_dict)
-  except capnp.lib.capnp.KjException as e:
+  except capnp.KjException as e:
     # Ignore legacy events the current schema no longer defines.
     if "enum has no such enumerant" in str(e):
       return None
@@ -306,9 +309,9 @@ def migrate_carOutput(msgs):
 @migration(inputs=["pandaStates", "pandaStateDEPRECATED", "carParams"])
 def migrate_pandaStates(msgs):
   # TODO: safety param migration should be handled automatically
-  safety_param_migration = {
-    "TOYOTA_PRIUS": EPS_SCALE["TOYOTA_PRIUS"] | ToyotaSafetyFlags.STOCK_LONGITUDINAL,
-    "TOYOTA_RAV4": EPS_SCALE["TOYOTA_RAV4"] | ToyotaSafetyFlags.ALT_BRAKE,
+  safety_param_migration: dict[str, int] = {
+    "TOYOTA_PRIUS": ToyotaSafetyFlags.STOCK_LONGITUDINAL | EPS_SCALE[TOYOTA.TOYOTA_PRIUS],
+    "TOYOTA_RAV4": ToyotaSafetyFlags.ALT_BRAKE | EPS_SCALE[TOYOTA.TOYOTA_RAV4],
     "KIA_EV6": HyundaiSafetyFlags.EV_GAS | HyundaiSafetyFlags.CANFD_LKA_STEER_MSG,
     "CHEVROLET_VOLT": GMSafetyFlags.EV,
     "CHEVROLET_BOLT_EUV": GMSafetyFlags.EV | GMSafetyFlags.HW_CAM,
@@ -321,7 +324,7 @@ def migrate_pandaStates(msgs):
   assert CP is not None, "carParams message not found"
   fingerprint = MIGRATION.get(CP.carFingerprint, CP.carFingerprint)
   if fingerprint in safety_param_migration:
-    safety_param = safety_param_migration[fingerprint].value
+    safety_param = int(safety_param_migration[fingerprint])
   elif len(CP.safetyConfigs):
     safety_param = CP.safetyConfigs[0].safetyParam
     if CP.safetyConfigs[0].deprecated.safetyParam != 0:

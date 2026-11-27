@@ -198,9 +198,8 @@ def plot_lead(rs, top_down):
 
 
 def maybe_update_radar_points(lt, lid_overlay):
-  ar_pts = []
+  ar_pts = {}
   if lt is not None:
-    ar_pts = {}
     for track in lt:
       ar_pts[track.trackId] = [track.dRel, track.yRel, track.vRel]
   for pt in ar_pts.values():

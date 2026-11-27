@@ -99,9 +99,10 @@ class WifiNetworkButton(BigButton):
   def _draw_content(self, btn_y: float):
     super()._draw_content(btn_y)
     # Render lock icon at lower right of wifi icon if secured
-    if self._draw_lock:
-      icon_x = self._rect.x + self._rect.width - 30 - self._txt_icon.width
+    icon = self._txt_icon
+    if self._draw_lock and icon is not None:
+      icon_x = self._rect.x + self._rect.width - 30 - icon.width
       icon_y = btn_y + 30
-      lock_x = icon_x + self._txt_icon.width - self._lock_txt.width + 7
-      lock_y = icon_y + self._txt_icon.height - self._lock_txt.height + 8
+      lock_x = icon_x + icon.width - self._lock_txt.width + 7
+      lock_y = icon_y + icon.height - self._lock_txt.height + 8
       rl.draw_texture_ex(self._lock_txt, rl.Vector2(lock_x, lock_y), 0.0, 1.0, rl.WHITE)

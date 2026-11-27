@@ -1,8 +1,8 @@
 import math
 from multiprocessing import Queue
 
-from metadrive.component.sensors.base_camera import _cuda_enable
-from metadrive.component.map.pg_map import MapGenerateMethod
+from metadrive.component.sensors.base_camera import _cuda_enable  # ty: ignore[import-not-found]  # optional sim dependency
+from metadrive.component.map.pg_map import MapGenerateMethod  # ty: ignore[import-not-found]  # optional sim dependency
 
 from openpilot.tools.sim.bridge.common import SimulatorBridge
 from openpilot.tools.sim.bridge.metadrive.metadrive_common import RGBCameraRoad, RGBCameraWide

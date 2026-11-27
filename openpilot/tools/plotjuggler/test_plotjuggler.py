@@ -26,6 +26,7 @@ class TestPlotJuggler(OpenpilotTestCase):
                            stderr=subprocess.PIPE, shell=True, start_new_session=True) as p:
       # Wait for "Done reading Rlog data" signal from the plugin
       output = "\n"
+      assert p.stderr is not None
       with Timeout(180, error_msg=output):
         while output.splitlines()[-1] != "Done reading Rlog data":
           output += p.stderr.readline().decode("utf-8")

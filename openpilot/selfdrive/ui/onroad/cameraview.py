@@ -114,16 +114,17 @@ class CameraView(Widget):
     if self._switching:
       self._handle_switch()
 
-    if not self._ensure_connection():
+    client = self.client
+    if client is None or not self._ensure_connection(client):
       self._draw_placeholder(rect)
       return
 
     # Try to get a new buffer without blocking
-    buffer = self.client.recv(timeout_ms=0)
+    buffer = client.recv(timeout_ms=0)
     if buffer:
       self._new_frame = True
       self.frame = buffer
-    elif not self.client.is_connected():
+    elif not client.is_connected():
       # ensure we clear the displayed frame when the connection is lost
       self.frame = None
 
@@ -164,8 +165,8 @@ class CameraView(Widget):
     """the frame's per channel curve and saturation"""
     return FRAME_COLOR
 
-  def _ensure_connection(self) -> bool:
-    if not self.client.is_connected():
+  def _ensure_connection(self, client: VisionIpcClient) -> bool:
+    if not client.is_connected():
       self.frame = None
       self.available_streams.clear()
 
@@ -175,11 +176,11 @@ class CameraView(Widget):
         return False
       self.last_connection_attempt = current_time
 
-      if not self.client.connect(False) or not self.client.num_buffers:
+      if not client.connect(False) or not client.num_buffers:
         return False
 
-      cloudlog.debug(f"Connected to {self._name} stream: {self._stream_type}, buffers: {self.client.num_buffers}")
-      self.available_streams = {VisionStreamType(s) for s in self.client.available_streams(self._name, block=False)}
+      cloudlog.debug(f"Connected to {self._name} stream: {self._stream_type}, buffers: {client.num_buffers}")
+      self.available_streams = {VisionStreamType(s) for s in client.available_streams(self._name, block=False)}
 
     return True
 

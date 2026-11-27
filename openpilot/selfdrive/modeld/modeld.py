@@ -87,9 +87,16 @@ class ChestnutGpuState:
     self.sends = 0
     self.metrics = {}
 
+  @staticmethod
+  def _smu():
+    from tinygrad.runtime.ops_amd import AMDDevice
+    dev = Device["AMD"]
+    assert isinstance(dev, AMDDevice)
+    return dev.iface.dev_impl.smu
+
   @cached_property
   def power_limit(self) -> int:
-    smu = Device["AMD"].iface.dev_impl.smu
+    smu = self._smu()
     return smu._send_msg(smu.smu_mod.PPSMC_MSG_GetPptLimit, 0, read_back_arg=True, timeout=100)
 
   def send(self) -> None:
@@ -98,7 +105,7 @@ class ChestnutGpuState:
     self.sends += 1
     if self.big and "AMD" in Device._opened_devices and self.sends % 100 == 1:
       try:
-        smu = Device["AMD"].iface.dev_impl.smu
+        smu = self._smu()
         metrics_t = smu.smu_mod.SmuMetricsExternal_t
         smu._send_msg(smu.smu_mod.PPSMC_MSG_TransferTableSmu2Dram, smu.smu_mod.TABLE_SMU_METRICS, timeout=100)
         metrics_buf = bytearray(smu.adev.vram.view(smu.driver_table_paddr, ctypes.sizeof(metrics_t))[:])
@@ -166,10 +173,11 @@ class ModelState:
     self.run_warp.captured._linear = lower_and_compile(self.run_warp.captured._linear)
     self.run_model = jits['run']
     self.run_model.captured._linear = lower_and_compile(self.run_model.captured._linear)
+    self.output_device = jits['output_specs']['outputs'][2]
     self.outputs = {name: Tensor(np.zeros(shape, dtype=dtype), device=device).realize() for name, (shape, dtype, device) in jits['output_specs'].items()}
     for name, next_name in self.state_pairs.items():
       state = self.input_queues[name]
-      self.outputs[next_name] = input_view(state._buffer(), state.shape, state.dtype, 0)
+      self.outputs[next_name] = input_view(state._buffer(), self.input_shapes[name][0], state.dtype, 0)
     self.copy_outputs = compile_copy(self.outputs['outputs'].to('CPU'))
     self.parser = Parser()
 
@@ -214,7 +222,7 @@ class ModelState:
     self.copy_inputs()
     self.input_queues['new_img'] = self.run_warp(**self.warp_inputs)
     self.run_model(output_buffers=self.outputs, **self.input_queues)
-    if self.chestnut and (err := Device[self.outputs['outputs'].device].error_state.host.view(fmt='q')[0]):
+    if self.chestnut and (err := Device[self.output_device].error_state.host.view(fmt='q')[0]):
       raise RuntimeError(f"chestnut failed with {err}")
     if after_enqueue is not None:
       after_enqueue()
@@ -303,9 +311,10 @@ def main(demo=False):
     else:
       params.put_bool("ChestnutActive", model is not None)
 
-  small_model = ModelState(cam_w, cam_h, False) if model is None or CHESTNUT else None
-  if model is None:
-    model = small_model
+  small_model = None
+  if model is None or CHESTNUT:
+    small_model = ModelState(cam_w, cam_h, False)
+    model = model or small_model
   params.put_bool("ChestnutLoading", False)
   cloudlog.warning(f"models loaded in {time.monotonic() - st:.1f}s, modeld starting")
 
@@ -431,7 +440,7 @@ def main(demo=False):
                        run_count % round(ModelConstants.MODEL_RUN_FREQ / SERVICE_LIST['chestnutGpuState'].frequency) == 0)
       model_output = model.run(bufs, transforms, inputs, chestnut_state.send if send_chestnut else None)
     except Exception:
-      if not model.chestnut:
+      if not model.chestnut or small_model is None:
         raise
       # fallback to small model
       cloudlog.exception("big model failed, fall back to small")

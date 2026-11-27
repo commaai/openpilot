@@ -55,9 +55,11 @@ class ClientRedirectHandler(BaseHTTPRequestHandler):
       return
 
     query_parsed = parse_qs(urlsplit(self.path).query, keep_blank_values=True)
-    with self.server.result_lock:
-      if not self.server.query_params and ('code' in query_parsed or 'error' in query_parsed):
-        self.server.query_params = query_parsed
+    server = self.server
+    assert isinstance(server, ClientRedirectServer)
+    with server.result_lock:
+      if not server.query_params and ('code' in query_parsed or 'error' in query_parsed):
+        server.query_params = query_parsed
 
     self.send_response(200)
     self.send_header('Content-type', 'text/plain')

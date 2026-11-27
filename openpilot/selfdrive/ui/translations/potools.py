@@ -117,6 +117,8 @@ def parse_po(path: str | Path) -> tuple[POEntry | None, list[POEntry]]:
 
     m = re.match(r'msgstr\[(\d+)]\s+(.*)', stripped)
     if m:
+      if cur is None:
+        cur = POEntry()
       plural_idx = int(m.group(1))
       cur.msgstr_plural[plural_idx] = _parse_quoted(m.group(2))
       cur_field = 'msgstr_plural'
@@ -129,7 +131,7 @@ def parse_po(path: str | Path) -> tuple[POEntry | None, list[POEntry]]:
       cur_field = 'msgstr'
       continue
 
-    if stripped.startswith('"'):
+    if stripped.startswith('"') and cur is not None:
       val = _parse_quoted(stripped)
       if cur_field == 'msgid':
         cur.msgid += val
@@ -301,7 +303,9 @@ def init_po(pot_path: str | Path, po_path: str | Path, language: str) -> None:
   _, entries = parse_po(pot_path)
   plural_forms = PLURAL_FORMS.get(language, 'nplurals=2; plural=(n != 1);')
 
-  nplurals = int(re.search(r'nplurals=(\d+)', plural_forms).group(1))
+  m = re.search(r'nplurals=(\d+)', plural_forms)
+  assert m is not None, plural_forms
+  nplurals = int(m.group(1))
   for e in entries:
     if e.is_plural:
       e.msgstr_plural = dict.fromkeys(range(nplurals), '')

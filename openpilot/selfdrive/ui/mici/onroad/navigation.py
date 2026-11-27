@@ -52,7 +52,7 @@ class NavigationPanel(Widget):
       self._unload_texture()
       self._texture = rl.load_texture_from_image(rl.Image(None, SIZE, SIZE, 1, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8))
     frame = self._client.recv(timeout_ms=0)
-    if frame is not None:
+    if frame is not None and self._texture is not None:
       gray = np.frombuffer(frame.data, dtype=np.uint8, count=SIZE * SIZE)
       rl.update_texture(self._texture, MAP_COLORS[gray])
       # Without a usable map, mapsd publishes black frames with a zero timestamp.
@@ -101,7 +101,7 @@ class NavigationPanel(Widget):
                 alignment_vertical=TextAlignmentVertical.TOP)
     map_rect = rl.Rectangle(x+8, y+61, rect.width-16, rect.height-111)
     rl.draw_rectangle_rec(map_rect, rl.BLACK)
-    if self.map_ready:
+    if self._texture is not None and self.map_ready:
       # A 1:1 crop of the model's frame, centered horizontally with the ego near the bottom.
       width, height = min(map_rect.width, SIZE), min(map_rect.height, SIZE)
       source = rl.Rectangle((SIZE - width) // 2, min(SIZE - height, max(0, EGO[1] + MARKER_MARGIN - height)), width, height)

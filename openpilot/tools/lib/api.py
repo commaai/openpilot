@@ -34,7 +34,7 @@ class CommaApi:
     return self.request('POST', endpoint, **kwargs)
 
 class APIError(Exception):
-  pass
+  status_code: int | None = None
 
 class UnauthorizedError(Exception):
   pass

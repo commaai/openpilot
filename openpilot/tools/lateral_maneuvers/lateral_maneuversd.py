@@ -131,7 +131,7 @@ def main():
     v_ego = max(sm['carState'].vEgo, 0)
     curvature = sm['controlsState'].desiredCurvature
 
-    if complete_cnt > 0:
+    if complete_cnt > 0 and maneuver is not None:
       complete_cnt -= 1
       alert_msg.alertDebug.alertText1 = 'Completed'
       alert_msg.alertDebug.alertText2 = maneuver.description
@@ -192,7 +192,7 @@ def main():
     pm.send('alertDebug', alert_msg)
 
     plan_send.valid = maneuver is not None and maneuver.active and complete_cnt == 0
-    if plan_send.valid:
+    if maneuver is not None and plan_send.valid:
       plan_send.lateralManeuverPlan.desiredCurvature = maneuver._baseline_curvature + accel / max(v_ego, MIN_SPEED) ** 2
     pm.send('lateralManeuverPlan', plan_send)
 

@@ -82,7 +82,7 @@ lenv["CCFLAGS"].append("-Wno-unused")
 if arch != "Darwin":
   lenv["LINKFLAGS"].append("-Wl,--disable-new-dtags")
 else:
-  lenv["LINKFLAGS"].append("-Wl,-install_name,@loader_path/libacados_ocp_solver_long.dylib")
+  lenv["LINKFLAGS"].append(f"-Wl,-install_name,@loader_path/{gen}/libacados_ocp_solver_long.dylib")
   lenv["LINKFLAGS"].append(f"-Wl,-rpath,@loader_path/{acados_rel_path}")
 lib_solver = lenv.SharedLibrary(f"{gen}/acados_ocp_solver_long",
                                 build_files,
@@ -96,7 +96,7 @@ libacados_ocp_solver_c = File(f'{gen}/acados_ocp_solver_pyx.c')
 
 lenv2 = envCython.Clone()
 lenv2["LIBPATH"] += [lib_solver[0].dir.abspath]
-lenv2["RPATH"] += [lenv2.Literal('\\$$ORIGIN')]
+lenv2["RPATH"] += [lenv2.Literal(f'\\$$ORIGIN/{gen}')]
 lenv2.Command(libacados_ocp_solver_c,
   [acados_ocp_solver_pyx, acados_ocp_solver_common, libacados_ocp_solver_pxd],
   f'cython' + \
@@ -104,7 +104,8 @@ lenv2.Command(libacados_ocp_solver_c,
   f' -I {libacados_ocp_solver_pxd.get_dir().get_labspath()}' + \
   f' -I {acados_ocp_solver_common.get_dir().get_labspath()}' + \
   f' {acados_ocp_solver_pyx.get_labspath()}')
-lib_cython = lenv2.Program(f'{gen}/acados_ocp_solver_pyx.so', [libacados_ocp_solver_c], LIBS=['acados_ocp_solver_long'])
+# outside of gen, next to its committed type stub
+lib_cython = lenv2.Program('acados_ocp_solver_pyx.so', [libacados_ocp_solver_c], LIBS=['acados_ocp_solver_long'])
 lenv2.Depends(lib_cython, lib_solver)
 lenv2.Depends(lib_cython, copied_acados_libs)
 lenv2.Depends(libacados_ocp_solver_c, np_version)

@@ -49,7 +49,7 @@ class SwaglogRotatingFileHandler(BaseRotatingHandler):
     return sorted(log_files, reverse=True)
 
   def shouldRollover(self, record):
-    size_exceeded = self.max_bytes > 0 and self.stream.tell() >= self.max_bytes
+    size_exceeded = self.max_bytes > 0 and self.stream is not None and self.stream.tell() >= self.max_bytes
     time_exceeded = self.interval > 0 and self.last_rollover + self.interval <= time.monotonic()
     return size_exceeded or time_exceeded
 
@@ -79,20 +79,22 @@ class UnixDomainSocketHandler(logging.Handler):
       self.sock.close()
       self.sock = None
 
-  def connect(self):
+  def connect(self) -> socket.socket:
     self.close()
-    self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
-    self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, SWAGLOG_MAX_SIZE)
-    self.sock.setblocking(False)
+    self.sock = sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, SWAGLOG_MAX_SIZE)
+    sock.setblocking(False)
     self.pid = os.getpid()
+    return sock
 
   def emit(self, record):
-    if os.getpid() != self.pid:
-      self.connect()
+    sock = self.sock
+    if os.getpid() != self.pid or sock is None:
+      sock = self.connect()
 
     msg = self.format(record).rstrip('\n')
     try:
-      self.sock.sendto((chr(record.levelno)+msg).encode('utf8'), Paths.swaglog_ipc())
+      sock.sendto((chr(record.levelno)+msg).encode('utf8'), Paths.swaglog_ipc())
     except OSError:
       # logmessaged is busy, not running, or the message is too big. drop :/
       pass

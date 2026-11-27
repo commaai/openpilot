@@ -366,7 +366,8 @@ class MiciOffroadAlerts(NavScroller):
       time.sleep(REFRESH_INTERVAL)
 
   def _sort_items(self):
-    self._scroller.items.sort(key=lambda w: -w.alert_data.severity)
+    severity: dict[Widget, int] = {item: item.alert_data.severity for item in [*self.alert_items, *self._notification_items]}
+    self._scroller.items.sort(key=lambda w: -severity[w])
 
   def _refresh(self, pending_params: dict) -> int:
     """Refresh alerts from params and return active count."""
@@ -401,7 +402,7 @@ class MiciOffroadAlerts(NavScroller):
 
       if text and not alert_data.visible:
         # Bump newly visible alerts to the top, severity sort keeps it at the top of its category
-        widget = next(w for w in self._scroller.items if w.alert_data is alert_data)
+        widget = next(w for w in self.alert_items if w.alert_data is alert_data)
         self._scroller.items.remove(widget)
         self._scroller.items.insert(0, widget)
       alert_data.text = text

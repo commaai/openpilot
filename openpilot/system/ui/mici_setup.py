@@ -23,7 +23,7 @@ from openpilot.system.ui.lib.wifi_manager import WifiManager, ConnectStatus
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.nav_widget import NavWidget
 from openpilot.system.ui.widgets.label import UnifiedLabel
-from openpilot.system.ui.widgets.scroller import Scroller, NavScroller, ITEM_SPACING
+from openpilot.system.ui.widgets.scroller import NavScroller, ITEM_SPACING
 from openpilot.system.ui.widgets.slider import LargerSlider
 from openpilot.selfdrive.ui.mici.layouts.settings.network import WifiNetworkButton
 from openpilot.selfdrive.ui.mici.layouts.settings.network.wifi_ui import WifiUIMici
@@ -254,7 +254,7 @@ class FailedPage(NavScroller):
       self._reason_card.set_visible(False)
 
 
-class NetworkSetupPageBase(Scroller):
+class NetworkSetupPageBase(NavScroller):
   def __init__(self, network_monitor: NetworkConnectivityMonitor, continue_callback: Callable[[bool], None],
                disable_connect_hint: bool = False):
     super().__init__()
@@ -386,7 +386,7 @@ class NetworkSetupPageBase(Scroller):
       self._wifi_button.trigger_grow_animation()
 
 
-class NetworkSetupPage(NetworkSetupPageBase, NavScroller):
+class NetworkSetupPage(NetworkSetupPageBase):
   def __init__(self, network_monitor: NetworkConnectivityMonitor, continue_callback: Callable[[bool], None],
                back_callback: Callable[[], None] | None):
     super().__init__(network_monitor, continue_callback)

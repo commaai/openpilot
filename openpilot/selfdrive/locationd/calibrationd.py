@@ -237,7 +237,7 @@ class Calibrator:
 
     return new_rpy
 
-  def get_msg(self, valid: bool) -> capnp.lib.capnp._DynamicStructBuilder:
+  def get_msg(self, valid: bool) -> capnp._DynamicStructBuilder:
     smooth_rpy = self.get_smooth_rpy()
 
     msg = messaging.new_message('extrinsicsCalibration')

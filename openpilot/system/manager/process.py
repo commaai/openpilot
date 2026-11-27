@@ -131,7 +131,7 @@ class NativeProcess(ManagerProcess):
     self.cmdline = cmdline
     self.should_run = should_run
     self.enabled = enabled
-    self.launcher = nativelauncher
+    self.launcher: Callable[..., None] = nativelauncher
 
   def start(self) -> None:
     # In case we only tried a non blocking stop we need to stop it before restarting
@@ -154,7 +154,7 @@ class PythonProcess(ManagerProcess):
     self.module = module
     self.should_run = should_run
     self.enabled = enabled
-    self.launcher = launcher
+    self.launcher: Callable[..., None] = launcher
 
   def start(self) -> None:
     # In case we only tried a non blocking stop we need to stop it before restarting
@@ -179,10 +179,7 @@ class DaemonProcess(ManagerProcess):
     self.param_name = param_name
     self.enabled = enabled
     self.params = None
-
-  @staticmethod
-  def should_run(started, params, CP):
-    return True
+    self.should_run = lambda started, params, CP: True
 
   def start(self) -> None:
     if self.params is None:

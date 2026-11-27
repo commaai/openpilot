@@ -72,8 +72,7 @@ def run_replay(variant: LayoutVariant) -> None:
   send_fn: Callable | None = None
   frame = 0
   # Override raylib timing functions to return deterministic values based on frame count instead of real time
-  rl.get_frame_time = lambda: 1.0 / FPS
-  rl.get_time = lambda: frame / FPS
+  vars(rl).update(get_frame_time=lambda: 1.0 / FPS, get_time=lambda: frame / FPS)
 
   # Main loop to replay events and render frames
   with tqdm(total=script[-1][0] + 1, desc="Replaying", unit="frame", disable=bool(os.getenv("CI"))) as pbar:

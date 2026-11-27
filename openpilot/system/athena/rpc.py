@@ -2,6 +2,7 @@ import inspect
 import json
 import re
 from collections.abc import Callable, Mapping
+from types import FunctionType, MethodType
 from typing import Any
 
 # a minimal implementation of json-rpc 2.0 https://www.jsonrpc.org/specification
@@ -61,7 +62,12 @@ class Dispatcher(dict[str, Callable[..., Any]]):
 
   def add_method(self, f: Callable[..., Any] | None = None, *, name: str | None = None, **validators: Validator):
     def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
-      method = name or fn.__name__
+      if name:
+        method = name
+      elif isinstance(fn, (FunctionType, MethodType)):
+        method = fn.__name__
+      else:
+        raise TypeError(f"{fn!r}: name is required for non-function callables")
       sig = inspect.signature(fn)
       if set(sig.parameters) != set(validators):
         raise TypeError(f"{method}: params {sorted(sig.parameters)} need exactly one validator each, got {sorted(validators)}")

@@ -136,10 +136,10 @@ class AtClient:
     self._serial: Serial | None = None
 
   def send_raw(self, data: bytes) -> None:
-    self._ensure_serial()
-    self._serial.reset_input_buffer()
-    self._serial.write(data)
-    self._serial.flush()
+    ser = self._ensure_serial()
+    ser.reset_input_buffer()
+    ser.write(data)
+    ser.flush()
 
   def close(self) -> None:
     try:
@@ -156,12 +156,12 @@ class AtClient:
   def _send(self, cmd: str) -> None:
     if DEBUG:
       print(f"SER >> {cmd}", file=sys.stderr)
-    self._serial.write((cmd + "\r").encode("ascii"))
+    self._ensure_serial().write((cmd + "\r").encode("ascii"))
 
   def _expect(self) -> list[str]:
     lines: list[str] = []
     while True:
-      raw = self._serial.readline()
+      raw = self._ensure_serial().readline()
       if not raw:
         raise TimeoutError("AT command timed out")
       line = raw.decode(errors="ignore").strip()
@@ -175,7 +175,7 @@ class AtClient:
         raise RuntimeError(f"AT command failed: {line}")
       lines.append(line)
 
-  def _ensure_serial(self, reconnect: bool = False) -> None:
+  def _ensure_serial(self, reconnect: bool = False) -> Serial:
     if reconnect:
       self.channel = None
       try:
@@ -186,6 +186,7 @@ class AtClient:
       self._serial = None
     if self._serial is None:
       self._serial = Serial(self._device, baudrate=self._baud, timeout=self._timeout)
+    return self._serial
 
   def query(self, cmd: str) -> list[str]:
     self._ensure_serial()

@@ -3,13 +3,13 @@ import time
 import numpy as np
 
 from collections import namedtuple
-from panda3d.core import Vec3
+from panda3d.core import Vec3  # ty: ignore[import-not-found]  # optional sim dependency
 from multiprocessing.connection import Connection
 
-from metadrive.engine.core.engine_core import EngineCore
-from metadrive.engine.core.image_buffer import ImageBuffer
-from metadrive.envs.metadrive_env import MetaDriveEnv
-from metadrive.obs.image_obs import ImageObservation
+from metadrive.engine.core.engine_core import EngineCore  # ty: ignore[import-not-found]  # optional sim dependency
+from metadrive.engine.core.image_buffer import ImageBuffer  # ty: ignore[import-not-found]  # optional sim dependency
+from metadrive.envs.metadrive_env import MetaDriveEnv  # ty: ignore[import-not-found]  # optional sim dependency
+from metadrive.obs.image_obs import ImageObservation  # ty: ignore[import-not-found]  # optional sim dependency
 
 from openpilot.common.realtime import Ratekeeper
 
