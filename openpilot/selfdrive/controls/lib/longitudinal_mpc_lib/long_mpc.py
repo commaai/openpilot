@@ -320,8 +320,8 @@ class LongitudinalMpc:
 
       # Smoothly fall back to the more pessimistic radar trajectory when radar requires hard braking
       x_obs_radar = radar_xv[:, 0] + radar_xv[:, 1]**2 / (2. * (-ACCEL_MIN))
-      a_req = float(np.max(v_ego**2 / (2. * np.maximum(x_obs_radar - STOP_DISTANCE, 0.5))))
-      w = float(np.interp(a_req, LEAD_FALLBACK_RANGE, [0.0, 1.0]))
+      a_req = v_ego**2 / (2. * max(np.min(x_obs_radar) - STOP_DISTANCE, 0.5))
+      w = np.interp(a_req, LEAD_FALLBACK_RANGE, [0.0, 1.0])
       if w > 0.0:
         x_obs_l = lead_xv[:, 0] + get_stopped_equivalence_factor(lead_xv[:, 1])
         x_obs_r = radar_xv[:, 0] + get_stopped_equivalence_factor(radar_xv[:, 1])
