@@ -318,15 +318,15 @@ class LongitudinalMpc:
       a_lead_traj = np.minimum(a_model + (a_lead - a_model[0]) * RADAR_RESIDUAL_W, np.maximum(a_radar, CLIP_MODEL_LEAD_ACCEL))
       lead_xv = self.integrate_lead(x_start, v_lead, a_lead_traj)
 
-      # Smoothly fall back to the more pessimistic radar trajectory when radar requires hard braking
+      # smoothly fall back to the more pessimistic radar trajectory when radar requires hard braking
       x_obs_radar = radar_xv[:, 0] + get_stopped_equivalence_factor(radar_xv[:, 1], brake=-ACCEL_MIN)
       a_req = v_ego**2 / (2. * max(np.min(x_obs_radar) - STOP_DISTANCE, 0.5))
       w = np.interp(a_req, LEAD_FALLBACK_RANGE, [0.0, 1.0])
       if w > 0.0:
-        x_obs_l = lead_xv[:, 0] + get_stopped_equivalence_factor(lead_xv[:, 1])
-        x_obs_r = radar_xv[:, 0] + get_stopped_equivalence_factor(radar_xv[:, 1])
-        pess = np.where((x_obs_r < x_obs_l)[:, None], radar_xv, lead_xv)
-        lead_xv = (1.0 - w) * lead_xv + w * pess
+        x_obs_fused_comfort = lead_xv[:, 0] + get_stopped_equivalence_factor(lead_xv[:, 1])
+        x_obs_radar_comfort = radar_xv[:, 0] + get_stopped_equivalence_factor(radar_xv[:, 1])
+        pessimistic = np.where((x_obs_radar_comfort < x_obs_fused_comfort)[:, None], radar_xv, lead_xv)
+        lead_xv = (1.0 - w) * lead_xv + w * pessimistic
       return lead_xv
 
     return radar_xv
