@@ -1,15 +1,9 @@
-from openpilot.cereal import log
 from openpilot.common.test import OpenpilotTestCase
 from openpilot.common.parameterized import parameterized
 
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import STOP_DISTANCE
+from openpilot.selfdrive.selfdrived.selfdrived import LONGITUDINAL_PERSONALITY_MAP
 from openpilot.selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
-
-PERSONALITIES = (
-  log.LongitudinalPersonality.aggressive,
-  log.LongitudinalPersonality.standard,
-  log.LongitudinalPersonality.relaxed,
-)
 
 
 # TODO: make new FCW tests
@@ -152,7 +146,7 @@ def create_adv_maneuvers(kwargs):
   return [
     *(
       Maneuver(
-        f"approaching stopped lead that doesn't go ({v0:g}m/s from {d0:g}m), model thinks +{model_a:g}m/s^2",
+        f"approaching stopped lead that doesn't go ({v0:g}m/s from {d0:g}m), model wrongly predicts +{model_a:g}m/s²",
         duration=dur,
         initial_speed=v0,
         lead_relevancy=True,
@@ -168,7 +162,7 @@ def create_adv_maneuvers(kwargs):
     ),
     *(
       Maneuver(
-        f"stopped behind a lead that doesn't go ({d0:g}m), model thinks +{model_a:g}m/s^2",
+        f"stopped behind a lead that doesn't go ({d0:g}m), model wrongly predicts +{model_a:g}m/s²",
         duration=20.,
         initial_speed=0.,
         lead_relevancy=True,
@@ -184,7 +178,7 @@ def create_adv_maneuvers(kwargs):
     ),
     *(
       Maneuver(
-        f"steady following ({v0:g}m/s) then lead brakes hard, lead -{decel:g}m/s^2 & model thinks 0m/s^2",
+        f"steady following ({v0:g}m/s) then lead brakes hard, lead -{decel:g}m/s² & model wrongly predicts 0m/s²",
         duration=15. + v0 / decel + 10.,
         initial_speed=v0,
         lead_relevancy=True,
@@ -208,8 +202,8 @@ class TestLongitudinalControl(OpenpilotTestCase):
     valid, _ = maneuver.evaluate()
     assert valid
 
-  @parameterized.expand([m for p in PERSONALITIES for m in create_adv_maneuvers({"personality": p})],
-                        ids=lambda m: f"{m.title}_personality_{m.personality}")
+  @parameterized.expand([m for p in LONGITUDINAL_PERSONALITY_MAP for m in create_adv_maneuvers({"personality": p})],
+                        ids=lambda m: f"{m.title}_personality_{LONGITUDINAL_PERSONALITY_MAP[m.personality]}")
   def test_adv_maneuver(self, maneuver):
     valid, _ = maneuver.evaluate()
     assert valid

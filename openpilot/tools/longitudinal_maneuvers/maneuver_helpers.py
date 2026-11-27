@@ -14,5 +14,5 @@ axis_labels = {Axis.TIME: 'Time (s)',
                Axis.LEAD_DISTANCE: 'Lead absolute position (m)',
                Axis.EGO_V: 'Ego Velocity (m/s)',
                Axis.LEAD_V: 'Lead Velocity (m/s)',
-               Axis.EGO_A: 'Ego acceleration (m/s^2)',
+               Axis.EGO_A: 'Ego acceleration (m/s²)',
                Axis.D_REL: 'Lead distance (m)'}
