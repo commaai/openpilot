@@ -8,7 +8,7 @@ from openpilot.common.constants import CV
 from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
 from openpilot.selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner
-from openpilot.selfdrive.controls.radard import _LEAD_ACCEL_TAU, RADAR_TO_CAMERA
+from openpilot.selfdrive.controls.radard import KalmanParams, RADAR_TO_CAMERA, Track
 from openpilot.selfdrive.modeld.constants import ModelConstants
 
 LEAD_STEPS = (np.asarray(ModelConstants.LEAD_T_IDXS) / DT_MDL).astype(int)
@@ -70,12 +70,10 @@ class Maneuver:
     v_ego = float(self.v_ego[i])
     v_lead = float(self.v_lead[i])
     prob = float(self.prob_lead[i]) if self.lead_relevancy else 0.0
-    lead = log.RadarState.LeadData(
-      dRel=max(0., float(self.x_lead[i] - self.x_ego[i])) if self.lead_relevancy else 200.,
-      vRel=v_lead - v_ego if self.lead_relevancy else 0.,
-      vLead=v_lead, vLeadK=v_lead, aLeadK=float(self.a_lead[i]), aLeadTau=_LEAD_ACCEL_TAU,
-      present=bool(self.lead_present[i]), modelProb=prob, radar=True,
-    )
+    d_rel = max(0., float(self.x_lead[i] - self.x_ego[i])) if self.lead_relevancy else 200.
+    v_rel = v_lead - v_ego if self.lead_relevancy else 0.
+    self.track.update(d_rel, 0.0, v_rel, v_lead)
+    lead = log.RadarState.LeadData(**(self.track.get_RadarState(prob) | {'present': bool(self.lead_present[i])}))
     radar = log.RadarState(leadTwo=lead)
     if not self.only_lead2:
       radar.leadOne = lead
@@ -120,6 +118,7 @@ class Maneuver:
   def evaluate(self):
     CP = CarInterface.get_non_essential_params(CAR.HONDA_CIVIC)
     self.planner = LongitudinalPlanner(CP, init_v=self.v_ego[0])
+    self.track = Track(0, float(self.v_lead[0]), KalmanParams(DT_MDL))
     for i in range(len(self.t) - 1):
       self._step(i)
 
