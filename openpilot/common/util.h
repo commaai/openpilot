@@ -71,7 +71,6 @@ std::string getenv(const char* key, std::string default_val = "");
 int getenv(const char* key, int default_val);
 float getenv(const char* key, float default_val);
 
-std::string hexdump(const uint8_t* in, const size_t size);
 bool starts_with(const std::string &s1, const std::string &s2);
 bool ends_with(const std::string &s, const std::string &suffix);
 std::string strip(const std::string &str);
@@ -153,30 +152,6 @@ struct unique_fd {
   }
   operator int() const { return fd_; }
   int fd_;
-};
-
-class FirstOrderFilter {
-public:
-  FirstOrderFilter(float x0, float ts, float dt, bool initialized = true) {
-    k_ = (dt / ts) / (1.0 + dt / ts);
-    x_ = x0;
-    initialized_ = initialized;
-  }
-  inline float update(float x) {
-    if (initialized_) {
-      x_ = (1. - k_) * x_ + k_ * x;
-    } else {
-      initialized_ = true;
-      x_ = x;
-    }
-    return x_;
-  }
-  inline void reset(float x) { x_ = x; }
-  inline float x(){ return x_; }
-
-private:
-  float x_, k_;
-  bool initialized_;
 };
 
 template<typename T>
