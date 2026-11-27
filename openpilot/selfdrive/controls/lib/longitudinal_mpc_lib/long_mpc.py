@@ -52,15 +52,17 @@ T_IDXS_LST = [index_function(idx, max_val=MAX_T, max_idx=N) for idx in range(N+1
 T_IDXS = np.array(T_IDXS_LST)
 FCW_IDXS = T_IDXS < 5.0
 T_DIFFS = np.diff(T_IDXS, prepend=[0.])
-LEAD_T_IDXS_MODEL = np.array(ModelConstants.LEAD_T_IDXS)
-LEAD_ACCEL_RESIDUAL_TAU = 2.0
-LEAD_ACCEL_RESIDUAL_W = np.exp(-T_IDXS / LEAD_ACCEL_RESIDUAL_TAU)
-LEAD_ACCEL_MODEL_MAX = 1.2
-LEAD_FALLBACK_A_REQ_MIN = 2.5
-LEAD_FALLBACK_A_REQ_RANGE = 1.0
 COMFORT_BRAKE = 2.5
 STOP_DISTANCE = 6.0
 MIN_X_LEAD_FACTOR = 0.5
+
+# model/radar fusion
+LEAD_T_IDXS_MODEL = np.array(ModelConstants.LEAD_T_IDXS)
+LEAD_ACCEL_RESIDUAL_TAU = 2.0
+LEAD_ACCEL_RESIDUAL_W = np.exp(-T_IDXS / LEAD_ACCEL_RESIDUAL_TAU)
+LEAD_ACCEL_MODEL_MAX = 2.0
+LEAD_FALLBACK_A_REQ_MIN = 2.5
+LEAD_FALLBACK_A_REQ_RANGE = 1.0
 
 def get_jerk_factor(personality=log.LongitudinalPersonality.standard):
   if personality==log.LongitudinalPersonality.relaxed:
