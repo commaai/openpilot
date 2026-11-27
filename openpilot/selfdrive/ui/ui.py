@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import signal
 import sys
 import threading
 import time
@@ -29,6 +30,8 @@ def set_core_affinity(cores: set[int]):
 
 def main():
   cores = {5, }
+  # msgq sends a SIGUSR2 per message to wake subscribers, interrupting the renderer. the UI only polls, so it never needs them
+  signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGUSR2})
   # above plannerd and radard. the threads it starts don't inherit that, so they can't hold off the renderer
   config_realtime_process(0, Priority.CTRL_HIGH)
   if COMMA_HARDWARE:
