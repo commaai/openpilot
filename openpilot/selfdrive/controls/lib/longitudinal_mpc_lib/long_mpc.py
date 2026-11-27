@@ -57,7 +57,6 @@ STOP_DISTANCE = 6.0
 MIN_X_LEAD_FACTOR = 0.5
 
 # model/radar fusion
-LEAD_T_IDXS_MODEL = np.array(ModelConstants.LEAD_T_IDXS)
 RADAR_RESIDUAL_DECAY_T = 2.0
 RADAR_RESIDUAL_W = np.exp(-T_IDXS / RADAR_RESIDUAL_DECAY_T)
 CLIP_MODEL_LEAD_ACCEL = 2.0
@@ -305,18 +304,18 @@ class LongitudinalMpc:
     # MPC will not converge if immediate crash is expected
     # Clip lead distance to what is still possible to brake for
     min_x_lead = MIN_X_LEAD_FACTOR * (v_ego + v_lead) * (v_ego - v_lead) / (-ACCEL_MIN * 2)
-    x_start = np.clip(x_lead, min_x_lead, 1e8)
+    x_lead = np.clip(x_lead, min_x_lead, 1e8)
     v_lead = np.clip(v_lead, 0.0, 1e8)
     a_lead = np.clip(a_lead, -10., 5.)
 
     # radar only lead traj estimate
     a_radar = a_lead * np.exp(-a_lead_tau * (T_IDXS**2) / 2.)
-    radar_xv = self.integrate_lead(x_start, v_lead, a_radar)
+    radar_xv = self.integrate_lead(x_lead, v_lead, a_radar)
 
     if model_prob > 0.5:
-      a_model = np.interp(T_IDXS, LEAD_T_IDXS_MODEL, np.clip(model_lead.a, -10., CLIP_MODEL_LEAD_ACCEL))
+      a_model = np.interp(T_IDXS, ModelConstants.LEAD_T_IDXS, np.clip(model_lead.a, -10., CLIP_MODEL_LEAD_ACCEL))
       a_lead_traj = np.minimum(a_model + (a_lead - a_model[0]) * RADAR_RESIDUAL_W, np.maximum(a_radar, CLIP_MODEL_LEAD_ACCEL))
-      lead_xv = self.integrate_lead(x_start, v_lead, a_lead_traj)
+      lead_xv = self.integrate_lead(x_lead, v_lead, a_lead_traj)
 
       # smoothly fall back to the more pessimistic radar trajectory when radar requires hard braking
       x_obs_radar = radar_xv[:, 0] + get_stopped_equivalence_factor(radar_xv[:, 1], brake=-ACCEL_MIN)
