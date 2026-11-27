@@ -24,6 +24,11 @@ MIN_ZOOM_ANIMATION_TIME = 0.075  # seconds
 DO_ZOOM = False
 DO_JELLO = False
 
+# tapping a read-only card nudges the items toward where the content continues, then springs back
+NUDGE_STIFFNESS = 110.0
+NUDGE_DAMPING = 12.0
+NUDGE_VELOCITY = 1000.0  # px/s, peaks around 40 px
+
 
 class ScrollIndicator(Widget):
   HORIZONTAL_MARGIN = 4
@@ -110,7 +115,19 @@ class _Scroller(Widget):
     self._pending_lift: set[Widget] = set()
     self._pending_move: set[Widget] = set()
 
+    # nudge spring, a visual offset on top of the scroll offset
+    self._nudge_x = 0.0
+    self._nudge_v = 0.0
+
     self.add_widgets(items)
+
+  def nudge(self):
+    """Hint the scroll direction: towards the next item, or back if at the end"""
+    max_scroll = self._content_size - self._rect.width
+    if max_scroll <= 0:
+      return
+    at_end = -self.scroll_panel.get_offset() >= max_scroll - 1
+    self._nudge_v = NUDGE_VELOCITY if at_end else -NUDGE_VELOCITY
 
   def set_reset_scroll_at_show(self, scroll: bool):
     self._reset_scroll_at_show = scroll
@@ -147,6 +164,11 @@ class _Scroller(Widget):
                                           and self.enabled and not self._scrolling_to[2] and not self.moving_items
                                           and (original_touch_valid_callback() if original_touch_valid_callback else True))
 
+    # read-only cards would otherwise ignore taps
+    if getattr(item, "passive", False) and self._horizontal:
+      item.set_click_callback(self.nudge)
+      item.set_long_press_callback(self.nudge)
+
   def add_widgets(self, items: Sequence[Widget]) -> None:
     for item in items:
       self.add_widget(item)
@@ -156,6 +178,10 @@ class _Scroller(Widget):
     self._scroll_enabled = enabled
 
   def _update_state(self):
+    dt = 1 / gui_app.target_fps
+    self._nudge_v -= (NUDGE_STIFFNESS * self._nudge_x + NUDGE_DAMPING * self._nudge_v) * dt
+    self._nudge_x += self._nudge_v * dt
+
     if DO_ZOOM:
       if self._scrolling_to[0] is not None or self.scroll_panel.state != ScrollState.STEADY:
         self._zoom_out_t = rl.get_time() + MIN_ZOOM_ANIMATION_TIME
@@ -286,7 +312,7 @@ class _Scroller(Widget):
 
       # Consider scroll
       if self._horizontal:
-        x += self._scroll_offset
+        x += self._scroll_offset + self._nudge_x
       else:
         y += self._scroll_offset
 
@@ -386,6 +412,7 @@ class _Scroller(Widget):
     self._pending_move.clear()
     self._scrolling_to = None, False, False
     self._scrolling_to_filter.x = 0.0
+    self._nudge_x = self._nudge_v = 0.0
 
   def hide_event(self):
     super().hide_event()

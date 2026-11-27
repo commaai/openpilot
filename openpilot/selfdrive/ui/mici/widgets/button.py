@@ -362,7 +362,7 @@ class GreyBigButton(BigButton):
 
   def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)
-    self.set_touch_valid_callback(lambda: False)
+    self.passive = True  # Scroller nudges on tap to hint the scroll direction
 
     self._rect.width = 476
 
