@@ -1,0 +1,107 @@
+/* comma prime (pages/prime.js): connect's (PrimeCheckout.jsx, PrimeManage.jsx, Notification), in its palette whatever the theme */
+.page.prime-page { max-width: none; margin: 0; padding: 0; color: var(--cnui-fg); font: 16px/1.5 "Inter", sans-serif; }
+.page.prime-page :is(h2, h3, p) { margin: 0; }
+.page.prime-page a:not(.cnui-btn, .cnui-ibtn, .cnui-care) { color: #1a974e; text-decoration: underline; }
+.page.prime-page a:not(.cnui-btn, .cnui-ibtn, .cnui-care):hover { color: #178645; }
+.page.prime-page .prime-body1 { font-size: 14px; line-height: 1.46429; }
+.page.prime-page .cnui-btn.prime-go { width: 100%; }
+.page.prime-page .prime-note { display: flex; align-items: center; gap: 10px; margin-top: 24px; padding: 8px 12px; border-radius: 12px; background: rgb(from var(--cnui-fg) r g b / .08); }
+.page.prime-page .prime-note > svg { margin-top: 1px; }
+.page.prime-page .prime-note.prime-error > svg { color: var(--critical-fg); }
+.page.prime-page .prime-note.prime-notice > svg { color: var(--alert-fg); }
+.page.prime-page .prime-note > div { margin-left: 10px; font-size: 14px; line-height: 1.46429; }
+.page.prime-page .prime-note a { color: var(--cnui-fg); }
+.page.prime-page .prime-note.prime-error { margin-top: 8px; background: rgba(255, 0, 0, .2); }
+
+/* checkout: a 430px column, its blocks 24px apart (16px on a phone) */
+.page.prime-page:not(:has(> .prime-manage)) { display: flex; flex-direction: column; max-width: 430px; margin: 18px 24px; --block: 24px; --checks: 7px; }
+.page.prime-page .prime-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; max-width: 410px; }
+.page.prime-page .prime-head-device { display: flex; align-items: center; }
+.page.prime-page .prime-head-device aside { margin-right: 8px; font-size: 14px; font-weight: 500; line-height: 1.71429; }
+.page.prime-page .prime-dongle { color: #525e66; font-size: 12px; line-height: 1.375; }
+.page.prime-page h2.prime-title { margin: 0 12px; font-size: 16px; font-weight: 400; line-height: 1.5; }
+.page.prime-page .prime-block { margin-top: var(--block); }
+.page.prime-page .prime-block-slot > :not(:empty) { margin-top: var(--block); }
+.page.prime-page .prime-block-slot .prime-note { margin-top: 0; }
+.page.prime-page .prime-checks { margin-left: 12px; padding: 0; }
+.page.prime-page .prime-checks svg { align-self: flex-start; color: var(--cnui-fg); }
+.page.prime-page .cnui-ibtn { color: var(--cnui-fg); }
+.page.prime-page .prime-checks > div { display: flex; align-items: center; margin-bottom: 4px; padding: 0 var(--checks); }
+.page.prime-page .prime-checks p { margin: 0 0 0 14px; font-size: 14px; line-height: 1.5; }
+.page.prime-page .prime-commacare { padding: 10px 14px 10px 12px; border: 1px solid #1a974e; border-radius: 12px; }
+.page.prime-page .prime-commacare > div { display: flex; align-items: center; font-size: 14px; line-height: 1.46429; }
+.page.prime-page .prime-commacare img { width: 24px; margin-right: 12px; }
+.page.prime-page .prime-commacare strong { color: #1a974e; letter-spacing: .04em; }
+.page.prime-page .prime-commacare p { font-size: 14px; font-weight: 500; line-height: 1.71429; }
+.page.prime-page .prime-past { padding: 10px 14px; border-radius: 12px; background: rgb(from var(--cnui-fg) r g b / .08); color: rgb(from var(--cnui-fg) r g b / .7); }
+.page.prime-page .prime-past p { font-size: 14px; font-weight: 500; line-height: 1.71429; }
+.page.prime-page .prime-past a { color: rgb(from var(--cnui-fg) r g b / .7); }
+.page.prime-page .prime-plans { position: relative; display: block; height: auto; margin: var(--block) -6px 0; }
+.page.prime-page .prime-plans > div:first-child { display: flex; justify-content: space-around; height: 140px; }
+.page.prime-page .prime-plan { display: flex; flex: none; flex-direction: column; align-items: center; justify-content: space-around; width: 160px; padding: 8px 0;
+  border: 2px solid transparent; border-radius: 18px; background: rgb(from var(--cnui-fg) r g b / .1); color: var(--cnui-fg); font: 600 16px/1.5 "Inter", sans-serif;
+  text-align: center; opacity: 1; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.page.prime-page .prime-plan:first-child { margin-right: 2px; }
+.page.prime-page .prime-plan:last-child { margin-left: 2px; }
+.page.prime-page .prime-plan b { font-size: 1.2rem; font-weight: 600; }
+.page.prime-page .prime-plan .prime-price { font-size: 1.5rem; }
+.page.prime-page .prime-plan .small { font-size: .8rem; font-weight: 400; line-height: 1.5; }
+.page.prime-page .prime-plan[aria-pressed="true"] { border-color: var(--cnui-fg); }
+.page.prime-page .prime-plan:disabled { background: rgb(from var(--cnui-fg) r g b / .05); color: rgb(from var(--cnui-fg) r g b / .4); cursor: default; }
+.page.prime-page .prime-plans:has(.prime-fetching:not([hidden])) .prime-plan { background: rgb(from var(--cnui-fg) r g b / .03); color: rgb(from var(--cnui-fg) r g b / .2); opacity: 1; }
+.page.prime-page .prime-fetching { position: absolute; inset: 0 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 140px;
+  font-size: 14px; }
+.page.prime-page .prime-fetching[hidden] { display: none; }
+.page.prime-page .prime-fetching p { margin-top: 10px; font-size: .9rem; line-height: 1.46429; }
+.page.prime-page .prime-block .cnui-btn.prime-go { height: 42px; margin: 0; border-radius: 21px; }
+.page.prime-page .prime-charge { font-size: 13px; line-height: 1.46429; }
+@media (max-height: 600px) { .page.prime-page .prime-plans > div:first-child, .page.prime-page .prime-fetching { height: 110px; } }
+@media (max-width: 520px) { .page.prime-page:not(:has(> .prime-manage)) { margin: 6px 12px; --block: 16px; --checks: 8px; } }
+
+/* manage: a bar with the back button over the page, each ruled off; 220px buttons (the width on a phone) */
+.page.prime-page .prime-manage { display: flex; flex-direction: column; }
+.page.prime-page .prime-manage[hidden] { display: none; }
+.page.prime-page .prime-bar { padding: 8px 36px; border-bottom: 1px solid rgb(from var(--cnui-fg) r g b / .1); }
+.page.prime-page .prime-main { padding: 16px 36px; }
+.page.prime-page .prime-main > h2 { font-size: 21px; font-weight: 500; line-height: 1.16667; }
+.page.prime-page .prime-item { margin-top: 20px; }
+.page.prime-page .prime-item h3 { margin: 0; color: var(--cnui-fg); font-size: 16px; font-weight: 400; line-height: 1.5; letter-spacing: 0; text-transform: none; }
+.page.prime-page .prime-item > :not(h3) { margin-left: 10px; font-size: 14px; line-height: 1.46429; }
+.page.prime-page .prime-item span { color: rgb(from var(--cnui-fg) r g b / .7); font-size: .9em; line-height: 20.5px; }
+.page.prime-page .prime-item-device aside { font-size: 14px; font-weight: 500; line-height: 1.71429; }
+.page.prime-page .prime-item-device span { display: block; font-size: 14.4px; line-height: 1.375; }
+.page.prime-page .cnui-care { margin-top: 14px; color: #1a974e; }
+.page.prime-page .prime-buttons { display: flex; flex-direction: column; max-width: 450px; margin-top: 20px; }
+.page.prime-page .prime-buttons .cnui-btn.prime-go { width: 220px; margin-top: 10px; }
+.page.prime-page .prime-buttons .cnui-btn.prime-cancel { border: 1px solid #424a4f; background: transparent; color: var(--cnui-fg); }
+.page.prime-page .prime-buttons .cnui-btn.prime-cancel:hover { background: rgb(from var(--cnui-fg) r g b / .1); }
+.page.prime-page .prime-main .prime-note:not(.prime-error, .prime-loading, .prime-success) { margin-top: 12px; }
+.page.prime-page .prime-main .prime-note.prime-error { margin-top: 15px; padding: 10px; border-radius: 0; }
+.page.prime-page .prime-note.prime-loading { margin-top: 15px; padding: 10px; border-radius: 0; background: rgba(0, 0, 0, .2); }
+.page.prime-page .prime-note.prime-success { display: block; margin-top: 15px; padding: 10px; border-radius: 0; background: rgba(0, 255, 0, .2); }
+.page.prime-page .prime-note.prime-success p { display: inline-block; margin-left: 10px; font-size: 14px; line-height: 1.46429; }
+.page.prime-page .prime-note.prime-success p:first-child { font-weight: 600; }
+@media (max-width: 520px) { .page.prime-page :is(.prime-bar, .prime-main) { padding-inline: 16px; } }
+@media (max-width: 513px) { .page.prime-page .prime-buttons .cnui-btn.prime-go { width: 100%; } }
+
+/* the switch and cancel dialogs: connect's papers a little above the window's middle */
+.prime-paper { top: 40%; left: 50%; width: 400px; max-width: 90%; padding: 16px; transform: translate(-50%, -50%); font-size: 14px; line-height: 1.46429; }
+.prime-paper p { margin: 0; }
+.prime-paper .prime-modal-text { margin-top: 12px; color: rgb(from var(--cnui-fg) r g b / .8); }
+.prime-paper .prime-modal-text b { color: var(--cnui-fg); }
+.prime-paper .prime-modal-busy { display: flex; flex-direction: column; align-items: center; margin-top: 16px; padding: 20px; border-radius: 8px; background: rgba(0, 0, 0, .2); }
+.prime-paper .prime-modal-busy p { margin-top: 8px; color: rgb(from var(--cnui-fg) r g b / .8); }
+.prime-paper .prime-modal-error { margin-top: 16px; padding: 12px; border-radius: 8px; background: color-mix(in oklab, oklch(.637 .237 25.331) 20%, transparent); color: oklch(.936 .032 17.717); }
+.prime-paper .prime-modal-ok { margin-top: 16px; padding: 12px; border-radius: 8px; background: color-mix(in oklab, oklch(.723 .219 149.579) 20%, transparent); color: oklch(.962 .044 156.743); }
+.prime-paper .prime-modal-buttons { margin-top: 16px; overflow: hidden; }
+.prime-paper .prime-modal-confirm { width: 170px; }
+.prime-paper .prime-modal-close { float: right; }
+/* cancelling (its own paper's styles): each line 10px apart, the outcome on brighter red and green */
+.prime-paper.cancel > p { margin-top: 10px; }
+.prime-paper.cancel .prime-modal-error, .prime-paper.cancel .prime-modal-ok { margin-top: 10px; padding: 10px; border-radius: 0; color: var(--cnui-fg); }
+.prime-paper.cancel .prime-modal-error { background: rgba(255, 0, 0, .3); }
+.prime-paper.cancel .prime-modal-ok { background: rgba(0, 255, 0, .3); }
+.prime-paper.cancel .prime-modal-buttons { margin-top: 0; }
+.prime-paper.cancel .prime-modal-buttons .cnui-btn { margin-top: 10px; }
+.prime-paper .prime-modal-care { margin-top: 12px; padding: 10px; background: #b85e1f; }
+.prime-paper .prime-modal-care a { color: #fff; text-decoration: underline; }

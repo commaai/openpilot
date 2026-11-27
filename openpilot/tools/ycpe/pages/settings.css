@@ -1,0 +1,53 @@
+/* user mode's device settings: connect's MUI modals (DeviceSettingsModal, UploadQueue around cnui.css's table) in its
+   dark-only palette, on cnui.css's modal and paper */
+.cn-paper { top: 40%; left: 50%; width: 400px; max-width: 90%; padding: 16px; outline: none; transform: translate(-50%, -50%); }
+.cn-paper.cn-unpair { width: 360px; max-width: 80%; }
+.cn-paper.cn-upload-queue { top: 50%; width: max-content; }
+.cn-paper :is(h2, p) { margin: 0; }
+.cn-paper .cnui-head { min-height: 25px; }
+.cn-upload-queue .cnui-head span { margin-left: 8px; }
+.cm-queue-body { max-height: calc(90vh - 98px); margin: 8px 0; overflow-y: auto; color: rgba(255,255,255,.9); text-align: left; }
+.cm-queue-body p { margin: 0; }
+.cm-queue-body .cnui-progress { vertical-align: middle; }
+.cn-modal-row { display: flex; align-items: flex-end; }
+
+/* cnui.css's buttons, spaced as connect's modals space them; contained ones pressed up, and disabled as Material UI's */
+.cn-paper .cnui-btn { margin: 20px 20px 0 0; }
+.cn-paper .cnui-btn:last-child { margin-right: 0; }
+.cn-paper .cnui-btn.grey:active { box-shadow: var(--mui-shadow-8); }
+.cn-paper .cnui-btn.grey:disabled { background: rgb(from var(--cnui-fg) r g b / .12); }
+.cn-modal-buttons { text-align: right; }
+.cn-modal-buttons .cnui-btn { margin: 0; }
+.cn-modal-buttons .cnui-btn + .cnui-btn { margin-left: 8px; }
+.cn-upload-queue .cn-modal-buttons .cnui-btn { margin-left: 8px; }
+
+/* the fields: connect's TextField */
+.cn-form { padding: 8px 0; }
+.cn-form-row { min-height: 75px; }
+.cn-form-error { margin-bottom: 5px; padding: 10px; background: #75141d; }
+.cn-form-error p { font-size: 14px; line-height: 1.46429; }
+.cn-field { position: relative; display: inline-flex; flex-direction: column; width: 70%; }
+.cn-field label { position: absolute; top: 0; left: 0; margin: 4px 0 0 16px; color: rgba(255,255,255,.7); font-size: 16px; line-height: 1; pointer-events: none;
+  transform: translate(0, 24px) scale(1); transform-origin: top left; transition: color .2s cubic-bezier(0, 0, .2, 1), transform .2s cubic-bezier(0, 0, .2, 1); }
+.cn-field:has(input:focus) label, .cn-field:has(input:not(:placeholder-shown)) label { transform: translate(0, -2px) scale(.75); }
+.cn-field:has(input:focus) label { color: #79bae8; }
+.cn-input { box-sizing: border-box; width: 100%; margin-top: 16px; overflow: hidden; border: 1px solid #272c2f; border-radius: 20px; }
+.cn-input input { box-sizing: content-box; width: 100%; height: 19px; padding: 12px 16px; border: 0; outline: none; background: none; color: #fff;
+  font: 400 16px/19px "Inter", sans-serif; }
+.cn-input input:focus { box-shadow: none; }
+.cn-input input:focus::placeholder { color: transparent; }
+.cn-field p { margin: 4px 0 0 8px; color: rgba(255,255,255,.7); font-size: 12px; line-height: 1; }
+.cn-fab { position: relative; display: inline-block; margin: 8px; }
+.cn-fab .cnui-ring { position: absolute; top: 0; left: 0; z-index: 1; color: #57a9e3; }
+.cn-iconbtn { display: grid; place-items: center; width: 48px; height: 48px; padding: 0; border: 0; border-radius: 50%; background: none; color: #fff; cursor: pointer;
+  transition: background-color .15s cubic-bezier(.4, 0, .2, 1); }
+.cn-iconbtn:hover { background: rgba(255,255,255,.08); }
+
+.cn-unpair-error, .cn-unpair-warning { display: flex; align-items: center; margin-top: 15px; padding: 10px; color: #fff; }
+.cn-unpair-error { background: rgba(255,0,0,.3); }
+.cn-unpair-warning { background: #b85e1f; }
+:is(.cn-unpair-error, .cn-unpair-warning) svg { flex-shrink: 0; }
+:is(.cn-unpair-error, .cn-unpair-warning) p { display: inline-block; margin-left: 10px; font-size: 14px; line-height: 1.46429; }
+.cn-unpair-warning a { color: #fff; text-decoration: underline; }
+.cn-unpair-buttons { display: flex; flex-wrap: wrap-reverse; align-items: baseline; justify-content: space-between; }
+.cn-unpaired { font-size: 14px; font-weight: 500; line-height: 1.71429; }
