@@ -145,45 +145,50 @@ def create_maneuvers(kwargs):
 def create_approach_stopped_adv_maneuvers(kwargs):
   return [
     Maneuver(
-      f"approaching stopped lead that doesn't go ({v0:g}m/s from {d0:g}m), model wrongly predicts +{model_a:g}m/s^2",
+      f"approaching stopped lead that doesn't go ({v0:g}m/s from {d0:g}m), "
+      + ("radar only" if model_a is None else f"model wrongly predicts +{model_a:g}m/s^2"),
       duration=duration,
       initial_speed=v0,
       lead_relevancy=True,
       initial_distance_lead=d0,
       speed_lead_values=[0., 0.],
       breakpoints=[0., duration],
-      model_speed_lead_values=[0., model_a * (duration + 15.)],
+      model_speed_lead_values=None if model_a is None else [0., model_a * (duration + 15.)],
       model_breakpoints=[0., duration + 15.],
+      only_radar=model_a is None,
       **kwargs,
     )
     for v0, d0, duration in ((30., 200., 25.), (15., 70., 20.), (8., 25., 18.))
-    for model_a in (1., 2., 4.)
+    for model_a in (None, 1., 2., 4.)
   ]
 
 
 def create_stopped_adv_maneuvers(kwargs):
   return [
     Maneuver(
-      f"stopped behind a lead that doesn't go ({d0:g}m), model wrongly predicts +{model_a:g}m/s^2",
+      f"stopped behind a lead that doesn't go ({d0:g}m), "
+      + ("radar only" if model_a is None else f"model wrongly predicts +{model_a:g}m/s^2"),
       duration=20.,
       initial_speed=0.,
       lead_relevancy=True,
       initial_distance_lead=d0,
       speed_lead_values=[0., 0.],
       breakpoints=[0., 20.],
-      model_speed_lead_values=[0., model_a * 35.],
+      model_speed_lead_values=None if model_a is None else [0., model_a * 35.],
       model_breakpoints=[0., 35.],
+      only_radar=model_a is None,
       **kwargs,
     )
     for d0 in (STOP_DISTANCE, 4.)
-    for model_a in (1., 2., 4.)
+    for model_a in (None, 1., 2., 4.)
   ]
 
 
 def create_hard_braking_adv_maneuvers(kwargs):
   return [
     Maneuver(
-      f"steady following ({v0:g}m/s) then lead brakes hard, model wrongly predicts 0m/s^2, lead -{decel:g}m/s^2",
+      f"steady following ({v0:g}m/s) then lead brakes hard (-{decel:g}m/s^2), "
+      + ("radar only" if only_radar else "model wrongly predicts 0m/s^2"),
       duration=15. + v0 / decel + 10.,
       initial_speed=v0,
       lead_relevancy=True,
@@ -192,10 +197,12 @@ def create_hard_braking_adv_maneuvers(kwargs):
       breakpoints=[0., 15., 15. + v0 / decel],
       model_speed_lead_values=[v0, v0, v0],
       model_breakpoints=[0., 15., 15. + v0 / decel + 25.],
+      only_radar=only_radar,
       **kwargs,
     )
     for v0, d0 in ((10., 20.), (20., 35.), (30., 50.))
     for decel in (2., 3., 3.5)
+    for only_radar in (True, False)
   ]
 
 

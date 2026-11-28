@@ -35,7 +35,7 @@ class Maneuver:
     # perception
     self.lead_relevancy = kwargs.get("lead_relevancy", False)
     self.only_lead2 = kwargs.get("only_lead2", False)
-    only_radar = kwargs.get("only_radar", False)
+    self.only_radar = kwargs.get("only_radar", False)
     prob_lead_values = kwargs.get("prob_lead_values", [1.0] * len(breakpoints))
     model_v_lead_values = kwargs.get("model_speed_lead_values", None)
     model_breakpoints = kwargs.get("model_breakpoints", breakpoints)
@@ -62,8 +62,8 @@ class Maneuver:
       self.model_v_lead = self.v_lead
       self.model_a_lead = self.a_lead
       self.model_x_lead = self.x_lead
-    self.prob_lead = np.zeros_like(self.t) if only_radar else np.interp(self.t, breakpoints, prob_lead_values)
-    self.lead_present = np.logical_and(self.lead_relevancy, np.logical_or(only_radar, self.prob_lead > 0.5))
+    self.prob_lead = np.zeros_like(self.t) if self.only_radar else np.interp(self.t, breakpoints, prob_lead_values)
+    self.lead_present = np.logical_and(self.lead_relevancy, np.logical_or(self.only_radar, self.prob_lead > 0.5))
     self.v_cruise = np.interp(self.t, breakpoints, v_cruise_values)
 
   def _make_messages(self, i):
