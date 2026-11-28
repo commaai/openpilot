@@ -9,11 +9,12 @@ from openpilot.tools.longitudinal_maneuvers.maneuver_helpers import Axis, axis_l
 from openpilot.selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 
 
-def get_html_from_results(results, labels, axes):
+def get_html_from_results(results, labels, axes, styles=None):
   fig, axs = plt.subplots(1, len(axes), figsize=(5 * len(axes), 3.4), squeeze=False)
   for ax, axis in zip(axs[0], axes, strict=True):
     for idx, key in enumerate(results.keys()):
-      ax.plot(results[key][:, Axis.TIME], results[key][:, axis], label=labels[idx])
+      style = styles[idx] if styles is not None else {}
+      ax.plot(results[key][:, Axis.TIME], results[key][:, axis], label=labels[idx], **style)
     ax.set_xlabel(axis_labels[Axis.TIME], fontsize=9)
     ax.set_ylabel(axis_labels[axis], fontsize=9)
     ax.tick_params(labelsize=8)

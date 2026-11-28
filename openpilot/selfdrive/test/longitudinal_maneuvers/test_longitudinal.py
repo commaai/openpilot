@@ -142,57 +142,69 @@ def create_maneuvers(kwargs):
   return maneuvers
 
 
-def create_adv_maneuvers(kwargs):
+def create_approach_stopped_adv_maneuvers(kwargs):
   return [
-    *(
-      Maneuver(
-        f"approaching stopped lead that doesn't go ({v0:g}m/s from {d0:g}m), model wrongly predicts +{model_a:g}m/s²",
-        duration=dur,
-        initial_speed=v0,
-        lead_relevancy=True,
-        initial_distance_lead=d0,
-        speed_lead_values=[0., 0.],
-        breakpoints=[0., dur],
-        model_speed_lead_values=[0., model_a * (dur + 15.)],
-        model_breakpoints=[0., dur + 15.],
-        **kwargs,
-      )
-      for v0, d0, dur in ((30., 200., 25.), (15., 70., 20.), (8., 25., 18.))
-      for model_a in (1., 2., 4.)
-    ),
-    *(
-      Maneuver(
-        f"stopped behind a lead that doesn't go ({d0:g}m), model wrongly predicts +{model_a:g}m/s²",
-        duration=20.,
-        initial_speed=0.,
-        lead_relevancy=True,
-        initial_distance_lead=d0,
-        speed_lead_values=[0., 0.],
-        breakpoints=[0., 20.],
-        model_speed_lead_values=[0., model_a * 35.],
-        model_breakpoints=[0., 35.],
-        **kwargs,
-      )
-      for d0 in (STOP_DISTANCE, 4.)
-      for model_a in (1., 2., 4.)
-    ),
-    *(
-      Maneuver(
-        f"steady following ({v0:g}m/s) then lead brakes hard, lead -{decel:g}m/s² & model wrongly predicts 0m/s²",
-        duration=15. + v0 / decel + 10.,
-        initial_speed=v0,
-        lead_relevancy=True,
-        initial_distance_lead=d0,
-        speed_lead_values=[v0, v0, 0.],
-        breakpoints=[0., 15., 15. + v0 / decel],
-        model_speed_lead_values=[v0, v0, v0],
-        model_breakpoints=[0., 15., 15. + v0 / decel + 25.],
-        **kwargs,
-      )
-      for v0, d0 in ((10., 20.), (20., 35.), (30., 50.))
-      for decel in (2., 3., 3.5)
-    ),
+    Maneuver(
+      f"approaching stopped lead that doesn't go ({v0:g}m/s from {d0:g}m), model wrongly predicts +{model_a:g}m/s²",
+      duration=dur,
+      initial_speed=v0,
+      lead_relevancy=True,
+      initial_distance_lead=d0,
+      speed_lead_values=[0., 0.],
+      breakpoints=[0., dur],
+      model_speed_lead_values=[0., model_a * (dur + 15.)],
+      model_breakpoints=[0., dur + 15.],
+      **kwargs,
+    )
+    for v0, d0, dur in ((30., 200., 25.), (15., 70., 20.), (8., 25., 18.))
+    for model_a in (1., 2., 4.)
   ]
+
+
+def create_stopped_adv_maneuvers(kwargs):
+  return [
+    Maneuver(
+      f"stopped behind a lead that doesn't go ({d0:g}m), model wrongly predicts +{model_a:g}m/s²",
+      duration=20.,
+      initial_speed=0.,
+      lead_relevancy=True,
+      initial_distance_lead=d0,
+      speed_lead_values=[0., 0.],
+      breakpoints=[0., 20.],
+      model_speed_lead_values=[0., model_a * 35.],
+      model_breakpoints=[0., 35.],
+      **kwargs,
+    )
+    for d0 in (STOP_DISTANCE, 4.)
+    for model_a in (1., 2., 4.)
+  ]
+
+
+def create_hard_braking_adv_maneuvers(kwargs):
+  return [
+    Maneuver(
+      f"steady following ({v0:g}m/s) then lead brakes hard, model wrongly predicts 0m/s², lead -{decel:g}m/s²",
+      duration=15. + v0 / decel + 10.,
+      initial_speed=v0,
+      lead_relevancy=True,
+      initial_distance_lead=d0,
+      speed_lead_values=[v0, v0, 0.],
+      breakpoints=[0., 15., 15. + v0 / decel],
+      model_speed_lead_values=[v0, v0, v0],
+      model_breakpoints=[0., 15., 15. + v0 / decel + 25.],
+      **kwargs,
+    )
+    for v0, d0 in ((10., 20.), (20., 35.), (30., 50.))
+    for decel in (2., 3., 3.5)
+  ]
+
+
+def create_adv_maneuvers(kwargs):
+  return (
+    create_approach_stopped_adv_maneuvers(kwargs)
+    + create_stopped_adv_maneuvers(kwargs)
+    + create_hard_braking_adv_maneuvers(kwargs)
+  )
 
 
 class TestLongitudinalControl(OpenpilotTestCase):
