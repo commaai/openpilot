@@ -187,8 +187,6 @@ void cloneFinished(int exitCode) {
   LOGD("git finished with %d", exitCode);
   assert(exitCode == 0);
 
-  renderProgress(100);
-
   // ensure correct branch is checked out
   int err = chdir(TMP_INSTALL_PATH);
   assert(err == 0);
@@ -198,6 +196,7 @@ void cloneFinished(int exitCode) {
   if (!util::check_output("git ls-files ':(attr:filter=lfs)'").empty()) {
     run(util::file_exists("tools/lfs.sh") ? "./tools/lfs.sh pull" : "git lfs pull");
   }
+  renderProgress(100);
 
   // move into place
   run(("rm -f " + VALID_CACHE_PATH).c_str());
