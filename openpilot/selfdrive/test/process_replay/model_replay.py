@@ -19,6 +19,7 @@ from openpilot.selfdrive.test.process_replay.process_replay import get_process_c
 from openpilot.tools.lib.framereader import FrameReader
 from openpilot.tools.lib.logreader import LogReader, save_log
 from openpilot.tools.lib.github_utils import GithubUtils
+from openpilot.tools.lib.url_file import URLFile
 
 TEST_ROUTE = "98395b7c5b27882e|0000002b--2686b5a2d0"
 SEGMENT = 1
@@ -248,7 +249,8 @@ if __name__ == "__main__":
   if not update:
     log_fn = get_log_fn(TEST_ROUTE)
     try:
-      all_logs = list(LogReader(GITHUB.get_file_url(MODEL_REPLAY_BUCKET, log_fn)))
+      # master's ref is overwritten at the same URL, so it can't come from the download cache
+      all_logs = list(LogReader.from_bytes(URLFile(GITHUB.get_file_url(MODEL_REPLAY_BUCKET, log_fn), cache=False).read()))
       cmp_log = []
       model_start_index = next(i for i, m in enumerate(all_logs) if m.which() in ("modelV2", "drivingModelData", "cameraOdometry"))
       cmp_log += all_logs[model_start_index+START_FRAME*3:model_start_index + END_FRAME*3]
