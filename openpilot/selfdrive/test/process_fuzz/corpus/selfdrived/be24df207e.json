@@ -1,0 +1,1 @@
+{"alpha_long": false, "dur": 12.0, "faults": [["deviceMotion", "drop", 0.0, 12.0, 1], ["vehicleParameters", "drop", 0.0, 12.0, 1], ["modelV2", "drop", 0.0, 12.0, 1]], "fp": "HONDA_CIVIC", "genes": {}, "params": {"ChestnutActive": true, "DisengageOnAccelerator": false, "IsLdwEnabled": true, "OpenpilotEnabledToggle": true}, "perturb": null, "proc": "selfdrived", "sim": false}

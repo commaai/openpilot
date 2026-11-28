@@ -1,0 +1,1 @@
+{"alpha_long": false, "dur": 6.0, "faults": [["modelV2", "invalid", 0.0, 6.0, 2]], "fp": "TOYOTA_COROLLA_TSS2", "genes": {"selfdriveState.state": {"a": "enabled", "b": "enabled", "idx": "same", "k": 1.0, "rel": null, "shape": "hold", "t0": 0.0, "t1": 0.0}}, "params": {}, "perturb": null, "proc": "controlsd", "sim": true}

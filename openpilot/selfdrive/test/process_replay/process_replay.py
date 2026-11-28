@@ -47,11 +47,13 @@ class LauncherWithCapture:
 
 
 class ReplayContext:
-  def __init__(self, cfg):
+  def __init__(self, cfg, is_alive=lambda: True):
     self.proc_name = cfg.proc_name
     self.pubs = cfg.pubs
     self.main_pub = cfg.main_pub
     self.main_pub_drained = cfg.main_pub_drained
+    self.timeout = cfg.timeout
+    self.is_alive = is_alive
     assert len(self.pubs) != 0 or self.main_pub is not None
 
   def __enter__(self):
@@ -87,8 +89,18 @@ class ReplayContext:
   def all_recv_ready_events(self):
     return [man.recv_ready_event for man in self.events.values()]
 
+  def wait_for_one_event(self, events):
+    # 1 s polls: a dead process never sets its events, and a wait blocked in C defers Timeout's SIGALRM
+    for _ in range(self.timeout):
+      try:
+        return messaging.wait_for_one_event(events, 1)
+      except RuntimeError:
+        if not self.is_alive():
+          raise RuntimeError(f"{self.proc_name} died") from None
+    raise RuntimeError(f"{self.proc_name} timed out")
+
   def send_sync(self, pm, endpoint, dat):
-    self.events[endpoint].recv_called_event.wait()
+    self.wait_for_one_event([self.events[endpoint].recv_called_event])
     self.events[endpoint].recv_called_event.clear()
     pm.send(endpoint, dat)
     self.events[endpoint].recv_ready_event.set()
@@ -96,20 +108,20 @@ class ReplayContext:
   def unlock_sockets(self):
     expected_sets = len(self.events)
     while expected_sets > 0:
-      index = messaging.wait_for_one_event(self.all_recv_called_events)
+      index = self.wait_for_one_event(self.all_recv_called_events)
       self.all_recv_called_events[index].clear()
       self.all_recv_ready_events[index].set()
       expected_sets -= 1
 
   def wait_for_recv_called(self):
-    messaging.wait_for_one_event(self.all_recv_called_events)
+    self.wait_for_one_event(self.all_recv_called_events)
 
   def wait_for_next_recv(self, trigger_empty_recv):
-    index = messaging.wait_for_one_event(self.all_recv_called_events)
+    index = self.wait_for_one_event(self.all_recv_called_events)
     if self.main_pub is not None and self.main_pub_drained and trigger_empty_recv:
       self.all_recv_called_events[index].clear()
       self.all_recv_ready_events[index].set()
-      self.all_recv_called_events[index].wait()
+      self.wait_for_one_event([self.all_recv_called_events[index]])
 
 
 @dataclass
@@ -130,6 +142,7 @@ class ProcessConfig:
   main_pub_drained: bool = False
   vision_pubs: list[str] = field(default_factory=list)
   ignore_alive_pubs: list[str] = field(default_factory=list)
+  launcher_wrapper: Callable | None = None  # launcher -> launcher, applied in the child before main()
 
   def __post_init__(self):
     # If the process is polling a service, we can just lock that one to speed up replay
@@ -213,6 +226,8 @@ class ProcessContainer:
     self.cfg.vision_pubs = [meta.camera_state for meta in streams_metas if meta.camera_state in self.cfg.vision_pubs]
 
   def _start_process(self):
+    if self.cfg.launcher_wrapper is not None:
+      self.process.launcher = self.cfg.launcher_wrapper(self.process.launcher)
     if self.capture is not None:
       self.process.launcher = LauncherWithCapture(self.capture, self.process.launcher)  # ty: ignore[invalid-assignment]  # intentional wrapper
     self.process.start()
@@ -230,7 +245,7 @@ class ProcessContainer:
         params = Params()
         self.cfg.config_callback(params, self.cfg, all_msgs)
 
-      self.rc = ReplayContext(self.cfg)
+      self.rc = ReplayContext(self.cfg, lambda: self.process.proc is None or self.process.proc.is_alive())
       self.rc.open_context()
 
       self.pm = messaging.PubMaster(self.cfg.pubs)
@@ -737,8 +752,6 @@ def generate_params_config(lr=None, CP=None, fingerprint=None, custom_params=Non
     "DisableLogging": False,
   }
 
-  if custom_params is not None:
-    params_dict.update(custom_params)
   if lr is not None:
     has_ublox = any(msg.which() == "ubloxGnss" for msg in lr)
     params_dict["UbloxAvailable"] = has_ublox
@@ -756,6 +769,8 @@ def generate_params_config(lr=None, CP=None, fingerprint=None, custom_params=Non
     if CP.notCar:
       params_dict["JoystickDebugMode"] = True
 
+  if custom_params is not None:  # explicit params win over the log/CP-derived ones
+    params_dict.update(custom_params)
   return params_dict
 
 

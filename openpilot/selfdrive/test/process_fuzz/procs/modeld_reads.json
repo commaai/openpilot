@@ -1,0 +1,23 @@
+[
+ "@seen[deviceState]",
+ "@seen[narrowRoadCameraState]",
+ "@updated[extrinsicsCalibration]",
+ "CP.brand",
+ "CP.longitudinalActuatorDelay",
+ "P CarParams",
+ "carControl.latActive",
+ "carState.leftBlindspot",
+ "carState.leftBlinker",
+ "carState.rightBlindspot",
+ "carState.rightBlinker",
+ "carState.steeringPressed",
+ "carState.steeringTorque",
+ "carState.vEgo",
+ "controlsState.curvature",
+ "deviceState.deviceType",
+ "driverMonitoringState.isRHD",
+ "extrinsicsCalibration.rpyCalib[]",
+ "lateralDelay.lateralDelay",
+ "narrowRoadCameraState.frameId",
+ "narrowRoadCameraState.sensor"
+]

@@ -1,0 +1,1 @@
+{"alpha_long": false, "dur": 8.0, "faults": [], "fp": "TOYOTA_YARIS", "genes": {}, "params": {"CarParamsCache": "cp", "CarParamsPersistent": "garbage", "InitialCruiseSpeedKph": 255, "IsMetric": false, "IsReleaseBranch": false, "OpenpilotEnabledToggle": true, "SecOCKey": "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"}, "perturb": null, "proc": "card", "sim": false}

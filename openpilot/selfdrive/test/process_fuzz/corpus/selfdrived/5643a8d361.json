@@ -1,0 +1,1 @@
+{"alpha_long": false, "dur": 12.0, "faults": [["radarState", "slow", 7.0, 12.0, 3]], "fp": "HONDA_CIVIC", "genes": {}, "params": {"DisengageOnAccelerator": false, "IsLdwEnabled": true, "OpenpilotEnabledToggle": true}, "perturb": null, "proc": "selfdrived", "sim": false}

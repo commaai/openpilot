@@ -1,0 +1,1 @@
+{"alpha_long": false, "dur": 2.0, "faults": [["carState", "invalid", 0.0, 2.0, 2]], "fp": "ACURA_ILX", "genes": {}, "params": {}, "perturb": null, "proc": "modeld", "sim": true}

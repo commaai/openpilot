@@ -1,0 +1,1 @@
+{"alpha_long": false, "dur": 1.0, "faults": [["extrinsicsCalibration", "invalid", 0.0, 1.0, 2]], "fp": "ACURA_ILX", "genes": {}, "params": {}, "perturb": null, "proc": "dmonitoringmodeld", "sim": true}

@@ -1,0 +1,1 @@
+{"alpha_long": false, "dur": 2.0, "faults": [], "fp": "ACURA_ILX", "genes": {"out.action[]": {"a": 0.09, "b": 0.11, "idx": "at:1", "k": 1.0, "rel": null, "shape": "osc", "t0": 0.0, "t1": 0.05}}, "params": {}, "perturb": null, "proc": "modeld", "sim": true}

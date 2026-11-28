@@ -1,0 +1,1 @@
+{"alpha_long": false, "dur": 10.0, "faults": [], "fp": "TOYOTA_PRIUS", "genes": {}, "params": {"CalibrationParams": {"event": {"extrinsicsCalibration": {"height": [1.22], "rpyCalib": [0.0, 0.0], "validBlocks": 0, "wideFromDeviceEuler": [0.0, 0.0, 0.0]}}}, "CarParamsPrevRoute": {"car": "same"}}, "perturb": null, "proc": "calibrationd", "sim": true}

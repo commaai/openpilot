@@ -1,0 +1,1 @@
+{"alpha_long": true, "dur": 10.0, "faults": [], "fp": "ACURA_ADX", "genes": {"carState.aEgo": {"a": -1.2361112833023071, "b": 24.999998092651367, "idx": "same", "k": 1.0, "rel": null, "shape": "osc", "t0": 9.37104646290456, "t1": 0.02}}, "params": {}, "perturb": null, "proc": "plannerd", "sim": false}

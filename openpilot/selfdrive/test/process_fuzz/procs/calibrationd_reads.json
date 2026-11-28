@@ -1,0 +1,20 @@
+[
+ "@all_checks(cameraOdometry,carState)",
+ "@updated[cameraOdometry]",
+ "CP.brand",
+ "CP.carFingerprint",
+ "CP.notCar",
+ "P CalibrationParams",
+ "P CarParams",
+ "P CarParamsPrevRoute",
+ "cameraOdometry.roadTransformTrans.len",
+ "cameraOdometry.roadTransformTransStd.len",
+ "cameraOdometry.roadTransformTransStd[]",
+ "cameraOdometry.roadTransformTrans[]",
+ "cameraOdometry.rot[]",
+ "cameraOdometry.transStd[]",
+ "cameraOdometry.trans[]",
+ "cameraOdometry.wideFromDeviceEuler.len",
+ "cameraOdometry.wideFromDeviceEuler[]",
+ "carState.vEgo"
+]

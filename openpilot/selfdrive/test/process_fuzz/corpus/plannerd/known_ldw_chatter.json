@@ -1,0 +1,42 @@
+{
+ "proc": "plannerd",
+ "fp": "CUPRA_BORN_MK1",
+ "alpha_long": false,
+ "sim": true,
+ "params": {},
+ "dur": 8.0,
+ "faults": [],
+ "perturb": null,
+ "genes": {
+  "carState.vEgo": {
+   "shape": "hover",
+   "a": 13.858240000000002,
+   "b": 0.05,
+   "t0": 0.0,
+   "t1": 0.5,
+   "idx": "same",
+   "rel": null,
+   "k": 1.0
+  },
+  "modelV2.laneLineProbs[]": {
+   "shape": "hold",
+   "a": 0.9,
+   "b": 0.9,
+   "t0": 0.0,
+   "t1": 0.0,
+   "idx": "same",
+   "rel": null,
+   "k": 1.0
+  },
+  "modelV2.meta.desirePrediction[]": {
+   "shape": "hold",
+   "a": 0.5,
+   "b": 0.5,
+   "t0": 0.0,
+   "t1": 0.0,
+   "idx": "same",
+   "rel": null,
+   "k": 1.0
+  }
+ }
+}
