@@ -276,7 +276,7 @@ bool V4LVideoDecoder::open(AVCodecParameters *codecpar, bool hw_decoder) {
   }
   width = codecpar->width;
   height = codecpar->height;
-  v4l_decoder.init(V4LDecoder::DEVICE, width, height, V4L2_PIX_FMT_HEVC);
+  v4l_decoder.init(width, height, V4L2_PIX_FMT_HEVC);
   return true;
 }
 

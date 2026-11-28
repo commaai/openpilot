@@ -152,8 +152,13 @@ class CameraView(Widget):
 
     curve, saturation = self._frame_color()
     rl.cpu.target_raylib()
+    # a new frame's buffer was last written by the device, redraws read the same frame again
+    if self._new_frame:
+      self.frame.begin_cpu_access()
     rl.cpu.nv12(self.frame.data, self.frame.uv_offset, self.frame.stride, self.frame.width, self.frame.height, dst_rect,
                 src_rect.width < 0, curve, round(saturation * 256), self._new_frame)
+    if self._new_frame:
+      self.frame.end_cpu_access()
     self._new_frame = False
 
   def _draw_placeholder(self, rect: rl.Rectangle):

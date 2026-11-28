@@ -469,7 +469,7 @@ class TestOnroad(OpenpilotTestCase):
            f"Not engageable for whole segment:\n- selfdriveState.engageable: {Counter(eng)}\n- No entry events: {no_entries}"
 
 
-CHESTNUT_VBUS = "/sys/kernel/debug/regulator/smb2-vbus/enable"
+CHESTNUT_VBUS = "/sys/class/typec/port0/port_type"
 
 @contextlib.contextmanager
 def chestnut_models(services):
@@ -501,12 +501,12 @@ class TestChestnutOnroad(OpenpilotTestCase):
 
       # test small model fallback by cutting VBUS which simulates usb disconnect
       try:
-        sudo_write("0", CHESTNUT_VBUS)
+        sudo_write("sink", CHESTNUT_VBUS)
         with Timeout(10, "modeld didn't fall back to the small model"):
           while sm['modelV2'].big:
             sm.update(1000)
       finally:
-        sudo_write("1", CHESTNUT_VBUS)
+        sudo_write("dual", CHESTNUT_VBUS)
 
       # test small model keeps running
       with log_collector(['modelV2']) as (small_model_logs, _):

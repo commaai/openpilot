@@ -1,6 +1,7 @@
 #include "tools/replay/camera.h"
 
 #include <algorithm>
+#include <cassert>
 
 #include <capnp/dynamic.h>
 
@@ -88,7 +89,13 @@ VisionBuf *CameraServer::getFrame(Camera &cam, FrameReader *fr, int32_t segment_
   if (buf_it != cam.cached_buf.end()) return *buf_it;
 
   VisionBuf *yuv_buf = vipc_server_->get_buffer(cam.stream_type);
-  if (fr->get(segment_id, yuv_buf)) {
+  // the decoders write the frame with the CPU
+  int err = yuv_buf->begin_cpu_access(true);
+  assert(err == 0);
+  bool ok = fr->get(segment_id, yuv_buf);
+  err = yuv_buf->end_cpu_access(true);
+  assert(err == 0);
+  if (ok) {
     yuv_buf->set_frame_id(frame_id);
     cam.cached_buf.insert(yuv_buf);
     return yuv_buf;

@@ -75,6 +75,41 @@ def get_default_route_iface():
     routes = [(int(route[6]), route[0]) for line in f.readlines()[1:] if (route := line.split())[1] == "00000000" and int(route[3], 16) & 0x1]
   return min(routes)[1] if routes else None
 
+# the IR LED, a leds-qcom-flash torch. it drives brightness b at b / 255 of the DT's led-max-microamp (300 mA),
+# whatever max_brightness says
+IR_TORCH = "/sys/class/leds/ir:torch"
+BACKLIGHT = "/sys/class/backlight/ae94000.dsi.0"
+
+def drm_fdinfo(pid: int) -> list[str]:
+  """the fdinfo files of a process's DRM fds"""
+  ret = []
+  try:
+    fds = os.listdir(f"/proc/{pid}/fd")
+  except OSError:
+    return ret
+  for fd in fds:
+    try:
+      if os.readlink(f"/proc/{pid}/fd/{fd}").startswith("/dev/dri/"):
+        ret.append(f"/proc/{pid}/fdinfo/{fd}")
+    except OSError:
+      pass
+  return ret
+
+def drm_engine_busy(fdinfo: str) -> dict[str, int]:
+  """{drm-client-id: GPU busy ns} of a DRM fd, or {} if it's gone"""
+  try:
+    with open(fdinfo) as f:
+      info = dict(line.split(":", 1) for line in f.read().splitlines() if ":" in line)
+    return {info["drm-client-id"].strip(): int(info["drm-engine-gpu"].split()[0])}
+  except (OSError, KeyError, ValueError, IndexError):
+    return {}
+
+def gpu_usage_percent(last: int, last_busy: dict[str, int], now: int, busy: dict[str, int]) -> float:
+  """the GPU load between two samples of the clients' busy ns, counting a new client from its next sample"""
+  if now <= last:
+    return 0.
+  return min(100., 100. * sum(b - last_busy.get(c, b) for c, b in busy.items()) / (now - last))
+
 class HardwareComma(HardwareBase):
   """
     This platform covers the Snapdragon 845-based comma devices:
@@ -85,6 +120,12 @@ class HardwareComma(HardwareBase):
     We strictly use only the device codenames in this codebase for
     consistency, though all user-facing UI should use the product names.
   """
+
+  def __init__(self):
+    super().__init__()
+    # GPU load: {pid: (when its fds were listed, its DRM fdinfo paths)} and the last (time, {client: busy ns})
+    self._drm_fdinfo: dict[int, tuple[int | None, list[str]]] = {}
+    self._gpu_busy: tuple[int, dict[str, int]] = (time.monotonic_ns(), {})
 
   @cached_property
   def amplifier(self):
@@ -129,13 +170,8 @@ class HardwareComma(HardwareBase):
     if self.get_device_type() == "tizi":
       return
 
-    value = int((percent / 100) * 300)
-    with open("/sys/class/leds/led:switch_2/brightness", "w") as f:
-      f.write("0\n")
-    with open("/sys/class/leds/led:torch_2/brightness", "w") as f:
-      f.write(f"{value}\n")
-    with open("/sys/class/leds/led:switch_2/brightness", "w") as f:
-      f.write(f"{value}\n")
+    with open(f"{IR_TORCH}/brightness", "w") as f:
+      f.write(f"{min(max(int(percent), 0), 100) * 255 // 100}\n")
 
   def get_network_type(self):
     try:
@@ -268,7 +304,9 @@ class HardwareComma(HardwareBase):
     return (self.read_param_file(f"{hwmon('ina231')}/power1_input", int) / 1e6)
 
   def get_som_power_draw(self):
-    return (self.read_param_file("/sys/class/power_supply/bms/voltage_now", int) * self.read_param_file("/sys/class/power_supply/bms/current_now", int) / 1e12)
+    # in mV and mA
+    som = hwmon("som_power")
+    return self.read_param_file(f"{som}/in1_input", int) * self.read_param_file(f"{som}/curr1_input", int) / 1e6
 
   def shutdown(self):
     subprocess.run("sudo poweroff", shell=True)
@@ -276,16 +314,15 @@ class HardwareComma(HardwareBase):
   def get_thermal_config(self):
     intake, exhaust, gnss, bottomSoc = None, None, None, None
     if self.get_device_type() == "mici":
-      gnss = ThermalZone("gnss")
-      intake = ThermalZone("intake")
-      exhaust = ThermalZone("exhaust")
-      bottomSoc = ThermalZone("bottom_soc")
-    return ThermalConfig(cpu=[ThermalZone(f"cpu{i}-silver-usr") for i in range(4)] +
-                             [ThermalZone(f"cpu{i}-gold-usr") for i in range(4)],
-                         gpu=[ThermalZone("gpu0-usr"), ThermalZone("gpu1-usr")],
-                         dsp=ThermalZone("compute-hvx-usr"),
-                         memory=ThermalZone("ddr-usr"),
-                         pmic=[ThermalZone("pm8998_tz"), ThermalZone("pm8005_tz")],
+      gnss = ThermalZone("gnss-thermal")
+      intake = ThermalZone("intake-thermal")
+      exhaust = ThermalZone("exhaust-thermal")
+      bottomSoc = ThermalZone("bottom-soc-thermal")
+    return ThermalConfig(cpu=[ThermalZone(f"cpu{i}-thermal") for i in range(8)],
+                         gpu=[ThermalZone("gpu-top-thermal"), ThermalZone("gpu-bottom-thermal")],
+                         dsp=ThermalZone("q6-hvx-thermal"),
+                         memory=ThermalZone("mem-thermal"),
+                         pmic=[ThermalZone("pm8998-thermal")],
                          intake=intake,
                          exhaust=exhaust,
                          gnss=gnss,
@@ -293,28 +330,28 @@ class HardwareComma(HardwareBase):
 
   def set_display_power(self, on):
     try:
-      with open("/sys/class/backlight/panel0-backlight/bl_power", "w") as f:
+      with open(f"{BACKLIGHT}/bl_power", "w") as f:
         f.write("0" if on else "4")
     except Exception:
       pass
 
   def set_screen_brightness(self, percentage):
     try:
-      with open("/sys/class/backlight/panel0-backlight/max_brightness") as f:
+      with open(f"{BACKLIGHT}/max_brightness") as f:
         max_brightness = float(f.read().strip())
 
       val = int(percentage * (max_brightness / 100.))
-      with open("/sys/class/backlight/panel0-backlight/brightness", "w") as f:
+      with open(f"{BACKLIGHT}/brightness", "w") as f:
         f.write(str(val))
     except Exception:
       pass
 
   def get_screen_brightness(self):
     try:
-      with open("/sys/class/backlight/panel0-backlight/max_brightness") as f:
+      with open(f"{BACKLIGHT}/max_brightness") as f:
         max_brightness = float(f.read().strip())
 
-      with open("/sys/class/backlight/panel0-backlight/brightness") as f:
+      with open(f"{BACKLIGHT}/brightness") as f:
         return int(float(f.read()) / (max_brightness / 100.))
     except Exception:
       return 0
@@ -345,20 +382,34 @@ class HardwareComma(HardwareBase):
     # *** IRQ config ***
 
     # GPU, modeld core
-    affine_irq(7, "kgsl-3d0")
+    affine_irq(7, "gpu-irq")
 
     # camerad core
     camera_irqs = ("a5", "cci", "cpas_camnoc", "cpas-cdm", "csid", "ife", "csid-lite", "ife-lite")
     for n in camera_irqs:
       affine_irq(6, n)
 
-  def get_gpu_usage_percent(self):
-    try:
-      with open('/sys/class/kgsl/kgsl-3d0/gpubusy') as f:
-        used, total = f.read().strip().split()
-      return 100.0 * int(used) / int(total)
-    except Exception:
-      return 0
+  def get_gpu_usage_percent(self, pids=()):
+    # the GPU busy time of the given DRM clients, https://docs.kernel.org/gpu/drm-usage-stats.html
+    now = time.monotonic_ns()
+    busy = {}
+    # listing a process's fds costs ~10 ms, so they're listed again every 10 s, for new DRM fds, or as soon as one of
+    # them isn't a DRM fd any more (closed, or its number reused). dup'd fds are one client
+    fdinfo = {}
+    for pid in pids:
+      listed, paths = self._drm_fdinfo.get(pid, (None, []))
+      if listed is None or now - listed > 10e9:
+        listed, paths = now, drm_fdinfo(pid)
+      for path in paths:
+        client = drm_engine_busy(path)
+        if not client:
+          listed = None
+        busy.update(client)
+      fdinfo[pid] = (listed, paths)
+    self._drm_fdinfo = fdinfo
+    last, last_busy = self._gpu_busy
+    self._gpu_busy = (now, busy)
+    return gpu_usage_percent(last, last_busy, now, busy)
 
   def initialize_hardware(self):
     if self.amplifier is not None:
@@ -374,33 +425,20 @@ class HardwareComma(HardwareBase):
     # *** IRQ config ***
 
     # move these off the default core, and off the cores AGNOS keeps for everything but openpilot
-    affine_irq(2, "msm_vidc")  # encoders
-    affine_irq(2, "i2c_geni")  # sensors
+    affine_irq(2, "venus")  # encoders
+    for i2c in ("890000.i2c", "894000.i2c", "a88000.i2c"):  # sensors, touch, amplifier
+      affine_irq(2, i2c)
+    # touch. the display IRQ is chained in the MDSS, so it can't be moved
+    affine_irq(5, "ft3168" if self.get_device_type() == "mici" else "s6sy761_irq")
 
     # *** GPU config ***
-    # https://github.com/commaai/agnos-kernel-sdm845/blob/master/arch/arm64/boot/dts/qcom/sdm845-gpu.dtsi#L216
-    affine_irq(5, "fts_ts")    # touch
-    affine_irq(5, "msm_drm")   # display
-    sudo_write("1", "/sys/class/kgsl/kgsl-3d0/min_pwrlevel")
-    sudo_write("1", "/sys/class/kgsl/kgsl-3d0/max_pwrlevel")
-    sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_bus_on")
-    sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_clk_on")
-    sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_rail_on")
-    sudo_write("1000", "/sys/class/kgsl/kgsl-3d0/idle_timer")
-    sudo_write("performance", "/sys/class/kgsl/kgsl-3d0/devfreq/governor")
-    sudo_write("710", "/sys/class/kgsl/kgsl-3d0/max_clock_mhz")
-
-    # setup governors
-    sudo_write("performance", "/sys/class/devfreq/soc:qcom,cpubw/governor")
-    sudo_write("performance", "/sys/class/devfreq/soc:qcom,memlat-cpu0/governor")
-    sudo_write("performance", "/sys/class/devfreq/soc:qcom,memlat-cpu4/governor")
-
-    # *** VIDC (encoder) config ***
-    sudo_write("N", "/sys/kernel/debug/msm_vidc/clock_scaling")
-    sudo_write("Y", "/sys/kernel/debug/msm_vidc/disable_thermal_mitigation")
+    # 675 MHz like KGSL's pwrlevel 1. The GPU still runtime-suspends when idle, so offroad and after
+    # openpilot exits it powers off and drops its DDR vote; onroad the models keep it awake
+    sudo_write("675000000", "/sys/class/devfreq/5000000.gpu/max_freq")
+    sudo_write("675000000", "/sys/class/devfreq/5000000.gpu/min_freq")
 
     # pandad core
-    affine_irq(3, "spi_geni")         # SPI
+    affine_irq(3, "880000.spi")  # SPI
     try:
       pid = subprocess.check_output(["pgrep", "-f", "spi0"], encoding='utf8').strip()
       subprocess.call(["sudo", "chrt", "-f", "-p", "1", pid])
