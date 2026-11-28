@@ -190,8 +190,8 @@ void cloneFinished(int exitCode) {
   // ensure correct branch is checked out
   int err = chdir(TMP_INSTALL_PATH);
   assert(err == 0);
-  run(util::string_format("git -c filter.lfs.process= -c filter.lfs.smudge= -c filter.lfs.required=false -c core.hooksPath=/dev/null "
-                          "checkout --no-recurse-submodules -f -B %s origin/%s", migrated_branch.c_str(), migrated_branch.c_str()).c_str());
+  run(util::string_format("GIT_LFS_SKIP_SMUDGE=1 git checkout --no-recurse-submodules -f -B %s origin/%s",
+                          migrated_branch.c_str(), migrated_branch.c_str()).c_str());
   run("git submodule update --init --recursive");
   if (!util::check_output("git ls-files ':(attr:filter=lfs)'").empty()) {
     run(util::file_exists("tools/lfs.sh") ? "./tools/lfs.sh pull" : "git lfs pull");
