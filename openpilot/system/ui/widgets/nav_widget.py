@@ -217,6 +217,8 @@ class NavWidget(Widget, abc.ABC):
     if not self._playing_dismiss_animation:
       self._playing_dismiss_animation = True
       self._y_pos_filter.update_alpha(DISMISS_ANIMATION_RC)
+    # the user may already be swiping it away
+    if self._dismiss_callback is None:
       self._dismiss_callback = callback
 
   def show_event(self):
