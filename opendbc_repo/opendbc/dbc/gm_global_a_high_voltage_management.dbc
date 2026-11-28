@@ -1,0 +1,196 @@
+VERSION ""
+
+
+NS_ :
+    NS_DESC_
+    CM_
+    BA_DEF_
+    BA_
+    VAL_
+    CAT_DEF_
+    CAT_
+    FILTER
+    BA_DEF_DEF_
+    EV_DATA_
+    ENVVAR_DATA_
+    SGTYPE_
+    SGTYPE_VAL_
+    BA_DEF_SGTYPE_
+    BA_SGTYPE_
+    SIG_TYPE_REF_
+    VAL_TABLE_
+    SIG_GROUP_
+    SIG_VALTYPE_
+    SIGTYPE_VALTYPE_
+    BO_TX_BU_
+    BA_DEF_REL_
+    BA_REL_
+    BA_DEF_DEF_REL_
+    BU_SG_REL_
+    BU_EV_REL_
+    BU_BO_REL_
+    SG_MUL_VAL_
+
+BS_: 
+BU_: K16_BECM K114B_HPCM T18_BatteryCharger 
+BO_ 512 Battery_Module_1: 8 K16_BECM
+   SG_ Voltage_1_0_A m0 : 4|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_1_0_B m0 : 20|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_1_0_C m0 : 39|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_1_1_A m1 : 4|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_1_1_B m1 : 20|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_1_1_C m1 : 39|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_1_2_A m2 : 4|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_1_2_B m2 : 20|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_1_2_C m2 : 39|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_1_3_A m3 : 4|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_1_3_B m3 : 20|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_1_3_C m3 : 39|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_1_4_A m4 : 4|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_1_4_B m4 : 20|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_1_4_C m4 : 39|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_1_5_A m5 : 4|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_1_5_B m5 : 20|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_1_5_C m5 : 39|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_1_6_A m6 : 4|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_1_6_B m6 : 20|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_1_6_C m6 : 39|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_1_7_A m7 : 4|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_1_7_B m7 : 20|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_1_7_C m7 : 39|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Cell_Bank_Number_1 M : 55|3@0+ (1,0) [0|0] "" K16_BECM
+
+BO_ 514 Battery_Module_2: 8 K16_BECM
+   SG_ Voltage_2_0_A m0 : 4|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_2_0_B m0 : 20|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_2_0_C m0 : 39|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_2_1_A m1 : 4|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_2_1_B m1 : 20|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_2_1_C m1 : 39|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_2_2_A m2 : 4|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_2_2_B m2 : 20|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_2_2_C m2 : 39|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_2_3_A m3 : 4|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_2_3_B m3 : 20|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_2_3_C m3 : 39|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_2_4_A m4 : 4|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_2_4_B m4 : 20|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_2_4_C m4 : 39|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_2_5_A m5 : 4|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_2_5_B m5 : 20|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_2_5_C m5 : 39|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_2_6_A m6 : 4|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_2_6_B m6 : 20|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_2_6_C m6 : 39|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_2_7_A m7 : 4|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_2_7_B m7 : 20|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_2_7_C m7 : 39|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Cell_Bank_Number_2 M : 55|3@0+ (1,0) [0|0] "" K16_BECM
+
+BO_ 516 Battery_Module_3: 8 K16_BECM
+   SG_ Voltage_3_0_A m0 : 4|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_3_0_B m0 : 20|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_3_0_C m0 : 39|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_3_1_A m1 : 4|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_3_1_B m1 : 20|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_3_1_C m1 : 39|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_3_2_A m2 : 4|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_3_2_B m2 : 20|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_3_2_C m2 : 39|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_3_3_A m3 : 4|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_3_3_B m3 : 20|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_3_3_C m3 : 39|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_3_4_A m4 : 4|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_3_4_B m4 : 20|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_3_4_C m4 : 39|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_3_5_A m5 : 4|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_3_5_B m5 : 20|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_3_5_C m5 : 39|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_3_6_A m6 : 4|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_3_6_B m6 : 20|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_3_6_C m6 : 39|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_3_7_A m7 : 4|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_3_7_B m7 : 20|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_3_7_C m7 : 39|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Cell_Bank_Number_3 M : 55|3@0+ (1,0) [0|0] "" K16_BECM
+
+BO_ 518 Battery_Module_4: 8 K16_BECM
+   SG_ Voltage_4_0_A m0 : 4|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_4_0_B m0 : 20|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_4_0_C m0 : 39|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_4_1_A m1 : 4|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_4_1_B m1 : 20|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_4_1_C m1 : 39|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_4_2_A m2 : 4|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_4_2_B m2 : 20|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_4_2_C m2 : 39|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_4_3_A m3 : 4|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_4_3_B m3 : 20|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_4_3_C m3 : 39|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_4_4_A m4 : 4|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_4_4_B m4 : 20|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_4_4_C m4 : 39|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_4_5_A m5 : 4|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_4_5_B m5 : 20|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_4_5_C m5 : 39|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_4_6_A m6 : 4|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_4_6_B m6 : 20|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_4_6_C m6 : 39|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_4_7_A m7 : 4|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_4_7_B m7 : 20|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Voltage_4_7_C m7 : 39|12@0+ (0.00125,0) [0|0] "V" K16_BECM
+   SG_ Cell_Bank_Number_4 M : 55|3@0+ (1,0) [0|0] "" K16_BECM
+
+BO_ 528 Pack_Stats: 8 K16_BECM
+   SG_ Pack_Voltage : 7|12@0+ (0.125,0) [0|0] "V" K16_BECM
+   SG_ Pack_Current : 23|8@0- (0.1,-0.1) [0|0] "A" K16_BECM
+
+BO_ 530 Charger_stats: 6 T18_BatteryCharger
+   SG_ Charger_HV_Current : 7|13@0+ (0.05,0) [0|0] "A" K16_BECM
+   SG_ HV_Voltage : 10|10@0+ (0.5,0) [0|0] "V" K16_BECM
+   SG_ LV_Current : 16|8@0+ (0.2,0) [0|0] "A" K16_BECM
+   SG_ LV_Voltage : 24|8@0+ (0.1,0) [0|0] "V" K16_BECM
+
+BO_ 770 Battery_temp: 8 K16_BECM
+   SG_ Temp_A m0 : 8|8@1+ (0.5,-40) [0|0] "C" K16_BECM
+   SG_ Temp_B m0 : 16|8@1+ (0.5,-40) [0|0] "C" K16_BECM
+   SG_ Temp_C m0 : 24|8@1+ (0.5,-40) [0|0] "C" K16_BECM
+   SG_ Temp_D m0 : 32|8@1+ (0.5,-40) [0|0] "C" K16_BECM
+   SG_ Temp_E m0 : 40|8@1+ (0.5,-40) [0|0] "C" K16_BECM
+   SG_ Temp_F m0 : 48|8@1+ (0.5,-40) [0|0] "C" K16_BECM
+   SG_ Temp_G m1 : 8|8@1+ (0.5,-40) [0|0] "C" K16_BECM
+   SG_ Temp_H m1 : 16|8@1+ (0.5,-40) [0|0] "C" K16_BECM
+   SG_ Temp_I m1 : 24|8@1+ (0.5,-40) [0|0] "C" K16_BECM
+   SG_ Switch M : 2|1@1+ (1,0) [0|0] "" K16_BECM
+
+BO_ 782 Charger_Command: 1 T18_BatteryCharger
+   SG_ Command : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 772 Charger_parameters: 4 T18_BatteryCharger
+   SG_ Unknown : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+   SG_ Current : 8|8@1+ (0.05,0) [0|0] "A" Vector__XXX
+   SG_ Voltage : 23|16@0+ (0.5,0) [0|0] "V" Vector__XXX
+
+BO_ 1120 Coolant_Temp: 4 K16_BECM
+   SG_ Inlet_Coolant_Temp : 1|10@0+ (0.125,-40) [0|0] "" Vector__XXX
+   SG_ Outlet_Coolant_Temp : 17|10@0+ (0.125,-40) [0|0] "" Vector__XXX
+
+BO_ 778 AC_Stats: 7 T18_BatteryCharger
+   SG_ Mains_Voltage : 10|2@0+ (1,0) [0|0] "V" Vector__XXX
+   SG_ Total_Charge : 19|8@0+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 776 Charger_status: 5 T18_BatteryCharger
+   SG_ Status : 20|3@1+ (1,0) [0|0] "" Vector__XXX
+
+BA_DEF_ BO_ "GenMsgBackgroundColor" STRING ;
+BA_DEF_ BO_ "GenMsgForegroundColor" STRING ;
+BA_DEF_ BO_ "isj1939dbc" INT 0 0;
+BA_DEF_DEF_ "GenMsgBackgroundColor" "#ffffff";
+BA_DEF_DEF_ "GenMsgForegroundColor" "#000000";
+BA_DEF_DEF_ "isj1939dbc" 0;
+CM_ BU_ K16_BECM "Battery Energy Control Module";
+CM_ BU_ K114B_HPCM "Hybrid Powertrain Control Module";
+CM_ BU_ T18_BatteryCharger "Battery Charger";
+VAL_ 782 Command 1 "12V_Only" 2 "HV_Only" 3 "12V_and_HV";
+VAL_ 778 Mains_Voltage 0 "Unplugged" 1 "110V" 3 "220V";
+VAL_ 776 Status 0 "Off" 5 "LV_Only" 7 "HV_and_LV" 3 "HV_Only";
