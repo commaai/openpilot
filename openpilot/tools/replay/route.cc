@@ -154,8 +154,15 @@ bool Route::loadFromJson(const json11::Json &json) {
 }
 
 bool Route::loadFromLocal() {
+  std::error_code ec;
+  const std::filesystem::directory_iterator entries(data_dir_, ec);
+  if (ec) {
+    rWarning("Failed to open local route directory '%s': %s", data_dir_.c_str(), ec.message().c_str());
+    return false;
+  }
+
   std::string pattern = route_.timestamp + "--";
-  for (const auto &entry : std::filesystem::directory_iterator(data_dir_)) {
+  for (const auto &entry : entries) {
     if (entry.is_directory() && entry.path().filename().string().find(pattern) != std::string::npos) {
       std::string segment = entry.path().string();
       int seg_num = std::atoi(segment.substr(segment.rfind("--") + 2).c_str());

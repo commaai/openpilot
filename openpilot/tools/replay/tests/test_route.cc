@@ -1,3 +1,7 @@
+#include <cstdlib>
+#include <filesystem>
+#include <fstream>
+
 #include "common/tests/native_test.h"
 #include "tools/replay/replay.h"
 #include "tools/replay/route.h"
@@ -32,6 +36,34 @@ void test_route_ranges() {
   }
 }
 
+void test_local_route_directory() {
+  std::string pattern = (std::filesystem::temp_directory_path() / "replay-test-XXXXXX").string();
+  REQUIRE(mkdtemp(pattern.data()) != nullptr);
+  struct TempDir {
+    std::filesystem::path path;
+    ~TempDir() {
+      std::error_code ec;
+      std::filesystem::remove_all(path, ec);
+    }
+  } temp{pattern};
+
+  REQUIRE(!Route(DEMO_ROUTE, (temp.path / "missing").string()).load());
+  const auto file = temp.path / "file";
+  REQUIRE(std::ofstream(file).good());
+  REQUIRE(!Route(DEMO_ROUTE, file.string()).load());
+
+  const auto segment = temp.path / (Route::parseRoute(DEMO_ROUTE).timestamp + "--0");
+  REQUIRE(std::filesystem::create_directory(segment));
+  const auto log = segment / "rlog.zst";
+  REQUIRE(std::ofstream(log).good());
+  Route route(DEMO_ROUTE, temp.path.string());
+  REQUIRE(route.load());
+  REQUIRE(route.at(0).rlog == log.string());
+}
+
 int main() {
-  return run_native_test(test_route_ranges);
+  return run_native_test([] {
+    test_route_ranges();
+    test_local_route_directory();
+  });
 }
