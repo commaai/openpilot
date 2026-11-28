@@ -135,7 +135,7 @@ int doInstall() {
 
 int freshClone() {
   LOGD("Doing fresh clone");
-  std::string cmd = util::string_format("git clone --progress %s -b %s --depth=1 --recurse-submodules %s 2>&1",
+  std::string cmd = util::string_format("git clone --progress %s -b %s --depth=1 --no-checkout %s 2>&1",
                                         GIT_URL.c_str(), migrated_branch.c_str(), TMP_INSTALL_PATH);
   return executeGitCommand(cmd);
 }
@@ -187,14 +187,16 @@ void cloneFinished(int exitCode) {
   LOGD("git finished with %d", exitCode);
   assert(exitCode == 0);
 
-  renderProgress(100);
-
   // ensure correct branch is checked out
   int err = chdir(TMP_INSTALL_PATH);
   assert(err == 0);
-  run(("git checkout " + migrated_branch).c_str());
-  run(("git reset --hard origin/" + migrated_branch).c_str());
-  run("git submodule update --init");
+  run(util::string_format("GIT_LFS_SKIP_SMUDGE=1 git checkout --no-recurse-submodules -f -B %s origin/%s",
+                          migrated_branch.c_str(), migrated_branch.c_str()).c_str());
+  run("git submodule update --init --recursive");
+  if (!util::check_output("git ls-files ':(attr:filter=lfs)'").empty()) {
+    run(util::file_exists("tools/lfs.sh") ? "./tools/lfs.sh pull" : "git lfs pull");
+  }
+  renderProgress(100);
 
   // move into place
   run(("rm -f " + VALID_CACHE_PATH).c_str());
