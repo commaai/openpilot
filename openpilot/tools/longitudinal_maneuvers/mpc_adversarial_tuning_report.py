@@ -1,4 +1,5 @@
 from collections import defaultdict
+from concurrent.futures import ProcessPoolExecutor
 import sys
 import markdown
 import numpy as np
@@ -7,7 +8,9 @@ from openpilot.cereal import log
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib import long_mpc
 from openpilot.selfdrive.selfdrived.selfdrived import LONGITUDINAL_PERSONALITY_MAP
 from openpilot.selfdrive.test.longitudinal_maneuvers.test_longitudinal import (
+  create_approach_slower_adv_maneuvers,
   create_approach_stopped_adv_maneuvers,
+  create_cutin_adv_maneuvers,
   create_hard_braking_adv_maneuvers,
   create_stopped_adv_maneuvers,
 )
@@ -29,23 +32,26 @@ def render_table(headers, rows):
   return f'<table><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>'
 
 
-def render_section(heading, maneuvers):
+def evaluate_maneuver(maneuver):
+  return maneuver.evaluate()
+
+
+def render_section(heading, evaluated):
   groups = defaultdict(list)
-  for maneuver in maneuvers:
-    groups[float(maneuver.v_ego[0]), float(maneuver.x_lead[0])].append(maneuver)
+  for maneuver, valid, logs in evaluated:
+    groups[float(maneuver.v_ego[0]), float(maneuver.x_lead[0])].append((maneuver, valid, logs))
 
   htmls = [markdown.markdown(f'# {heading}')]
   table_rows = []
   for (v0, d0), group in groups.items():
-    evaluated = [(m, *m.evaluate()) for m in group]
-    results = {i: logs for i, (_, _, logs) in enumerate(evaluated)}
-    labels = [m.title for m, _, _ in evaluated]
-    styles = [{'linestyle': '--'} if m.only_radar else {} for m, _, _ in evaluated]
+    results = {i: logs for i, (_, _, logs) in enumerate(group)}
+    labels = [m.title for m, _, _ in group]
+    styles = [{'linestyle': '--'} if m.only_radar else {} for m, _, _ in group]
 
-    for maneuver, valid, logs in evaluated:
+    for maneuver, valid, logs in group:
       if maneuver.only_radar:
         continue
-      base_logs = next(b_logs for b, _, b_logs in evaluated if b.only_radar and np.array_equal(b.x_lead, maneuver.x_lead))
+      base_logs = next(b_logs for b, _, b_logs in group if b.only_radar and np.array_equal(b.x_lead, maneuver.x_lead))
       base_min_a, adv_min_a = float(np.min(base_logs[:, Axis.EGO_A])), float(np.min(logs[:, Axis.EGO_A]))
       base_min_d, adv_min_d = float(np.min(base_logs[:, Axis.D_REL])), float(np.min(logs[:, Axis.D_REL]))
       table_rows.append([
@@ -77,24 +83,27 @@ def generate_adversarial_tuning_report(personality=log.LongitudinalPersonality.r
       ['Personality', f'{LONGITUDINAL_PERSONALITY_MAP[personality]} (T_FOLLOW={long_mpc.get_T_FOLLOW(personality):g} s)'],
     ],
   )
+  sections = [
+    ("1. Approaching a stopped lead that doesn't go, model wrongly predicts it will go", create_approach_stopped_adv_maneuvers(kwargs)),
+    ("2. Stopped behind a lead that doesn't go, model wrongly predicts it will go", create_stopped_adv_maneuvers(kwargs)),
+    ('3. Steady following then lead brakes hard, model wrongly predicts 0 / +2 m/s^2', create_hard_braking_adv_maneuvers(kwargs)),
+    ('4. Approaching a slower moving lead, model wrongly predicts it will accelerate', create_approach_slower_adv_maneuvers(kwargs)),
+    ('5. Slower cut-in at close range, model wrongly predicts it will accelerate', create_cutin_adv_maneuvers(kwargs)),
+  ]
+  with ProcessPoolExecutor() as pool:
+    submitted = [(heading, [(m, pool.submit(evaluate_maneuver, m)) for m in maneuvers]) for heading, maneuvers in sections]
+    section_htmls = [
+      chunk
+      for heading, items in submitted
+      for chunk in render_section(heading, [(m, *fut.result()) for m, fut in items])
+    ]
 
   return [
     REPORT_CSS,
     markdown.markdown('# MPC adversarial lead-prediction tuning report'),
     markdown.markdown('## Active parameters'),
     params_table,
-    *render_section(
-      "1. Approaching a stopped lead that doesn't go, model wrongly predicts it will go",
-      create_approach_stopped_adv_maneuvers(kwargs),
-    ),
-    *render_section(
-      "2. Stopped behind a lead that doesn't go, model wrongly predicts it will go",
-      create_stopped_adv_maneuvers(kwargs),
-    ),
-    *render_section(
-      '3. Steady following then lead brakes hard, model wrongly predicts a = 0',
-      create_hard_braking_adv_maneuvers(kwargs),
-    ),
+    *section_htmls,
   ]
 
 

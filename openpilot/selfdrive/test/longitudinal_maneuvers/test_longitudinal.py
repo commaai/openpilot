@@ -188,21 +188,66 @@ def create_hard_braking_adv_maneuvers(kwargs):
   return [
     Maneuver(
       f"steady following ({v0:g}m/s) then lead brakes hard (-{decel:g}m/s^2), "
-      + ("radar only" if only_radar else "model wrongly predicts 0m/s^2"),
+      + ("radar only" if model_a is None else f"model wrongly predicts {model_a:+g}m/s^2"),
       duration=15. + v0 / decel + 10.,
       initial_speed=v0,
+      cruise_values=[v0, v0, v0],
       lead_relevancy=True,
       initial_distance_lead=d0,
       speed_lead_values=[v0, v0, 0.],
       breakpoints=[0., 15., 15. + v0 / decel],
-      model_speed_lead_values=[v0, v0, v0],
+      model_speed_lead_values=None if model_a is None else [v0, v0, v0 + model_a * (v0 / decel + 25.)],
       model_breakpoints=[0., 15., 15. + v0 / decel + 25.],
-      only_radar=only_radar,
+      only_radar=model_a is None,
       **kwargs,
     )
     for v0, d0 in ((10., 20.), (20., 35.), (30., 50.))
     for decel in (2., 3., 3.5)
-    for only_radar in (True, False)
+    for model_a in (None, 0., 2.)
+  ]
+
+
+def create_approach_slower_adv_maneuvers(kwargs):
+  return [
+    Maneuver(
+      f"approaching slower lead ({v0:g}m/s to {v_lead:g}m/s from {d0:g}m), "
+      + ("radar only" if model_a is None else f"model wrongly predicts +{model_a:g}m/s^2"),
+      duration=40.,
+      initial_speed=v0,
+      cruise_values=[v0, v0],
+      lead_relevancy=True,
+      initial_distance_lead=d0,
+      speed_lead_values=[v_lead, v_lead],
+      breakpoints=[0., 40.],
+      model_speed_lead_values=None if model_a is None else [v_lead, v_lead + model_a * 55.],
+      model_breakpoints=[0., 55.],
+      only_radar=model_a is None,
+      **kwargs,
+    )
+    for v0, v_lead, d0 in ((30., 15., 100.), (25., 10., 80.), (20., 10., 60.))
+    for model_a in (None, 1., 2., 4.)
+  ]
+
+
+def create_cutin_adv_maneuvers(kwargs):
+  return [
+    Maneuver(
+      f"slower cut-in ({v0:g}m/s to {v_lead:g}m/s at {d0:g}m), "
+      + ("radar only" if model_a is None else f"model wrongly predicts +{model_a:g}m/s^2"),
+      duration=40.,
+      initial_speed=v0,
+      cruise_values=[v0, v0],
+      lead_relevancy=True,
+      initial_distance_lead=d0,
+      speed_lead_values=[v_lead, v_lead],
+      breakpoints=[0., 40.],
+      model_speed_lead_values=None if model_a is None else [v_lead, v_lead + model_a * 55.],
+      model_breakpoints=[0., 55.],
+      only_radar=model_a is None,
+      **kwargs,
+    )
+    for v0, v_lead, d0 in ((10., 5., 12.), (20., 15., 21.), (30., 25., 30.))
+    for model_a in (None, 1., 2., 4.)
   ]
 
 
@@ -211,6 +256,8 @@ def create_adv_maneuvers(kwargs):
     create_approach_stopped_adv_maneuvers(kwargs)
     + create_stopped_adv_maneuvers(kwargs)
     + create_hard_braking_adv_maneuvers(kwargs)
+    + create_approach_slower_adv_maneuvers(kwargs)
+    + create_cutin_adv_maneuvers(kwargs)
   )
 
 
