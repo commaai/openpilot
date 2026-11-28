@@ -9,9 +9,12 @@ curl --fail --show-error --silent --location -o "$data/installer" \
 chmod +x "$data/installer"
 
 # Run like comma.service, with a clean install location and the device's Git config.
-sudo systemd-run --wait --pipe --collect --uid=comma --slice=app.slice -p MemoryMax=infinity -p OOMScoreAdjust=-500 \
-  -p "BindPaths=$data:/data" -p RuntimeMaxSec=18min \
-  /usr/comma/run_in_app_group.sh bash -c 'source /etc/profile && exec /data/installer'
+sudo systemd-run --scope --slice=app.slice --expand-environment=no unshare --mount sh -ec '
+  mount --bind "$1" /data
+  cd /
+  exec setpriv --reuid=comma --regid=comma --init-groups --reset-env \
+    /usr/comma/run_in_app_group.sh bash -lc "exec /data/installer"
+' sh "$data"
 
 test -x "$data/continue.sh"
 cd "$data/openpilot"
