@@ -352,13 +352,29 @@ class HardwareComma(HardwareBase):
     for n in camera_irqs:
       affine_irq(6, n)
 
-  def get_gpu_usage_percent(self):
+  def get_gpu_usage_percent(self, path='/sys/class/kgsl/kgsl-3d0/gpu_clock_stats', now_us=None):
+    # gpubusy only refreshes under a load-sampling devfreq governor and is frozen with "performance", so use deltas of
+    # gpu_clock_stats (cumulative busy microseconds per power level) over monotonic wall time. A first sample, a read
+    # error or a counter reset gives 0 and starts a new window; reads closer than 0.2 s repeat the last value.
     try:
-      with open('/sys/class/kgsl/kgsl-3d0/gpubusy') as f:
-        used, total = f.read().strip().split()
-      return 100.0 * int(used) / int(total)
+      with open(path) as f:
+        busy = sum(int(x) for x in f.read().split())
+      now = time.monotonic_ns() // 1000 if now_us is None else now_us
     except Exception:
+      self._gpu_prev, self._gpu_last = None, 0.0
       return 0
+    prev = getattr(self, '_gpu_prev', None)
+    if prev is None:
+      self._gpu_prev, self._gpu_last = (now, busy), 0.0
+      return 0
+    wall = now - prev[0]
+    if wall <= 0 or busy < prev[1]:
+      self._gpu_prev, self._gpu_last = (now, busy), 0.0
+      return 0
+    if wall < 200_000:
+      return self._gpu_last
+    self._gpu_prev, self._gpu_last = (now, busy), max(0.0, min(100.0, 100.0 * (busy - prev[1]) / wall))
+    return self._gpu_last
 
   def initialize_hardware(self):
     if self.amplifier is not None:
