@@ -7,7 +7,8 @@ import openpilot.cereal.messaging as messaging
 from openpilot.cereal import log
 from openpilot.common.params import Params
 from openpilot.selfdrive.locationd.calibrationd import Calibrator, INPUTS_NEEDED, INPUTS_WANTED, BLOCK_SIZE, MIN_SPEED_FILTER, \
-                                                         MAX_YAW_RATE_FILTER, SMOOTH_CYCLES, HEIGHT_INIT, MAX_ALLOWED_PITCH_SPREAD, MAX_ALLOWED_YAW_SPREAD
+                                                         MAX_YAW_RATE_FILTER, SMOOTH_CYCLES, HEIGHT_INIT, MAX_ALLOWED_PITCH_SPREAD, MAX_ALLOWED_YAW_SPREAD, \
+                                                         YAW_LIMITS, LIMIT_HYSTERESIS
 
 
 def process_messages(c, cam_odo_calib, cycles,
@@ -111,3 +112,27 @@ class TestCalibrationd(OpenpilotTestCase):
     assert c.valid_blocks == 0
     assert c.cal_status == log.ExtrinsicsCalibration.Status.recalibrating
     np.testing.assert_allclose(c.rpy, [0.0, 0.0, MAX_ALLOWED_YAW_SPREAD*1.1], atol=1e-2)
+
+  def test_calibration_limit_hysteresis(self):
+    Status = log.ExtrinsicsCalibration.Status
+    just_over = float(YAW_LIMITS[1]) + 0.001
+
+    c = Calibrator(param_put=False)
+    c.valid_blocks = INPUTS_NEEDED
+    for yaw, status in [(just_over, Status.invalid),
+                        (YAW_LIMITS[1] - 0.001, Status.calibrated),
+                        (just_over, Status.calibrated),
+                        (YAW_LIMITS[1] + LIMIT_HYSTERESIS + 0.001, Status.invalid),
+                        (just_over, Status.invalid)]:
+      c.rpys[:] = [0.0, 0.0, yaw]
+      c.update_status()
+      assert c.cal_status == status
+
+    # same on the next drive
+    for status in (Status.calibrated, Status.invalid):
+      msg = messaging.new_message('extrinsicsCalibration')
+      msg.extrinsicsCalibration.validBlocks = INPUTS_WANTED
+      msg.extrinsicsCalibration.rpyCalib = [0.0, 0.0, just_over]
+      msg.extrinsicsCalibration.calStatus = status
+      Params().put("CalibrationParams", msg.to_bytes(), block=True)
+      assert Calibrator(param_put=True).cal_status == status
