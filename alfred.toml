@@ -69,12 +69,12 @@ timeout-minutes = 45
 
 [[jobs.install.steps]]
 name = "Install the release on a fresh mici"
-run = "bash scripts/test_mici_install.sh https://openpilot.comma.ai release-mici"
+run = "scripts/test_mici_install.sh https://openpilot.comma.ai origin/release-mici"
 timeout-minutes = 20
 
 [[jobs.install.steps]]
 name = "Install this branch on a fresh mici"
-run = 'bash scripts/test_mici_install.sh "https://installer.comma.ai/${GIT_REPO%/openpilot}/$GIT_BRANCH" "$GIT_COMMIT"'
+run = 'scripts/test_mici_install.sh "https://installer.comma.ai/${GIT_REPO%/*}/$GIT_BRANCH" "$GIT_COMMIT"'
 timeout-minutes = 20
 
 [jobs.replay]
