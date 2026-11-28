@@ -1,10 +1,12 @@
 #include <cassert>
+#include <cstring>
 #ifdef __COMMA_HARDWARE__
 #include <exception>
 #include <stdexcept>
 #endif
 
 #ifdef __COMMA_HARDWARE__
+#include "system/camerad/cameras/nv12_info.h"
 #include "system/loggerd/clip_encoder.h"
 #endif
 #include "system/loggerd/loggerd.h"
@@ -75,6 +77,11 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
   std::unique_ptr<JpegEncoder> jpeg_encoder;
 
   const bool live = std::all_of(cam_info.encoder_infos.begin(), cam_info.encoder_infos.end(), [](auto &e) { return e.is_live; });
+#ifdef __COMMA_HARDWARE__
+  std::vector<VisionBuf> crop_bufs;
+  SafeQueue<VisionBuf *> crop_pool;
+  int crop_x = 0, crop_w = 0;
+#endif
 
   int cur_seg = 0;
   while (!do_exit) {
@@ -88,8 +95,38 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
       const VisionBuf &buf_info = vipc_client.buffers[0];
       LOGW("encoder %s init %zux%zu", cam_info.thread_name, buf_info.width, buf_info.height);
       assert(buf_info.width > 0 && buf_info.height > 0);
+#ifdef __COMMA_HARDWARE__
+      const bool crop_wide = live && cam_info.stream_type == VISION_STREAM_WIDE_ROAD &&
+                             getenv("ARM_TELEOP") && buf_info.width == 1344 && buf_info.height == 760;
+      if (crop_wide) {
+        assert(cam_info.encoder_infos.size() == 1);
+        crop_x = 208;
+        crop_w = 960;
+        auto [stride, y_height, uv_height, yuv_size] = get_nv12_info(crop_w, 720);
+        (void)uv_height;
+        crop_bufs.resize(BUF_IN_COUNT + 1);
+        for (auto &b : crop_bufs) {
+          b.allocate(yuv_size);
+          b.init_yuv(crop_w, 720, stride, stride * y_height);
+          crop_pool.push(&b);
+        }
+      }
+#endif
 
       for (const auto &encoder_info : cam_info.encoder_infos) {
+#ifdef __COMMA_HARDWARE__
+        if (crop_w > 0) {
+          EncoderInfo info = encoder_info;
+          info.frame_width = crop_w;
+          info.frame_height = 720;
+          V4LEncoder::Options opts = {
+            .input_done_callback = [&crop_pool](VisionBuf *b) { crop_pool.push(b); },
+          };
+          auto &e = encoders.emplace_back(new Encoder(info, crop_w, 720, std::move(opts)));
+          e->encoder_open();
+          continue;
+        }
+#endif
         auto &e = encoders.emplace_back(new Encoder(encoder_info, buf_info.width, buf_info.height));
         e->encoder_open();
       }
@@ -140,6 +177,23 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
         ++cur_seg;
       }
 
+      VisionBuf *enc_buf = buf;
+#ifdef __COMMA_HARDWARE__
+      if (crop_w > 0) {
+        VisionBuf *dst = crop_pool.pop();
+        buf->sync(VISIONBUF_SYNC_FROM_DEVICE);
+        constexpr int crop_y = 20, crop_h = 720;
+        for (size_t row = 0; row < crop_h; ++row) {
+          memcpy(dst->y + row * dst->stride, buf->y + (row + crop_y) * buf->stride + crop_x, crop_w);
+        }
+        for (size_t row = 0; row < crop_h / 2; ++row) {
+          memcpy(dst->uv + row * dst->stride, buf->uv + (row + crop_y / 2) * buf->stride + crop_x, crop_w);
+        }
+        dst->sync(VISIONBUF_SYNC_TO_DEVICE);
+        enc_buf = dst;
+      }
+#endif
+
       // encode a frame
       for (int i = 0; i < encoders.size(); ++i) {
         if (cam_info.encoder_infos[i].is_live) {
@@ -147,7 +201,7 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
           encoder_request_keyframe(encoders[i]);
         }
 
-        int out_id = encoders[i]->encode_frame(buf, &extra);
+        int out_id = encoders[i]->encode_frame(enc_buf, &extra);
 
         if (out_id == -1) {
           LOGE("Failed to encode frame. frame_id: %d", extra.frame_id);
@@ -159,6 +213,12 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
       }
     }
   }
+#ifdef __COMMA_HARDWARE__
+  encoders.clear();
+  for (auto &b : crop_bufs) {
+    b.free();
+  }
+#endif
 }
 
 template <size_t N>
