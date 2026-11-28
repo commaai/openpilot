@@ -21,6 +21,10 @@ th, td { border: 1px solid #ccc; padding: 4px 8px; text-align: right; }
 th:first-child, td:first-child { text-align: left; }
 </style>"""
 
+TABLE_HEADERS = [
+  'Case', 'Baseline min a (m/s^2)', 'Adv min a (m/s^2)', 'Baseline min d (m)', 'Adv min d (m)', 'Δ min d (m)', 'Result',
+]
+
 
 def render_table(headers, rows):
   head = ''.join(f'<th>{h}</th>' for h in headers)
@@ -28,26 +32,7 @@ def render_table(headers, rows):
   return f'<table><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>'
 
 
-def summarize_pair(base_logs, adv_logs, adv_valid):
-  base_min_a = float(np.min(base_logs[:, Axis.EGO_A]))
-  adv_min_a = float(np.min(adv_logs[:, Axis.EGO_A]))
-  base_min_d = float(np.min(base_logs[:, Axis.D_REL]))
-  adv_min_d = float(np.min(adv_logs[:, Axis.D_REL]))
-  return {
-    'base_min_a': base_min_a,
-    'adv_min_a': adv_min_a,
-    'extra_brake': base_min_a - adv_min_a,
-    'base_min_d': base_min_d,
-    'adv_min_d': adv_min_d,
-    'delta_d': adv_min_d - base_min_d,
-    'creep': float(np.max(adv_logs[:, Axis.EGO_POSITION])),
-    'max_v': float(np.max(adv_logs[:, Axis.EGO_V])),
-    'max_a': float(np.max(adv_logs[:, Axis.EGO_A])),
-    'valid': adv_valid,
-  }
-
-
-def render_section(heading, make_maneuvers, personality, axes, shared_baseline=True, is_stopped=False):
+def render_section(heading, make_maneuvers, personality, axes, shared_baseline=True):
   colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
   maneuver_pairs = zip(
     make_maneuvers({'personality': personality}),
@@ -64,19 +49,16 @@ def render_section(heading, make_maneuvers, personality, axes, shared_baseline=T
   table_rows = []
   for group_name, items in groups.items():
     results, labels, styles = {}, [], []
-    base_cache = None
     if shared_baseline:
-      _, base_cache = items[0][2].evaluate()
-      results[len(results)] = base_cache
+      _, base_logs = items[0][2].evaluate()
+      results[len(results)] = base_logs
       labels.append('Baseline (aLeadK/aLeadTau)')
       styles.append({'color': '#111111', 'linestyle': '--', 'linewidth': 2.2})
 
     for idx, (curve_label, adv_man, base_man) in enumerate(items):
       color = colors[idx % len(colors)]
-      if shared_baseline:
-        base_valid, base_logs = True, base_cache
-      else:
-        base_valid, base_logs = base_man.evaluate()
+      if not shared_baseline:
+        _, base_logs = base_man.evaluate()
         results[len(results)] = base_logs
         labels.append(f'Baseline · {curve_label}')
         styles.append({'color': color, 'linestyle': '--', 'linewidth': 1.5})
@@ -86,36 +68,19 @@ def render_section(heading, make_maneuvers, personality, axes, shared_baseline=T
       labels.append(curve_label)
       styles.append({'color': color})
 
-      st = summarize_pair(base_logs, adv_logs, adv_valid)
-      status = 'PASS' if st['valid'] else ('CRASH (base also crashed)' if not base_valid else 'CRASH')
-      if is_stopped:
-        row = [
-          adv_man.title,
-          f"{st['creep']:.2f}", f"{st['max_v']:.2f}", f"{st['max_a']:+.2f}",
-          f"{st['base_min_a']:+.2f}", f"{st['adv_min_a']:+.2f}",
-          f"{st['base_min_d']:.2f}", f"{st['adv_min_d']:.2f}", f"{st['delta_d']:+.2f}", status,
-        ]
-      else:
-        row = [
-          adv_man.title,
-          f"{st['base_min_a']:+.2f}", f"{st['adv_min_a']:+.2f}", f"{st['extra_brake']:+.2f}",
-          f"{st['base_min_d']:.2f}", f"{st['adv_min_d']:.2f}", f"{st['delta_d']:+.2f}", status,
-        ]
-      table_rows.append(row)
+      base_min_a, adv_min_a = float(np.min(base_logs[:, Axis.EGO_A])), float(np.min(adv_logs[:, Axis.EGO_A]))
+      base_min_d, adv_min_d = float(np.min(base_logs[:, Axis.D_REL])), float(np.min(adv_logs[:, Axis.D_REL]))
+      table_rows.append([
+        adv_man.title,
+        f'{base_min_a:+.2f}', f'{adv_min_a:+.2f}',
+        f'{base_min_d:.2f}', f'{adv_min_d:.2f}', f'{adv_min_d - base_min_d:+.2f}',
+        'PASS' if adv_valid else 'CRASH',
+      ])
 
     htmls.append(markdown.markdown(f'## {group_name}'))
     htmls.append(get_html_from_results(results, labels, axes, styles))
 
-  if is_stopped:
-    headers = [
-      'Case', 'Creep (m)', 'Max v (m/s)', 'Max a (m/s^2)', 'Baseline min a (m/s^2)', 'Adv min a (m/s^2)', 'Baseline min d (m)', 'Adv min d (m)', 'Δ min d (m)',
-      'Result',
-    ]
-  else:
-    headers = [
-      'Case', 'Baseline peak a (m/s^2)', 'Adv peak a (m/s^2)', 'Extra braking (m/s^2)', 'Baseline min d (m)', 'Adv min d (m)', 'Δ min d (m)', 'Result',
-    ]
-  htmls.insert(1, render_table(headers, table_rows))
+  htmls.insert(1, render_table(TABLE_HEADERS, table_rows))
   return htmls
 
 
@@ -141,7 +106,7 @@ def generate_adversarial_tuning_report(personality=log.LongitudinalPersonality.r
     ),
     *render_section(
       "2. Stopped behind a lead that doesn't go, model wrongly predicts it will go",
-      create_stopped_adv_maneuvers, personality, [Axis.EGO_A, Axis.D_REL, Axis.EGO_V], shared_baseline=True, is_stopped=True,
+      create_stopped_adv_maneuvers, personality, [Axis.EGO_A, Axis.D_REL, Axis.EGO_V], shared_baseline=True,
     ),
     *render_section(
       '3. Steady following then lead brakes hard, model wrongly predicts a = 0',
