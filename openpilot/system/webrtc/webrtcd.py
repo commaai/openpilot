@@ -10,7 +10,7 @@ import uuid
 import logging
 import signal
 import threading
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 from typing import Any
 
@@ -18,6 +18,7 @@ from openpilot.system.webrtc.device.bitrate import LivestreamBitrateController
 from openpilot.system.webrtc.device.messaging import CerealIncomingMessageProxy, CerealOutgoingMessageProxy, DynamicPubMaster
 from openpilot.system.webrtc.helpers import StreamRequestBody
 from openpilot.system.webrtc.schema import generate_field
+from openpilot.common.http_server import HTTPRequestHandler
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 from openpilot.cereal import messaging, log
@@ -51,15 +52,16 @@ class StreamSession:
     self.identifier = str(uuid.uuid4())
     self.params = Params()
     self.is_body = "testJoystick" in body.bridge_services_in
+    self.continuous_camera = body.continuous_camera
 
-    builder = WebRTCAnswerBuilder(body.sdp, bind_address=_default_route_ip())
+    builder = WebRTCAnswerBuilder(body.sdp, bind_address=body.camera_bind_address if body.continuous_camera else _default_route_ip())
 
     # create video tracks and add to sdp
     from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
     self.video_enabled = body.enabled
     self.video_tracks = []
     for camera in body.cameras:
-      track = LiveStreamVideoStreamTrack(camera, self.video_enabled)
+      track = LiveStreamVideoStreamTrack(camera, self.video_enabled, continuous_camera=body.continuous_camera)
       self.video_tracks.append(track)
       builder.add_video_stream(camera, track)
     self.stream = builder.stream()
@@ -183,7 +185,7 @@ class StreamSession:
 
       with cloudlog.ctx(session_id=self.identifier):
         cloudlog.warning("webrtcd.session.connected")
-      if self.is_body or self.raw:
+      if self.is_body or self.raw or self.continuous_camera:
         await self.run_body_session()
       else:
         await self.run_normal_session()
@@ -327,23 +329,13 @@ async def on_shutdown(state: ServerState):
   state.streams.clear()
 
 
-class WebrtcdHandler(BaseHTTPRequestHandler):
-  protocol_version = "HTTP/1.1"
-
+class WebrtcdHandler(HTTPRequestHandler):
   # path -> allowed methods (aiohttp registered POST /stream, POST /notify, GET /schema + its auto HEAD)
   _routes = {
     "/schema": ("GET", "HEAD"),
     "/stream": ("POST",),
     "/notify": ("POST",),
   }
-
-  def _send(self, status: int, body: bytes, content_type: str) -> None:
-    self.send_response(status)
-    self.send_header("Content-Type", content_type)
-    self.send_header("Content-Length", str(len(body)))
-    self.end_headers()
-    if self.command != "HEAD":
-      self.wfile.write(body)
 
   def _read_body(self) -> bytes:
     length = int(self.headers.get("Content-Length", 0))
@@ -377,32 +369,15 @@ class WebrtcdHandler(BaseHTTPRequestHandler):
       logging.getLogger("webrtcd").exception("Unhandled error handling %s", self.path)
       result = _json_response({"error": "exception", "message": f"{type(e).__name__}: {e}"}, status=500)
 
-    self._send(*result)
+    self.send_body(*result)
 
-  def do_GET(self) -> None:
-    self._dispatch_request()
-
-  def do_HEAD(self) -> None:
-    self._dispatch_request()
-
-  def do_POST(self) -> None:
-    self._dispatch_request()
-
-  def do_PUT(self) -> None:
-    self._dispatch_request()
-
-  def do_DELETE(self) -> None:
-    self._dispatch_request()
-
-  def do_PATCH(self) -> None:
-    self._dispatch_request()
-
-  def do_OPTIONS(self) -> None:
-    self._dispatch_request()
-
-  def log_message(self, format: str, *args: object) -> None:  # noqa: A002  # stdlib override
-    # silence default access logging; errors are logged explicitly in _dispatch_request
-    pass
+  do_GET = _dispatch_request
+  do_HEAD = _dispatch_request
+  do_POST = _dispatch_request
+  do_PUT = _dispatch_request
+  do_DELETE = _dispatch_request
+  do_PATCH = _dispatch_request
+  do_OPTIONS = _dispatch_request
 
 
 class WebrtcdHTTPServer(ThreadingHTTPServer):

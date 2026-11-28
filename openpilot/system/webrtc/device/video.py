@@ -37,12 +37,13 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
     "road": "livestreamNarrowRoadEncodeData",
   }
 
-  def __init__(self, camera_type: str, video_enabled: bool = True):
+  def __init__(self, camera_type: str, video_enabled: bool = True, *, continuous_camera: bool = False):
     super().__init__(camera_type, DT_MDL)
 
     self._sock = self._make_sock(camera_type)
     self._pts = 0
     self._t0_ns = time.monotonic_ns()
+    self.continuous_camera = continuous_camera
     self.timing_sei_enabled = False
     self.params = Params()
     self._seen_keyframe = False
@@ -64,20 +65,30 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
       self._seen_keyframe = False
 
   def request_keyframe(self) -> None:
+    self._seen_keyframe = False
     self.params.put("LivestreamRequestKeyframe", True, block=False)
 
   def _build_frame_data(self, msg) -> bytes:
     encode_data = getattr(msg, msg.which())
-    if not self.timing_sei_enabled:
+    if not (self.timing_sei_enabled or self.continuous_camera):
       return encode_data.header + encode_data.data
 
     idx = encode_data.idx
-    sei_nal = _SEI_PREFIX + struct.pack('>4d',
+    timing = struct.pack('>4d',
       (idx.timestampEof - idx.timestampSof) / 1e6,
       (msg.logMonoTime - idx.timestampEof) / 1e6,
       (time.monotonic_ns() - msg.logMonoTime) / 1e6,
       time.time() * 1000,  # noqa: TID251
-    ) + b'\x80'
+    )
+    if self.continuous_camera:
+      # Decoders require emulation prevention. Connect reads the original fixed-offset timing bytes.
+      escaped = bytearray()
+      for value in timing:
+        if value <= 3 and escaped.endswith(b'\x00\x00'):
+          escaped.append(3)
+        escaped.append(value)
+      timing = bytes(escaped)
+    sei_nal = _SEI_PREFIX + timing + b'\x80'
     return encode_data.header + sei_nal + encode_data.data
 
   async def recv(self):
