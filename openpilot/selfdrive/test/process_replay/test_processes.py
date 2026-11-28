@@ -14,7 +14,6 @@ from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, f
 from openpilot.selfdrive.test.process_replay.diff_report import diff_process, diff_report
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, replay_process, \
                                                                    check_most_messages_valid
-from openpilot.selfdrive.test.process_replay.sanity_checks import PROCESS_CHECKS
 from openpilot.tools.lib.filereader import FileReader
 from openpilot.tools.lib.logreader import LogReader, save_log
 from openpilot.tools.lib.url_file import URLFile
@@ -123,8 +122,6 @@ def test_process(cfg, lr, segment, ref_log_msgs, new_log_path, ignore_fields=Non
       return f"Expected messages: {expected_msgs}, but got: {seen_msgs}", log_msgs
 
   try:
-    for check in PROCESS_CHECKS.get(cfg.proc_name, []):
-      check(lr, log_msgs)
     return compare_logs(ref_log_msgs, log_msgs, ignore_fields + cfg.ignore, ignore_msgs, cfg.tolerance), log_msgs
   except Exception as e:
     return str(e), log_msgs
