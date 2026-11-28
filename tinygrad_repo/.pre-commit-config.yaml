@@ -1,0 +1,30 @@
+repos:
+  - repo: local
+    hooks:
+      - id: ruff
+        name: ruff
+        entry: python3 -m ruff check .
+        language: system
+        always_run: true
+        pass_filenames: false
+      - id: mypy
+        name: mypy
+        entry: python3 -m mypy
+        language: system
+        always_run: true
+        pass_filenames: false
+      - id: tests
+        name: tiny, all-device and core regression tests
+        # Keep common ops and cases that failed on >=5 distinct branches in the Nov 1–23, 2026 GitHub Actions sample.
+        # CI runs the full test_ops.py matrix.
+        entry: >-
+          env OMP_NUM_THREADS=1 PARALLEL=1 python3 -m pytest -n auto --maxprocesses=12 --dist=worksteal
+          test/test_tiny.py test/external/external_test_example.py test/runtime/test_ops.py test/runtime/test_schedule.py
+          test/runtime/test_assign.py test/runtime/test_tensor.py test/runtime/test_jit.py test/runtime/test_schedule_cache.py
+          test/null/test_pattern_matcher.py test/null/test_uop_symbolic.py test/runtime/test_helpers.py
+          -k 'not test_ops or matmul or matvec or test_sum or test_relu or test_div or test_fancy_indexing or test_slice_in_bounds
+          or entropy or nll_loss or softplus or pow_neg_inf or (test_pad and not test_pad_) or negative_padding_conv2d
+          or fancy_conv2d or simple_conv_transpose2d or grouped_conv_transpose2d or cummin or test_cumsum or cmp_ne_backwards'
+        language: system
+        always_run: true
+        pass_filenames: false
