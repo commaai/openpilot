@@ -41,13 +41,13 @@ class LatControlTorque(LatControl):
     self.torque_params = CP.lateralTuning.torque.as_builder()
     self.torque_from_lateral_accel = CI.torque_from_lateral_accel()
     self.lateral_accel_from_torque = CI.lateral_accel_from_torque()
-    self.torque_step = None
-    self.last_torque = 0.
+    self.torque_slew_steps = None
+    self.estimated_torque = 0.
     if CP.carFingerprint == GM.CHEVROLET_BOLT_EUV:
       eps_counts_per_sec = BOLT_EPS_SLEW_RATE / 0.01  # 0.01 N·m per CAN count
       send_interval = GMParams.STEER_STEP * DT_CTRL
-      self.torque_step = (min(eps_counts_per_sec, GMParams.STEER_DELTA_UP / send_interval) * dt / GMParams.STEER_MAX,
-                          min(eps_counts_per_sec, GMParams.STEER_DELTA_DOWN / send_interval) * dt / GMParams.STEER_MAX)
+      self.torque_slew_steps = (min(eps_counts_per_sec, GMParams.STEER_DELTA_UP / send_interval) * dt / GMParams.STEER_MAX,
+                                min(eps_counts_per_sec, GMParams.STEER_DELTA_DOWN / send_interval) * dt / GMParams.STEER_MAX)
     self.pid = PIDController([INTERP_SPEEDS, KP_INTERP], KI, rate=1/self.dt)
     self.update_limits()
     self.steering_angle_deadzone_deg = self.torque_params.steeringAngleDeadzoneDeg
@@ -95,8 +95,8 @@ class LatControlTorque(LatControl):
     if not active:
       output_torque = 0.0
       pid_log.active = False
-      if self.torque_step is not None:
-        self.last_torque = 0.
+      if self.torque_slew_steps is not None:
+        self.estimated_torque = 0.
         self.pid.reset()
     else:
       # do error correction in lateral acceleration space, convert at end to handle non-linear torque responses correctly
@@ -105,10 +105,10 @@ class LatControlTorque(LatControl):
       freeze_integrator = steer_limited_by_safety or CS.steeringPressed or CS.vEgo < 5
       torque_limits = None
       accel_limits = None
-      if self.torque_step is not None:
-        up, down = self.torque_step
-        lower = max(-self.steer_max, self.last_torque - down, min(self.last_torque, 0.) - up)
-        upper = min(self.steer_max, self.last_torque + down, max(self.last_torque, 0.) + up)
+      if self.torque_slew_steps is not None:
+        up, down = self.torque_slew_steps
+        lower = max(-self.steer_max, self.estimated_torque - down, min(self.estimated_torque, 0.) - up)
+        upper = min(self.steer_max, self.estimated_torque + down, max(self.estimated_torque, 0.) + up)
         torque_limits = (lower, upper)
         accel_limits = (self.lateral_accel_from_torque(lower, self.torque_params),
                         self.lateral_accel_from_torque(upper, self.torque_params))
@@ -117,9 +117,8 @@ class LatControlTorque(LatControl):
                                         anti_windup_limits=accel_limits)
       output_torque = self.torque_from_lateral_accel(output_lataccel, self.torque_params)
       if torque_limits is not None:
-        # Clamp in command space so the controller can traverse a flat part of the assist curve.
-        output_torque = float(np.clip(output_torque, *torque_limits))
-        self.last_torque = output_torque
+        # The sender and EPS apply the slew limits. Track the ramp for the next integral update.
+        self.estimated_torque = float(np.clip(output_torque, *torque_limits))
 
       pid_log.active = True
       pid_log.p = float(self.pid.p)
