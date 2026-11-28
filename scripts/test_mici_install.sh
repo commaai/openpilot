@@ -8,7 +8,6 @@ cd "$data"
 curl -fsSL -A "AGNOSSetup-$(cat /VERSION)" -H "X-openpilot-device-type: mici" "$1" -o installer
 chmod +x installer
 
-# Give only the installer a fresh /data. A login shell gets the device's Git LFS settings.
 sudo unshare --mount sh -ec '
   mount --bind . /data
   exec runuser --login comma -c /data/installer
