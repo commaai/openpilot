@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import math
+import os
 from numbers import Number
 
 from openpilot.cereal import log
@@ -60,7 +61,12 @@ class Controls:
     elif self.CP.lateralTuning.which() == 'pid':
       self.LaC = LatControlPID(self.CP, self.CI, DT_CTRL)
     elif self.CP.lateralTuning.which() == 'torque':
-      self.LaC = LatControlTorque(self.CP, self.CI, DT_CTRL)
+      assist_map = os.getenv("BOLT_REPLAY_ASSIST_MAP")
+      if os.getenv("REPLAY") == "1" and self.CP.carFingerprint == "CHEVROLET_BOLT_EUV" and assist_map:
+        from openpilot.selfdrive.test.process_replay.bolt_torque import LatControlBoltReplay
+        self.LaC = LatControlBoltReplay(self.CP, self.CI, DT_CTRL, assist_map)
+      else:
+        self.LaC = LatControlTorque(self.CP, self.CI, DT_CTRL)
 
   def update(self):
     self.sm.update(15)

@@ -39,7 +39,8 @@ class PIDController:
     self.pos_limit = pos_limit
     self.neg_limit = neg_limit
 
-  def update(self, error, error_rate=0.0, speed=0.0, feedforward=0., freeze_integrator=False):
+  def update(self, error, error_rate=0.0, speed=0.0, feedforward=0., freeze_integrator=False,
+             anti_windup_limits: tuple[float, float] | None = None):
     self.speed = speed
     self.p = self.k_p * float(error)
     self.d = self.k_d * error_rate
@@ -50,8 +51,9 @@ class PIDController:
 
       # Don't allow windup if already clipping
       test_control = self.p + i + self.d + self.f
-      i_upperbound = self.i if test_control > self.pos_limit else self.pos_limit
-      i_lowerbound = self.i if test_control < self.neg_limit else self.neg_limit
+      lower, upper = anti_windup_limits if anti_windup_limits is not None else (self.neg_limit, self.pos_limit)
+      i_upperbound = self.i if test_control > upper else self.pos_limit
+      i_lowerbound = self.i if test_control < lower else self.neg_limit
       self.i = np.clip(i, i_lowerbound, i_upperbound)
 
     control = self.p + self.i + self.d + self.f

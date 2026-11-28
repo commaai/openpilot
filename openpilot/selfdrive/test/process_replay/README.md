@@ -123,3 +123,23 @@ output_logs = replay_process_with_name(['radard', 'plannerd'], lr, captured_outp
 print(output_store['radard']['out']) # radard stdout
 print(output_store['radard']['err']) # radard stderr
 ```
+
+### Replaying the Chevrolet Bolt EUV with a measured assist curve
+
+Set `BOLT_REPLAY_ASSIST_MAP` to the absolute path of a calibration JSON before replaying `controlsd` on a Bolt log.
+Run the same segment with the variable unset to get the baseline.
+Both runs use the estimated torque reachable on each control cycle to prevent integral windup.
+
+```python
+import os
+from openpilot.selfdrive.test.process_replay.process_replay import replay_process_with_name
+from openpilot.tools.lib.logreader import LogReader
+
+os.environ["BOLT_REPLAY_ASSIST_MAP"] = "/path/to/assist-map.json"
+messages = replay_process_with_name("controlsd", LogReader("/path/to/bolt-rlog.bz2"), fingerprint="CHEVROLET_BOLT_EUV")
+```
+
+The JSON contains a `speed_kph` array and two equally shaped tables, `handwheel_nm` and `motor_nm`.
+Each speed has one row of positive-direction handwheel torque breakpoints and corresponding base motor assist values, starting at zero.
+`motor_nm_per_normalized_torque` gives the target increase in motor assist for one unit of the linear torque controller's output.
+The replay inverts the increase in base assist above the logged driver torque. It assumes an odd assist curve and zero internal hysteresis torque.
