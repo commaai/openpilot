@@ -17,8 +17,8 @@ DESCRIPTIONS = {
   ),
   "DisengageOnAccelerator": tr_noop("When enabled, pressing the accelerator pedal will disengage openpilot."),
   "LongitudinalPersonality": tr_noop(
-    "In aggressive mode, openpilot will follow lead cars closer and more confidently accelerate towards the max speed. " +
-    "Relaxed lets the driving model decide your speed, regardless of max speed. Relaxed is recommended. " +
+    "Chill is recommended. Hurry follows lead cars closer, with firmer gas and braking. " +
+    "Relaxed follows at the same distance as Chill, with gentler acceleration. " +
     "On supported cars, you can cycle through these personalities with your steering wheel distance button."
   ),
   "IsLdwEnabled": tr_noop(
@@ -86,7 +86,7 @@ class TogglesLayout(Widget):
     self._long_personality_setting = multiple_button_item(
       lambda: tr("Driving Personality"),
       lambda: tr(DESCRIPTIONS["LongitudinalPersonality"]),
-      buttons=[lambda: tr("Aggressive"), lambda: tr("Standard"), lambda: tr("Relaxed")],
+      buttons=[lambda: tr("Hurry"), lambda: tr("Chill"), lambda: tr("Relaxed")],
       button_width=255,
       callback=self._set_longitudinal_personality,
       selected_index=self._params.get("LongitudinalPersonality", return_default=True),

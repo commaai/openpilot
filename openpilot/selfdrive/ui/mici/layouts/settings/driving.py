@@ -14,10 +14,10 @@ class DrivingLayoutMici(NavScroller):
   def __init__(self):
     super().__init__()
 
-    self._personality_toggle = BigMultiParamToggle("driving personality", "LongitudinalPersonality", ["aggressive", "standard", "relaxed"],
-                                                   description="Standard is recommended.\n" +
-                                                               "Aggressive follows closer, with firmer gas and braking.\n" +
-                                                               "Relaxed follows at the same distance as Standard, with gentler acceleration.\n" +
+    self._personality_toggle = BigMultiParamToggle("driving personality", "LongitudinalPersonality", ["hurry", "chill", "relaxed"],
+                                                   description="Chill is recommended.\n" +
+                                                               "Hurry follows closer, with firmer gas and braking.\n" +
+                                                               "Relaxed follows at the same distance as Chill, with gentler acceleration.\n" +
                                                                "Use the steering wheel distance button on supported cars.")
     self._initial_cruise_speed = InitialCruiseSpeedButton()
     self._initial_cruise_speed.set_visible(lambda: ui_state.CP is not None and ui_state.has_longitudinal_control and not ui_state.CP.pcmCruise)
