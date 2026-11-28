@@ -1,0 +1,3 @@
+include README.md pyproject.toml setup.py SConstruct SConscript
+recursive-include msgq *.py py.typed *.h *.cc
+global-exclude *.pyi *.so *.o *.os *.a *.pyc
