@@ -114,6 +114,8 @@ class BigInputDialog(BigDialogBase):
     self._text_valid = lambda text: len(text) >= minimum_length and (text_validator is None or text_validator(text))
 
     self._backspace_held_time: float | None = None
+    self._press_pos = rl.Vector2(0, 0)
+    self._press_time = 0.0
 
     self._backspace_img = gui_app.texture("icons_mici/settings/keyboard/backspace.png", 42, 36)
     self._backspace_img_alpha = FirstOrderFilter(0, 0.05, 1 / gui_app.target_fps)
@@ -232,16 +234,26 @@ class BigInputDialog(BigDialogBase):
 
   def _handle_mouse_press(self, mouse_pos: MousePos):
     super()._handle_mouse_press(mouse_pos)
-    # TODO: need to track where press was so enter and back can activate on release rather than press
-    #  or turn into icon widgets :eyes_open:
+    self._press_pos = rl.Vector2(mouse_pos.x, mouse_pos.y)
+    self._press_time = rl.get_time()
 
+  def _handle_mouse_release(self, mouse_pos: MousePos):
+    super()._handle_mouse_release(mouse_pos)
+    # TODO: turn enter and back into icon widgets :eyes_open:
+
+    # activate on release, a swipe down from a top corner only goes back
     if self.is_dismissing:
       return
 
-    # handle backspace icon click
-    if rl.check_collision_point_rec(rl.Vector2(mouse_pos.x, mouse_pos.y), self._top_right_button_rect) and self._backspace_img_alpha.x > 254:
-      self._keyboard.backspace()
-    elif rl.check_collision_point_rec(rl.Vector2(mouse_pos.x, mouse_pos.y), self._top_left_button_rect) and self._enter_img_alpha.x > 254:
+    def tapped(rect: rl.Rectangle) -> bool:
+      return (rl.check_collision_point_rec(self._press_pos, rect) and
+              rl.check_collision_point_rec(rl.Vector2(mouse_pos.x, mouse_pos.y), rect))
+
+    # handle backspace icon click, holding it repeats in _update_state
+    if tapped(self._top_right_button_rect) and self._backspace_img_alpha.x > 254:
+      if rl.get_time() - self._press_time < 0.5:
+        self._keyboard.backspace()
+    elif tapped(self._top_left_button_rect) and self._enter_img_alpha.x > 254:
       # handle enter icon click
       self._confirm_callback()
 
