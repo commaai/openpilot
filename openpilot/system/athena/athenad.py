@@ -56,6 +56,13 @@ LOCAL_PORT_WHITELIST = {22, }  # SSH
 LOG_ATTR_NAME = 'user.upload'
 LOG_ATTR_VALUE_MAX_UNIX_TIME = int.to_bytes(2147483647, 4, sys.byteorder)
 RECONNECT_TIMEOUT_S = 70
+# Offroad, comma four's modem can sleep with LTE up, but it resets a connection that gets data while it's asleep. So
+# athenad tells athena it's sleeping, and keeps the connection alive itself with a keepalive every KEEPALIVE_INTERVAL_S;
+# athena then only sends it data right after hearing from it. Once athena acks that, ModemSleep lets AGNOS sleep the modem.
+KEEPALIVE_INTERVAL_S = 30
+KEEPALIVE_TIMEOUT_S = 10
+CELL_NETWORK_TYPES = (log.DeviceState.NetworkType.cell2G, log.DeviceState.NetworkType.cell3G,
+                      log.DeviceState.NetworkType.cell4G, log.DeviceState.NetworkType.cell5G)
 
 RETRY_DELAY = 10  # seconds
 MAX_RETRY_COUNT = 30  # Try for at most 5 minutes if upload fails immediately
@@ -190,8 +197,109 @@ class UploadQueueCache:
       cloudlog.exception("athena.UploadQueueCache.cache.exception")
 
 
+class SleepKeepalive:
+  """See KEEPALIVE_INTERVAL_S. One per connection: shared by ws_manage, which sends the keepalives, jsonrpc_handler,
+  which hands it their acks, and ws_recv, which counts them like athena's pings."""
+  ID_PREFIX = "keepalive-"
+
+  def __init__(self, params: Params, modem_awake: Callable[[], bool]):
+    self._params = params
+    self._modem_awake = modem_awake  # AGNOS holds the modem's link awake, ModemSleep is off
+    self._lock = threading.Lock()
+    self._ids = itertools.count()
+    self.want_sleep = False
+    self.sleeping = False  # athena acked that we're sleeping
+    self.unsupported = False  # athena doesn't know keepalives
+    self.pending: tuple[str, bool] | None = None  # (id, sleeping) of the keepalive awaiting its ack
+    self.sent_at = 0.0
+    self.woke_at = 0.0
+    self.last_ack_ns = 0
+    self._set_modem_sleep(False)
+
+  def _set_modem_sleep(self, sleep: bool) -> None:
+    self._params.put_bool("ModemSleep", sleep, block=True)
+    self.modem_sleep = sleep
+
+  def _send(self, sleeping: bool) -> None:
+    msg_id = f"{self.ID_PREFIX}{next(self._ids)}"
+    self.pending = (msg_id, sleeping)
+    self.sent_at = time.monotonic()
+    send_queue_push(dumps_call("keepalive", {"sleeping": sleeping, "interval": KEEPALIVE_INTERVAL_S}, request_id=msg_id),
+                    SEND_PRIORITY_HIGH)
+
+  def update(self, want_sleep: bool) -> bool:
+    """Called by ws_manage. Returns False if a keepalive went unanswered, and the connection is dead."""
+    with self._lock:
+      self.want_sleep = want_sleep
+      now = time.monotonic()
+      if not want_sleep and self.modem_sleep:
+        # right away, even with a keepalive in flight: whatever wakes us may not wait for athena
+        self._set_modem_sleep(False)
+        self.woke_at = now
+      if self.unsupported:
+        return True
+      if self.pending is not None:
+        if now - self.sent_at > KEEPALIVE_TIMEOUT_S:
+          cloudlog.event("athenad.keepalive.timeout", sleeping=self.sleeping)
+          return False
+        return True
+      if not want_sleep and self.sleeping:
+        # athena sends right away once it knows, so only after AGNOS holds the modem awake
+        if self._modem_awake() or now - self.woke_at > KEEPALIVE_TIMEOUT_S:
+          self._send(False)
+        elif now - self.sent_at >= KEEPALIVE_INTERVAL_S:
+          self._send(True)
+      elif want_sleep and (not self.sleeping or now - self.sent_at >= KEEPALIVE_INTERVAL_S):
+        self._send(True)
+      return True
+
+  def next_due(self) -> float:
+    """Seconds until update should run again."""
+    with self._lock:
+      if self.unsupported or not (self.want_sleep or self.sleeping):
+        return math.inf
+      if self.sleeping and not self.want_sleep and self.pending is None:
+        return 0.2  # waking, waiting for AGNOS
+      deadline = self.sent_at + (KEEPALIVE_TIMEOUT_S if self.pending else KEEPALIVE_INTERVAL_S)
+      return max(0.0, deadline - time.monotonic())
+
+  def handle_response(self, msg: dict) -> bool:
+    """Called by jsonrpc_handler with every response. Returns True if it was the ack of a keepalive."""
+    msg_id = msg.get("id")
+    if not isinstance(msg_id, str) or not msg_id.startswith(self.ID_PREFIX):
+      return False
+    with self._lock:
+      if self.pending is None or self.pending[0] != msg_id:
+        return True
+      sent_sleeping = self.pending[1]
+      self.pending = None
+      result = msg.get("result")
+      if not isinstance(result, dict) or result.get("sleeping") is not sent_sleeping:
+        cloudlog.event("athenad.keepalive.unsupported", response=msg)
+        self.unsupported = True
+        self.sleeping = False
+        self._set_modem_sleep(False)
+        return True
+      self.sleeping = sent_sleeping
+      self.last_ack_ns = int(time.monotonic() * 1e9)
+      self._params.put("LastAthenaPingTime", self.last_ack_ns, block=True)
+      if self.sleeping and self.want_sleep:
+        self._set_modem_sleep(True)
+      return True
+
+  def stop(self) -> None:
+    with self._lock:
+      self._set_modem_sleep(False)
+
+
+keepalive: SleepKeepalive | None = None
+local_proxies: set[threading.Event] = set()  # end events of the running local proxies
+
+
 def handle_long_poll(ws: WebSocket, exit_event: threading.Event | None) -> None:
+  global keepalive
   end_event = threading.Event()
+  keepalive = SleepKeepalive(Params(), lambda: HARDWARE.get_modem_state().get("sleep_allowed") is not True)
 
   threads = [
     threading.Thread(target=ws_manage, args=(ws, end_event), name='ws_manage'),
@@ -220,6 +328,7 @@ def handle_long_poll(ws: WebSocket, exit_event: threading.Event | None) -> None:
     for thread in threads:
       cloudlog.debug(f"athena.joining {thread.name}")
       thread.join()
+    keepalive.stop()
 
 
 def jsonrpc_handler(end_event: threading.Event) -> None:
@@ -232,6 +341,8 @@ def jsonrpc_handler(end_event: threading.Event) -> None:
       if is_call(msg):
         cloudlog.event("athena.jsonrpc_handler.call_method", data=data)
         send_queue_push(handle(msg, dispatcher), SEND_PRIORITY_HIGH)
+      elif keepalive is not None and keepalive.handle_response(msg):
+        pass  # before is_response: athena without keepalives answers them with neither result nor error
       elif is_response(msg):
         log_recv_queue.put_nowait(data)
       else:
@@ -746,6 +857,7 @@ def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local
     local_sock.setblocking(False)
 
     proxy_end_event = threading.Event()
+    local_proxies.add(proxy_end_event)  # its data comes unannounced, so the modem can't sleep during it
     threads = [
       threading.Thread(target=ws_proxy_recv, args=(ws, local_sock, ssock, proxy_end_event, global_end_event)),
       threading.Thread(target=ws_proxy_send, args=(ws, local_sock, csock, proxy_end_event))
@@ -907,7 +1019,7 @@ def ws_proxy_recv(ws: WebSocket, local_sock: socket.socket, ssock: socket.socket
     try:
       sock = ws.sock
       if sock is None:
-        return
+        break
       r = select.select((sock,), (), (), 30)
       if r[0]:
         data = ws.recv()
@@ -927,6 +1039,7 @@ def ws_proxy_recv(ws: WebSocket, local_sock: socket.socket, ssock: socket.socket
   cloudlog.debug("athena.ws_proxy_recv done closing sockets")
 
   end_event.set()
+  local_proxies.discard(end_event)
 
 
 def ws_proxy_send(ws: WebSocket, local_sock: socket.socket, signal_sock: socket.socket, end_event: threading.Event) -> None:
@@ -967,6 +1080,9 @@ def ws_recv(ws: WebSocket, end_event: threading.Event) -> None:
         last_ping = int(time.monotonic() * 1e9)
         Params().put("LastAthenaPingTime", last_ping, block=True)
     except WebSocketTimeoutException:
+      # a sleeping device gets no pings, the acks of its keepalives stand in for them
+      if keepalive is not None:
+        last_ping = max(last_ping, keepalive.last_ack_ns)
       ns_since_last_ping = int(time.monotonic() * 1e9) - last_ping
       if ns_since_last_ping > RECONNECT_TIMEOUT_S * 1e9:
         cloudlog.exception("athenad.ws_recv.timeout")
@@ -995,26 +1111,41 @@ def ws_send(ws: WebSocket, end_event: threading.Event) -> None:
 def ws_manage(ws: WebSocket, end_event: threading.Event) -> None:
   params = Params()
   onroad_prev = None
+  sleeping_prev = False
   sock = ws.sock
 
   while True:
     onroad = not params.get_bool("IsOffroad")
-    if onroad != onroad_prev:
+    # sleep_capable: AGNOS can sleep this modem, other modems would only get more keepalives than athena's pings
+    want_sleep = (not onroad and not local_proxies and not params.get_bool("IsLiveStreaming") and
+                  HARDWARE.get_network_type() in CELL_NETWORK_TYPES and
+                  HARDWARE.get_modem_state().get("sleep_capable") is True)
+    if keepalive is not None and not keepalive.update(want_sleep):
+      end_event.set()
+      break
+
+    sleeping = keepalive is not None and keepalive.sleeping
+    if onroad != onroad_prev or sleeping != sleeping_prev:
       onroad_prev = onroad
+      sleeping_prev = sleeping
 
       if sock is not None:
         # While not sending data, onroad, we can expect to time out in 7 + (7 * 2) = 21s
         #                         offroad, we can expect to time out in 30 + (10 * 3) = 60s
         # FIXME: TCP_USER_TIMEOUT is effectively 2x for some reason (32s), so it's mostly unused
+        # sleeping, the keepalives find a dead connection, and TCP's would only wake the modem more often
+        idle = 7 if onroad else (4 * KEEPALIVE_INTERVAL_S if sleeping else 30)
         if sys.platform == 'linux':
           sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_USER_TIMEOUT, 16000 if onroad else 0)
-          sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 7 if onroad else 30)
+          sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, idle)
         elif sys.platform == 'darwin':
-          sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPALIVE, 7 if onroad else 30)
+          sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPALIVE, idle)
         sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 7 if onroad else 10)
         sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 2 if onroad else 3)
 
-    if end_event.wait(5):
+    # asleep, notice what wakes us sooner: until athena knows, it can't send to us
+    wait = 1 if sleeping else 5
+    if end_event.wait(min(wait, keepalive.next_due() if keepalive is not None else wait)):
       break
 
 
