@@ -124,7 +124,8 @@ def test_process(cfg, lr, segment, ref_log_msgs, new_log_path, ignore_fields=Non
 
   try:
     for check in PROCESS_CHECKS.get(cfg.proc_name, []):
-      check(lr, log_msgs)
+      sample_count = check(lr, log_msgs)
+      print(f"{segment} {check.__name__}: {sample_count} samples")
     return compare_logs(ref_log_msgs, log_msgs, ignore_fields + cfg.ignore, ignore_msgs, cfg.tolerance), log_msgs
   except Exception as e:
     return str(e), log_msgs
