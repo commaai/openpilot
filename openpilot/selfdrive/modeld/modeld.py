@@ -10,7 +10,7 @@ os.environ.setdefault('AM_POWER_LIMIT', '100')
 from tinygrad.device import Buffer, Device
 from tinygrad.dtype import DType, dtypes
 from tinygrad.engine.jit import CapturedJit
-from tinygrad.engine.realize import compile_linear, lower_and_compile
+from tinygrad.codegen.compile import lower_and_compile
 from tinygrad.tensor import Tensor
 from tinygrad.helpers import round_up
 from tinygrad.uop.ops import UOp
@@ -140,7 +140,8 @@ def input_view(buffer: Buffer, shape: tuple[int, ...], dtype: DType, offset: int
 
 
 def compile_copy(tensor: Tensor) -> Callable[[], Tensor]:
-  jit = CapturedJit(tensor, compile_linear(tensor.schedule_linear()), [], [])
+  fn, externs = Tensor.export(tensor)
+  jit = CapturedJit(tensor, Tensor.compile(fn), externs, [], [], {})
   return lambda: jit([], {})
 
 
