@@ -146,17 +146,17 @@ def create_approach_stopped_adv_maneuvers(kwargs):
   return [
     Maneuver(
       f"approaching stopped lead that doesn't go ({v0:g}m/s from {d0:g}m), model wrongly predicts +{model_a:g}m/s^2",
-      duration=dur,
+      duration=duration,
       initial_speed=v0,
       lead_relevancy=True,
       initial_distance_lead=d0,
       speed_lead_values=[0., 0.],
-      breakpoints=[0., dur],
-      model_speed_lead_values=[0., model_a * (dur + 15.)],
-      model_breakpoints=[0., dur + 15.],
+      breakpoints=[0., duration],
+      model_speed_lead_values=[0., model_a * (duration + 15.)],
+      model_breakpoints=[0., duration + 15.],
       **kwargs,
     )
-    for v0, d0, dur in ((30., 200., 25.), (15., 70., 20.), (8., 25., 18.))
+    for v0, d0, duration in ((30., 200., 25.), (15., 70., 20.), (8., 25., 18.))
     for model_a in (1., 2., 4.)
   ]
 
