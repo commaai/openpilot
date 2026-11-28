@@ -235,6 +235,7 @@ def hardware_thread(end_event, hw_queue) -> None:
   in_car = False
   engaged_prev = False
   pwrsave = False
+  network_metered_prev: bool | None = None
   offroad_cycle_count = 0
 
   params = Params()
@@ -472,7 +473,10 @@ def hardware_thread(end_event, hw_queue) -> None:
         except Exception:
           cloudlog.exception("failed to save offroad status")
 
-    params.put_bool("NetworkMetered", msg.deviceState.networkMetered)
+    # a param write is a file write and two fsyncs, which keep the storage from going idle. only write on change
+    if msg.deviceState.networkMetered != network_metered_prev:
+      params.put_bool("NetworkMetered", msg.deviceState.networkMetered)
+      network_metered_prev = msg.deviceState.networkMetered
 
     now_ts = time.monotonic()
     if off_ts:
