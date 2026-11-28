@@ -8,9 +8,10 @@ curl --fail --show-error --silent --location -o "$data/installer" \
   -A "AGNOSSetup-$(cat /VERSION)" -H "X-openpilot-device-type: mici" "$1"
 chmod +x "$data/installer"
 
-# Give the shipped installer an empty /data and the same user and environment as AGNOS setup.
-sudo systemd-run --wait --pipe --collect --uid=comma -p "BindPaths=$data:/data" -p RuntimeMaxSec=18min \
-  bash -c 'source /etc/profile && exec /data/installer'
+# Run like comma.service, with a clean install location and the device's Git config.
+sudo systemd-run --wait --pipe --collect --uid=comma --slice=app.slice -p MemoryMax=infinity -p OOMScoreAdjust=-500 \
+  -p "BindPaths=$data:/data" -p RuntimeMaxSec=18min \
+  /usr/comma/run_in_app_group.sh bash -c 'source /etc/profile && exec /data/installer'
 
 test -x "$data/continue.sh"
 cd "$data/openpilot"
