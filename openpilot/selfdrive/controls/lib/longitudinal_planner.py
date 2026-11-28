@@ -81,9 +81,10 @@ class LongitudinalPlanner:
     self.mpc.set_weights(prev_accel_constraint, personality=personality)
     if self.CP.openpilotLongitudinalControl:
       self.mpc.set_cur_state(self.v_desired_filter.x, self.output_a_target)
+      self.mpc.update(sm['modelV2'], sm['radarState'], personality=personality)
     else:
       self.mpc.set_cur_state(v_ego, sm['carState'].aEgo)
-    self.mpc.update(sm['radarState'], personality=personality)
+      self.mpc.update(None, sm['radarState'], personality=personality)
 
     self.v_desired_trajectory = np.interp(CONTROL_N_T_IDX, T_IDXS_MPC, self.mpc.v_solution)
     self.a_desired_trajectory = np.interp(CONTROL_N_T_IDX, T_IDXS_MPC, self.mpc.a_solution)

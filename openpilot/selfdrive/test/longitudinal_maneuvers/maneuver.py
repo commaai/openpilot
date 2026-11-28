@@ -8,7 +8,10 @@ from openpilot.common.constants import CV
 from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
 from openpilot.selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner
-from openpilot.selfdrive.controls.radard import _LEAD_ACCEL_TAU
+from openpilot.selfdrive.controls.radard import KalmanParams, RADAR_TO_CAMERA, Track
+from openpilot.selfdrive.modeld.constants import ModelConstants
+
+LEAD_STEPS = (np.asarray(ModelConstants.LEAD_T_IDXS) / DT_MDL).astype(int)
 
 
 class Maneuver:
@@ -32,8 +35,10 @@ class Maneuver:
     # perception
     self.lead_relevancy = kwargs.get("lead_relevancy", False)
     self.only_lead2 = kwargs.get("only_lead2", False)
-    only_radar = kwargs.get("only_radar", False)
+    self.only_radar = kwargs.get("only_radar", False)
     prob_lead_values = kwargs.get("prob_lead_values", [1.0] * len(breakpoints))
+    model_v_lead_values = kwargs.get("model_speed_lead_values", None)
+    model_breakpoints = kwargs.get("model_breakpoints", breakpoints)
 
     # ego state, to be simulated
     n_steps = round(duration / DT_MDL)
@@ -44,29 +49,50 @@ class Maneuver:
     self.v_ego[0] = initial_v_ego
 
     # lead state, known in advance
-    self.v_lead = np.interp(self.t, breakpoints, v_lead_values)
+    # extend so we can populate fake model predicted traj
+    lead_t = np.arange(n_steps + LEAD_STEPS[-1] + 1) * DT_MDL
+    self.v_lead = np.interp(lead_t, breakpoints, v_lead_values)
     self.a_lead = np.diff(self.v_lead, prepend=0.0) / DT_MDL
     self.x_lead = np.cumsum(np.r_[initial_x_lead, self.v_lead[:-1] * DT_MDL])
-    self.prob_lead = np.interp(self.t, breakpoints, prob_lead_values)
-    self.lead_present = np.logical_and(self.lead_relevancy, np.logical_or(only_radar, self.prob_lead > 0.5))
+    if model_v_lead_values is not None:
+      self.model_v_lead = np.interp(lead_t, model_breakpoints, model_v_lead_values)
+      self.model_a_lead = np.diff(self.model_v_lead, prepend=self.model_v_lead[0]) / DT_MDL
+      self.model_x_lead = np.cumsum(np.r_[initial_x_lead, self.model_v_lead[:-1] * DT_MDL])
+    else:
+      self.model_v_lead = self.v_lead
+      self.model_a_lead = self.a_lead
+      self.model_x_lead = self.x_lead
+    self.prob_lead = np.zeros_like(self.t) if self.only_radar else np.interp(self.t, breakpoints, prob_lead_values)
+    self.lead_present = np.logical_and(self.lead_relevancy, np.logical_or(self.only_radar, self.prob_lead > 0.5))
     self.v_cruise = np.interp(self.t, breakpoints, v_cruise_values)
 
   def _make_messages(self, i):
     v_ego = float(self.v_ego[i])
     v_lead = float(self.v_lead[i])
     prob = float(self.prob_lead[i]) if self.lead_relevancy else 0.0
-    lead = log.RadarState.LeadData(
-      dRel=max(0., float(self.x_lead[i] - self.x_ego[i])) if self.lead_relevancy else 200.,
-      vRel=v_lead - v_ego if self.lead_relevancy else 0.,
-      vLead=v_lead, vLeadK=v_lead, aLeadK=float(self.a_lead[i]), aLeadTau=_LEAD_ACCEL_TAU,
-      present=bool(self.lead_present[i]), modelProb=prob, radar=True,
-    )
+    d_rel = max(0., float(self.x_lead[i] - self.x_ego[i])) if self.lead_relevancy else 200.
+    v_rel = v_lead - v_ego if self.lead_relevancy else 0.
+    self.track.update(d_rel, 0.0, v_rel, v_lead)
+    lead = log.RadarState.LeadData(**(self.track.get_RadarState(prob) | {'present': bool(self.lead_present[i])}))
     radar = log.RadarState(leadTwo=lead)
     if not self.only_lead2:
       radar.leadOne = lead
 
-    # Model requests more acceleration so the lead policy must handle slowdowns.
     model = log.ModelDataV2()
+    future = i + LEAD_STEPS
+    camera_x = self.x_ego[i] - RADAR_TO_CAMERA
+    future_x = (self.x_lead[i] + (self.model_x_lead[future] - self.model_x_lead[i]) - camera_x).tolist()
+    future_v = self.model_v_lead[future].tolist()
+    future_a = self.model_a_lead[future].tolist()
+    for j, model_lead in enumerate(model.init('leadsV3', len(ModelConstants.LEAD_T_OFFSETS))):
+      model_lead.prob = 0.0 if self.only_lead2 and j != 1 else prob
+      model_lead.probTime = ModelConstants.LEAD_T_OFFSETS[j]
+      model_lead.t = ModelConstants.LEAD_T_IDXS
+      model_lead.x = future_x
+      model_lead.v = future_v
+      model_lead.a = future_a
+
+    # Model requests more acceleration so the lead policy must handle slowdowns.
     model.action.desiredAcceleration = float(self.a_ego[i] + 0.5)
     return {
       'radarState': radar,
@@ -92,10 +118,12 @@ class Maneuver:
   def evaluate(self):
     CP = CarInterface.get_non_essential_params(CAR.HONDA_CIVIC)
     self.planner = LongitudinalPlanner(CP, init_v=self.v_ego[0])
+    self.track = Track(0, float(self.v_lead[0]), KalmanParams(DT_MDL))
     for i in range(len(self.t) - 1):
       self._step(i)
 
-    d_rel = self.x_lead - self.x_ego
+    x_lead, v_lead = self.x_lead[:len(self.t)], self.v_lead[:len(self.t)]
+    d_rel = x_lead - self.x_ego
 
     valid = True
     if np.any(d_rel[self.lead_present] < 0.4):
@@ -104,7 +132,7 @@ class Maneuver:
 
     if self.ensure_start and self.lead_relevancy:
       not_starting_since = None
-      not_starting = (self.v_lead > self.v_ego) & (self.a_ego < 1e-3)
+      not_starting = (v_lead > self.v_ego) & (self.a_ego < 1e-3)
       for now, waiting in zip(self.t, not_starting, strict=True):
         if not waiting:
           not_starting_since = None
@@ -120,5 +148,5 @@ class Maneuver:
       valid = False
 
     print('maneuver end', valid)
-    logs = np.column_stack((self.t, self.x_ego, self.x_lead, self.v_ego, self.v_lead, self.a_ego, d_rel))
+    logs = np.column_stack((self.t, self.x_ego, x_lead, self.v_ego, v_lead, self.a_ego, d_rel))
     return valid, logs
