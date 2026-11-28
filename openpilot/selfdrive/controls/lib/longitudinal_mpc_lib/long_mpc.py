@@ -312,7 +312,7 @@ class LongitudinalMpc:
     a_radar = a_lead * np.exp(-a_lead_tau * (T_IDXS**2) / 2.)
     radar_xv = self.integrate_lead(x_lead, v_lead, a_radar)
 
-    if model_prob > 0.5:
+    if model_lead is not None and model_prob > 0.5:
       a_model = np.interp(T_IDXS, ModelConstants.LEAD_T_IDXS, np.clip(model_lead.a, -10., CLIP_MODEL_LEAD_ACCEL))
       a_lead_traj = np.clip(a_model + (a_lead - a_model[0]) * RADAR_RESIDUAL_W, -10., np.maximum(a_radar, CLIP_MODEL_LEAD_ACCEL))
       lead_xv = self.integrate_lead(x_lead, v_lead, a_lead_traj)
@@ -333,8 +333,8 @@ class LongitudinalMpc:
   def update(self, modelV2, radarstate, personality=log.LongitudinalPersonality.standard):
     t_follow = get_T_FOLLOW(personality)
 
-    lead_xv_0 = self.process_lead(modelV2.leadsV3[0], radarstate.leadOne)
-    lead_xv_1 = self.process_lead(modelV2.leadsV3[1], radarstate.leadTwo)
+    lead_xv_0 = self.process_lead(modelV2.leadsV3[0] if modelV2 is not None else None, radarstate.leadOne)
+    lead_xv_1 = self.process_lead(modelV2.leadsV3[1] if modelV2 is not None else None, radarstate.leadTwo)
 
     # To estimate a safe distance from a moving lead, we calculate how much stopping
     # distance that lead needs as a minimum. We can add that to the current distance
