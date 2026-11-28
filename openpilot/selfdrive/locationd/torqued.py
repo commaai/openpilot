@@ -21,14 +21,15 @@ FIT_POINTS_TOTAL = 2000
 FIT_POINTS_TOTAL_QLOG = 600
 MIN_VEL = 15  # m/s
 FRICTION_FACTOR = 1.5  # ~85% of data coverage
-FACTOR_SANITY = 0.3
+FACTOR_SANITY_MIN = 0.3
+FACTOR_SANITY_MAX = 0.6
 FACTOR_SANITY_QLOG = 0.5
 FRICTION_SANITY = 0.5
 FRICTION_SANITY_QLOG = 0.8
 STEER_MIN_THRESHOLD = 0.02
 MIN_FILTER_DECAY = 50
 MAX_FILTER_DECAY = 250
-LAT_ACC_THRESHOLD = 1
+LAT_ACC_THRESHOLD = 2.0
 STEER_BUCKET_BOUNDS = [(-0.5, -0.3), (-0.3, -0.2), (-0.2, -0.1), (-0.1, 0), (0, 0.1), (0.1, 0.2), (0.2, 0.3), (0.3, 0.5)]
 MIN_BUCKET_POINTS = np.array([100, 300, 500, 500, 500, 500, 300, 100])
 MIN_ENGAGE_BUFFER = 2  # secs
@@ -60,14 +61,16 @@ class TorqueEstimator(ParameterEstimator):
       self.min_bucket_points: list[float] = (MIN_BUCKET_POINTS / 10).tolist()
       self.min_points_total = MIN_POINTS_TOTAL_QLOG
       self.fit_points = FIT_POINTS_TOTAL_QLOG
-      self.factor_sanity = FACTOR_SANITY_QLOG
+      self.factor_sanity_min = FACTOR_SANITY_QLOG
+      self.factor_sanity_max = max(FACTOR_SANITY_MAX, FACTOR_SANITY_QLOG)
       self.friction_sanity = FRICTION_SANITY_QLOG
 
     else:
       self.min_bucket_points = MIN_BUCKET_POINTS.tolist()
       self.min_points_total = MIN_POINTS_TOTAL
       self.fit_points = FIT_POINTS_TOTAL
-      self.factor_sanity = FACTOR_SANITY
+      self.factor_sanity_min = FACTOR_SANITY_MIN
+      self.factor_sanity_max = FACTOR_SANITY_MAX
       self.friction_sanity = FRICTION_SANITY
 
     self.offline_friction = 0.0
@@ -90,8 +93,8 @@ class TorqueEstimator(ParameterEstimator):
       'points': []
     }
     self.decay = MIN_FILTER_DECAY
-    self.min_lataccel_factor = (1.0 - self.factor_sanity) * self.offline_latAccelFactor
-    self.max_lataccel_factor = (1.0 + self.factor_sanity) * self.offline_latAccelFactor
+    self.min_lataccel_factor = (1.0 - self.factor_sanity_min) * self.offline_latAccelFactor
+    self.max_lataccel_factor = (1.0 + self.factor_sanity_max) * self.offline_latAccelFactor
     self.min_friction = (1.0 - self.friction_sanity) * self.offline_friction
     self.max_friction = (1.0 + self.friction_sanity) * self.offline_friction
 
