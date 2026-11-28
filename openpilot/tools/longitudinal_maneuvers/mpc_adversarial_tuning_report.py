@@ -108,12 +108,12 @@ def render_section(heading, make_maneuvers, personality, axes, shared_baseline=T
 
   if is_stopped:
     headers = [
-      'Case', 'Creep (m)', 'Max v (m/s)', 'Max a (m/s²)', 'Baseline min a (m/s²)', 'Adv min a (m/s²)', 'Baseline min d (m)', 'Adv min d (m)', 'Δ min d (m)',
+      'Case', 'Creep (m)', 'Max v (m/s)', 'Max a (m/s^2)', 'Baseline min a (m/s^2)', 'Adv min a (m/s^2)', 'Baseline min d (m)', 'Adv min d (m)', 'Δ min d (m)',
       'Result',
     ]
   else:
     headers = [
-      'Case', 'Baseline peak a (m/s²)', 'Adv peak a (m/s²)', 'Extra braking (m/s²)', 'Baseline min d (m)', 'Adv min d (m)', 'Δ min d (m)', 'Result',
+      'Case', 'Baseline peak a (m/s^2)', 'Adv peak a (m/s^2)', 'Extra braking (m/s^2)', 'Baseline min d (m)', 'Adv min d (m)', 'Δ min d (m)', 'Result',
     ]
   htmls.insert(1, render_table(headers, table_rows))
   return htmls
@@ -123,8 +123,8 @@ def generate_adversarial_tuning_report(personality=log.LongitudinalPersonality.r
   params_table = render_table(
     ['Parameter', 'Value'],
     [
-      ['CLIP_MODEL_LEAD_ACCEL', f'{long_mpc.CLIP_MODEL_LEAD_ACCEL:g} m/s²'],
-      ['LEAD_FALLBACK_RANGE', f'{long_mpc.LEAD_FALLBACK_RANGE} m/s²'],
+      ['CLIP_MODEL_LEAD_ACCEL', f'{long_mpc.CLIP_MODEL_LEAD_ACCEL:g} m/s^2'],
+      ['LEAD_FALLBACK_RANGE', f'{long_mpc.LEAD_FALLBACK_RANGE} m/s^2'],
       ['RADAR_RESIDUAL_DECAY_T', f'{long_mpc.RADAR_RESIDUAL_DECAY_T:g} s'],
       ['Personality', f'{LONGITUDINAL_PERSONALITY_MAP[personality]} (T_FOLLOW={long_mpc.get_T_FOLLOW(personality):g} s)'],
     ],

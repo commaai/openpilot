@@ -145,7 +145,7 @@ def create_maneuvers(kwargs):
 def create_approach_stopped_adv_maneuvers(kwargs):
   return [
     Maneuver(
-      f"approaching stopped lead that doesn't go ({v0:g}m/s from {d0:g}m), model wrongly predicts +{model_a:g}m/s²",
+      f"approaching stopped lead that doesn't go ({v0:g}m/s from {d0:g}m), model wrongly predicts +{model_a:g}m/s^2",
       duration=dur,
       initial_speed=v0,
       lead_relevancy=True,
@@ -164,7 +164,7 @@ def create_approach_stopped_adv_maneuvers(kwargs):
 def create_stopped_adv_maneuvers(kwargs):
   return [
     Maneuver(
-      f"stopped behind a lead that doesn't go ({d0:g}m), model wrongly predicts +{model_a:g}m/s²",
+      f"stopped behind a lead that doesn't go ({d0:g}m), model wrongly predicts +{model_a:g}m/s^2",
       duration=20.,
       initial_speed=0.,
       lead_relevancy=True,
@@ -183,7 +183,7 @@ def create_stopped_adv_maneuvers(kwargs):
 def create_hard_braking_adv_maneuvers(kwargs):
   return [
     Maneuver(
-      f"steady following ({v0:g}m/s) then lead brakes hard, model wrongly predicts 0m/s², lead -{decel:g}m/s²",
+      f"steady following ({v0:g}m/s) then lead brakes hard, model wrongly predicts 0m/s^2, lead -{decel:g}m/s^2",
       duration=15. + v0 / decel + 10.,
       initial_speed=v0,
       lead_relevancy=True,
