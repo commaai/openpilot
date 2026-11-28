@@ -278,5 +278,6 @@ class ModelRenderer(BaseModelRenderer):
 
   def _draw_lead_indicator(self):
     offset = self._draw_offset()
-    for lead in (*self._lead_bars, self._stop_point):
+    for lead in self._lead_bars:
       draw_polygon(self._rect, lead.bar + offset, rl.Color(255, 255, 255, int(255 * lead.fade_filter.x)))
+    draw_polygon(self._rect, self._stop_point.bar + offset, rl.Color(255, 60, 60, int(255 * self._stop_point.fade_filter.x)))
