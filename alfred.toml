@@ -63,6 +63,20 @@ run = "./openpilot/system/manager/test/test_manager.py"
 name = "Power draw"
 run = "./openpilot/selfdrive/test/test_power_draw.py"
 
+[jobs.install]
+runs-on = "up-mici"
+timeout-minutes = 45
+
+[[jobs.install.steps]]
+name = "Install the release on a fresh mici"
+run = "bash scripts/test_mici_install.sh https://openpilot.comma.ai release-mici"
+timeout-minutes = 20
+
+[[jobs.install.steps]]
+name = "Install this branch on a fresh mici"
+run = 'bash scripts/test_mici_install.sh "https://installer.comma.ai/${GIT_REPO%/openpilot}/$GIT_BRANCH" "$GIT_COMMIT"'
+timeout-minutes = 20
+
 [jobs.replay]
 runs-on = "up-mici"
 timeout-minutes = 35
