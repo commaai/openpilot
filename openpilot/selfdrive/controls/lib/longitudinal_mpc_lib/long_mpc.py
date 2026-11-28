@@ -203,7 +203,7 @@ def gen_long_ocp():
 
   # More iterations take too much time and less lead to inaccurate convergence in
   # some situations. Ideally we would run just 1 iteration to ensure fixed runtime.
-  ocp.solver_options.qp_solver_iter_max = 10
+  ocp.solver_options.qp_solver_iter_max = 20
   ocp.solver_options.qp_tol = 1e-3
 
   # set prediction horizon
@@ -314,7 +314,7 @@ class LongitudinalMpc:
 
     if model_prob > 0.5:
       a_model = np.interp(T_IDXS, ModelConstants.LEAD_T_IDXS, np.clip(model_lead.a, -10., CLIP_MODEL_LEAD_ACCEL))
-      a_lead_traj = np.minimum(a_model + (a_lead - a_model[0]) * RADAR_RESIDUAL_W, np.maximum(a_radar, CLIP_MODEL_LEAD_ACCEL))
+      a_lead_traj = np.clip(a_model + (a_lead - a_model[0]) * RADAR_RESIDUAL_W, -10., np.maximum(a_radar, CLIP_MODEL_LEAD_ACCEL))
       lead_xv = self.integrate_lead(x_lead, v_lead, a_lead_traj)
 
       # smoothly fall back to the more pessimistic radar trajectory when radar requires hard braking
