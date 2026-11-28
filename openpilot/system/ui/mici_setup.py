@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
-import os
-import re
 import ssl
 import threading
 import time
 import urllib.request
 import urllib.error
-from urllib.parse import urlparse
 from collections.abc import Callable
 
 import raylib_nb as rl
@@ -18,6 +15,7 @@ from openpilot.common.realtime import config_realtime_process, set_core_affinity
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.time_helpers import system_time_valid
 from openpilot.common.utils import run_cmd
+from openpilot.system.ui.lib.installer import OPENPILOT_URL, InvalidInstaller, download_installer, installer_url
 from openpilot.system.ui.lib.application import gui_app, FontWeight, TextAlignment, TextAlignmentVertical
 from openpilot.system.ui.lib.wifi_manager import WifiManager, ConnectStatus
 from openpilot.system.ui.widgets import Widget
@@ -31,12 +29,6 @@ from openpilot.selfdrive.ui.mici.widgets.dialog import BigInputDialog, BigConfir
 from openpilot.selfdrive.ui.mici.widgets.button import GreyBigButton, BigPillButton
 
 NetworkType = log.DeviceState.NetworkType
-
-OPENPILOT_URL = "https://openpilot.comma.ai"
-USER_AGENT = f"AGNOSSetup-{HARDWARE.get_os_version()}"
-
-INSTALLER_DESTINATION_PATH = "/tmp/installer"
-INSTALLER_URL_PATH = "/tmp/installer_url"
 
 
 class NetworkConnectivityMonitor:
@@ -460,12 +452,7 @@ class Setup(Widget):
       gui_app.push_widget(keyboard)
 
   def _download(self, url: str):
-    # autocomplete incomplete URLs
-    if re.match("^([^/.]+)/([^/]+)$", url):
-      url = f"https://installer.comma.ai/{url}"
-
-    parsed = urlparse(url, scheme='https')
-    self.download_url = (urlparse(f"https://{url}") if not parsed.netloc else parsed).geturl()
+    self.download_url = installer_url(url)
     self.download_progress = 0
 
     def start_download():
@@ -477,53 +464,15 @@ class Setup(Widget):
 
   def _download_thread(self):
     try:
-      import tempfile
-
-      fd, tmpfile = tempfile.mkstemp(prefix="installer_")
-
-      headers = {"User-Agent": USER_AGENT,
-                 "X-openpilot-serial": HARDWARE.get_serial(),
-                 "X-openpilot-device-type": HARDWARE.get_device_type()}
-      req = urllib.request.Request(self.download_url, headers=headers)
-
-      with open(tmpfile, 'wb') as f, urllib.request.urlopen(req, timeout=30) as response:
-        total_size = int(response.headers.get('content-length', 0))
-        downloaded = 0
-        block_size = 8192
-
-        while True:
-          buffer = response.read(block_size)
-          if not buffer:
-            break
-
-          downloaded += len(buffer)
-          f.write(buffer)
-
-          if total_size:
-            self.download_progress = int(downloaded * 100 / total_size)
-
-      is_elf = False
-      with open(tmpfile, 'rb') as f:
-        header = f.read(4)
-        is_elf = header == b'\x7fELF'
-
-      if not is_elf:
-        self._download_failed_reason = "No custom software found at this URL: " + self.download_url.replace("https://", "", 1)
-        return
-
-      # NOTE: currently unused, for future logging
-      with open(INSTALLER_URL_PATH, "w") as f:
-        f.write(self.download_url)
-
-      # AGNOS might try to execute the installer before this process exits.
-      # Therefore, important to close the fd before renaming the installer.
-      os.close(fd)
-      os.rename(tmpfile, INSTALLER_DESTINATION_PATH)
+      for progress in download_installer(self.download_url):
+        self.download_progress = progress
 
       # give time for installer UI to take over
       time.sleep(0.1)
       gui_app.request_close()
 
+    except InvalidInstaller:
+      self._download_failed_reason = "No custom software found at this URL: " + self.download_url.replace("https://", "", 1)
     except urllib.error.HTTPError as e:
       if e.code == 409:
         self._download_failed_reason = "Incompatible openpilot version."

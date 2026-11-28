@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
-import os
-import re
 import threading
 import time
 import urllib.request
 import urllib.error
-from urllib.parse import urlparse
 from enum import IntEnum
 
 import raylib_nb as rl
 
 from openpilot.cereal import log
 from openpilot.common.hardware import HARDWARE
+from openpilot.system.ui.lib.installer import OPENPILOT_URL, InvalidInstaller, download_installer, installer_url
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.application import gui_app, FontWeight, FONT_SCALE, TextAlignment, TextAlignmentVertical
 from openpilot.system.ui.widgets import DialogResult, Widget
@@ -29,12 +27,6 @@ NEXT_BUTTON_WIDTH = 310
 BODY_FONT_SIZE = 80
 BUTTON_HEIGHT = 160
 BUTTON_SPACING = 50
-
-OPENPILOT_URL = "https://openpilot.comma.ai"
-USER_AGENT = f"AGNOSSetup-{HARDWARE.get_os_version()}"
-
-INSTALLER_DESTINATION_PATH = "/tmp/installer"
-INSTALLER_URL_PATH = "/tmp/installer_url"
 
 
 class SetupState(IntEnum):
@@ -343,12 +335,7 @@ class Setup(Widget):
     gui_app.push_widget(self.keyboard)
 
   def download(self, url: str):
-    # autocomplete incomplete URLs
-    if re.match("^([^/.]+)/([^/]+)$", url):
-      url = f"https://installer.comma.ai/{url}"
-
-    parsed = urlparse(url, scheme='https')
-    self.download_url = (urlparse(f"https://{url}") if not parsed.netloc else parsed).geturl()
+    self.download_url = installer_url(url)
 
     self.state = SetupState.DOWNLOADING
 
@@ -357,52 +344,15 @@ class Setup(Widget):
 
   def _download_thread(self):
     try:
-      import tempfile
-
-      fd, tmpfile = tempfile.mkstemp(prefix="installer_")
-
-      headers = {"User-Agent": USER_AGENT,
-                 "X-openpilot-serial": HARDWARE.get_serial(),
-                 "X-openpilot-device-type": HARDWARE.get_device_type()}
-      req = urllib.request.Request(self.download_url, headers=headers)
-
-      with open(tmpfile, 'wb') as f, urllib.request.urlopen(req, timeout=30) as response:
-        total_size = int(response.headers.get('content-length', 0))
-        downloaded = 0
-        block_size = 8192
-
-        while True:
-          buffer = response.read(block_size)
-          if not buffer:
-            break
-
-          downloaded += len(buffer)
-          f.write(buffer)
-
-          if total_size:
-            self.download_progress = int(downloaded * 100 / total_size)
-
-      is_elf = False
-      with open(tmpfile, 'rb') as f:
-        header = f.read(4)
-        is_elf = header == b'\x7fELF'
-
-      if not is_elf:
-        self.download_failed(self.download_url, "No custom software found at this URL.")
-        return
-
-      # AGNOS might try to execute the installer before this process exits.
-      # Therefore, important to close the fd before renaming the installer.
-      os.close(fd)
-      os.rename(tmpfile, INSTALLER_DESTINATION_PATH)
-
-      with open(INSTALLER_URL_PATH, "w") as f:
-        f.write(self.download_url)
+      for progress in download_installer(self.download_url):
+        self.download_progress = progress
 
       # give time for installer UI to take over
       time.sleep(0.1)
       gui_app.request_close()
 
+    except InvalidInstaller:
+      self.download_failed(self.download_url, "No custom software found at this URL.")
     except urllib.error.HTTPError as e:
       if e.code == 409:
         error_msg = e.read().decode("utf-8")
