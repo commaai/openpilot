@@ -128,6 +128,7 @@ print(output_store['radard']['err']) # radard stderr
 
 Set `BOLT_REPLAY_ASSIST_MAP` to the absolute path of a calibration JSON before replaying `controlsd` on a Bolt log.
 Run the same segment with the variable unset to get the baseline.
+Both runs apply the Bolt torque slew limits and use the reachable torque range to prevent integral windup.
 
 ```python
 import os

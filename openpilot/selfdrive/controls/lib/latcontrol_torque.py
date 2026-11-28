@@ -3,6 +3,8 @@ import numpy as np
 from collections import deque
 
 from openpilot.cereal import log
+from opendbc.car import DT_CTRL
+from opendbc.car.gm.values import CAR as GM, CarControllerParams as GMParams
 from opendbc.car.lateral import FRICTION_THRESHOLD, get_friction
 from openpilot.common.constants import ACCELERATION_DUE_TO_GRAVITY
 from openpilot.common.filter_simple import FirstOrderFilter
@@ -30,6 +32,7 @@ LP_FILTER_CUTOFF_HZ = 1.2
 JERK_LOOKAHEAD_SECONDS = 0.19
 JERK_GAIN = 0.3
 LAT_ACCEL_REQUEST_BUFFER_SECONDS = 1.0
+BOLT_EPS_SLEW_RATE = 3.5  # handwheel N·m/s, fitted to the reported LKA overlay
 VERSION = 1
 
 class LatControlTorque(LatControl):
@@ -38,6 +41,13 @@ class LatControlTorque(LatControl):
     self.torque_params = CP.lateralTuning.torque.as_builder()
     self.torque_from_lateral_accel = CI.torque_from_lateral_accel()
     self.lateral_accel_from_torque = CI.lateral_accel_from_torque()
+    self.torque_step = None
+    self.last_torque = 0.
+    if CP.carFingerprint == GM.CHEVROLET_BOLT_EUV:
+      eps_counts_per_sec = BOLT_EPS_SLEW_RATE / 0.01  # 0.01 N·m per CAN count
+      send_interval = GMParams.STEER_STEP * DT_CTRL
+      self.torque_step = (min(eps_counts_per_sec, GMParams.STEER_DELTA_UP / send_interval) * dt / GMParams.STEER_MAX,
+                          min(eps_counts_per_sec, GMParams.STEER_DELTA_DOWN / send_interval) * dt / GMParams.STEER_MAX)
     self.pid = PIDController([INTERP_SPEEDS, KP_INTERP], KI, rate=1/self.dt)
     self.update_limits()
     self.steering_angle_deadzone_deg = self.torque_params.steeringAngleDeadzoneDeg
@@ -85,13 +95,31 @@ class LatControlTorque(LatControl):
     if not active:
       output_torque = 0.0
       pid_log.active = False
+      if self.torque_step is not None:
+        self.last_torque = 0.
+        self.pid.reset()
     else:
       # do error correction in lateral acceleration space, convert at end to handle non-linear torque responses correctly
       pid_log.error = float(error)
 
       freeze_integrator = steer_limited_by_safety or CS.steeringPressed or CS.vEgo < 5
-      output_lataccel = self.pid.update(pid_log.error, speed=CS.vEgo, feedforward=ff, freeze_integrator=freeze_integrator)
+      torque_limits = None
+      accel_limits = None
+      if self.torque_step is not None:
+        up, down = self.torque_step
+        lower = max(-self.steer_max, self.last_torque - down, min(self.last_torque, 0.) - up)
+        upper = min(self.steer_max, self.last_torque + down, max(self.last_torque, 0.) + up)
+        torque_limits = (lower, upper)
+        accel_limits = (self.lateral_accel_from_torque(lower, self.torque_params),
+                        self.lateral_accel_from_torque(upper, self.torque_params))
+
+      output_lataccel = self.pid.update(pid_log.error, speed=CS.vEgo, feedforward=ff, freeze_integrator=freeze_integrator,
+                                        anti_windup_limits=accel_limits)
       output_torque = self.torque_from_lateral_accel(output_lataccel, self.torque_params)
+      if torque_limits is not None:
+        # Clamp in command space so the controller can traverse a flat part of the assist curve.
+        output_torque = float(np.clip(output_torque, *torque_limits))
+        self.last_torque = output_torque
 
       pid_log.active = True
       pid_log.p = float(self.pid.p)
